@@ -3,9 +3,14 @@ import copy
 
 import pandas as pd
 import numpy as np
+import cython as cy
 
 
 class Node(object):
+
+    _price = cy.declare(cy.double)
+    _value = cy.declare(cy.double)
+    _weight = cy.declare(cy.double)
 
     def __init__(self, name, parent=None, children=None):
 
@@ -95,6 +100,11 @@ class Node(object):
 
 class StrategyBase(Node):
 
+    _capital = cy.declare(cy.double)
+    _net_flows = cy.declare(cy.double)
+    _last_value = cy.declare(cy.double)
+    _last_price = cy.declare(cy.double)
+
     def __init__(self, name, children=None, parent=None):
         Node.__init__(self, name, children=children, parent=parent)
         self._capital = 0
@@ -144,6 +154,7 @@ class StrategyBase(Node):
         if self.children is not None:
             [c.setup(dates) for c in self._childrenv]
 
+    @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double)
     def update(self, date, data):
         # resolve stale state
         self.root.stale = False
@@ -188,9 +199,8 @@ class StrategyBase(Node):
                 else:
                     raise e
 
-            prc = self._last_price * (1 + ret)
-            self._price = prc
-            self._prices[date] = prc
+            self._price = self._last_price * (1 + ret)
+            self._prices[date] = self._price
 
         # update children weights
         if self.children is not None:
@@ -200,6 +210,7 @@ class StrategyBase(Node):
                 except ZeroDivisionError:
                     c._weight = 0
 
+    @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint)
     def adjust(self, amount, update=True, flow=True):
         """
         adjust captial - used to inject capital
@@ -218,6 +229,7 @@ class StrategyBase(Node):
             # be updated before access
             self.root.stale = True
 
+    @cy.locals(amount=cy.double, update=cy.bint)
     def allocate(self, amount, update=True):
         # adjust parent's capital
         # no need to update now - avoids repetition
@@ -242,6 +254,11 @@ class StrategyBase(Node):
 
 class SecurityBase(Node):
 
+    _last_pos = cy.declare(cy.int)
+    _position = cy.declare(cy.int)
+    multiplier = cy.declare(cy.double)
+
+    @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1):
         Node.__init__(self, name, parent=None, children=None)
         self._value = 0
@@ -280,6 +297,7 @@ class SecurityBase(Node):
         self._values = self.data['value']
         self._positions = self.data['position']
 
+    @cy.locals(prc=cy.double)
     def update(self, date, data):
         # filter for internal calls when position has not changed - nothing to
         # do. Internal calls (stale root calls) have None data. Also want to
@@ -302,6 +320,7 @@ class SecurityBase(Node):
         self._value = self.position * self._price * self.multiplier
         self._values[date] = self._value
 
+    @cy.locals(amount=cy.double, update=cy.bint, q=cy.int, outlay=cy.double)
     def allocate(self, amount, update=True):
         # buy/sell appropriate # of shares and pass
         # remaining capital back up to parent as
@@ -339,8 +358,10 @@ class SecurityBase(Node):
         # adjust position & value
         self._position += q
 
+    @cy.locals(q=cy.int)
     def commission(self, q):
         return max(1, abs(q) * 0.01)
 
+    @cy.locals(q=cy.int)
     def outlay(self, q):
         return q * self._price * self.multiplier + self.commission(q)
