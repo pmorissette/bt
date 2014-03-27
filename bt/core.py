@@ -1,7 +1,8 @@
 import math
+import copy
+
 import pandas as pd
 import numpy as np
-import cython as cy
 
 
 class Node(object):
@@ -12,7 +13,8 @@ class Node(object):
 
         if children is not None:
             if isinstance(children, list):
-                children = {c.name: c for c in children}
+                children = {c.name: copy.deepcopy(c)
+                            for c in children}
 
         if parent is None:
             self.parent = self
@@ -42,6 +44,9 @@ class Node(object):
         self._price = 0
         self._value = 0
         self._weight = 0
+
+    def __getitem__(self, key):
+        return self.children[key]
 
     @property
     def prices(self):
@@ -118,6 +123,12 @@ class StrategyBase(Node):
         return self._prices[:self.now]
 
     @property
+    def values(self):
+        if self.root.stale:
+            self.root.update(self.now, None)
+        return self._values[:self.now]
+
+    @property
     def capital(self):
         # no stale check needed
         return self._capital
@@ -168,7 +179,8 @@ class StrategyBase(Node):
 
             # calc price - artificial index representing strategy return
             try:
-                ret = float(self._value) / (self._last_value + self._net_flows) - 1
+                ret = float(self._value) / \
+                    (self._last_value + self._net_flows) - 1
             except ZeroDivisionError, e:
                 # if denom is 0 as well - just have 0 return
                 if self._value == 0:
@@ -209,10 +221,10 @@ class StrategyBase(Node):
     def allocate(self, amount, update=True):
         # adjust parent's capital
         # no need to update now - avoids repetition
-        self.parent.adjust(-amount, update=False, flow=False)
+        self.parent.adjust(-amount, update=False, flow=True)
 
         # adjust self's capital
-        self.adjust(amount, update=False, flow=False)
+        self.adjust(amount, update=False, flow=True)
 
         # push allocation down to children if any
         # use _weight to avoid triggering an update
@@ -248,6 +260,12 @@ class SecurityBase(Node):
     @property
     def prices(self):
         return self._prices[:self.now]
+
+    @property
+    def values(self):
+        if self.root.stale:
+            self.root.update(self.now, None)
+        return self._values[:self.now]
 
     @property
     def position(self):
