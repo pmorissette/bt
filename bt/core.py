@@ -257,6 +257,7 @@ class SecurityBase(Node):
     _last_pos = cy.declare(cy.double)
     _position = cy.declare(cy.double)
     multiplier = cy.declare(cy.double)
+    _prices_set = cy.declare(cy.bint)
 
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1):
@@ -276,7 +277,7 @@ class SecurityBase(Node):
 
     @property
     def prices(self):
-        return self._prices[:self.now]
+        return self._prices.ix[:self.now]
 
     @property
     def values(self):
@@ -289,11 +290,19 @@ class SecurityBase(Node):
         # no stale check needed
         return self._position
 
-    def setup(self, dates):
+    def setup(self, dates, prices=None):
         # setup internal data
-        self.data = pd.DataFrame(index=dates,
-                                 columns=['price', 'value', 'position'])
-        self._prices = self.data['price']
+        if prices is not None:
+            self._prices = prices
+            self.data = pd.DataFrame(index=dates,
+                                     columns=['value', 'position'])
+            self._prices_set = True
+        else:
+            self.data = pd.DataFrame(index=dates,
+                                     columns=['price', 'value', 'position'])
+            self._prices = self.data['price']
+            self._prices_set = False
+
         self._values = self.data['value']
         self._positions = self.data['position']
 
@@ -310,9 +319,13 @@ class SecurityBase(Node):
         self.now = date
 
         if data is not None:
-            prc = data[self.name]
-            self._price = prc
-            self._prices[date] = prc
+            if self._prices_set:
+                prc = self._prices[self.now]
+                self._price = prc
+            else:
+                prc = data[self.name]
+                self._price = prc
+                self._prices[date] = prc
 
         self._positions[date] = self._position
         self._last_pos = self._position
