@@ -37,6 +37,59 @@ def test_strategy_tree():
     assert s == s['s2'].parent
 
 
+def test_security_setup_prices():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    s.setup(dts)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    assert c1.price == 105
+    assert len(c1.prices) == 1
+    assert c1.prices[0] == 105
+
+    assert c2.price == 95
+    assert len(c2.prices) == 1
+    assert c2.prices[0] == 95
+
+    # now with setup
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    s.setup(dts)
+    c1.setup(dts, data['c1'])
+    c2.setup(dts, data['c2'])
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    assert c1.price == 105
+    assert len(c1.prices) == 1
+    assert c1.prices[0] == 105
+
+    assert c2.price == 95
+    assert len(c2.prices) == 1
+    assert c2.prices[0] == 95
+
+
 def test_strategy_tree_setup():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
