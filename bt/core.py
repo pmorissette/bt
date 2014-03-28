@@ -32,7 +32,8 @@ class Node(object):
         self.children = children
 
         if children is not None:
-            for c in self.children.values():
+            self._childrenv = children.values()
+            for c in self._childrenv:
                 c.parent = self
                 c.root = self.root
 
@@ -88,6 +89,8 @@ class Node(object):
         else:
             self.children[child.name] = child
 
+        self._childrenv = self.children.values()
+
     def update(self, date, data):
         raise NotImplementedError()
 
@@ -116,9 +119,6 @@ class StrategyBase(Node):
         self._net_flows = 0
         self._last_value = 0
         self._last_price = 100
-
-        if self.children is not None:
-            self._childrenv = self.children.values()
 
     @property
     def price(self):
@@ -177,9 +177,9 @@ class StrategyBase(Node):
         val = self._capital  # default if no children
 
         if self.children is not None:
-            [c.update(date, data) for c in self._childrenv]
-            # if children factor in sum of children
-            val = sum(c.value for c in self._childrenv) + self._capital
+            for c in self._childrenv:
+                c.update(date, data)
+                val += c.value
 
         # update data if this value is different or
         # if now has changed - avoid all this if not since it
