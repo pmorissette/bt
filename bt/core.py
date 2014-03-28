@@ -1,5 +1,4 @@
 import math
-import copy
 
 import pandas as pd
 import numpy as np
@@ -18,7 +17,7 @@ class Node(object):
 
         if children is not None:
             if isinstance(children, list):
-                children = {c.name: copy.deepcopy(c)
+                children = {c.name: c
                             for c in children}
 
         if parent is None:

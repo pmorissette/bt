@@ -1,3 +1,5 @@
+import copy
+
 from bt.core import Node, StrategyBase, SecurityBase
 import pandas as pd
 
@@ -10,19 +12,19 @@ def test_node_tree():
     assert len(p.children) == 2
     assert 'c1' in p.children
     assert 'c2' in p.children
-    assert p == p['c1'].parent
-    assert p == p['c2'].parent
+    assert p == c1.parent
+    assert p == c2.parent
 
     m = Node('m', children=[p])
 
     assert len(m.children) == 1
     assert 'p' in m.children
-    assert m['p'].parent == m
+    assert p.parent == m
     assert len(p.children) == 2
     assert 'c1' in p.children
     assert 'c2' in p.children
-    assert p == p['c1'].parent
-    assert p == p['c2'].parent
+    assert p == c1.parent
+    assert p == c2.parent
 
 
 def test_strategy_tree():
@@ -33,16 +35,14 @@ def test_strategy_tree():
     assert len(s.children) == 2
     assert 's1' in s.children
     assert 's2' in s.children
-    assert s == s['s1'].parent
-    assert s == s['s2'].parent
+    assert s == s1.parent
+    assert s == s2.parent
 
 
 def test_security_setup_prices():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
-    c1 = s['c1']
-    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -101,9 +101,6 @@ def test_strategy_tree_setup():
     data['c2'][dts[1]] = 95
 
     s.setup(dts)
-
-    c1 = s['c1']
-    c2 = s['c2']
 
     assert len(s.data) == 3
     assert len(c1.data) == 3
@@ -175,8 +172,6 @@ def test_strategy_tree_allocate():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
-    c1 = s['c1']
-    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -210,15 +205,12 @@ def test_strategy_tree_allocate():
 
 def test_strategy_tree_allocate_level2():
     c1 = SecurityBase('c1')
+    c12 = copy.deepcopy(c1)
     c2 = SecurityBase('c2')
+    c22 = copy.deepcopy(c2)
     s1 = StrategyBase('s1', [c1, c2])
-    s2 = StrategyBase('s2', [c1, c2])
+    s2 = StrategyBase('s2', [c12, c22])
     m = StrategyBase('m', [s1, s2])
-    # re-reference
-    s1 = m['s1']
-    s2 = m['s2']
-    s1c1 = s1['c1']
-    s2c1 = s2['c1']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -251,28 +243,26 @@ def test_strategy_tree_allocate_level2():
     assert s2.weight == 0
 
     # now allocate directly to child of child
-    s1c1.allocate(200)
+    c1.allocate(200)
 
     assert s1.value == 499
     assert s1.capital == 500 - 201
-    assert s1.children['c1'].value == 200
-    assert s1.children['c1'].weight == 200.0 / 499
-    assert s1.children['c1'].position == 2
+    assert c1.value == 200
+    assert c1.weight == 200.0 / 499
+    assert c1.position == 2
 
     assert m.capital == 1000 - 500
     assert m.value == 999
     assert s1.weight == 499.0 / 999
     assert s2.weight == 0
 
-    assert s2c1.value == 0
+    assert c12.value == 0
 
 
 def test_strategy_tree_allocate_long_short():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
-    c1 = s['c1']
-    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -323,8 +313,6 @@ def test_strategy_tree_allocate_update():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
-    c1 = s['c1']
-    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
