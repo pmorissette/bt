@@ -254,8 +254,8 @@ class StrategyBase(Node):
 
 class SecurityBase(Node):
 
-    _last_pos = cy.declare(cy.int)
-    _position = cy.declare(cy.int)
+    _last_pos = cy.declare(cy.double)
+    _position = cy.declare(cy.double)
     multiplier = cy.declare(cy.double)
 
     @cy.locals(multiplier=cy.double)
@@ -320,7 +320,7 @@ class SecurityBase(Node):
         self._value = self.position * self._price * self.multiplier
         self._values[date] = self._value
 
-    @cy.locals(amount=cy.double, update=cy.bint, q=cy.int, outlay=cy.double)
+    @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double)
     def allocate(self, amount, update=True):
         # buy/sell appropriate # of shares and pass
         # remaining capital back up to parent as
@@ -358,10 +358,10 @@ class SecurityBase(Node):
         # adjust position & value
         self._position += q
 
-    @cy.locals(q=cy.int)
+    @cy.locals(q=cy.double)
     def commission(self, q):
         return max(1, abs(q) * 0.01)
 
-    @cy.locals(q=cy.int)
+    @cy.locals(q=cy.double)
     def outlay(self, q):
         return q * self._price * self.multiplier + self.commission(q)
