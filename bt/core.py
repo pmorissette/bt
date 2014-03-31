@@ -76,13 +76,13 @@ class Node(object):
     @property
     def value(self):
         if self.root.stale:
-            self.root.update(self.now, None)
+            self.root.update(self.root.now, None)
         return self._value
 
     @property
     def weight(self):
         if self.root.stale:
-            self.root.update(self.now, None)
+            self.root.update(self.root.now, None)
         return self._weight
 
     def setup(self, dates):
@@ -164,10 +164,8 @@ class StrategyBase(Node):
 
     @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double)
     def update(self, date, data=None):
-        #print '%s parentupdate' % date
         # resolve stale state
-        if self.root == self:
-            self.stale = False
+        self.root.stale = False
 
         # update helpers on date change
         # also set newpt flag
@@ -292,16 +290,25 @@ class SecurityBase(Node):
 
     @property
     def price(self):
+        # if accessing and stale - update first
+        if not self._needupdate:
+            self.update(self.root.now)
         return self._price
 
     @property
     def prices(self):
+        # if accessing and stale - update first
+        if not self._needupdate:
+            self.update(self.root.now)
         return self._prices.ix[:self.now]
 
     @property
     def values(self):
+        # if accessing and stale - update first
+        if not self._needupdate:
+            self.update(self.root.now)
         if self.root.stale:
-            self.root.update(self.now, None)
+            self.root.update(self.root.now, None)
         return self._values[:self.now]
 
     @property
@@ -335,13 +342,13 @@ class SecurityBase(Node):
         if date == self.now and self._last_pos == self._position:
             return
 
+        # date change - update price
         if date != self.now:
             # update now
             self.now = date
 
             if self._prices_set:
-                prc = self._prices[self.now]
-                self._price = prc
+                self._price = self._prices[self.now]
             # traditional data update
             elif data is not None:
                 prc = data[self.name]
@@ -352,7 +359,6 @@ class SecurityBase(Node):
         self._last_pos = self._position
 
         self._value = self._position * self._price * self.multiplier
-        #print '%s (%s): %s %s %s' % (date, self.name, self.position, self._price, self.multiplier)
         self._values[date] = self._value
 
         if self._weight == 0 and self._position == 0:
@@ -360,13 +366,14 @@ class SecurityBase(Node):
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double)
     def allocate(self, amount, update=True):
-        #print '%s (%s): alloc %s' % (self.now, self.name, amount)
         # buy/sell appropriate # of shares and pass
         # remaining capital back up to parent as
         # adjustment
 
         # will need to update if this has been idle for a while...
-        if not self._needupdate:
+        # update if needupdate or if now is stale
+        # fetch parent's now since our now is stale
+        if self._needupdate or self.now != self.parent.now:
             self.update(self.parent.now)
 
         # ignore 0 alloc
@@ -400,17 +407,17 @@ class SecurityBase(Node):
         # last update)
         self._needupdate = True
 
+        # adjust position & value
+        self._position += q
+
         # calculate proper adjustment for parent
         # parent passed down amount so we want to pass
         # -outlay back up to parent to adjust for capital
         # used
         outlay = self.outlay(q)
+
+        # call parent
         self.parent.adjust(-outlay, update=update, flow=False)
-
-        #print '%s (%s): quant %s' % (self.now, self.name, q)
-
-        # adjust position & value
-        self._position += q
 
     @cy.locals(q=cy.double)
     def commission(self, q):
