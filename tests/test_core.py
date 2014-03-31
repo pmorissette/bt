@@ -1,6 +1,6 @@
 import copy
 
-from bt.core import Node, StrategyBase, SecurityBase
+from bt.core import Node, StrategyBase, SecurityBase, Strategy
 import pandas as pd
 
 
@@ -27,7 +27,7 @@ def test_node_tree():
     assert p == c2.parent
 
 
-def test_strategy_tree():
+def test_strategybase_tree():
     s1 = SecurityBase('s1')
     s2 = SecurityBase('s2')
     s = StrategyBase('p', [s1, s2])
@@ -90,7 +90,7 @@ def test_security_setup_prices():
     assert c2.prices[0] == 95
 
 
-def test_strategy_tree_setup():
+def test_strategybase_tree_setup():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
@@ -115,7 +115,7 @@ def test_strategy_tree_setup():
     assert len(c2.values) == 0
 
 
-def test_strategy_tree_adjust():
+def test_strategybase_tree_adjust():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
@@ -137,7 +137,7 @@ def test_strategy_tree_adjust():
     assert c2.weight == 0
 
 
-def test_strategy_tree_update():
+def test_strategybase_tree_update():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
@@ -168,7 +168,7 @@ def test_strategy_tree_update():
     c2.price == 100
 
 
-def test_strategy_tree_allocate():
+def test_strategybase_tree_allocate():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
@@ -203,7 +203,7 @@ def test_strategy_tree_allocate():
     assert c2.weight == 0
 
 
-def test_strategy_tree_allocate_level2():
+def test_strategybase_tree_allocate_level2():
     c1 = SecurityBase('c1')
     c12 = copy.deepcopy(c1)
     c2 = SecurityBase('c2')
@@ -259,7 +259,7 @@ def test_strategy_tree_allocate_level2():
     assert c12.value == 0
 
 
-def test_strategy_tree_allocate_long_short():
+def test_strategybase_tree_allocate_long_short():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
@@ -309,7 +309,7 @@ def test_strategy_tree_allocate_long_short():
     assert s.value == 996
 
 
-def test_strategy_tree_allocate_update():
+def test_strategybase_tree_allocate_update():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
@@ -347,3 +347,104 @@ def test_strategy_tree_allocate_update():
     assert s.capital == 1000 - 501
     assert s.value == 1024
     assert s.price == 102.4
+
+
+def test_strategy_universe():
+    s = Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    assert len(s.universe) == 1
+    assert 'c1' in s.universe
+    assert 'c2' in s.universe
+    assert s.universe['c1'][dts[i]] == 105
+    assert s.universe['c2'][dts[i]] == 95
+
+    # should not have children unless allocated
+    assert len(s.children) == 0
+
+
+def test_strategy_allocate():
+    s = Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 100
+    data['c2'][dts[0]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    s.adjust(1000)
+    s.allocate('c1', 100)
+    c1 = s['c1']
+
+    assert c1.position == 1
+    assert c1.value == 100
+    assert s.value == 999
+
+
+def test_strategy_close():
+    s = Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    s.adjust(1000)
+    s.allocate('c1', 100)
+    c1 = s['c1']
+
+    assert c1.position == 1
+    assert c1.value == 100
+    assert s.value == 999
+
+    s.close('c1')
+
+    assert c1.position == 0
+    assert c1.value == 0
+    assert s.value == 998
+
+
+def test_strategy_flatten():
+    s = Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    s.adjust(1000)
+    s.allocate('c1', 100)
+    c1 = s['c1']
+    s.allocate('c2', 100)
+    c2 = s['c2']
+
+    assert c1.position == 1
+    assert c1.value == 100
+    assert c2.position == 1
+    assert c2.value == 100
+    assert s.value == 998
+
+    s.flatten()
+
+    assert c1.position == 0
+    assert c1.value == 0
+    assert s.value == 996

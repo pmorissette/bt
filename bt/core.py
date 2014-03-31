@@ -10,6 +10,7 @@ class Node(object):
     _price = cy.declare(cy.double)
     _value = cy.declare(cy.double)
     _weight = cy.declare(cy.double)
+    _issec = cy.declare(cy.bint)
 
     def __init__(self, name, parent=None, children=None):
 
@@ -28,13 +29,15 @@ class Node(object):
             self.root = parent.root
             parent._add_child(self)
 
+        # default children
+        if children is None:
+            children = {}
         self.children = children
 
-        if children is not None:
-            self._childrenv = children.values()
-            for c in self._childrenv:
-                c.parent = self
-                c.root = self.root
+        self._childrenv = children.values()
+        for c in self._childrenv:
+            c.parent = self
+            c.root = self.root
 
         # set default value for now
         self.now = 0
@@ -49,6 +52,9 @@ class Node(object):
         self._price = 0
         self._value = 0
         self._weight = 0
+
+        # is security flag - used to avoid updating 0 pos securities
+        self._issec = False
 
     def __getitem__(self, key):
         return self.children[key]
@@ -83,6 +89,8 @@ class Node(object):
         raise NotImplementedError()
 
     def _add_child(self, child):
+        child.parent = self
+        child.root = self.root
         if self.children is None:
             self.children = {child.name: child}
         else:
@@ -90,7 +98,7 @@ class Node(object):
 
         self._childrenv = self.children.values()
 
-    def update(self, date, data):
+    def update(self, date, data=None):
         raise NotImplementedError()
 
     def adjust(self, amount, update=True, isflow=True):
@@ -129,13 +137,13 @@ class StrategyBase(Node):
     def prices(self):
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._prices[:self.now]
+        return self._prices.ix[:self.now]
 
     @property
     def values(self):
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._values[:self.now]
+        return self._values.ix[:self.now]
 
     @property
     def capital(self):
@@ -145,7 +153,8 @@ class StrategyBase(Node):
     def setup(self, dates):
         # setup internal data
         self.data = pd.DataFrame(index=dates,
-                                 columns=['price', 'value'])
+                                 columns=['price', 'value'],
+                                 data=0)
         self._prices = self.data['price']
         self._values = self.data['value']
 
@@ -154,9 +163,11 @@ class StrategyBase(Node):
             [c.setup(dates) for c in self._childrenv]
 
     @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double)
-    def update(self, date, data):
+    def update(self, date, data=None):
+        #print '%s parentupdate' % date
         # resolve stale state
-        self.root.stale = False
+        if self.root == self:
+            self.stale = False
 
         # update helpers on date change
         # also set newpt flag
@@ -177,6 +188,9 @@ class StrategyBase(Node):
 
         if self.children is not None:
             for c in self._childrenv:
+                # avoid useless update call
+                if c._issec and not c._needupdate:
+                    continue
                 c.update(date, data)
                 val += c.value
 
@@ -189,7 +203,7 @@ class StrategyBase(Node):
 
             # calc price - artificial index representing strategy return
             try:
-                ret = float(self._value) / \
+                ret = self._value / \
                     (self._last_value + self._net_flows) - 1
             except ZeroDivisionError, e:
                 # if denom is 0 as well - just have 0 return
@@ -204,8 +218,11 @@ class StrategyBase(Node):
         # update children weights
         if self.children is not None:
             for c in self._childrenv:
+                # avoid useless update call
+                if c._issec and not c._needupdate:
+                    continue
                 try:
-                    c._weight = float(c.value) / val
+                    c._weight = c.value / val
                 except ZeroDivisionError:
                     c._weight = 0
 
@@ -257,6 +274,7 @@ class SecurityBase(Node):
     _position = cy.declare(cy.double)
     multiplier = cy.declare(cy.double)
     _prices_set = cy.declare(cy.bint)
+    _needupdate = cy.declare(cy.bint)
 
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1):
@@ -269,6 +287,8 @@ class SecurityBase(Node):
 
         # opt
         self._last_pos = 0
+        self._issec = True
+        self._needupdate = True
 
     @property
     def price(self):
@@ -294,7 +314,8 @@ class SecurityBase(Node):
         if prices is not None:
             self._prices = prices
             self.data = pd.DataFrame(index=dates,
-                                     columns=['value', 'position'])
+                                     columns=['value', 'position'],
+                                     data=0)
             self._prices_set = True
         else:
             self.data = pd.DataFrame(index=dates,
@@ -306,7 +327,7 @@ class SecurityBase(Node):
         self._positions = self.data['position']
 
     @cy.locals(prc=cy.double)
-    def update(self, date, data):
+    def update(self, date, data=None):
         # filter for internal calls when position has not changed - nothing to
         # do. Internal calls (stale root calls) have None data. Also want to
         # make sure date has not changed, because then we do indeed want to
@@ -314,14 +335,15 @@ class SecurityBase(Node):
         if date == self.now and self._last_pos == self._position:
             return
 
-        # update now
-        self.now = date
+        if date != self.now:
+            # update now
+            self.now = date
 
-        if data is not None:
             if self._prices_set:
                 prc = self._prices[self.now]
                 self._price = prc
-            else:
+            # traditional data update
+            elif data is not None:
                 prc = data[self.name]
                 self._price = prc
                 self._prices[date] = prc
@@ -329,14 +351,23 @@ class SecurityBase(Node):
         self._positions[date] = self._position
         self._last_pos = self._position
 
-        self._value = self.position * self._price * self.multiplier
+        self._value = self._position * self._price * self.multiplier
+        #print '%s (%s): %s %s %s' % (date, self.name, self.position, self._price, self.multiplier)
         self._values[date] = self._value
+
+        if self._weight == 0 and self._position == 0:
+            self._needupdate = False
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double)
     def allocate(self, amount, update=True):
+        #print '%s (%s): alloc %s' % (self.now, self.name, amount)
         # buy/sell appropriate # of shares and pass
         # remaining capital back up to parent as
         # adjustment
+
+        # will need to update if this has been idle for a while...
+        if not self._needupdate:
+            self.update(self.parent.now)
 
         # ignore 0 alloc
         if amount == 0:
@@ -351,14 +382,23 @@ class SecurityBase(Node):
 
         # buy/sell
         # determine quantity - must also factor in commission
-        if amount > 0:
-            q = math.floor(float(amount) / (self._price * self.multiplier))
+        # closing out?
+        if amount == -self._value:
+            q = -self._position
         else:
-            q = math.ceil(float(amount) / (self._price * self.multiplier))
+            if amount > 0:
+                q = math.floor(amount / (self._price * self.multiplier))
+            else:
+                q = math.ceil(amount / (self._price * self.multiplier))
 
         # if q is 0 nothing to do
         if q == 0 or np.isnan(q):
             return
+
+        # this security will need an update, even if pos is 0 (for example if
+        # we close the positions, value and pos is 0, but still need to do that
+        # last update)
+        self._needupdate = True
 
         # calculate proper adjustment for parent
         # parent passed down amount so we want to pass
@@ -366,6 +406,8 @@ class SecurityBase(Node):
         # used
         outlay = self.outlay(q)
         self.parent.adjust(-outlay, update=update, flow=False)
+
+        #print '%s (%s): quant %s' % (self.now, self.name, q)
 
         # adjust position & value
         self._position += q
@@ -377,3 +419,52 @@ class SecurityBase(Node):
     @cy.locals(q=cy.double)
     def outlay(self, q):
         return q * self._price * self.multiplier + self.commission(q)
+
+
+class Strategy(StrategyBase):
+
+    def __init__(self, name, children=None):
+        StrategyBase.__init__(self, name, children=children)
+
+    def setup(self, universe):
+        self._universe = universe
+        self._funiverse = universe
+        self._last_chk = None
+        super(Strategy, self).setup(universe.index)
+
+    @property
+    def universe(self):
+        # avoid windowing every time
+        # if calling and on same date return
+        # cached value
+        if self.now == self._last_chk:
+            return self._funiverse
+        else:
+            self._last_chk = self.now
+            self._funiverse = self._universe[:self.now]
+            return self._funiverse
+
+    @cy.locals(amount=cy.double)
+    def allocate(self, child, amount):
+        if child not in self.children:
+            c = SecurityBase(child)
+            # want full price history
+            d = self._universe[child]
+            c.setup(d.index, d)
+            # update to bring up to speed
+            c.update(self.now)
+            # add child to tree
+            self._add_child(c)
+
+        self.children[child].allocate(amount)
+
+    def close(self, child):
+        c = self.children[child]
+        c.allocate(-c.value)
+
+    def flatten(self):
+        # go right to base alloc
+        [c.allocate(-c.value) for c in self._childrenv if c.value != 0]
+
+    def run(self):
+        raise NotImplementedError()
