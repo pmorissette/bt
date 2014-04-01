@@ -150,17 +150,34 @@ class StrategyBase(Node):
         # no stale check needed
         return self._capital
 
-    def setup(self, dates):
+    @property
+    def universe(self):
+        # avoid windowing every time
+        # if calling and on same date return
+        # cached value
+        if self.now == self._last_chk:
+            return self._funiverse
+        else:
+            self._last_chk = self.now
+            self._funiverse = self._universe.ix[:self.now]
+            return self._funiverse
+
+    def setup(self, universe):
+        # setup universe
+        self._universe = universe
+        self._funiverse = universe
+        self._last_chk = None
+
         # setup internal data
-        self.data = pd.DataFrame(index=dates,
+        self.data = pd.DataFrame(index=universe.index,
                                  columns=['price', 'value'],
-                                 data=0)
+                                 data=0.0)
         self._prices = self.data['price']
         self._values = self.data['value']
 
         # setup children as well
         if self.children is not None:
-            [c.setup(dates) for c in self._childrenv]
+            [c.setup(universe) for c in self._childrenv]
 
     @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double)
     def update(self, date, data=None):
@@ -244,23 +261,45 @@ class StrategyBase(Node):
             self.root.stale = True
 
     @cy.locals(amount=cy.double, update=cy.bint)
-    def allocate(self, amount, update=True):
-        # adjust parent's capital
-        # no need to update now - avoids repetition
-        self.parent.adjust(-amount, update=False, flow=True)
+    def allocate(self, amount, child=None, update=True):
+        # allocate to child
+        if child is not None:
+            if child not in self.children:
+                c = SecurityBase(child)
+                c.setup(self._universe)
+                # update to bring up to speed
+                c.update(self.now)
+                # add child to tree
+                self._add_child(c)
 
-        # adjust self's capital
-        self.adjust(amount, update=False, flow=True)
+            # allocate to child
+            self.children[child].allocate(amount)
+        # allocate to self
+        else:
+            # adjust parent's capital
+            # no need to update now - avoids repetition
+            self.parent.adjust(-amount, update=False, flow=True)
 
-        # push allocation down to children if any
-        # use _weight to avoid triggering an update
-        if self.children is not None:
-            [c.allocate(amount * c._weight, update=False)
-             for c in self._childrenv]
+            # adjust self's capital
+            self.adjust(amount, update=False, flow=True)
 
-        # mark as stale if update requested
-        if update:
-            self.root.stale = True
+            # push allocation down to children if any
+            # use _weight to avoid triggering an update
+            if self.children is not None:
+                [c.allocate(amount * c._weight, update=False)
+                 for c in self._childrenv]
+
+            # mark as stale if update requested
+            if update:
+                self.root.stale = True
+
+    def close(self, child):
+        c = self.children[child]
+        c.allocate(-c.value)
+
+    def flatten(self):
+        # go right to base alloc
+        [c.allocate(-c.value) for c in self._childrenv if c.value != 0]
 
     def run(self):
         pass
@@ -316,16 +355,23 @@ class SecurityBase(Node):
         # no stale check needed
         return self._position
 
-    def setup(self, dates, prices=None):
+    def setup(self, universe):
+        # if we already have all the prices, we will store them to speed up
+        # future udpates
+        try:
+            prices = universe[self.name]
+        except KeyError:
+            prices = None
+
         # setup internal data
         if prices is not None:
             self._prices = prices
-            self.data = pd.DataFrame(index=dates,
+            self.data = pd.DataFrame(index=universe.index,
                                      columns=['value', 'position'],
-                                     data=0)
+                                     data=0.0)
             self._prices_set = True
         else:
-            self.data = pd.DataFrame(index=dates,
+            self.data = pd.DataFrame(index=universe.index,
                                      columns=['price', 'value', 'position'])
             self._prices = self.data['price']
             self._prices_set = False
@@ -426,52 +472,3 @@ class SecurityBase(Node):
     @cy.locals(q=cy.double)
     def outlay(self, q):
         return q * self._price * self.multiplier + self.commission(q)
-
-
-class Strategy(StrategyBase):
-
-    def __init__(self, name, children=None):
-        StrategyBase.__init__(self, name, children=children)
-
-    def setup(self, universe):
-        self._universe = universe
-        self._funiverse = universe
-        self._last_chk = None
-        super(Strategy, self).setup(universe.index)
-
-    @property
-    def universe(self):
-        # avoid windowing every time
-        # if calling and on same date return
-        # cached value
-        if self.now == self._last_chk:
-            return self._funiverse
-        else:
-            self._last_chk = self.now
-            self._funiverse = self._universe[:self.now]
-            return self._funiverse
-
-    @cy.locals(amount=cy.double)
-    def allocate(self, child, amount):
-        if child not in self.children:
-            c = SecurityBase(child)
-            # want full price history
-            d = self._universe[child]
-            c.setup(d.index, d)
-            # update to bring up to speed
-            c.update(self.now)
-            # add child to tree
-            self._add_child(c)
-
-        self.children[child].allocate(amount)
-
-    def close(self, child):
-        c = self.children[child]
-        c.allocate(-c.value)
-
-    def flatten(self):
-        # go right to base alloc
-        [c.allocate(-c.value) for c in self._childrenv if c.value != 0]
-
-    def run(self):
-        raise NotImplementedError()
