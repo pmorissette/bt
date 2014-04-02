@@ -2,6 +2,7 @@ import copy
 
 from bt.core import Node, StrategyBase, SecurityBase
 import pandas as pd
+from nose.tools import assert_almost_equal as aae
 
 
 def test_node_tree():
@@ -1131,3 +1132,120 @@ def test_strategybase_multiple_calls_no_post_update():
     assert c2.value == 1045
     assert c2.weight == 1045.0 / 1096
     assert c2.price == 95
+
+
+def test_strategybase_prices():
+    dts = pd.date_range('2010-01-01', periods=21)
+    rawd = [13.555, 13.75, 14.16, 13.915, 13.655,
+            13.765, 14.02, 13.465, 13.32, 14.65,
+            14.59, 14.175, 13.865, 13.865, 13.89,
+            13.85, 13.565, 13.47, 13.225, 13.385,
+            12.89]
+    data = pd.DataFrame(index=dts, data=rawd, columns=['a'])
+
+    s = StrategyBase('s')
+    s.setup(data)
+
+    # buy 100 shares on day 1 - hold until end
+    # just enough to buy 100 shares + 1$ commission
+    s.adjust(1356.50)
+
+    s.update(dts[0])
+    # allocate all capital to child a
+    # a should be dynamically created and should have
+    # 100 shares allocated. s.capital should be 0
+    s.allocate(s.value, 'a')
+
+    assert s.capital == 0
+    assert s.value == 1355.50
+    assert len(s.children) == 1
+    aae(s.price, 99.92628, 5)
+
+    a = s['a']
+    assert a.position == 100
+    assert a.value == 1355.50
+    assert a.weight == 1
+    assert a.price == 13.555
+    assert len(a.prices) == 1
+
+    # update through all dates and make sure price is ok
+    s.update(dts[1])
+    aae(s.price, 101.3638, 4)
+
+    s.update(dts[2])
+    aae(s.price, 104.3863, 4)
+
+    s.update(dts[3])
+    aae(s.price, 102.5802, 4)
+
+    # finish updates and make sure ok at end
+    for i in range(4, 21):
+        s.update(dts[i])
+
+    assert len(s.prices) == 21
+    aae(s.prices[-1], 95.02396, 5)
+    aae(s.prices[-2], 98.67306, 5)
+
+
+def test_fail_if_root_value_negative():
+    s = StrategyBase('s')
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 100
+    data['c2'][dts[0]] = 95
+    s.setup(data)
+
+    try:
+        s.adjust(-100)
+        # trigger update
+        s.update(dts[0])
+        assert False
+    except ValueError, e:
+        if not 'negative root node value' in e.message:
+            assert False
+
+    # make sure only triggered if root negative
+    c1 = StrategyBase('c1')
+    s = StrategyBase('s', children=[c1])
+    s.setup(data)
+
+    s.adjust(1000)
+    c1.adjust(-100)
+    s.update(dts[0])
+
+    # now make it trigger
+    try:
+        c1.adjust(-1000)
+        # trigger update
+        s.update(dts[0])
+        assert False
+    except ValueError, e:
+        if not 'negative root node value' in e.message:
+            assert False
+
+
+def test_fail_if_0_base_in_return_calc():
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 100
+    data['c2'][dts[0]] = 95
+
+    # must setup tree because if not negative root error pops up first
+    c1 = StrategyBase('c1')
+    s = StrategyBase('s', children=[c1])
+    s.setup(data)
+
+    s.adjust(1000)
+    c1.adjust(100)
+    s.update(dts[0])
+
+    c1.adjust(-100)
+    s.update(dts[1])
+
+    try:
+        c1.adjust(-100)
+        s.update(dts[1])
+        assert False
+    except ZeroDivisionError, e:
+        if not 'Could not update' in e.message:
+            assert False

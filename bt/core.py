@@ -209,6 +209,10 @@ class StrategyBase(Node):
                 c.update(date, data)
                 val += c.value
 
+        if self.root == self:
+            if val < 0:
+                raise ValueError('negative root node value!')
+
         # update data if this value is different or
         # if now has changed - avoid all this if not since it
         # won't change
@@ -220,12 +224,18 @@ class StrategyBase(Node):
             try:
                 ret = self._value / \
                     (self._last_value + self._net_flows) - 1
-            except ZeroDivisionError, e:
+            except ZeroDivisionError:
                 # if denom is 0 as well - just have 0 return
                 if self._value == 0:
                     ret = 0
                 else:
-                    raise e
+                    raise ZeroDivisionError(
+                        'Could not update %s. Last value \
+                        was %s and net flows were %s. Therefore,\
+                        we are dividing by zero to obtain the return\
+                        for the period.' % (self.name,
+                                            self._last_value,
+                                            self._net_flows))
 
             self._price = self._last_price * (1 + ret)
             self._prices[date] = self._price
