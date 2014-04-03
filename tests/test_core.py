@@ -45,17 +45,17 @@ def test_node_members():
     s2 = SecurityBase('s2')
     s = StrategyBase('p', [s1, s2])
 
-    actual = s.members()
+    actual = s.members
     assert len(actual) == 3
     assert s1 in actual
     assert s2 in actual
     assert s in actual
 
-    actual = s1.members()
+    actual = s1.members
     assert len(actual) == 1
     assert s1 in actual
 
-    actual = s2.members()
+    actual = s2.members
     assert len(actual) == 1
     assert s2 in actual
 

@@ -107,10 +107,11 @@ class Node(object):
     def allocate(self, amount, update=True):
         raise NotImplementedError()
 
+    @property
     def members(self):
         res = [self]
         for c in self.children.values():
-            res.extend(c.members())
+            res.extend(c.members)
         return res
 
     @property
