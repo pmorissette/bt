@@ -107,6 +107,12 @@ class Node(object):
     def allocate(self, amount, update=True):
         raise NotImplementedError()
 
+    def members(self):
+        res = [self]
+        for c in self.children.values():
+            res.extend(c.members())
+        return res
+
 
 class StrategyBase(Node):
 
@@ -358,7 +364,7 @@ class SecurityBase(Node):
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return self._values[:self.now]
+        return self._values.ix[:self.now]
 
     @property
     def position(self):

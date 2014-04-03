@@ -40,6 +40,26 @@ def test_strategybase_tree():
     assert s == s2.parent
 
 
+def test_node_members():
+    s1 = SecurityBase('s1')
+    s2 = SecurityBase('s2')
+    s = StrategyBase('p', [s1, s2])
+
+    actual = s.members()
+    assert len(actual) == 3
+    assert s1 in actual
+    assert s2 in actual
+    assert s in actual
+
+    actual = s1.members()
+    assert len(actual) == 1
+    assert s1 in actual
+
+    actual = s2.members()
+    assert len(actual) == 1
+    assert s2 in actual
+
+
 def test_security_setup_prices():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
