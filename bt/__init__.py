@@ -1,1 +1,1 @@
-from .backtest import Backtest
+from .backtest import Backtest, run

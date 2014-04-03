@@ -1,4 +1,15 @@
 from copy import deepcopy
+import bt
+import ffn
+import pandas as pd
+
+
+def run(*backtests):
+    # run each backtest
+    for bkt in backtests:
+        bkt.run()
+
+    return Result(*backtests)
 
 
 class Backtest(object):
