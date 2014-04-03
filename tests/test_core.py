@@ -60,6 +60,16 @@ def test_node_members():
     assert s2 in actual
 
 
+def test_node_full_name():
+    s1 = SecurityBase('s1')
+    s2 = SecurityBase('s2')
+    s = StrategyBase('p', [s1, s2])
+
+    assert s.full_name == 'p'
+    assert s1.full_name == 'p>s1'
+    assert s2.full_name == 'p>s2'
+
+
 def test_security_setup_prices():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')

@@ -113,6 +113,13 @@ class Node(object):
             res.extend(c.members())
         return res
 
+    @property
+    def full_name(self):
+        if self.parent == self:
+            return self.name
+        else:
+            return '%s>%s' % (self.parent.full_name, self.name)
+
 
 class StrategyBase(Node):
 
