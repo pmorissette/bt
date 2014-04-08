@@ -230,6 +230,41 @@ def test_strategybase_tree_allocate():
     assert c2.weight == 0
 
 
+def test_strategybase_tree_allocate_child_from_strategy():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    s.adjust(1000)
+    # since children have w == 0 this should stay in s
+    s.allocate(1000)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now allocate to c1
+    s.allocate(500, 'c1')
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 501
+    assert s.value == 999
+    assert c1.weight == 500.0 / 999
+    assert c2.weight == 0
+
+
 def test_strategybase_tree_allocate_level2():
     c1 = SecurityBase('c1')
     c12 = copy.deepcopy(c1)
@@ -1279,3 +1314,156 @@ def test_fail_if_0_base_in_return_calc():
     except ZeroDivisionError, e:
         if not 'Could not update' in e.message:
             assert False
+
+
+def test_strategybase_tree_rebalance():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    s.adjust(1000)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now rebalance c1
+    s.rebalance(0.5, 'c1')
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 501
+    assert s.value == 999
+    assert c1.weight == 500.0 / 999
+    assert c2.weight == 0
+
+
+def test_strategybase_tree_rebalance_to_0():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    s.adjust(1000)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now rebalance c1
+    s.rebalance(0.5, 'c1')
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 501
+    assert s.value == 999
+    assert c1.weight == 500.0 / 999
+    assert c2.weight == 0
+
+    # now rebalance c1
+    s.rebalance(0, 'c1')
+
+    assert c1.position == 0
+    assert c1.value == 0
+    assert s.capital == 1000 - 501 + 499
+    assert s.value == 998
+    assert c1.weight == 0
+    assert c2.weight == 0
+
+
+def test_strategybase_tree_rebalance_level2():
+    c1 = SecurityBase('c1')
+    c12 = copy.deepcopy(c1)
+    c2 = SecurityBase('c2')
+    c22 = copy.deepcopy(c2)
+    s1 = StrategyBase('s1', [c1, c2])
+    s2 = StrategyBase('s2', [c12, c22])
+    m = StrategyBase('m', [s1, s2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    m.setup(data)
+
+    i = 0
+    m.update(dts[i], data.ix[dts[i]])
+
+    m.adjust(1000)
+
+    assert m.value == 1000
+    assert m.capital == 1000
+    assert s1.value == 0
+    assert s2.value == 0
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now rebalance child s1 - since its children are 0, no waterfall alloc
+    m.rebalance(0.5, 's1')
+
+    assert s1.value == 500
+    assert m.capital == 1000 - 500
+    assert m.value == 1000
+    assert s1.weight == 500.0 / 1000
+    assert s2.weight == 0
+
+    # now allocate directly to child of child
+    s1.rebalance(0.4, 'c1')
+
+    assert s1.value == 499
+    assert s1.capital == 500 - 201
+    assert c1.value == 200
+    assert c1.weight == 200.0 / 499
+    assert c1.position == 2
+
+    assert m.capital == 1000 - 500
+    assert m.value == 999
+    assert s1.weight == 499.0 / 999
+    assert s2.weight == 0
+
+    assert c12.value == 0
+
+    # now rebalance child s1 again and make sure c1 also gets proportional
+    # increase
+    m.rebalance(0.8, 's1')
+    assert s1.value == 798.2
+    aae(m.capital, 199.8, 1)
+    assert m.value == 998
+    assert s1.weight == 798.2 / 998
+    assert s2.weight == 0
+    assert c1.value == 300.0
+    assert c1.weight == 300.0 / 798.2
+    assert c1.position == 3
+
+    # now rebalance child s1 to 0 - should close out s1 and c1 as well
+    m.rebalance(0, 's1')
+
+    print s1.value
+    assert s1.value == 0
+    assert m.capital == 997
+    assert m.value == 997
+    assert s1.weight == 0
+    assert s2.weight == 0
+    assert c1.weight == 0

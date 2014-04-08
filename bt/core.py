@@ -317,8 +317,31 @@ class StrategyBase(Node):
             if update:
                 self.root.stale = True
 
+    @cy.locals(delta=cy.double, weight=cy.double)
+    def rebalance(self, weight, child, update=True):
+        # if weight is 0 - we want to close child
+        if weight == 0:
+            return self.close(child)
+
+        # else make sure we have child
+        if child not in self.children:
+            c = SecurityBase(child)
+            c.setup(self._universe)
+            # update child to bring up to speed
+            c.update(self.now)
+            self._add_child(c)
+
+        # allocate to child
+        # figure out weight delta
+        c = self.children[child]
+        delta = weight - c.weight
+        c.allocate(delta * self.value)
+
     def close(self, child):
         c = self.children[child]
+        # flatten if children not None
+        if c.children is not None and len(c.children) != 0:
+            c.flatten()
         c.allocate(-c.value)
 
     def flatten(self):
