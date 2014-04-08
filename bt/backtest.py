@@ -89,6 +89,3 @@ class Result(ffn.GroupStats):
         tmp = [pd.DataFrame({x.name: x.strategy.prices}) for x in backtests]
         super(Result, self).__init__(*tmp)
         self.backtests = {x.name: x for x in backtests}
-
-    def set_date_range(self, start=None, end=None):
-        self.stats.set_date_range(start, end)
