@@ -1467,3 +1467,77 @@ def test_strategybase_tree_rebalance_level2():
     assert s1.weight == 0
     assert s2.weight == 0
     assert c1.weight == 0
+
+
+def test_strategybase_tree_rebalance_base():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    s.adjust(1000)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # check that 2 rebalances of equal weight lead to two different allocs
+    # since value changes after first call
+    s.rebalance(0.5, 'c1')
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 501
+    assert s.value == 999
+    assert c1.weight == 500.0 / 999
+    assert c2.weight == 0
+
+    s.rebalance(0.5, 'c2')
+
+    assert c2.position == 4
+    assert c2.value == 400
+    assert s.capital == 1000 - 501 - 401
+    assert s.value == 998
+    assert c2.weight == 400.0 / 998
+    assert c1.weight == 500.0 / 998
+
+    # close out everything
+    s.flatten()
+
+    # adjust to get back to 1000
+    s.adjust(4)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now rebalance but set fixed base
+    base = s.value
+    s.rebalance(0.5, 'c1', base=base)
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 501
+    assert s.value == 999
+    assert c1.weight == 500.0 / 999
+    assert c2.weight == 0
+
+    s.rebalance(0.5, 'c2', base=base)
+
+    assert c2.position == 5
+    assert c2.value == 500
+    assert s.capital == 1000 - 501 - 501
+    assert s.value == 998
+    assert c2.weight == 500.0 / 998
+    assert c1.weight == 500.0 / 998

@@ -317,11 +317,15 @@ class StrategyBase(Node):
             if update:
                 self.root.stale = True
 
-    @cy.locals(delta=cy.double, weight=cy.double)
-    def rebalance(self, weight, child, update=True):
+    @cy.locals(delta=cy.double, weight=cy.double, base=cy.double)
+    def rebalance(self, weight, child, base=np.nan, update=True):
         # if weight is 0 - we want to close child
         if weight == 0:
             return self.close(child)
+
+        # if no base specified use self's value
+        if np.isnan(base):
+            base = self.value
 
         # else make sure we have child
         if child not in self.children:
@@ -335,7 +339,7 @@ class StrategyBase(Node):
         # figure out weight delta
         c = self.children[child]
         delta = weight - c.weight
-        c.allocate(delta * self.value)
+        c.allocate(delta * base)
 
     def close(self, child):
         c = self.children[child]
