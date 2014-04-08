@@ -523,3 +523,49 @@ class SecurityBase(Node):
     @cy.locals(q=cy.double)
     def outlay(self, q):
         return q * self._price * self.multiplier + self.commission(q)
+
+    def run(self):
+        pass
+
+
+class Algo(object):
+
+    def __init__(self, name=None):
+        self._name = name
+
+    @property
+    def name(self):
+        if self._name is None:
+            self._name = self.__class__.__name__
+        return self._name
+
+    def __call__(self, target):
+        raise NotImplementedError("%s not implemented!" % self.name)
+
+
+class AlgoStack(Algo):
+
+    def __init__(self, *algos):
+        super(AlgoStack, self).__init__()
+        self.algos = algos
+
+    def __call__(self, target):
+        for algo in self.algos:
+            if not algo(target):
+                return False
+
+
+class Strategy(StrategyBase):
+
+    def __init__(self, name, algos=[], children=None):
+        super(Strategy, self).__init__(name, children=children)
+        self.stack = AlgoStack(*algos)
+        self.algo_data = {}
+
+    def run(self):
+        # run algo stack
+        self.stack(self)
+
+        # run children
+        for c in self.children.values():
+            c.run()
