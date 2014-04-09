@@ -1266,7 +1266,7 @@ def test_fail_if_root_value_negative():
         s.update(dts[0])
         assert False
     except ValueError, e:
-        if not 'negative root node value' in e.message:
+        if not 'negative root node value' in str(e):
             assert False
 
     # make sure only triggered if root negative
@@ -1285,7 +1285,7 @@ def test_fail_if_root_value_negative():
         s.update(dts[0])
         assert False
     except ValueError, e:
-        if not 'negative root node value' in e.message:
+        if not 'negative root node value' in str(e):
             assert False
 
 
@@ -1312,7 +1312,7 @@ def test_fail_if_0_base_in_return_calc():
         s.update(dts[1])
         assert False
     except ZeroDivisionError, e:
-        if not 'Could not update' in e.message:
+        if not 'Could not update' in str(e):
             assert False
 
 
