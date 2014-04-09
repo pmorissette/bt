@@ -187,6 +187,17 @@ class WeighEqually(Algo):
         return True
 
 
+class WeighSpecified(Algo):
+
+    def __init__(self, **weights):
+        super(WeighSpecified, self).__init__()
+        self.weights = weights
+
+    def __call__(self, target):
+        target.algo_data['weights'] = self.weights
+        return True
+
+
 class CapitalFlow(Algo):
 
     """
@@ -218,7 +229,7 @@ class Rebalance(Algo):
     """
     Rebalances capital based on algo_data weights.
 
-    Rebalances capital based on algo_data['weighs']. Also closes
+    Rebalances capital based on algo_data['weights']. Also closes
     positions if open but not in target_weights. This is typically
     the last Algo called once the target weights have been set.
     """

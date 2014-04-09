@@ -218,3 +218,25 @@ def test_weight_equally():
     assert weights['c1'] == 0.5
     assert 'c2' in weights
     assert weights['c2'] == 0.5
+
+
+def test_weight_specified():
+    algo = algos.WeighSpecified(c1=0.6, c2=0.4)
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+    s.update(dts[0])
+
+    assert algo(s)
+    weights = s.algo_data['weights']
+    assert len(weights) == 2
+    assert 'c1' in weights
+    assert weights['c1'] == 0.6
+    assert 'c2' in weights
+    assert weights['c2'] == 0.4
