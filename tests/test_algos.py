@@ -2,6 +2,7 @@ from datetime import datetime
 
 import mock
 import pandas as pd
+import numpy as np
 
 import bt
 import bt.algos as algos
@@ -240,3 +241,41 @@ def test_weight_specified():
     assert weights['c1'] == 0.6
     assert 'c2' in weights
     assert weights['c2'] == 0.4
+
+
+def test_select_has_data():
+    algo = algos.SelectHasData(min_count=3, lookback=pd.DateOffset(days=3))
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    data['c1'].ix[dts[0]] = np.nan
+    data['c1'].ix[dts[1]] = np.nan
+
+    s.setup(data)
+    s.update(dts[2])
+
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 1
+    assert 'c2' in selected
+
+
+def test_select_has_data_preselected():
+    algo = algos.SelectHasData(min_count=3, lookback=pd.DateOffset(days=3))
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    data['c1'].ix[dts[0]] = np.nan
+    data['c1'].ix[dts[1]] = np.nan
+
+    s.setup(data)
+    s.update(dts[2])
+    s.algo_data['selected'] = ['c1']
+
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 0

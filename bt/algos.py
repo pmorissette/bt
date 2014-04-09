@@ -1,3 +1,4 @@
+import bt
 from bt.core import Algo
 import pandas as pd
 
@@ -166,6 +167,27 @@ class SelectAll(Algo):
 
     def __call__(self, target):
         target.algo_data['selected'] = target.universe.columns
+        return True
+
+
+class SelectHasData(Algo):
+
+    def __init__(self, min_count,
+                 lookback=pd.DateOffset(months=3)):
+        super(SelectHasData, self).__init__()
+        self.lookback = lookback
+        self.min_count = min_count
+
+    def __call__(self, target):
+        if 'selected' in target.algo_data:
+            selected = target.algo_data['selected']
+        else:
+            selected = target.universe.columns
+
+        filt = target.universe[selected].ix[target.now - self.lookback:]
+        cnt = filt.count()
+        cnt = cnt[cnt >= self.min_count]
+        target.algo_data['selected'] = list(cnt.index)
         return True
 
 
