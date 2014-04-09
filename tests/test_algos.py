@@ -3,6 +3,7 @@ from datetime import datetime
 import mock
 import pandas as pd
 import numpy as np
+from nose.tools import assert_almost_equal as aae
 
 import bt
 import bt.algos as algos
@@ -279,3 +280,35 @@ def test_select_has_data_preselected():
     assert algo(s)
     selected = s.algo_data['selected']
     assert len(selected) == 0
+
+
+def test_weight_inv_vol():
+    algo = algos.WeighInvVol(lookback=pd.DateOffset(days=5))
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=5)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+
+    # high vol c1
+    data['c1'].ix[dts[1]] = 105
+    data['c1'].ix[dts[2]] = 95
+    data['c1'].ix[dts[3]] = 105
+    data['c1'].ix[dts[4]] = 95
+
+    # low vol c2
+    data['c2'].ix[dts[1]] = 100.1
+    data['c2'].ix[dts[2]] = 99.9
+    data['c2'].ix[dts[3]] = 100.1
+    data['c2'].ix[dts[4]] = 99.9
+
+    s.setup(data)
+    s.update(dts[4])
+    s.algo_data['selected'] = ['c1', 'c2']
+
+    assert algo(s)
+    weights = s.algo_data['weights']
+    assert len(weights) == 2
+    assert weights['c2'] > weights['c1']
+    aae(weights['c1'], 0.020, 3)
+    aae(weights['c2'], 0.980, 3)

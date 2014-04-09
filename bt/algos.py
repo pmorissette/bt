@@ -220,6 +220,20 @@ class WeighSpecified(Algo):
         return True
 
 
+class WeighInvVol(Algo):
+
+    def __init__(self, lookback=pd.DateOffset(months=3)):
+        super(WeighInvVol, self).__init__()
+        self.lookback = lookback
+
+    def __call__(self, target):
+        selected = target.algo_data['selected']
+        prc = target.universe[selected].ix[target.now - self.lookback:]
+        target.algo_data['weights'] = bt.finance.calc_inv_vol_weights(
+            prc.to_returns().dropna())
+        return True
+
+
 class CapitalFlow(Algo):
 
     """
