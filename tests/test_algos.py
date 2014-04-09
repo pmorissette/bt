@@ -282,7 +282,7 @@ def test_select_has_data_preselected():
     assert len(selected) == 0
 
 
-def test_weight_inv_vol():
+def test_weigh_inv_vol():
     algo = algos.WeighInvVol(lookback=pd.DateOffset(days=5))
 
     s = bt.Strategy('s')
@@ -312,3 +312,31 @@ def test_weight_inv_vol():
     assert weights['c2'] > weights['c1']
     aae(weights['c1'], 0.020, 3)
     aae(weights['c2'], 0.980, 3)
+
+
+@mock.patch('bt.finance.calc_mean_var_weights')
+def test_weigh_mean_var(mock_mv):
+    algo = algos.WeighMeanVar(lookback=pd.DateOffset(days=5))
+
+    mock_mv.return_value = {'c1': 0.3, 'c2': 0.7}
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=5)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+
+    s.setup(data)
+    s.update(dts[4])
+    s.algo_data['selected'] = ['c1', 'c2']
+
+    assert algo(s)
+    assert mock_mv.called
+    rets = mock_mv.call_args[0][0]
+    assert len(rets) == 4
+    assert 'c1' in rets
+    assert 'c2' in rets
+
+    weights = s.algo_data['weights']
+    assert len(weights) == 2
+    assert weights['c1'] == 0.3
+    assert weights['c2'] == 0.7

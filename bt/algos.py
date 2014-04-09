@@ -234,6 +234,26 @@ class WeighInvVol(Algo):
         return True
 
 
+class WeighMeanVar(Algo):
+
+    def __init__(self, lookback=pd.DateOffset(months=3),
+                 bounds=(0., 1.), covar_method='ledoit-wolf',
+                 rf=0.):
+        super(WeighMeanVar, self).__init__()
+        self.lookback = lookback
+        self.bounds = bounds
+        self.covar_method = covar_method
+        self.rf = rf
+
+    def __call__(self, target):
+        selected = target.algo_data['selected']
+        prc = target.universe[selected].ix[target.now - self.lookback:]
+        target.algo_data['weights'] = bt.finance.calc_mean_var_weights(
+            prc.to_returns().dropna(), weight_bounds=self.bounds,
+            covar_method=self.covar_method, rf=self.rf)
+        return True
+
+
 class CapitalFlow(Algo):
 
     """
