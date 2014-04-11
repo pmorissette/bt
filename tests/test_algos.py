@@ -403,6 +403,26 @@ def test_select_n():
     assert len(selected) == 0
 
 
+def test_select_n_perc():
+    algo = algos.SelectN(n=0.5, sort_descending=True)
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    data['c1'].ix[dts[2]] = 105
+    data['c2'].ix[dts[2]] = 95
+
+    s.setup(data)
+    s.update(dts[2])
+    s.algo_data['stat'] = data.calc_total_return()
+
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 1
+    assert 'c1' in selected
+
+
 def test_select_momentum():
     algo = algos.SelectMomentum(n=1, lookback=pd.DateOffset(days=3))
 

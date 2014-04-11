@@ -198,6 +198,8 @@ class SelectN(Algo):
     def __init__(self, n, sort_descending=True,
                  all_or_none=False):
         super(SelectN, self).__init__()
+        if n < 0:
+            raise ValueError('n cannot be negative')
         self.n = n
         self.ascending = not sort_descending
         self.all_or_none = all_or_none
@@ -205,9 +207,15 @@ class SelectN(Algo):
     def __call__(self, target):
         stat = target.algo_data['stat']
         stat.sort(ascending=self.ascending)
-        sel = list(stat[:self.n].index)
 
-        if self.all_or_none and len(sel) < self.n:
+        # handle percent n
+        keep_n = self.n
+        if self.n < 1:
+            keep_n = int(self.n * len(stat))
+
+        sel = list(stat[:keep_n].index)
+
+        if self.all_or_none and len(sel) < keep_n:
             sel = []
 
         target.algo_data['selected'] = sel
