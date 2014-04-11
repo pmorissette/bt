@@ -191,6 +191,41 @@ class SelectHasData(Algo):
         return True
 
 
+class SelectN(Algo):
+
+    def __init__(self, n, sort_descending=True,
+                 all_or_none=False):
+        super(SelectN, self).__init__()
+        self.n = n
+        self.ascending = not sort_descending
+        self.all_or_none = all_or_none
+
+    def __call__(self, target):
+        stat = target.algo_data['stat']
+        stat.sort(ascending=self.ascending)
+        sel = list(stat[:self.n].index)
+
+        if self.all_or_none and len(sel) < self.n:
+            sel = []
+
+        target.algo_data['selected'] = sel
+
+        return True
+
+
+class StatTotalReturn(Algo):
+
+    def __init__(self, lookback=pd.DateOffset(months=3)):
+        super(StatTotalReturn, self).__init__()
+        self.lookback = lookback
+
+    def __call__(self, target):
+        selected = target.algo_data['selected']
+        prc = target.universe[selected].ix[target.now - self.lookback:]
+        target.algo_data['stat'] = prc.calc_total_return()
+        return True
+
+
 class WeighEqually(Algo):
 
     def __init__(self):

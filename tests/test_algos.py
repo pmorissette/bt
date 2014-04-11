@@ -340,3 +340,64 @@ def test_weigh_mean_var(mock_mv):
     assert len(weights) == 2
     assert weights['c1'] == 0.3
     assert weights['c2'] == 0.7
+
+
+def test_stat_total_return():
+    algo = algos.StatTotalReturn(lookback=pd.DateOffset(days=3))
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    data['c1'].ix[dts[2]] = 105
+    data['c2'].ix[dts[2]] = 95
+
+    s.setup(data)
+    s.update(dts[2])
+    s.algo_data['selected'] = ['c1', 'c2']
+
+    assert algo(s)
+    stat = s.algo_data['stat']
+    assert len(stat) == 2
+    assert stat['c1'] == 105.0 / 100 - 1
+    assert stat['c2'] == 95.0 / 100 - 1
+
+
+def test_select_n():
+    algo = algos.SelectN(n=1, sort_descending=True)
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    data['c1'].ix[dts[2]] = 105
+    data['c2'].ix[dts[2]] = 95
+
+    s.setup(data)
+    s.update(dts[2])
+    s.algo_data['stat'] = data.calc_total_return()
+
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 1
+    assert 'c1' in selected
+
+    algo = algos.SelectN(n=1, sort_descending=False)
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 1
+    assert 'c2' in selected
+
+    # return 2 we have if all_or_none false
+    algo = algos.SelectN(n=3, sort_descending=False)
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 2
+    assert 'c1' in selected
+    assert 'c2' in selected
+
+    # return 0 we have if all_or_none true
+    algo = algos.SelectN(n=3, sort_descending=False, all_or_none=True)
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 0
