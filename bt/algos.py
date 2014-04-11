@@ -1,5 +1,5 @@
 import bt
-from bt.core import Algo
+from bt.core import Algo, AlgoStack
 import pandas as pd
 
 
@@ -213,6 +213,14 @@ class SelectN(Algo):
         target.algo_data['selected'] = sel
 
         return True
+
+
+class SelectMomentum(AlgoStack):
+
+    def __init__(self, n, lookback=pd.DateOffset(months=3)):
+        super(SelectMomentum, self).__init__(
+            StatTotalReturn(lookback=lookback),
+            SelectN(n=n))
 
 
 class StatTotalReturn(Algo):
