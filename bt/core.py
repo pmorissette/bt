@@ -553,6 +553,7 @@ class AlgoStack(Algo):
         for algo in self.algos:
             if not algo(target):
                 return False
+        return True
 
 
 class Strategy(StrategyBase):
