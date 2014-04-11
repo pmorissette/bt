@@ -172,10 +172,12 @@ class SelectAll(Algo):
 
 class SelectHasData(Algo):
 
-    def __init__(self, min_count,
-                 lookback=pd.DateOffset(months=3)):
+    def __init__(self, lookback=pd.DateOffset(months=3),
+                 min_count=None):
         super(SelectHasData, self).__init__()
         self.lookback = lookback
+        if min_count is None:
+            min_count = bt.finance.get_num_days_required(lookback)
         self.min_count = min_count
 
     def __call__(self, target):
