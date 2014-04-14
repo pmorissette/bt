@@ -185,12 +185,29 @@ def test_select_all():
     s = bt.Strategy('s')
 
     dts = pd.date_range('2010-01-01', periods=3)
-    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    data['c1'][dts[1]] = 105
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    data['c1'][dts[1]] = np.nan
     data['c2'][dts[1]] = 95
 
     s.setup(data)
     s.update(dts[0])
+
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 2
+    assert 'c1' in selected
+    assert 'c2' in selected
+
+    # make sure don't keep nan
+    s.update(dts[1])
+
+    assert algo(s)
+    selected = s.algo_data['selected']
+    assert len(selected) == 1
+    assert 'c2' in selected
+
+    # if specify include_no_data then 2
+    algo = algos.SelectAll(include_no_data=True)
 
     assert algo(s)
     selected = s.algo_data['selected']

@@ -482,7 +482,9 @@ class SecurityBase(Node):
                 'Cannot allocate capital to a parentless security')
 
         if self._price == 0 or np.isnan(self._price):
-            return
+            raise Exception(
+                'Cannot allocate capital to '
+                '%s because price is 0 or nan' % self.name)
 
         # buy/sell
         # determine quantity - must also factor in commission

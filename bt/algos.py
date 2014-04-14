@@ -162,11 +162,16 @@ class RunOnDate(Algo):
 
 class SelectAll(Algo):
 
-    def __init__(self):
+    def __init__(self, include_no_data=False):
         super(SelectAll, self).__init__()
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
-        target.algo_data['selected'] = target.universe.columns
+        if self.include_no_data:
+            target.algo_data['selected'] = target.universe.columns
+        else:
+            target.algo_data['selected'] = list(
+                target.universe.ix[target.now].dropna().index)
         return True
 
 
