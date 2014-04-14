@@ -566,6 +566,9 @@ class Strategy(StrategyBase):
         self.algo_data = {}
 
     def run(self):
+        # clear out algo_data
+        self.algo_data = {}
+
         # run algo stack
         self.stack(self)
 
