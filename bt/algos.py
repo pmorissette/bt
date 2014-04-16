@@ -286,6 +286,15 @@ class WeighInvVol(Algo):
 
     def __call__(self, target):
         selected = target.algo_data['selected']
+
+        if len(selected) == 0:
+            target.algo_data['weights'] = {}
+            return True
+
+        if len(selected) == 1:
+            target.algo_data['weights'] = {selected[0]: 1.}
+            return True
+
         prc = target.universe[selected].ix[target.now - self.lookback:]
         target.algo_data['weights'] = bt.finance.calc_inv_vol_weights(
             prc.to_returns().dropna())
@@ -305,10 +314,20 @@ class WeighMeanVar(Algo):
 
     def __call__(self, target):
         selected = target.algo_data['selected']
+
+        if len(selected) == 0:
+            target.algo_data['weights'] = {}
+            return True
+
+        if len(selected) == 1:
+            target.algo_data['weights'] = {selected[0]: 1.}
+            return True
+
         prc = target.universe[selected].ix[target.now - self.lookback:]
         target.algo_data['weights'] = bt.finance.calc_mean_var_weights(
             prc.to_returns().dropna(), weight_bounds=self.bounds,
             covar_method=self.covar_method, rf=self.rf)
+
         return True
 
 
