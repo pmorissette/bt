@@ -275,7 +275,8 @@ class WeighSpecified(Algo):
         self.weights = weights
 
     def __call__(self, target):
-        target.algo_data['weights'] = self.weights
+        # added copy to make sure these are not overwritten
+        target.algo_data['weights'] = self.weights.copy()
         return True
 
 
