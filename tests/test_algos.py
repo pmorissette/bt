@@ -458,3 +458,57 @@ def test_select_momentum():
     actual = s.algo_data['selected']
     assert len(actual) == 1
     assert 'c1' in actual
+
+
+def test_limit_deltas():
+    algo = algos.LimitDeltas(0.1)
+
+    s = bt.Strategy('s')
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+
+    s.setup(data)
+    s.algo_data['weights'] = {'c1': 1}
+
+    algo = algos.LimitDeltas(0.1)
+    assert algo(s)
+    w = s.algo_data['weights']
+    assert w['c1'] == 0.1
+
+    s.algo_data['weights'] = {'c1': 0.05}
+    algo = algos.LimitDeltas(0.1)
+    assert algo(s)
+    w = s.algo_data['weights']
+    assert w['c1'] == 0.05
+
+    s.algo_data['weights'] = {'c1': 0.5, 'c2': 0.5}
+    algo = algos.LimitDeltas(0.1)
+    assert algo(s)
+    w = s.algo_data['weights']
+    assert len(w) == 2
+    assert w['c1'] == 0.1
+    assert w['c2'] == 0.1
+
+    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    algo = algos.LimitDeltas(0.1)
+    assert algo(s)
+    w = s.algo_data['weights']
+    assert len(w) == 2
+    assert w['c1'] == 0.1
+    assert w['c2'] == -0.1
+
+    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    algo = algos.LimitDeltas({'c1': 0.1})
+    assert algo(s)
+    w = s.algo_data['weights']
+    assert len(w) == 2
+    assert w['c1'] == 0.1
+    assert w['c2'] == -0.5
+
+    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    algo = algos.LimitDeltas({'c1': 0.1, 'c2': 0.3})
+    assert algo(s)
+    w = s.algo_data['weights']
+    assert len(w) == 2
+    assert w['c1'] == 0.1
+    assert w['c2'] == -0.3

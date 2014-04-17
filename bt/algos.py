@@ -1,6 +1,7 @@
 import bt
 from bt.core import Algo, AlgoStack
 import pandas as pd
+import numpy as np
 
 
 class DatePrintAlgo(Algo):
@@ -327,6 +328,39 @@ class WeighMeanVar(Algo):
         target.algo_data['weights'] = bt.finance.calc_mean_var_weights(
             prc.to_returns().dropna(), weight_bounds=self.bounds,
             covar_method=self.covar_method, rf=self.rf)
+
+        return True
+
+
+class LimitDeltas(Algo):
+
+    def __init__(self, limit=0.1):
+        super(LimitDeltas, self).__init__()
+        self.limit = limit
+        # determine if global or specific
+        self.global_limit = True
+        if isinstance(limit, dict):
+            self.global_limit = False
+
+    def __call__(self, target):
+        tw = target.algo_data['weights']
+        all_keys = set(target.children.keys() + tw.keys())
+
+        for k in all_keys:
+            tgt = tw[k] if k in tw else 0.
+            cur = target.children[k].weight if k in target.children else 0.
+            delta = tgt - cur
+
+            # check if we need to limi
+            if self.global_limit:
+                if abs(delta) > self.limit:
+                    tw[k] = self.limit * np.sign(delta)
+            else:
+                # make sure we have a limit defined in case of limit dict
+                if k in self.limit:
+                    lmt = self.limit[k]
+                    if abs(delta) > lmt:
+                        tw[k] = lmt * np.sign(delta)
 
         return True
 
