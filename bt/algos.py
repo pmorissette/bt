@@ -352,16 +352,16 @@ class LimitDeltas(Algo):
             cur = target.children[k].weight if k in target.children else 0.
             delta = tgt - cur
 
-            # check if we need to limi
+            # check if we need to limit
             if self.global_limit:
                 if abs(delta) > self.limit:
-                    tw[k] = self.limit * np.sign(delta)
+                    tw[k] = cur + (self.limit * np.sign(delta))
             else:
                 # make sure we have a limit defined in case of limit dict
                 if k in self.limit:
                     lmt = self.limit[k]
                     if abs(delta) > lmt:
-                        tw[k] = lmt * np.sign(delta)
+                        tw[k] = cur + (lmt * np.sign(delta))
 
         return True
 

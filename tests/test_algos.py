@@ -512,3 +512,17 @@ def test_limit_deltas():
     assert len(w) == 2
     assert w['c1'] == 0.1
     assert w['c2'] == -0.3
+
+    # set exisitng weight
+    s.children['c1'] = bt.core.SecurityBase('c1')
+    s.children['c1']._weight = 0.3
+    s.children['c2'] = bt.core.SecurityBase('c2')
+    s.children['c2']._weight = -0.7
+
+    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    algo = algos.LimitDeltas(0.1)
+    assert algo(s)
+    w = s.algo_data['weights']
+    assert len(w) == 2
+    assert w['c1'] == 0.4
+    assert w['c2'] == -0.6
