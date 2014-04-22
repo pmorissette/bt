@@ -4,6 +4,16 @@ import pandas as pd
 import numpy as np
 
 
+def run_always(f):
+    """
+    Run always decorator to be used with Algo
+    to ensure stack runs the decorated Algo
+    no matter what.
+    """
+    f.run_always = True
+    return f
+
+
 class DatePrintAlgo(Algo):
 
     def __call__(self, target):
