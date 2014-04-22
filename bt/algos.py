@@ -430,3 +430,42 @@ class Rebalance(Algo):
             target.rebalance(item[1], child=item[0], base=base)
 
         return True
+
+
+class RebalanceOverTime(Algo):
+
+    def __init__(self, days=10):
+        super(RebalanceOverTime, self).__init__()
+        self.days = float(days)
+        self._rb = Rebalance()
+        self._weights = None
+        self._days_left = None
+
+    def __call__(self, target):
+        # new weights specified - update rebalance data
+        if 'weights' in target.algo_data:
+            self._weights = target.algo_data['weights']
+            self._days_left = self.days
+
+        # if _weights are not None, we have some work to do
+        if self._weights:
+            tgt = {}
+            # scale delta relative to # of days left and set that as the new
+            # target
+            for t in self._weights:
+                curr = target.children[t].weight
+                dlt = (self._weights[t] - curr) / self._days_left
+                tgt[t] = curr + dlt
+
+            # mock weights and call real Rebalance
+            target.algo_data['weights'] = tgt
+            self._rb(target)
+
+            # dec _days_left. If 0, set to None & set _weights to None
+            self._days_left -= 1
+
+            if self._days_left == 0:
+                self._days_left = None
+                self._weights = None
+
+        return True

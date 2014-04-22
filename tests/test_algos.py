@@ -526,3 +526,61 @@ def test_limit_deltas():
     assert len(w) == 2
     assert w['c1'] == 0.4
     assert w['c2'] == -0.6
+
+
+def test_rebalance_over_time():
+    target = mock.MagicMock()
+    rb = mock.MagicMock()
+
+    algo = algos.RebalanceOverTime(days=2)
+    # patch in rb function
+    algo._rb = rb
+
+    target.algo_data = {}
+    target.algo_data['weights'] = {'a': 1, 'b': 0}
+
+    a = mock.MagicMock()
+    a.weight = 0.
+    b = mock.MagicMock()
+    b.weight = 1.
+    target.children = {'a': a, 'b': b}
+
+    assert algo(target)
+    w = target.algo_data['weights']
+    assert len(w) == 2
+    assert w['a'] == 0.5
+    assert w['b'] == 0.5
+
+    assert rb.called
+    called_tgt = rb.call_args[0][0]
+    called_tgt_w = called_tgt.algo_data['weights']
+    assert len(called_tgt_w) == 2
+    assert called_tgt_w['a'] == 0.5
+    assert called_tgt_w['b'] == 0.5
+
+    # update weights for next call
+    a.weight = 0.5
+    b.weight = 0.5
+
+    # clear out algo_data - same as would Strategy
+    target.algo_data = {}
+
+    assert algo(target)
+    w = target.algo_data['weights']
+    assert len(w) == 2
+    assert w['a'] == 1.
+    assert w['b'] == 0.
+
+    assert rb.call_count == 2
+
+    # update weights for next call
+    # should do nothing now
+    a.weight = 1
+    b.weight = 0
+
+    # clear out algo_data - same as would Strategy
+    target.algo_data = {}
+
+    assert algo(target)
+    # no diff in call_count since last time
+    assert rb.call_count == 2
