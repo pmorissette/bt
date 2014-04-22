@@ -1,8 +1,9 @@
 import copy
 
-from bt.core import Node, StrategyBase, SecurityBase
+from bt.core import Node, StrategyBase, SecurityBase, AlgoStack
 import pandas as pd
 from nose.tools import assert_almost_equal as aae
+import mock
 
 
 def test_node_tree():
@@ -1541,3 +1542,38 @@ def test_strategybase_tree_rebalance_base():
     assert s.value == 998
     assert c2.weight == 500.0 / 998
     assert c1.weight == 500.0 / 998
+
+
+def test_algo_stack():
+    a1 = mock.MagicMock(return_value=True)
+    a2 = mock.MagicMock(return_value=False)
+    a3 = mock.MagicMock(return_value=True)
+
+    # no run_always for now
+    del a1.run_always
+    del a2.run_always
+    del a3.run_always
+
+    stack = AlgoStack(a1, a2, a3)
+    target = mock.MagicMock()
+    assert not stack(target)
+    assert a1.called
+    assert a2.called
+    assert not a3.called
+
+    # now test that run_always marked are run
+
+    a1 = mock.MagicMock(return_value=True)
+    a2 = mock.MagicMock(return_value=False)
+    a3 = mock.MagicMock(return_value=True)
+
+    # a3 will have run_always
+    del a1.run_always
+    del a2.run_always
+
+    stack = AlgoStack(a1, a2, a3)
+    target = mock.MagicMock()
+    assert not stack(target)
+    assert a1.called
+    assert a2.called
+    assert a3.called

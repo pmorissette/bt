@@ -550,12 +550,29 @@ class AlgoStack(Algo):
     def __init__(self, *algos):
         super(AlgoStack, self).__init__()
         self.algos = algos
+        self.check_run_always = any(hasattr(x, 'run_always')
+                                    for x in self.algos)
 
     def __call__(self, target):
-        for algo in self.algos:
-            if not algo(target):
-                return False
-        return True
+        # normal runing mode
+        if not self.check_run_always:
+            for algo in self.algos:
+                if not algo(target):
+                    return False
+            return True
+        # run mode when at least one algo has a run_always attribute
+        else:
+            # store result in res
+            # allows continuation to check for and run
+            # algos that have run_always set to True
+            res = True
+            for algo in self.algos:
+                if res:
+                    res = algo(target)
+                elif hasattr(algo, 'run_always'):
+                    if algo.run_always:
+                        algo(target)
+            return res
 
 
 class Strategy(StrategyBase):
