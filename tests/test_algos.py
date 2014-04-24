@@ -584,3 +584,18 @@ def test_rebalance_over_time():
     assert algo(target)
     # no diff in call_count since last time
     assert rb.call_count == 2
+
+
+def test_require():
+    target = mock.MagicMock()
+    target.algo_data = {}
+
+    pred = lambda x: len(x) > 0
+    algo = algos.Require(pred, 'selected')
+    assert not algo(target)
+
+    target.algo_data['selected'] = []
+    assert not algo(target)
+
+    target.algo_data['selected'] = ['a', 'b']
+    assert algo(target)

@@ -469,3 +469,27 @@ class RebalanceOverTime(Algo):
                 self._weights = None
 
         return True
+
+
+class Require(Algo):
+    """
+    Flow control Algo.
+
+    This algo returns the value of a predicate
+    on an algo_data entry. Useful for controlling
+    flow.
+
+    i.e. Stop execution is len(selected) == 0
+    """
+
+    def __init__(self, pred, item, if_none=False):
+        super(Require, self).__init__()
+        self.item = item
+        self.pred = pred
+        self.if_none = if_none
+
+    def __call__(self, target):
+        if self.item not in target.algo_data:
+            return self.if_none
+
+        return self.pred(target.algo_data[self.item])
