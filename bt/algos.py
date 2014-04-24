@@ -14,10 +14,17 @@ def run_always(f):
     return f
 
 
-class DatePrintAlgo(Algo):
+class PrintDate(Algo):
 
     def __call__(self, target):
         print target.now
+        return True
+
+
+class PrintAlgoData(Algo):
+
+    def __call__(self, target):
+        print target.algo_data
         return True
 
 
