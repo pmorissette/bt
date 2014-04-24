@@ -453,7 +453,7 @@ class RebalanceOverTime(Algo):
             # scale delta relative to # of days left and set that as the new
             # target
             for t in self._weights:
-                curr = target.children[t].weight
+                curr = target.children[t].weight if t in target.children else 0.
                 dlt = (self._weights[t] - curr) / self._days_left
                 tgt[t] = curr + dlt
 
