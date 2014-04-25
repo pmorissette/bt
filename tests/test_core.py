@@ -850,7 +850,6 @@ def test_strategybase_multiple_calls_preset_secs():
     # run t1 - close out c2, open c1
     s.run(s)
 
-    print c1.value
     assert c1.value == 1045
     assert c1.weight == 1045.0 / 1047
     assert c1.price == 95
@@ -1350,6 +1349,28 @@ def test_strategybase_tree_rebalance():
     assert c2.weight == 0
 
 
+def test_rebalance_child_not_in_tree():
+    s = StrategyBase('p')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+    s.adjust(1000)
+
+    # rebalance to 0 w/ child that is not present - should ignore
+    s.rebalance(0, 'c2')
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert len(s.children) == 0
+
+
 def test_strategybase_tree_rebalance_to_0():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
@@ -1461,7 +1482,6 @@ def test_strategybase_tree_rebalance_level2():
     # now rebalance child s1 to 0 - should close out s1 and c1 as well
     m.rebalance(0, 's1')
 
-    print s1.value
     assert s1.value == 0
     assert m.capital == 997
     assert m.value == 997

@@ -321,7 +321,10 @@ class StrategyBase(Node):
     def rebalance(self, weight, child, base=np.nan, update=True):
         # if weight is 0 - we want to close child
         if weight == 0:
-            return self.close(child)
+            if child in self.children:
+                return self.close(child)
+            else:
+                return
 
         # if no base specified use self's value
         if np.isnan(base):
