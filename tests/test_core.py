@@ -1597,3 +1597,21 @@ def test_algo_stack():
     assert a1.called
     assert a2.called
     assert a3.called
+
+
+def test_set_commissions():
+    s = StrategyBase('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+    s.update(dts[0])
+    s.adjust(1000)
+
+    s.allocate(500, 'c1')
+    assert s.capital == 499
+
+    s.set_commissions(lambda x: 0.0)
+    s.allocate(-500, 'c1')
+    assert s.capital == 999

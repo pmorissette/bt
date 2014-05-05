@@ -26,6 +26,7 @@ class Backtest(object):
         self.dates = data.index
         self.initial_capital = initial_capital
         self.name = name if name is not None else strategy.name
+
         if commissions:
             self.strategy.set_commissions(commissions)
 

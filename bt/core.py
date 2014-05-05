@@ -141,6 +141,9 @@ class StrategyBase(Node):
         self._last_value = 0
         self._last_price = 100
 
+        # default commission function
+        self.commission_fn = self._dflt_comm_fn
+
     @property
     def price(self):
         if self.root.stale:
@@ -358,6 +361,13 @@ class StrategyBase(Node):
     def run(self):
         pass
 
+    def set_commissions(self, fn):
+        self.commission_fn = fn
+
+    @cy.locals(q=cy.double)
+    def _dflt_comm_fn(self, q):
+        return max(1, abs(q) * 0.01)
+
 
 class SecurityBase(Node):
 
@@ -523,7 +533,7 @@ class SecurityBase(Node):
 
     @cy.locals(q=cy.double)
     def commission(self, q):
-        return max(1, abs(q) * 0.01)
+        return self.parent.commission_fn(q)
 
     @cy.locals(q=cy.double)
     def outlay(self, q):
