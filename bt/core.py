@@ -247,12 +247,12 @@ class StrategyBase(Node):
                     ret = 0
                 else:
                     raise ZeroDivisionError(
-                        'Could not update %s. Last value \
-                        was %s and net flows were %s. Therefore,\
-                        we are dividing by zero to obtain the return\
-                        for the period.' % (self.name,
-                                            self._last_value,
-                                            self._net_flows))
+                        'Could not update %s. Last value '
+                        'was %s and net flows were %s. Therefore, '
+                        'we are dividing by zero to obtain the return '
+                        'for the period.' % (self.name,
+                                             self._last_value,
+                                             self._net_flows))
 
             self._price = self._last_price * (1 + ret)
             self._prices[date] = self._price
