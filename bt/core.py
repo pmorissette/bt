@@ -242,8 +242,11 @@ class StrategyBase(Node):
                 ret = self._value / \
                     (self._last_value + self._net_flows) - 1
             except ZeroDivisionError:
-                # if denom is 0 as well - just have 0 return
+                # if nominator is 0 as well - just have 0 return
                 if self._value == 0:
+                    ret = 0
+                # if both denom factors are 0, ret is 0 as well...
+                elif self._last_value == 0 and self._net_flows == 0:
                     ret = 0
                 else:
                     raise ZeroDivisionError(
