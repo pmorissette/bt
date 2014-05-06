@@ -70,13 +70,17 @@ class Backtest(object):
         else:
             # get values for all securities in tree and divide by root values
             # for security weights
-            vals = pd.DataFrame({x.name: x.values for x in
-                                 self.strategy.members if
-                                 isinstance(x, bt.core.SecurityBase)})
-            vals = vals.div(self.strategy.values, axis=0)
+            vals = {}
+            for m in self.strategy.members:
+                if isinstance(m, bt.core.SecurityBase):
+                    if m.name in vals:
+                        vals[m.name] += m.values
+                    else:
+                        vals[m.name] = m.values
+            vals = pd.DataFrame(vals)
 
-            # combine securities with same ticker
-            vals = vals.groupby(vals.columns, axis=1).sum()
+            # divide by root strategy values
+            vals = vals.div(self.strategy.values, axis=0)
 
             # save for future use
             self._sweights = vals
