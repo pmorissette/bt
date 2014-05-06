@@ -261,25 +261,22 @@ class StrategyBase(Node):
             self._value = val
             self._values[date] = val
 
-            # calc price - artificial index representing strategy return
             try:
-                ret = self._value / \
-                    (self._last_value + self._net_flows) - 1
+                ret = self._value / (self._last_value
+                                     + self._net_flows) - 1
             except ZeroDivisionError:
-                # if nominator is 0 as well - just have 0 return
                 if self._value == 0:
-                    ret = 0
-                # if both denom factors are 0, ret is 0 as well...
-                elif self._last_value == 0 and self._net_flows == 0:
                     ret = 0
                 else:
                     raise ZeroDivisionError(
                         'Could not update %s. Last value '
-                        'was %s and net flows were %s. Therefore, '
+                        'was %s and net flows were %s. Current'
+                        'value is %s. Therefore, '
                         'we are dividing by zero to obtain the return '
                         'for the period.' % (self.name,
                                              self._last_value,
-                                             self._net_flows))
+                                             self._net_flows,
+                                             self._value))
 
             self._price = self._last_price * (1 + ret)
             self._prices[date] = self._price

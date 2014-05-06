@@ -391,6 +391,8 @@ def test_strategybase_tree_allocate_update():
     s.adjust(1000)
 
     assert s.price == 100
+    assert s.value == 1000
+    assert s._value == 1000
 
     c1.allocate(500)
 
