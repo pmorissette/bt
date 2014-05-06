@@ -18,8 +18,25 @@ class Node(object):
 
         if children is not None:
             if isinstance(children, list):
-                children = {c.name: c
-                            for c in children}
+                # if all strings - just save as universe_filter
+                if all(isinstance(x, str) for x in children):
+                    self._universe_tickers = children
+                    # empty dict - don't want to uselessly create
+                    # tons of children when they might not be needed
+                    children = {}
+                else:
+                    # this will be case if we pass in children
+                    # (say a bunch of sub-strategies)
+                    tmp = {}
+                    for c in children:
+                        if type(c) == str:
+                            tmp[c] = SecurityBase(c)
+                        else:
+                            tmp[c.name] = c
+                    children = tmp
+                    # we want to keep whole universe in this case
+                    # so set to None
+                    self._universe_tickers = None
 
         if parent is None:
             self.parent = self
@@ -32,6 +49,7 @@ class Node(object):
         # default children
         if children is None:
             children = {}
+            self._universe_tickers = None
         self.children = children
 
         self._childrenv = children.values()
@@ -181,6 +199,12 @@ class StrategyBase(Node):
 
     def setup(self, universe):
         # setup universe
+        if self._universe_tickers is not None:
+            # if we have universe_tickers defined, limit universe to
+            # those tickers
+            valid_filter = list(set(universe.columns)
+                                .intersection(self._universe_tickers))
+            universe = universe[valid_filter]
         self._universe = universe
         self._funiverse = universe
         self._last_chk = None
