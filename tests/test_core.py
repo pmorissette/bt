@@ -1617,3 +1617,67 @@ def test_set_commissions():
     s.set_commissions(lambda x: 0.0)
     s.allocate(-500, 'c1')
     assert s.capital == 999
+
+
+def test_strategy_tree_proper_return_calcs():
+    s1 = StrategyBase('s1')
+    s2 = StrategyBase('s2')
+    m = StrategyBase('m', [s1, s2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    m.setup(data)
+
+    i = 0
+    m.update(dts[i], data.ix[dts[i]])
+
+    m.adjust(1000)
+    # since children have w == 0 this should stay in s
+    m.allocate(1000)
+
+    assert m.value == 1000
+    assert m.capital == 1000
+    assert m.price == 100
+    assert s1.value == 0
+    assert s2.value == 0
+
+    # now allocate directly to child
+    s1.allocate(500)
+
+    print m.capital
+    assert m.capital == 500
+    assert m.value == 1000
+    assert m.price == 100
+    assert s1.value == 500
+    assert s1.weight == 500.0 / 1000
+    assert s1.price == 100
+    assert s2.weight == 0
+
+    # allocate to child2 via master method
+    m.allocate(500, 's2')
+
+    assert m.capital == 0
+    assert m.value == 1000
+    assert m.price == 100
+    assert s1.value == 500
+    assert s1.weight == 500.0 / 1000
+    assert s1.price == 100
+    assert s2.value == 500
+    assert s2.weight == 500.0 / 1000
+    assert s2.price == 100
+
+    # now allocate and incur commission fee
+    s1.allocate(500, 'c1')
+
+    assert m.capital == 0
+    assert m.value == 999
+    assert m.price == 99.9
+    assert s1.value == 499
+    assert s1.weight == 499.0 / 999.0
+    assert s1.price == 99.8
+    assert s2.value == 500
+    assert s2.weight == 500.0 / 999.0
+    assert s2.price == 100

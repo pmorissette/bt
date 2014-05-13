@@ -329,7 +329,12 @@ class StrategyBase(Node):
         else:
             # adjust parent's capital
             # no need to update now - avoids repetition
-            self.parent.adjust(-amount, update=False, flow=True)
+            if self.parent == self:
+                self.parent.adjust(-amount, update=False, flow=True)
+            else:
+                # do NOT set as flow - parent will be another strategy
+                # and therefore should not incur flow
+                self.parent.adjust(-amount, update=False, flow=False)
 
             # adjust self's capital
             self.adjust(amount, update=False, flow=True)
