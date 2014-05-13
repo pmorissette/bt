@@ -423,6 +423,9 @@ class Rebalance(Algo):
         super(Rebalance, self).__init__()
 
     def __call__(self, target):
+        if 'weights' not in target.algo_data:
+            return True
+
         targets = target.algo_data['weights']
 
         # de-allocate children that are not in targets
@@ -460,7 +463,8 @@ class RebalanceOverTime(Algo):
             # scale delta relative to # of days left and set that as the new
             # target
             for t in self._weights:
-                curr = target.children[t].weight if t in target.children else 0.
+                curr = target.children[t].weight if t in \
+                    target.children else 0.
                 dlt = (self._weights[t] - curr) / self._days_left
                 tgt[t] = curr + dlt
 
