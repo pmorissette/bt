@@ -93,4 +93,29 @@ class Result(ffn.GroupStats):
     def __init__(self, *backtests):
         tmp = [pd.DataFrame({x.name: x.strategy.prices}) for x in backtests]
         super(Result, self).__init__(*tmp)
+        self.backtest_list = backtests
         self.backtests = {x.name: x for x in backtests}
+
+    def display_monthly_returns(self, backtest=0):
+        key = self._get_backtest(backtest)
+        self[key].display_monthly_returns()
+
+    def plot_weights(self, backtest=0, **kwds):
+        key = self._get_backtest(backtest)
+        self.backtests[key].weights.plot(**kwds)
+
+    def plot_security_weights(self, backtest=0, **kwds):
+        key = self._get_backtest(backtest)
+        self.backtests[key].security_weights.plot(**kwds)
+
+    def plot_histogram(self, backtest=0, **kwds):
+        key = self._get_backtest(backtest)
+        self[key].plot_histogram(**kwds)
+
+    def _get_backtest(self, backtest):
+        # based on input order
+        if type(backtest) == int:
+            return self.backtest_list[backtest].name
+
+        # default case assume ok
+        return backtest
