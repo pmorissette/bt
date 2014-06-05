@@ -383,6 +383,23 @@ class LimitDeltas(Algo):
         return True
 
 
+class LimitWeights(Algo):
+
+    def __init__(self, limit=0.1):
+        super(LimitWeights, self).__init__()
+        self.limit = limit
+
+    def __call__(self, target):
+        if 'weights' not in target.algo_data:
+            return True
+
+        tw = target.algo_data['weights']
+        tw = bt.ffn.finance.limit_weights(tw, self.limit)
+        target.algo_data['weights'] = tw
+
+        return True
+
+
 class CapitalFlow(Algo):
 
     """
