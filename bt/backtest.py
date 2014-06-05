@@ -100,13 +100,25 @@ class Result(ffn.GroupStats):
         key = self._get_backtest(backtest)
         self[key].display_monthly_returns()
 
-    def plot_weights(self, backtest=0, **kwds):
+    def plot_weights(self, backtest=0, filter=None, **kwds):
         key = self._get_backtest(backtest)
-        self.backtests[key].weights.plot(**kwds)
 
-    def plot_security_weights(self, backtest=0, **kwds):
+        if filter is not None:
+            data = self.backtests[key].weights[filter]
+        else:
+            data = self.backtests[key].weights
+
+        data.plot(**kwds)
+
+    def plot_security_weights(self, backtest=0, filter=None, **kwds):
         key = self._get_backtest(backtest)
-        self.backtests[key].security_weights.plot(**kwds)
+
+        if filter is not None:
+            data = self.backtests[key].security_weights[filter]
+        else:
+            data = self.backtests[key].security_weights
+
+        data.plot(**kwds)
 
     def plot_histogram(self, backtest=0, **kwds):
         key = self._get_backtest(backtest)
