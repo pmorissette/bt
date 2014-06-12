@@ -526,7 +526,8 @@ class SecurityBase(Node):
         if self._price == 0 or np.isnan(self._price):
             raise Exception(
                 'Cannot allocate capital to '
-                '%s because price is 0 or nan' % self.name)
+                '%s because price is 0 or nan as of %s'
+                % (self.name, self.parent.now))
 
         # buy/sell
         # determine quantity - must also factor in commission
@@ -622,11 +623,12 @@ class Strategy(StrategyBase):
     def __init__(self, name, algos=[], children=None):
         super(Strategy, self).__init__(name, children=children)
         self.stack = AlgoStack(*algos)
-        self.algo_data = {}
+        self.temp = {}
+        self.perm = {}
 
     def run(self):
-        # clear out algo_data
-        self.algo_data = {}
+        # clear out temp data
+        self.temp = {}
 
         # run algo stack
         self.stack(self)

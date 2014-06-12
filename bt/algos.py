@@ -24,7 +24,7 @@ class PrintDate(Algo):
 class PrintAlgoData(Algo):
 
     def __call__(self, target):
-        print target.algo_data
+        print target.temp
         return True
 
 
@@ -186,9 +186,9 @@ class SelectAll(Algo):
 
     def __call__(self, target):
         if self.include_no_data:
-            target.algo_data['selected'] = target.universe.columns
+            target.temp['selected'] = target.universe.columns
         else:
-            target.algo_data['selected'] = list(
+            target.temp['selected'] = list(
                 target.universe.ix[target.now].dropna().index)
         return True
 
@@ -204,15 +204,15 @@ class SelectHasData(Algo):
         self.min_count = min_count
 
     def __call__(self, target):
-        if 'selected' in target.algo_data:
-            selected = target.algo_data['selected']
+        if 'selected' in target.temp:
+            selected = target.temp['selected']
         else:
             selected = target.universe.columns
 
         filt = target.universe[selected].ix[target.now - self.lookback:]
         cnt = filt.count()
         cnt = cnt[cnt >= self.min_count]
-        target.algo_data['selected'] = list(cnt.index)
+        target.temp['selected'] = list(cnt.index)
         return True
 
 
@@ -228,7 +228,7 @@ class SelectN(Algo):
         self.all_or_none = all_or_none
 
     def __call__(self, target):
-        stat = target.algo_data['stat']
+        stat = target.temp['stat']
         stat.sort(ascending=self.ascending)
 
         # handle percent n
@@ -241,7 +241,7 @@ class SelectN(Algo):
         if self.all_or_none and len(sel) < keep_n:
             sel = []
 
-        target.algo_data['selected'] = sel
+        target.temp['selected'] = sel
 
         return True
 
@@ -261,9 +261,9 @@ class StatTotalReturn(Algo):
         self.lookback = lookback
 
     def __call__(self, target):
-        selected = target.algo_data['selected']
+        selected = target.temp['selected']
         prc = target.universe[selected].ix[target.now - self.lookback:]
-        target.algo_data['stat'] = prc.calc_total_return()
+        target.temp['stat'] = prc.calc_total_return()
         return True
 
 
@@ -273,14 +273,14 @@ class WeighEqually(Algo):
         super(WeighEqually, self).__init__()
 
     def __call__(self, target):
-        selected = target.algo_data['selected']
+        selected = target.temp['selected']
         n = len(selected)
 
         if n == 0:
-            target.algo_data['weights'] = {}
+            target.temp['weights'] = {}
         else:
             w = 1.0 / n
-            target.algo_data['weights'] = {x: w for x in selected}
+            target.temp['weights'] = {x: w for x in selected}
 
         return True
 
@@ -293,7 +293,7 @@ class WeighSpecified(Algo):
 
     def __call__(self, target):
         # added copy to make sure these are not overwritten
-        target.algo_data['weights'] = self.weights.copy()
+        target.temp['weights'] = self.weights.copy()
         return True
 
 
@@ -304,18 +304,18 @@ class WeighInvVol(Algo):
         self.lookback = lookback
 
     def __call__(self, target):
-        selected = target.algo_data['selected']
+        selected = target.temp['selected']
 
         if len(selected) == 0:
-            target.algo_data['weights'] = {}
+            target.temp['weights'] = {}
             return True
 
         if len(selected) == 1:
-            target.algo_data['weights'] = {selected[0]: 1.}
+            target.temp['weights'] = {selected[0]: 1.}
             return True
 
         prc = target.universe[selected].ix[target.now - self.lookback:]
-        target.algo_data['weights'] = bt.finance.calc_inv_vol_weights(
+        target.temp['weights'] = bt.finance.calc_inv_vol_weights(
             prc.to_returns().dropna())
         return True
 
@@ -332,18 +332,18 @@ class WeighMeanVar(Algo):
         self.rf = rf
 
     def __call__(self, target):
-        selected = target.algo_data['selected']
+        selected = target.temp['selected']
 
         if len(selected) == 0:
-            target.algo_data['weights'] = {}
+            target.temp['weights'] = {}
             return True
 
         if len(selected) == 1:
-            target.algo_data['weights'] = {selected[0]: 1.}
+            target.temp['weights'] = {selected[0]: 1.}
             return True
 
         prc = target.universe[selected].ix[target.now - self.lookback:]
-        target.algo_data['weights'] = bt.finance.calc_mean_var_weights(
+        target.temp['weights'] = bt.finance.calc_mean_var_weights(
             prc.to_returns().dropna(), weight_bounds=self.bounds,
             covar_method=self.covar_method, rf=self.rf)
 
@@ -361,7 +361,7 @@ class LimitDeltas(Algo):
             self.global_limit = False
 
     def __call__(self, target):
-        tw = target.algo_data['weights']
+        tw = target.temp['weights']
         all_keys = set(target.children.keys() + tw.keys())
 
         for k in all_keys:
@@ -390,12 +390,12 @@ class LimitWeights(Algo):
         self.limit = limit
 
     def __call__(self, target):
-        if 'weights' not in target.algo_data:
+        if 'weights' not in target.temp:
             return True
 
-        tw = target.algo_data['weights']
+        tw = target.temp['weights']
         tw = bt.ffn.finance.limit_weights(tw, self.limit)
-        target.algo_data['weights'] = tw
+        target.temp['weights'] = tw
 
         return True
 
@@ -429,9 +429,9 @@ class CapitalFlow(Algo):
 class Rebalance(Algo):
 
     """
-    Rebalances capital based on algo_data weights.
+    Rebalances capital based on temp weights.
 
-    Rebalances capital based on algo_data['weights']. Also closes
+    Rebalances capital based on temp['weights']. Also closes
     positions if open but not in target_weights. This is typically
     the last Algo called once the target weights have been set.
     """
@@ -440,10 +440,10 @@ class Rebalance(Algo):
         super(Rebalance, self).__init__()
 
     def __call__(self, target):
-        if 'weights' not in target.algo_data:
+        if 'weights' not in target.temp:
             return True
 
-        targets = target.algo_data['weights']
+        targets = target.temp['weights']
 
         # de-allocate children that are not in targets
         not_in = [x for x in target.children if x not in targets]
@@ -470,8 +470,8 @@ class RebalanceOverTime(Algo):
 
     def __call__(self, target):
         # new weights specified - update rebalance data
-        if 'weights' in target.algo_data:
-            self._weights = target.algo_data['weights']
+        if 'weights' in target.temp:
+            self._weights = target.temp['weights']
             self._days_left = self.days
 
         # if _weights are not None, we have some work to do
@@ -486,7 +486,7 @@ class RebalanceOverTime(Algo):
                 tgt[t] = curr + dlt
 
             # mock weights and call real Rebalance
-            target.algo_data['weights'] = tgt
+            target.temp['weights'] = tgt
             self._rb(target)
 
             # dec _days_left. If 0, set to None & set _weights to None
@@ -504,7 +504,7 @@ class Require(Algo):
     Flow control Algo.
 
     This algo returns the value of a predicate
-    on an algo_data entry. Useful for controlling
+    on an temp entry. Useful for controlling
     flow.
 
     i.e. Stop execution is len(selected) == 0
@@ -517,7 +517,7 @@ class Require(Algo):
         self.if_none = if_none
 
     def __call__(self, target):
-        if self.item not in target.algo_data:
+        if self.item not in target.temp:
             return self.if_none
 
-        return self.pred(target.algo_data[self.item])
+        return self.pred(target.temp[self.item])

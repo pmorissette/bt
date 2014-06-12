@@ -155,7 +155,7 @@ def test_rebalance():
     s.adjust(1000)
     s.update(dts[0])
 
-    s.algo_data['weights'] = {'c1': 1}
+    s.temp['weights'] = {'c1': 1}
 
     assert algo(s)
     assert s.value == 999
@@ -165,7 +165,7 @@ def test_rebalance():
     assert c1.position == 10
     assert c1.weight == 1000.0 / 999
 
-    s.algo_data['weights'] = {'c2': 1}
+    s.temp['weights'] = {'c2': 1}
 
     assert algo(s)
     assert s.value == 997
@@ -193,7 +193,7 @@ def test_select_all():
     s.update(dts[0])
 
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 2
     assert 'c1' in selected
     assert 'c2' in selected
@@ -202,7 +202,7 @@ def test_select_all():
     s.update(dts[1])
 
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 1
     assert 'c2' in selected
 
@@ -210,7 +210,7 @@ def test_select_all():
     algo = algos.SelectAll(include_no_data=True)
 
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 2
     assert 'c1' in selected
     assert 'c2' in selected
@@ -228,10 +228,10 @@ def test_weight_equally():
 
     s.setup(data)
     s.update(dts[0])
-    s.algo_data['selected'] = ['c1', 'c2']
+    s.temp['selected'] = ['c1', 'c2']
 
     assert algo(s)
-    weights = s.algo_data['weights']
+    weights = s.temp['weights']
     assert len(weights) == 2
     assert 'c1' in weights
     assert weights['c1'] == 0.5
@@ -253,7 +253,7 @@ def test_weight_specified():
     s.update(dts[0])
 
     assert algo(s)
-    weights = s.algo_data['weights']
+    weights = s.temp['weights']
     assert len(weights) == 2
     assert 'c1' in weights
     assert weights['c1'] == 0.6
@@ -275,7 +275,7 @@ def test_select_has_data():
     s.update(dts[2])
 
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 1
     assert 'c2' in selected
 
@@ -292,10 +292,10 @@ def test_select_has_data_preselected():
 
     s.setup(data)
     s.update(dts[2])
-    s.algo_data['selected'] = ['c1']
+    s.temp['selected'] = ['c1']
 
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 0
 
 
@@ -321,10 +321,10 @@ def test_weigh_inv_vol():
 
     s.setup(data)
     s.update(dts[4])
-    s.algo_data['selected'] = ['c1', 'c2']
+    s.temp['selected'] = ['c1', 'c2']
 
     assert algo(s)
-    weights = s.algo_data['weights']
+    weights = s.temp['weights']
     assert len(weights) == 2
     assert weights['c2'] > weights['c1']
     aae(weights['c1'], 0.020, 3)
@@ -344,7 +344,7 @@ def test_weigh_mean_var(mock_mv):
 
     s.setup(data)
     s.update(dts[4])
-    s.algo_data['selected'] = ['c1', 'c2']
+    s.temp['selected'] = ['c1', 'c2']
 
     assert algo(s)
     assert mock_mv.called
@@ -353,7 +353,7 @@ def test_weigh_mean_var(mock_mv):
     assert 'c1' in rets
     assert 'c2' in rets
 
-    weights = s.algo_data['weights']
+    weights = s.temp['weights']
     assert len(weights) == 2
     assert weights['c1'] == 0.3
     assert weights['c2'] == 0.7
@@ -371,10 +371,10 @@ def test_stat_total_return():
 
     s.setup(data)
     s.update(dts[2])
-    s.algo_data['selected'] = ['c1', 'c2']
+    s.temp['selected'] = ['c1', 'c2']
 
     assert algo(s)
-    stat = s.algo_data['stat']
+    stat = s.temp['stat']
     assert len(stat) == 2
     assert stat['c1'] == 105.0 / 100 - 1
     assert stat['c2'] == 95.0 / 100 - 1
@@ -392,23 +392,23 @@ def test_select_n():
 
     s.setup(data)
     s.update(dts[2])
-    s.algo_data['stat'] = data.calc_total_return()
+    s.temp['stat'] = data.calc_total_return()
 
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 1
     assert 'c1' in selected
 
     algo = algos.SelectN(n=1, sort_descending=False)
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 1
     assert 'c2' in selected
 
     # return 2 we have if all_or_none false
     algo = algos.SelectN(n=3, sort_descending=False)
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 2
     assert 'c1' in selected
     assert 'c2' in selected
@@ -416,7 +416,7 @@ def test_select_n():
     # return 0 we have if all_or_none true
     algo = algos.SelectN(n=3, sort_descending=False, all_or_none=True)
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 0
 
 
@@ -432,10 +432,10 @@ def test_select_n_perc():
 
     s.setup(data)
     s.update(dts[2])
-    s.algo_data['stat'] = data.calc_total_return()
+    s.temp['stat'] = data.calc_total_return()
 
     assert algo(s)
-    selected = s.algo_data['selected']
+    selected = s.temp['selected']
     assert len(selected) == 1
     assert 'c1' in selected
 
@@ -452,10 +452,10 @@ def test_select_momentum():
 
     s.setup(data)
     s.update(dts[2])
-    s.algo_data['selected'] = ['c1', 'c2']
+    s.temp['selected'] = ['c1', 'c2']
 
     assert algo(s)
-    actual = s.algo_data['selected']
+    actual = s.temp['selected']
     assert len(actual) == 1
     assert 'c1' in actual
 
@@ -468,47 +468,47 @@ def test_limit_deltas():
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
 
     s.setup(data)
-    s.algo_data['weights'] = {'c1': 1}
+    s.temp['weights'] = {'c1': 1}
 
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
-    w = s.algo_data['weights']
+    w = s.temp['weights']
     assert w['c1'] == 0.1
 
-    s.algo_data['weights'] = {'c1': 0.05}
+    s.temp['weights'] = {'c1': 0.05}
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
-    w = s.algo_data['weights']
+    w = s.temp['weights']
     assert w['c1'] == 0.05
 
-    s.algo_data['weights'] = {'c1': 0.5, 'c2': 0.5}
+    s.temp['weights'] = {'c1': 0.5, 'c2': 0.5}
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
-    w = s.algo_data['weights']
+    w = s.temp['weights']
     assert len(w) == 2
     assert w['c1'] == 0.1
     assert w['c2'] == 0.1
 
-    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    s.temp['weights'] = {'c1': 0.5, 'c2': -0.5}
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
-    w = s.algo_data['weights']
+    w = s.temp['weights']
     assert len(w) == 2
     assert w['c1'] == 0.1
     assert w['c2'] == -0.1
 
-    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    s.temp['weights'] = {'c1': 0.5, 'c2': -0.5}
     algo = algos.LimitDeltas({'c1': 0.1})
     assert algo(s)
-    w = s.algo_data['weights']
+    w = s.temp['weights']
     assert len(w) == 2
     assert w['c1'] == 0.1
     assert w['c2'] == -0.5
 
-    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    s.temp['weights'] = {'c1': 0.5, 'c2': -0.5}
     algo = algos.LimitDeltas({'c1': 0.1, 'c2': 0.3})
     assert algo(s)
-    w = s.algo_data['weights']
+    w = s.temp['weights']
     assert len(w) == 2
     assert w['c1'] == 0.1
     assert w['c2'] == -0.3
@@ -519,10 +519,10 @@ def test_limit_deltas():
     s.children['c2'] = bt.core.SecurityBase('c2')
     s.children['c2']._weight = -0.7
 
-    s.algo_data['weights'] = {'c1': 0.5, 'c2': -0.5}
+    s.temp['weights'] = {'c1': 0.5, 'c2': -0.5}
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
-    w = s.algo_data['weights']
+    w = s.temp['weights']
     assert len(w) == 2
     assert w['c1'] == 0.4
     assert w['c2'] == -0.6
@@ -536,8 +536,8 @@ def test_rebalance_over_time():
     # patch in rb function
     algo._rb = rb
 
-    target.algo_data = {}
-    target.algo_data['weights'] = {'a': 1, 'b': 0}
+    target.temp = {}
+    target.temp['weights'] = {'a': 1, 'b': 0}
 
     a = mock.MagicMock()
     a.weight = 0.
@@ -546,14 +546,14 @@ def test_rebalance_over_time():
     target.children = {'a': a, 'b': b}
 
     assert algo(target)
-    w = target.algo_data['weights']
+    w = target.temp['weights']
     assert len(w) == 2
     assert w['a'] == 0.5
     assert w['b'] == 0.5
 
     assert rb.called
     called_tgt = rb.call_args[0][0]
-    called_tgt_w = called_tgt.algo_data['weights']
+    called_tgt_w = called_tgt.temp['weights']
     assert len(called_tgt_w) == 2
     assert called_tgt_w['a'] == 0.5
     assert called_tgt_w['b'] == 0.5
@@ -562,11 +562,11 @@ def test_rebalance_over_time():
     a.weight = 0.5
     b.weight = 0.5
 
-    # clear out algo_data - same as would Strategy
-    target.algo_data = {}
+    # clear out temp - same as would Strategy
+    target.temp = {}
 
     assert algo(target)
-    w = target.algo_data['weights']
+    w = target.temp['weights']
     assert len(w) == 2
     assert w['a'] == 1.
     assert w['b'] == 0.
@@ -578,8 +578,8 @@ def test_rebalance_over_time():
     a.weight = 1
     b.weight = 0
 
-    # clear out algo_data - same as would Strategy
-    target.algo_data = {}
+    # clear out temp - same as would Strategy
+    target.temp = {}
 
     assert algo(target)
     # no diff in call_count since last time
@@ -588,14 +588,14 @@ def test_rebalance_over_time():
 
 def test_require():
     target = mock.MagicMock()
-    target.algo_data = {}
+    target.temp = {}
 
     pred = lambda x: len(x) > 0
     algo = algos.Require(pred, 'selected')
     assert not algo(target)
 
-    target.algo_data['selected'] = []
+    target.temp['selected'] = []
     assert not algo(target)
 
-    target.algo_data['selected'] = ['a', 'b']
+    target.temp['selected'] = ['a', 'b']
     assert algo(target)
