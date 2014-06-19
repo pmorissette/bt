@@ -2,6 +2,7 @@ import bt
 from bt.core import Algo, AlgoStack
 import pandas as pd
 import numpy as np
+import random
 
 
 def run_always(f):
@@ -265,6 +266,22 @@ class SelectMomentum(AlgoStack):
             SelectN(n=n))
 
 
+class SelectRandomly(AlgoStack):
+
+    def __init__(self, n=None):
+        super(SelectRandomly, self).__init__()
+        self.n = n
+
+    def __call__(self, target):
+        sel = target.temp['selected']
+
+        if self.n is not None:
+            sel = random.sample(sel, self.n)
+
+        target.temp['selected'] = sel
+        return True
+
+
 class StatTotalReturn(Algo):
 
     def __init__(self, lookback=pd.DateOffset(months=3)):
@@ -354,10 +371,43 @@ class WeighMeanVar(Algo):
             return True
 
         prc = target.universe[selected].ix[target.now - self.lookback:]
-        target.temp['weights'] = bt.finance.calc_mean_var_weights(
+        target.temp['weights'] = bt.ffn.calc_mean_var_weights(
             prc.to_returns().dropna(), weight_bounds=self.bounds,
             covar_method=self.covar_method, rf=self.rf)
 
+        return True
+
+
+class WeighRandomlyLongOnly(Algo):
+
+    def __init__(self, bounds=(0., 1.), weight_sum=1):
+        super(WeighRandomlyLongOnly, self).__init__()
+        self.bounds = bounds
+
+        low = bounds[0]
+        high = bounds[1]
+
+        if low < 0.0 or high < 0.0:
+            raise ValueError('limits must be in range [0, inf)')
+        if high < low:
+            raise ValueError('limits is a tuple containing (low, high). '
+                             'Low must be lower than high.')
+
+        self.weight_sum = weight_sum
+
+    def __call__(self, target):
+        sel = target.temp['selected']
+        n = len(sel)
+
+        w = {}
+        try:
+            rw = bt.ffn.random_long_only_weights(
+                n, self.bounds, self.weight_sum)
+            w = dict(zip(sel, rw))
+        except ValueError:
+            pass
+
+        target.temp['weights'] = w
         return True
 
 
