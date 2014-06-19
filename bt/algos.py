@@ -378,20 +378,14 @@ class WeighMeanVar(Algo):
         return True
 
 
-class WeighRandomlyLongOnly(Algo):
+class WeighRandomly(Algo):
 
     def __init__(self, bounds=(0., 1.), weight_sum=1):
-        super(WeighRandomlyLongOnly, self).__init__()
+        super(WeighRandomly, self).__init__()
         self.bounds = bounds
 
         low = bounds[0]
         high = bounds[1]
-
-        if low < 0.0 or high < 0.0:
-            raise ValueError('limits must be in range [0, inf)')
-        if high < low:
-            raise ValueError('limits is a tuple containing (low, high). '
-                             'Low must be lower than high.')
 
         self.weight_sum = weight_sum
 
@@ -401,7 +395,7 @@ class WeighRandomlyLongOnly(Algo):
 
         w = {}
         try:
-            rw = bt.ffn.random_long_only_weights(
+            rw = bt.ffn.random_weights(
                 n, self.bounds, self.weight_sum)
             w = dict(zip(sel, rw))
         except ValueError:
