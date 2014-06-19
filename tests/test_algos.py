@@ -331,7 +331,7 @@ def test_weigh_inv_vol():
     aae(weights['c2'], 0.980, 3)
 
 
-@mock.patch('bt.finance.calc_mean_var_weights')
+@mock.patch('bt.ffn.calc_mean_var_weights')
 def test_weigh_mean_var(mock_mv):
     algo = algos.WeighMeanVar(lookback=pd.DateOffset(days=5))
 

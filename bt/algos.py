@@ -211,7 +211,7 @@ class SelectHasData(Algo):
         super(SelectHasData, self).__init__()
         self.lookback = lookback
         if min_count is None:
-            min_count = bt.finance.get_num_days_required(lookback)
+            min_count = bt.ffn.get_num_days_required(lookback)
         self.min_count = min_count
 
     def __call__(self, target):
@@ -326,7 +326,7 @@ class WeighInvVol(Algo):
             return True
 
         prc = target.universe[selected].ix[target.now - self.lookback:]
-        target.temp['weights'] = bt.finance.calc_inv_vol_weights(
+        target.temp['weights'] = bt.ffn.calc_inv_vol_weights(
             prc.to_returns().dropna())
         return True
 
@@ -405,7 +405,7 @@ class LimitWeights(Algo):
             return True
 
         tw = target.temp['weights']
-        tw = bt.ffn.finance.limit_weights(tw, self.limit)
+        tw = bt.ffn.limit_weights(tw, self.limit)
         target.temp['weights'] = tw
 
         return True
