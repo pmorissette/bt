@@ -193,6 +193,17 @@ class SelectAll(Algo):
         return True
 
 
+class SelectThese(Algo):
+
+    def __init__(self, tickers):
+        super(SelectThese, self).__init__()
+        self.tickers = tickers
+
+    def __call__(self, target):
+        target.temp['selected'] = self.tickers
+        return True
+
+
 class SelectHasData(Algo):
 
     def __init__(self, lookback=pd.DateOffset(months=3),
