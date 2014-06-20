@@ -2,6 +2,7 @@ from copy import deepcopy
 import bt
 import ffn
 import pandas as pd
+from matplotlib import pyplot as plt
 
 
 def run(*backtests):
@@ -10,6 +11,33 @@ def run(*backtests):
         bkt.run()
 
     return Result(*backtests)
+
+
+def benchmark_random(backtest, random_strategy, nsim=100):
+    # save name for future use
+    if backtest.name is None:
+        backtest.name = 'original'
+
+    # run if necessary
+    if not backtest.has_run:
+        backtest.run()
+
+    bts = []
+    bts.append(backtest)
+    data = backtest.data
+
+    # create and run random backtests
+    for i in range(nsim):
+        random_strategy.name = 'random_%s' % i
+        rbt = bt.Backtest(random_strategy, data)
+        rbt.run()
+
+        bts.append(rbt)
+
+    # now create new RandomBenchmarkResult
+    res = RandomBenchmarkResult(*bts)
+
+    return res
 
 
 class Backtest(object):
@@ -34,8 +62,12 @@ class Backtest(object):
         self._original_prices = None
         self._weights = None
         self._sweights = None
+        self.has_run = False
 
     def run(self):
+        # set run flag
+        self.has_run = True
+
         # setup strategy
         self.strategy.setup(self.data)
 
@@ -131,3 +163,33 @@ class Result(ffn.GroupStats):
 
         # default case assume ok
         return backtest
+
+
+class RandomBenchmarkResult(Result):
+
+    def __init__(self, *backtests):
+        super(RandomBenchmarkResult, self).__init__(*backtests)
+        self.base_name = backtests[0].name
+        # seperate stats to make
+        self.r_stats = self.stats.drop(self.base_name, axis=1)
+        self.b_stats = self.stats[self.base_name]
+
+    def plot_histogram(self, statistic='monthly_sharpe',
+                       figsize=(15, 5), title=None,
+                       bins=20, **kwargs):
+
+        if not statistic in self.r_stats.index:
+            raise ValueError("Invalid statistic. Valid statistics"
+                             "are the statistics in self.stats")
+
+        if title is None:
+            title = '%s histogram' % statistic
+
+        plt.figure(figsize=figsize)
+
+        ser = self.r_stats.ix[statistic]
+
+        ax = ser.hist(bins=bins, figsize=figsize, normed=True, **kwargs)
+        ax.set_title(title)
+        plt.axvline(self.b_stats[statistic], linewidth=4)
+        ser.plot(kind='kde')
