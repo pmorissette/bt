@@ -11,7 +11,7 @@ def local_file(filename):
     )
 
 version = re.search(
-    "^__version__ = \((\d+), (\d+), (\d+)\)$",
+    "^__version__ = \((\d+), (\d+), (\d+)\)",
     local_file(os.path.join('bt', '__init__.py')).read(),
     re.MULTILINE
 ).groups()
