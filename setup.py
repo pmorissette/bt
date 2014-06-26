@@ -1,5 +1,5 @@
-from Cython.Build import cythonize
 from distutils.core import setup
+from distutils.extension import Extension
 import codecs
 import os
 import re
@@ -16,6 +16,22 @@ version = re.search(
     re.MULTILINE
 ).groups()
 
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    use_cython = False
+else:
+    use_cython = True
+
+ext_modules = []
+
+if use_cython:
+    ext_modules = cythonize('bt/core.py')
+else:
+    ext_modules = [
+        Extension('bt.core', ['bt/core.c'])
+    ]
+
 setup(
     name="bt",
     version='.'.join(version),
@@ -24,7 +40,7 @@ setup(
     description='A flexible backtesting framework for Python',
     keywords='python finance quant backtesting strategies',
     url='https://github.com/pmorissette/bt',
-    requires=[
+    install_requires=[
         'ffn'
     ],
     packages=['bt'],
@@ -34,5 +50,5 @@ setup(
         'Topic :: Software Development :: Libraries',
         'Programming Language :: Python'
     ],
-    ext_modules=cythonize('bt/core.py')
+    ext_modules=ext_modules
 )

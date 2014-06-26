@@ -2,8 +2,8 @@ include MANIFEST.in
 include README.rst
 include setup.py
 
-graft doc
-prune doc/build
+graft docs
+prune docs/build
 
 graft bt
 
