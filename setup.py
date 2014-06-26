@@ -1,13 +1,8 @@
-from distutils.core import setup
 from Cython.Build import cythonize
-import setuptools
+from distutils.core import setup
 import codecs
 import os
 import re
-
-setup(
-    ext_modules = cythonize("bt/core.py")
-)
 
 
 def local_file(filename):
@@ -15,15 +10,13 @@ def local_file(filename):
         os.path.join(os.path.dirname(__file__), filename), 'r', 'utf-8'
     )
 
-
 version = re.search(
     "^__version__ = \((\d+), (\d+), (\d+)\)$",
     local_file('bt/__init__.py').read(),
     re.MULTILINE
 ).groups()
 
-
-setuptools.setup(
+setup(
     name="bt",
     version='.'.join(version),
     author='Philippe Morissette',
@@ -31,7 +24,7 @@ setuptools.setup(
     description='A flexible backtesting framework for Python',
     keywords='python finance quant backtesting strategies',
     url='https://github.com/pmorissette/bt',
-    install_requires=[
+    requires=[
         'ffn'
     ],
     packages=['bt'],
@@ -40,5 +33,6 @@ setuptools.setup(
         'Development Status :: 3 - Alpha',
         'Topic :: Software Development :: Libraries',
         'Programming Language :: Python'
-    ]
+    ],
+    ext_modules=cythonize('bt/core.py')
 )
