@@ -1,3 +1,6 @@
+"""
+Contains the core building blocks of the framework.
+"""
 import math
 
 import pandas as pd
@@ -6,6 +9,36 @@ import cython as cy
 
 
 class Node(object):
+
+    """
+    The Node is the main building block in bt's tree structure design.
+    Both StrategyBase and SecurityBase inherit Node. It contains the
+    core functionality of a tree node.
+
+    Args:
+        * name (str): The Node name
+        * parent (Node): The parent Node
+        * children (dict, list): A collection of children. If dict,
+            the format is {name: child}, if list then list of children.
+
+    Attributes:
+        * name (str): Node name
+        * parent (Node): Node parent
+        * root (Node): Root node of the tree (topmost node)
+        * children (dict): Node's children
+        * now (datetime): Used when backtesting to store current date
+        * stale (bool): Flag used to determine if Node is stale and need
+            updating
+        * prices (TimeSeries): Prices of the Node. Prices for a security will
+            be the security's price, for a strategy it will be an index that
+            reflects the value of the strategy over time.
+        * price (float): last price
+        * value (float): last value
+        * weight (float): weight in parent
+        * full_name (str): Name including parents' names
+        * members (list): Current Node + node's children
+
+    """
 
     _price = cy.declare(cy.double)
     _value = cy.declare(cy.double)
@@ -79,6 +112,9 @@ class Node(object):
 
     @property
     def prices(self):
+        """
+        A TimeSeries of the Node's price.
+        """
         # can optimize depending on type -
         # securities don't need to check stale to
         # return latest prices, whereas strategies do...
@@ -86,6 +122,9 @@ class Node(object):
 
     @property
     def price(self):
+        """
+        Current price of the Node
+        """
         # can optimize depending on type -
         # securities don't need to check stale to
         # return latest prices, whereas strategies do...
@@ -93,17 +132,26 @@ class Node(object):
 
     @property
     def value(self):
+        """
+        Current value of the Node
+        """
         if self.root.stale:
             self.root.update(self.root.now, None)
         return self._value
 
     @property
     def weight(self):
+        """
+        Current weight of the Node (with respect to the parent).
+        """
         if self.root.stale:
             self.root.update(self.root.now, None)
         return self._weight
 
     def setup(self, dates):
+        """
+        Setup method used to initialize a Node with a set of dates.
+        """
         raise NotImplementedError()
 
     def _add_child(self, child):
@@ -117,16 +165,29 @@ class Node(object):
         self._childrenv = self.children.values()
 
     def update(self, date, data=None):
+        """
+        Update Node with latest date, and optionally some data.
+        """
         raise NotImplementedError()
 
     def adjust(self, amount, update=True, isflow=True):
+        """
+        Adjust Node value by amount.
+        """
         raise NotImplementedError()
 
     def allocate(self, amount, update=True):
+        """
+        Allocate capital to Node.
+        """
         raise NotImplementedError()
 
     @property
     def members(self):
+        """
+        Node members. Members include current node as well as Node's
+        children.
+        """
         res = [self]
         for c in self.children.values():
             res.extend(c.members)
@@ -141,6 +202,42 @@ class Node(object):
 
 
 class StrategyBase(Node):
+
+    """
+    Strategy Node. Used to define strategy logic within a tree.
+    A Strategy's role is to allocate capital to it's children
+    based on a function.
+
+    Args:
+        * name (str): Strategy name
+        * children (dict, list): A collection of children. If dict,
+            the format is {name: child}, if list then list of children.
+            Children can be any type of Node.
+        * parent (Node): The parent Node
+
+    Attributes:
+        * name (str): Strategy name
+        * parent (Strategy): Strategy parent
+        * root (Strategy): Root node of the tree (topmost node)
+        * children (dict): Strategy's children
+        * now (datetime): Used when backtesting to store current date
+        * stale (bool): Flag used to determine if Strategy is stale and need
+            updating
+        * prices (TimeSeries): Prices of the Strategy - basically an index that
+            reflects the value of the strategy over time.
+        * price (float): last price
+        * value (float): last value
+        * weight (float): weight in parent
+        * full_name (str): Name including parents' names
+        * members (list): Current Strategy + strategy's children
+        * commission_fn (fn(quantity)): A function used to determine the
+            commission amount.
+        * capital (float): Capital amount in Strategy - cash
+        * universe (DataFrame): Data universe available at the current time.
+            Universe contains the data passed in when creating a Backtest. Use
+            this data to determine strategy logic.
+
+    """
 
     _capital = cy.declare(cy.double)
     _net_flows = cy.declare(cy.double)
@@ -164,29 +261,46 @@ class StrategyBase(Node):
 
     @property
     def price(self):
+        """
+        Current price.
+        """
         if self.root.stale:
             self.root.update(self.now, None)
         return self._price
 
     @property
     def prices(self):
+        """
+        TimeSeries of prices.
+        """
         if self.root.stale:
             self.root.update(self.now, None)
         return self._prices.ix[:self.now]
 
     @property
     def values(self):
+        """
+        TimeSeries of values.
+        """
         if self.root.stale:
             self.root.update(self.now, None)
         return self._values.ix[:self.now]
 
     @property
     def capital(self):
+        """
+        Current capital - amount of unallocated capital left in strategy.
+        """
         # no stale check needed
         return self._capital
 
     @property
     def universe(self):
+        """
+        Data universe available at the current time.
+        Universe contains the data passed in when creating a Backtest.
+        Use this data to determine strategy logic.
+        """
         # avoid windowing every time
         # if calling and on same date return
         # cached value
@@ -198,6 +312,10 @@ class StrategyBase(Node):
             return self._funiverse
 
     def setup(self, universe):
+        """
+        Setup strategy with universe. This will speed up future calculations
+        and updates.
+        """
         # setup universe
         if self._universe_tickers is not None:
             # if we have universe_tickers defined, limit universe to
@@ -222,6 +340,9 @@ class StrategyBase(Node):
 
     @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double)
     def update(self, date, data=None):
+        """
+        Update strategy. Updates prices, values, weight, etc.
+        """
         # resolve stale state
         self.root.stale = False
 
@@ -295,7 +416,16 @@ class StrategyBase(Node):
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint)
     def adjust(self, amount, update=True, flow=True):
         """
-        adjust captial - used to inject capital
+        Adjust captial - used to inject capital to a Strategy. This injection
+        of capital will have no effect on the children.
+
+        Args:
+            * amount (float): Amount to adjust by.
+            * update (bool): Force update?
+            * flow (bool): Is this adjustment a flow? Basically a flow will
+                have an impact on the price index. Examples of flows are
+                commissions.
+
         """
         # adjust capital
         self._capital += amount
@@ -313,6 +443,23 @@ class StrategyBase(Node):
 
     @cy.locals(amount=cy.double, update=cy.bint)
     def allocate(self, amount, child=None, update=True):
+        """
+        Allocate capital to Strategy. By default, capital is allocated
+        recursively down the children, proportionally to the children's
+        weights.  If a child is specified, capital will be allocated
+        to that specific child.
+
+        Allocation also have a side-effect. They will deduct the same amount
+        from the parent's "account" to offset the allocation. If there is
+        remaining capital after allocation, it will remain in Strategy.
+
+        Args:
+            * amount (float): Amount to allocate.
+            * child (str): If specified, allocation will be directed to child
+                only. Specified by name.
+            * update (bool): Force update.
+
+        """
         # allocate to child
         if child is not None:
             if child not in self.children:
@@ -351,6 +498,28 @@ class StrategyBase(Node):
 
     @cy.locals(delta=cy.double, weight=cy.double, base=cy.double)
     def rebalance(self, weight, child, base=np.nan, update=True):
+        """
+        Rebalance a child to a given weight.
+
+        This is a helper method to simplify code logic. This method is used
+        when we want to se the weight of a particular child to a set amount.
+        It is similar to allocate, but it calculates the appropriate allocation
+        based on the current weight.
+
+        Args:
+            * weight (float): The target weight. Usually between -1.0 and 1.0.
+            * child (str): child to allocate to - specified by name.
+            * base (float): If specified, this is the base amount all weight
+                delta calculations will be based off of. This is useful when we
+                determine a set of weights and want to rebalance each child
+                given these new weights. However, as we iterate through each
+                child and call this method, the base (which is by default the
+                current value) will change. Therefore, we can set this base to
+                the original value before the iteration to ensure the proper
+                allocations are made.
+            * update (bool): Force update?
+
+        """
         # if weight is 0 - we want to close child
         if weight == 0:
             if child in self.children:
@@ -377,6 +546,13 @@ class StrategyBase(Node):
         c.allocate(delta * base)
 
     def close(self, child):
+        """
+        Close a child position - alias for rebalance(0, child). This will also
+        flatten (close out all) the child's children.
+
+        Args:
+            * child (str): Child, specified by name.
+        """
         c = self.children[child]
         # flatten if children not None
         if c.children is not None and len(c.children) != 0:
@@ -384,13 +560,28 @@ class StrategyBase(Node):
         c.allocate(-c.value)
 
     def flatten(self):
+        """
+        Close all child positions.
+        """
         # go right to base alloc
         [c.allocate(-c.value) for c in self._childrenv if c.value != 0]
 
     def run(self):
+        """
+        This is the main logic method. Override this method to provide some
+        algorithm to execute on each date change. This method is called by
+        backtester.
+        """
         pass
 
     def set_commissions(self, fn):
+        """
+        Set commission function.
+
+        Args:
+            fn (fn(quantity)): Function used to determine commission amount.
+
+        """
         self.commission_fn = fn
 
     @cy.locals(q=cy.double)
@@ -399,6 +590,33 @@ class StrategyBase(Node):
 
 
 class SecurityBase(Node):
+
+    """
+    Security Node. Used to define a security within a tree.
+    A Security's has no children. It simply models an asset that can be bought
+    or sold.
+
+    Args:
+        * name (str): Security name
+        * multiplier (float): security multiplier - typically used for
+            derivatives.
+
+    Attributes:
+        * name (str): Security name
+        * parent (Security): Security parent
+        * root (Security): Root node of the tree (topmost node)
+        * now (datetime): Used when backtesting to store current date
+        * stale (bool): Flag used to determine if Security is stale and need
+            updating
+        * prices (TimeSeries): Security prices.
+        * price (float): last price
+        * value (float): last value - basically position * price * multiplier
+        * weight (float): weight in parent
+        * full_name (str): Name including parents' names
+        * members (list): Current Security + strategy's children
+        * position (float): Current position (quantity).
+
+    """
 
     _last_pos = cy.declare(cy.double)
     _position = cy.declare(cy.double)
@@ -422,6 +640,9 @@ class SecurityBase(Node):
 
     @property
     def price(self):
+        """
+        Current price.
+        """
         # if accessing and stale - update first
         if not self._needupdate:
             self.update(self.root.now)
@@ -429,6 +650,9 @@ class SecurityBase(Node):
 
     @property
     def prices(self):
+        """
+        TimeSeries of prices.
+        """
         # if accessing and stale - update first
         if not self._needupdate:
             self.update(self.root.now)
@@ -436,6 +660,9 @@ class SecurityBase(Node):
 
     @property
     def values(self):
+        """
+        TimeSeries of values.
+        """
         # if accessing and stale - update first
         if not self._needupdate:
             self.update(self.root.now)
@@ -445,10 +672,21 @@ class SecurityBase(Node):
 
     @property
     def position(self):
+        """
+        Current position
+        """
         # no stale check needed
         return self._position
 
     def setup(self, universe):
+        """
+        Setup Security with universe. Speeds up future runs.
+
+        Args:
+            * universe (DataFrame): DataFrame of prices with security's name as
+                one of the columns.
+
+        """
         # if we already have all the prices, we will store them to speed up
         # future udpates
         try:
@@ -474,6 +712,10 @@ class SecurityBase(Node):
 
     @cy.locals(prc=cy.double)
     def update(self, date, data=None):
+        """
+        Update security with a given date and optionally, some data.
+        This will update price, value, weight, etc.
+        """
         # filter for internal calls when position has not changed - nothing to
         # do. Internal calls (stale root calls) have None data. Also want to
         # make sure date has not changed, because then we do indeed want to
@@ -505,9 +747,20 @@ class SecurityBase(Node):
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double)
     def allocate(self, amount, update=True):
-        # buy/sell appropriate # of shares and pass
-        # remaining capital back up to parent as
-        # adjustment
+        """
+        This allocates capital to the Security. This is the method used to
+        buy/sell the security.
+
+        A given amount of shares will be determined on the current price, a
+        commisison will be calculated based on the parent's commission fn, and
+        any remaining capital will be passed back up  to parent as an
+        adjustment.
+
+        Args:
+            * amount (float): Amount of adjustment.
+            * update (bool): Force update?
+
+        """
 
         # will need to update if this has been idle for a while...
         # update if needupdate or if now is stale
@@ -563,23 +816,62 @@ class SecurityBase(Node):
 
     @cy.locals(q=cy.double)
     def commission(self, q):
+        """
+        Calculates the commission based on quantity. Uses the parent's
+        commission_fn.
+
+        Args:
+            * q (float): quantity
+
+        """
         return self.parent.commission_fn(q)
 
     @cy.locals(q=cy.double)
     def outlay(self, q):
+        """
+        Determines the cash outlay necessary given a quantity q.
+
+        Args:
+            * q (float): quantity
+
+        """
         return q * self._price * self.multiplier + self.commission(q)
 
     def run(self):
+        """
+        Does nothing - securities have nothing to do on run.
+        """
         pass
 
 
 class Algo(object):
+
+    """
+    Algos are used to modularize strategy logic so that strategy logic becomes
+    modular, composable, more testable and less error prone. Basically, the
+    Algo should follow the unix philosophy - do one thing well.
+
+    In practice, algos are simply a function that receives one argument, the
+    Strategy (refered to as target) and are expected to return a bool.
+
+    When some state preservation is necessary between calls, the Algo
+    object can be used (this object). The __call___ method should be
+    implemented and logic defined therein to mimic a function call. A
+    simple function may also be used if no state preservation is neceesary.
+
+    Args:
+        * name (str): Algo name
+
+    """
 
     def __init__(self, name=None):
         self._name = name
 
     @property
     def name(self):
+        """
+        Algo name.
+        """
         if self._name is None:
             self._name = self.__class__.__name__
         return self._name
@@ -589,6 +881,18 @@ class Algo(object):
 
 
 class AlgoStack(Algo):
+
+    """
+    An AlgoStack derives from Algo runs multiple Algos until a
+    failure is encountered.
+
+    The purpose of an AlgoStack is to group a logic set of Algos together. Each
+    Algo in the stack is run. Execution stops if one Algo returns False.
+
+    Args:
+        * algos (*list): List of algos.
+
+    """
 
     def __init__(self, *algos):
         super(AlgoStack, self).__init__()
@@ -619,6 +923,30 @@ class AlgoStack(Algo):
 
 
 class Strategy(StrategyBase):
+
+    """
+    Strategy expands on the StrategyBase and incorporates Algos.
+
+    Basically, a Strategy is built by passing in a set of algos. These algos
+    will be placed in an Algo stack and the run function will call the stack.
+
+    Furthermore, two class attributes are created to pass data between algos.
+    perm for permanent data, temp for temporary data.
+
+    Args:
+        * name (str): Strategy name
+        * algos (list): List of Algos to be passed into an AlgoStack
+        * children (dict, list): Children - useful when you want to create
+            strategies of strategies
+
+    Attributes:
+        * stack (AlgoStack): The stack
+        * temp (dict): A dict containing temporary data - cleared on each call
+            to run. This can be used to pass info to other algos.
+        * perm (dict): Permanent data used to pass info from one algo to
+            another. Not cleared on each pass.
+
+    """
 
     def __init__(self, name, algos=[], children=None):
         super(Strategy, self).__init__(name, children=children)
