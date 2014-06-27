@@ -207,7 +207,7 @@ class Result(ffn.GroupStats):
     Based on ffn's GroupStats with a few extra helper methods.
 
     Args:
-        * backtests (*list): List of backtests
+        * backtests (list): List of backtests
 
     Attributes:
         * backtest_list (list): List of bactests in the same order as provided
@@ -243,7 +243,7 @@ class Result(ffn.GroupStats):
             * filter (list, str): filter columns for specific columns. Filter
                 is simply passed as is to DataFrame[filter], so use something
                 that makes sense with a DataFrame.
-            * kwds (**dict): Keywords passed to plot
+            * kwds (dict): Keywords passed to plot
 
         """
         key = self._get_backtest(backtest)
@@ -265,7 +265,7 @@ class Result(ffn.GroupStats):
             * filter (list, str): filter columns for specific columns. Filter
                 is simply passed as is to DataFrame[filter], so use something
                 that makes sense with a DataFrame.
-            * kwds (**dict): Keywords passed to plot
+            * kwds (dict): Keywords passed to plot
 
         """
         key = self._get_backtest(backtest)
@@ -284,7 +284,7 @@ class Result(ffn.GroupStats):
         Args:
             * backtest (str, int): Backtest. Can be either a index (int) or the
                 name (str)
-            * kwds (**dict): Keywords passed to plot_histogram
+            * kwds (dict): Keywords passed to plot_histogram
 
         """
         key = self._get_backtest(backtest)
@@ -306,7 +306,7 @@ class RandomBenchmarkResult(Result):
     to random strategy benchmarking.
 
     Args:
-        * backtests (*list): List of backtests
+        * backtests (list): List of backtests
 
     Attributes:
         * base_name (str): Name of backtest being benchmarked
@@ -340,7 +340,7 @@ class RandomBenchmarkResult(Result):
             * figsize ((x, y)): Figure size
             * title (str): Chart title
             * bins (int): Number of bins
-            * kwargs (**dict): Passed to pandas hist function.
+            * kwargs (dict): Passed to pandas hist function.
 
         """
         if not statistic in self.r_stats.index:

@@ -194,7 +194,7 @@ class RunOnDate(Algo):
     Returns True on a specific set of dates.
 
     Args:
-        * dates (*list): List of dates to run Algo on.
+        * dates (list): List of dates to run Algo on.
 
     """
 
@@ -521,7 +521,7 @@ class WeighSpecified(Algo):
     Sets the weights based on pre-specified targets.
 
     Args:
-        * weights (**dict): target weights -> ticker: weight
+        * weights (dict): target weights -> ticker: weight
 
     Sets:
         * weights
