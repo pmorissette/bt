@@ -532,7 +532,7 @@ def test_rebalance_over_time():
     target = mock.MagicMock()
     rb = mock.MagicMock()
 
-    algo = algos.RebalanceOverTime(days=2)
+    algo = algos.RebalanceOverTime(n=2)
     # patch in rb function
     algo._rb = rb
 
