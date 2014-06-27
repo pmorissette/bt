@@ -1,6 +1,6 @@
 import copy
 
-from bt.core import Node, StrategyBase, SecurityBase, AlgoStack
+from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 import pandas as pd
 from nose.tools import assert_almost_equal as aae
 import mock
@@ -1681,3 +1681,28 @@ def test_strategy_tree_proper_return_calcs():
     assert s2.value == 500
     assert s2.weight == 500.0 / 999.0
     assert s2.price == 100
+
+
+def test_strategy_tree_proper_universes():
+    do_nothing = lambda x: 1 == 1
+    child1 = Strategy('c1', [do_nothing], ['b', 'c'])
+    master = Strategy('m', [do_nothing], [child1, 'a'])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(
+        {'a': pd.TimeSeries(data=1, index=dts, name='a'),
+         'b': pd.TimeSeries(data=2, index=dts, name='b'),
+         'c': pd.TimeSeries(data=3, index=dts, name='c')})
+
+    master.setup(data)
+
+    assert len(master.children) == 2
+    assert 'c1' in master.children
+    assert 'a' in master.children
+    assert len(master.universe.columns) == 2
+    assert 'c1' in master.universe.columns
+    assert 'a' in master.universe.columns
+
+    assert len(child1.universe.columns) == 2
+    assert 'b' in child1.universe.columns
+    assert 'c' in child1.universe.columns

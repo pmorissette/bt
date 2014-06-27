@@ -44,11 +44,18 @@ class Node(object):
     _value = cy.declare(cy.double)
     _weight = cy.declare(cy.double)
     _issec = cy.declare(cy.bint)
+    _has_strat_children = cy.declare(cy.bint)
 
     def __init__(self, name, parent=None, children=None):
 
         self.name = name
 
+        # strategy children helpers
+        self._has_strat_children = False
+        self._strat_children = []
+
+        # if children is not None, we assume that we want to limit the
+        # available children space to the provided list.
         if children is not None:
             if isinstance(children, list):
                 # if all strings - just save as universe_filter
@@ -61,15 +68,28 @@ class Node(object):
                     # this will be case if we pass in children
                     # (say a bunch of sub-strategies)
                     tmp = {}
+                    ut = []
                     for c in children:
                         if type(c) == str:
                             tmp[c] = SecurityBase(c)
+                            ut.append(c)
                         else:
                             tmp[c.name] = c
+
+                            # if strategy, turn on flag and add name to list
+                            # strategy children have special treatment
+                            if isinstance(c, StrategyBase):
+                                self._has_strat_children = True
+                                self._strat_children.append(c.name)
+                            # if not strategy, then we will want to add this to
+                            # universe_tickers to filter on setup
+                            else:
+                                ut.append(c.name)
+
                     children = tmp
                     # we want to keep whole universe in this case
                     # so set to None
-                    self._universe_tickers = None
+                    self._universe_tickers = ut
 
         if parent is None:
             self.parent = self
@@ -317,24 +337,39 @@ class StrategyBase(Node):
         and updates.
         """
         # setup universe
+        funiverse = universe
+
         if self._universe_tickers is not None:
             # if we have universe_tickers defined, limit universe to
             # those tickers
             valid_filter = list(set(universe.columns)
                                 .intersection(self._universe_tickers))
-            universe = universe[valid_filter]
-        self._universe = universe
-        self._funiverse = universe
+
+            funiverse = universe[valid_filter]
+
+            # if we have strat children, we will need to create their columns
+            # in the new universe
+            if self._has_strat_children:
+                for c in self._strat_children:
+                    funiverse[c] = np.nan
+
+            # must create to avoid pandas warning
+            funiverse = pd.DataFrame(funiverse)
+
+        self._universe = funiverse
+        self._funiverse = funiverse
         self._last_chk = None
 
         # setup internal data
-        self.data = pd.DataFrame(index=universe.index,
+        self.data = pd.DataFrame(index=funiverse.index,
                                  columns=['price', 'value'],
                                  data=0.0)
+
         self._prices = self.data['price']
         self._values = self.data['value']
 
-        # setup children as well
+        # setup children as well - use original universe here - don't want to
+        # pollute with potential strategy children in funiverse
         if self.children is not None:
             [c.setup(universe) for c in self._childrenv]
 
@@ -412,6 +447,11 @@ class StrategyBase(Node):
                     c._weight = c.value / val
                 except ZeroDivisionError:
                     c._weight = 0
+
+        # if we have strategy children, we will need to update them in universe
+        if self._has_strat_children:
+            for c in self._strat_children:
+                self._universe.loc[date, c] = self.children[c].price
 
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint)
     def adjust(self, amount, update=True, flow=True):
