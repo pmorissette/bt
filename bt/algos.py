@@ -17,12 +17,24 @@ def run_always(f):
 
 class PrintDate(Algo):
 
+    """
+    This Algo simply print's the current date.
+
+    Can be useful for debugging purposes.
+    """
+
     def __call__(self, target):
         print target.now
         return True
 
 
-class PrintAlgoData(Algo):
+class PrintTempData(Algo):
+
+    """
+    This Algo prints the temp data.
+
+    Useful for debugging.
+    """
 
     def __call__(self, target):
         print target.temp
