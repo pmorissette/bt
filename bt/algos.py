@@ -272,7 +272,29 @@ class SelectN(Algo):
 
 class SelectMomentum(AlgoStack):
 
-    def __init__(self, n, lookback=pd.DateOffset(months=3)):
+    """
+    Sets temp['selected'] based on a simple momentum filter.
+
+    Selects the top n securities based on the total return over
+    a given lookback period. This is just a wrapper around an
+    AlgoStack with two algos: StatTotalReturn and SelectN.
+
+    Args:
+        * n (int): select first N elements
+        * lookback (DateOffset): lookback period for total return
+            calculation
+        * sort_descending (bool): Sort descending (highest return is best)
+
+    Sets:
+        * selected
+
+    Requires:
+        * selected
+
+    """
+
+    def __init__(self, n, lookback=pd.DateOffset(months=3),
+                 sort_descending=True):
         super(SelectMomentum, self).__init__(
             StatTotalReturn(lookback=lookback),
             SelectN(n=n))
