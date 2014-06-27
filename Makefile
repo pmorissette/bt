@@ -10,5 +10,7 @@ build_dev:
 
 clean:
 	- rm -rf build
+	- rm -rf dist
+	- rm -rf bt.egg-info
 	- find . -name '*.so' -delete
 	- find . -name '*.c' -delete
