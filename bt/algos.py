@@ -1,3 +1,6 @@
+"""
+A collection of Algos used to create Strategy logic.
+"""
 import bt
 from bt.core import Algo, AlgoStack
 import pandas as pd
@@ -9,7 +12,7 @@ def run_always(f):
     """
     Run always decorator to be used with Algo
     to ensure stack runs the decorated Algo
-    no matter what.
+    on each pass, regardless of failures in the stack.
     """
     f.run_always = True
     return f
@@ -44,7 +47,7 @@ class PrintTempData(Algo):
 class RunOnce(Algo):
 
     """
-    Returns True on first run then returns False
+    Returns True on first run then returns False.
 
     As the name says, the algo only runs once. Useful in situations
     where we want to run the logic once (buy and hold for example).
@@ -73,6 +76,11 @@ class RunWeekly(Algo):
     Returns True if the target.now's week has changed
     since the last run, if not returns False. Useful for
     weekly rebalancing strategies.
+
+    Note:
+        This algo will typically run on the first day of the
+        week (assuming we have daily data)
+
     """
 
     def __init__(self):
@@ -110,6 +118,11 @@ class RunMonthly(Algo):
     Returns True if the target.now's month has changed
     since the last run, if not returns False. Useful for
     monthly rebalancing strategies.
+
+    Note:
+        This algo will typically run on the first day of the
+        month (assuming we have daily data)
+
     """
 
     def __init__(self):
@@ -144,6 +157,11 @@ class RunYearly(Algo):
     Returns True if the target.now's year has changed
     since the last run, if not returns False. Useful for
     yearly rebalancing strategies.
+
+    Note:
+        This algo will typically run on the first day of the
+        year (assuming we have daily data)
+
     """
 
     def __init__(self):
@@ -174,6 +192,10 @@ class RunOnDate(Algo):
 
     """
     Returns True on a specific set of dates.
+
+    Args:
+        * dates (*list): List of dates to run Algo on.
+
     """
 
     def __init__(self, *dates):
@@ -193,6 +215,21 @@ class RunOnDate(Algo):
 
 class SelectAll(Algo):
 
+    """
+    Sets temp['selected'] with all securities (based on universe).
+
+    Selects all the securities and saves them in temp['selected'].
+    By default, SelectAll does not include securities that have no
+    data (nan) on current date.
+
+    Args:
+        * include_no_data (bool): Include securities that do not have data?
+
+    Sets:
+        * selected
+
+    """
+
     def __init__(self, include_no_data=False):
         super(SelectAll, self).__init__()
         self.include_no_data = include_no_data
@@ -208,6 +245,19 @@ class SelectAll(Algo):
 
 class SelectThese(Algo):
 
+    """
+    Sets temp['selected'] with a set list of tickers.
+
+    Sets the temp['selected'] to a set list of tickers.
+
+    Args:
+        * ticker (list): List of tickers to select.
+
+    Sets:
+        * selected
+
+    """
+
     def __init__(self, tickers):
         super(SelectThese, self).__init__()
         self.tickers = tickers
@@ -218,6 +268,39 @@ class SelectThese(Algo):
 
 
 class SelectHasData(Algo):
+
+    """
+    Sets temp['selected'] based on all items in universe that meet
+    data requirements.
+
+    This is a more advanced version of SelectAll. Useful for selecting
+    tickers that need a certain amount of data for future algos to run
+    properly.
+
+    For example, if we need the items with 3 months of data or more,
+    we could use this Algo with a lookback period of 3 months.
+
+    When providing a lookback period, it is also wise to provide a min_count.
+    This is basically the number of data points needed within the lookback
+    period for a series to be considered valid. For example, in our 3 month
+    lookback above, we might want to specify the min_count as being
+    57 -> a typical trading month has give or take 20 trading days. If we
+    factor in some holidays, we can use 57 or 58. It's really up to you.
+
+    If you don't specify min_count, min_count will default to ffn's
+    get_num_days_required.
+
+    Args:
+        * lookback (DateOffset): A DateOffset that determines the lookback
+            period.
+        * min_count (int): Minimum number of days required for a series to be
+            considered valid. If not provided, ffn's get_num_days_required is
+            used to estimate the number of points required.
+
+    Sets:
+        * selected
+
+    """
 
     def __init__(self, lookback=pd.DateOffset(months=3),
                  min_count=None):
@@ -241,6 +324,29 @@ class SelectHasData(Algo):
 
 
 class SelectN(Algo):
+
+    """
+    Sets temp['selected'] based on ranking temp['stat'].
+
+    Selects the top or botton N items based on temp['stat'].
+    This is usually some kind of metric that will be computed in a
+    previous Algo and will be used for ranking purposes. Can select
+    top or bottom N based on sort_descending parameter.
+
+    Args:
+        * n (int): select top n items.
+        * sort_descending (bool): Should the stat be sorted in descending order
+            before selecting the first n items?
+        * all_or_none (bool): If true, only populates temp['selected'] if we
+            have n items. If we have less than n, then temp['selected'] = [].
+
+    Sets:
+        * selected
+
+    Requires:
+        * stat
+
+    """
 
     def __init__(self, n, sort_descending=True,
                  all_or_none=False):
@@ -297,10 +403,38 @@ class SelectMomentum(AlgoStack):
                  sort_descending=True):
         super(SelectMomentum, self).__init__(
             StatTotalReturn(lookback=lookback),
-            SelectN(n=n))
+            SelectN(n=n, sort_descending=sort_descending))
 
 
 class SelectRandomly(AlgoStack):
+
+    """
+    Sets temp['selected'] based on a random subset of
+    the items currently in temp['selected'].
+
+    Selects n random elements from the list stored in temp['selected'].
+    This is useful for benchmarking against a strategy where we believe
+    the selection algorithm is adding value.
+
+    For example, if we are testing a momentum strategy and we want to see if
+    selecting securities based on momentum is better than just selecting
+    securities randomly, we could use this Algo to create a random Strategy
+    used for random benchmarking.
+
+    Note:
+        Another selection algorithm should be use prior to this Algo to
+        populate temp['selected']. This will typically be SelectAll.
+
+    Args:
+        * n (int): Select N elements randomly.
+
+    Sets:
+        * selected
+
+    Requires:
+        * selected
+
+    """
 
     def __init__(self, n=None):
         super(SelectRandomly, self).__init__()
@@ -318,6 +452,24 @@ class SelectRandomly(AlgoStack):
 
 class StatTotalReturn(Algo):
 
+    """
+    Sets temp['stat'] with total returns over a given period.
+
+    Sets the 'stat' based on the total return of each element in
+    temp['selected'] over a given lookback period. The total return
+    is determined by ffn's calc_total_return.
+
+    Args:
+        * lookback (DateOffset): lookback period.
+
+    Sets:
+        * stat
+
+    Requires:
+        * selected
+
+    """
+
     def __init__(self, lookback=pd.DateOffset(months=3)):
         super(StatTotalReturn, self).__init__()
         self.lookback = lookback
@@ -330,6 +482,20 @@ class StatTotalReturn(Algo):
 
 
 class WeighEqually(Algo):
+
+    """
+    Sets temp['weights'] by calculating equal weights for all items in
+    selected.
+
+    Equal weight Algo. Sets the 'weights' to 1/n for each item in 'selected'.
+
+    Sets:
+        * weights
+
+    Requires:
+        * selected
+
+    """
 
     def __init__(self):
         super(WeighEqually, self).__init__()
@@ -349,6 +515,19 @@ class WeighEqually(Algo):
 
 class WeighSpecified(Algo):
 
+    """
+    Sets temp['weights'] based on a provided dict of ticker:weights.
+
+    Sets the weights based on pre-specified targets.
+
+    Args:
+        * weights (**dict): target weights -> ticker: weight
+
+    Sets:
+        * weights
+
+    """
+
     def __init__(self, **weights):
         super(WeighSpecified, self).__init__()
         self.weights = weights
@@ -360,6 +539,25 @@ class WeighSpecified(Algo):
 
 
 class WeighInvVol(Algo):
+
+    """
+    Sets temp['weights'] based on the inverse volatility Algo.
+
+    Sets the target weights based on ffn's calc_inv_vol_weights. This
+    is a commonly used technique for risk parity portfolios. The least
+    volatile elements receive the highest weight under this scheme. Weights
+    are proportional to the inverse of their volatility.
+
+    Args:
+        * lookback (DateOffset): lookback period for estimating volatility
+
+    Sets:
+        * weights
+
+    Requires:
+        * selected
+
+    """
 
     def __init__(self, lookback=pd.DateOffset(months=3)):
         super(WeighInvVol, self).__init__()
@@ -383,6 +581,31 @@ class WeighInvVol(Algo):
 
 
 class WeighMeanVar(Algo):
+
+    """
+    Sets temp['weights'] based on mean-variance optimization.
+
+    Sets the target weights based on ffn's calc_mean_var_weights. This is a
+    Python implementation of Markowitz's mean-variance optimization.
+
+    See:
+        http://en.wikipedia.org/wiki/Modern_portfolio_theory#The_efficient_frontier_with_no_risk-free_asset
+
+    Args:
+        * lookback (DateOffset): lookback period for estimating volatility
+        * bounds ((min, max)): tuple specifying the min and max weights for
+            each asset in the optimization.
+        * covar_method (str): method used to estimate the covariance. See ffn's
+            calc_mean_var_weights for more details.
+        * rf (float): risk-free rate used in optimization.
+
+    Sets:
+        * weights
+
+    Requires:
+        * selected
+
+    """
 
     def __init__(self, lookback=pd.DateOffset(months=3),
                  bounds=(0., 1.), covar_method='ledoit-wolf',
@@ -414,13 +637,36 @@ class WeighMeanVar(Algo):
 
 class WeighRandomly(Algo):
 
+    """
+    Sets temp['weights'] based on a random weight vector.
+
+    Sets random target weights for each security in 'selected'.
+    This is useful for benchmarking against a strategy where we believe
+    the weighing algorithm is adding value.
+
+    For example, if we are testing a low-vol strategy and we want to see if
+    our weighing strategy is better than just weighing
+    securities randomly, we could use this Algo to create a random Strategy
+    used for random benchmarking.
+
+    This is an Algo wrapper around ffn's random_weights function.
+
+    Args:
+        * bounds ((low, high)): Tuple including low and high bounds for each
+            security
+        * weight_sum (float): What should the weights sum up to?
+
+    Sets:
+        * weights
+
+    Requires:
+        * selected
+
+    """
+
     def __init__(self, bounds=(0., 1.), weight_sum=1):
         super(WeighRandomly, self).__init__()
         self.bounds = bounds
-
-        low = bounds[0]
-        high = bounds[1]
-
         self.weight_sum = weight_sum
 
     def __call__(self, target):
@@ -440,6 +686,32 @@ class WeighRandomly(Algo):
 
 
 class LimitDeltas(Algo):
+
+    """
+    Modifies temp['weights'] based on weight delta limits.
+
+    Basically, this can be used if we want to restrict how much a security's
+    target weight can change from day to day. Useful when we want to be more
+    conservative about how much we could actually trade on a given day without
+    affecting the market.
+
+    For example, if we have a strategy that is currently long 100% one
+    security, and the weighing Algo sets the new weight to 0%, but we
+    use this Algo with a limit of 0.1, the new target weight will
+    be 90% instead of 0%.
+
+    Args:
+        * limit (float, dict): Weight delta limit. If float, this will be a
+            global limit for all securities. If dict, you may specify by-ticker
+            limit.
+
+    Sets:
+        * weights
+
+    Requires:
+        * weights
+
+    """
 
     def __init__(self, limit=0.1):
         super(LimitDeltas, self).__init__()
@@ -474,6 +746,29 @@ class LimitDeltas(Algo):
 
 class LimitWeights(Algo):
 
+    """
+    Modifies temp['weights'] based on weight limits.
+
+    This is an Algo wrapper around ffn's limit_weights. The purpose of this
+    Algo is to limit the weight of any one specifc asset. For example, some
+    Algos will set some rather extreme weights that may not be acceptable.
+    Therefore, we can use this Algo to limit the extreme weights. The excess
+    weight is then redistributed to the other assets, proportionally to
+    their current weights.
+
+    See ffn's limit_weights for more information.
+
+    Args:
+        * limit (float): Weight limit.
+
+    Sets:
+        * weights
+
+    Requires:
+        * weights
+
+    """
+
     def __init__(self, limit=0.1):
         super(LimitWeights, self).__init__()
         self.limit = limit
@@ -498,6 +793,13 @@ class CapitalFlow(Algo):
     fund might have inflows every month or year due to contributions. This
     Algo will affect the capital of the target node without affecting returns
     for the node.
+
+    Since this is modeled as an adjustment, the capital will remain in the
+    strategy until a re-allocation/rebalancement is made.
+
+    Args:
+        * amount (float): Amount of adjustment
+
     """
 
     def __init__(self, amount):
@@ -518,11 +820,15 @@ class CapitalFlow(Algo):
 class Rebalance(Algo):
 
     """
-    Rebalances capital based on temp weights.
+    Rebalances capital based on temp['weights']
 
     Rebalances capital based on temp['weights']. Also closes
     positions if open but not in target_weights. This is typically
     the last Algo called once the target weights have been set.
+
+    Requires:
+        * weights
+
     """
 
     def __init__(self):
@@ -550,9 +856,40 @@ class Rebalance(Algo):
 
 class RebalanceOverTime(Algo):
 
-    def __init__(self, days=10):
+    """
+    Similar to Rebalance but rebalances to target
+    weight over n periods.
+
+    Rebalances towards a target weight over a n periods. Splits up the weight
+    delta over n periods.
+
+    This can be useful if we want to make more conservative rebalacing
+    assumptions. Some strategies can produce large swings in allocations. It
+    might not be reasonable to assume that this rebalancing can occur at the
+    end of one specific period. Therefore, this algo can be used to simulate
+    rebalancing over n periods.
+
+    This has typically been used in monthly strategies where we want to spread
+    out the rebalancing over 5 or 10 days.
+
+    Note:
+        This Algo will require the run_always wrapper in the above case. For
+        example, the RunMonthly will return True on the first day, and
+        RebalanceOverTime will be 'armed'. However, RunMonthly will return
+        False the rest days of the month. Therefore, we must specify that we
+        want to always run this algo.
+
+    Args:
+        * n (int): number of periods over which rebalancing takes place.
+
+    Requires:
+        * weights
+
+    """
+
+    def __init__(self, n=10):
         super(RebalanceOverTime, self).__init__()
-        self.days = float(days)
+        self.n = float(n)
         self._rb = Rebalance()
         self._weights = None
         self._days_left = None
@@ -561,12 +898,12 @@ class RebalanceOverTime(Algo):
         # new weights specified - update rebalance data
         if 'weights' in target.temp:
             self._weights = target.temp['weights']
-            self._days_left = self.days
+            self._days_left = self.n
 
         # if _weights are not None, we have some work to do
         if self._weights:
             tgt = {}
-            # scale delta relative to # of days left and set that as the new
+            # scale delta relative to # of periods left and set that as the new
             # target
             for t in self._weights:
                 curr = target.children[t].weight if t in \
@@ -596,7 +933,20 @@ class Require(Algo):
     on an temp entry. Useful for controlling
     flow.
 
-    i.e. Stop execution is len(selected) == 0
+    For example, we might want to make sure we have some items selected.
+    We could pass a lambda function that checks the len of 'selected':
+
+        pred=lambda x: len(x) == 0
+        item='selected'
+
+    Args:
+        * pred (Algo): Function that returns a Bool given the strategy. This
+            is the definition of an Algo. However, this is typically used
+            with a simple lambda function.
+        * item (str): An item within temp.
+        * if_none (bool): Result if the item required is not in temp or if it's
+            value if None
+
     """
 
     def __init__(self, pred, item, if_none=False):
@@ -609,4 +959,9 @@ class Require(Algo):
         if self.item not in target.temp:
             return self.if_none
 
-        return self.pred(target.temp[self.item])
+        item = target.temp[self.item]
+
+        if item is None:
+            return self.if_none
+
+        return self.pred(item)
