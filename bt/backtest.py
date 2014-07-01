@@ -233,7 +233,8 @@ class Result(ffn.GroupStats):
         key = self._get_backtest(backtest)
         self[key].display_monthly_returns()
 
-    def plot_weights(self, backtest=0, filter=None, **kwds):
+    def plot_weights(self, backtest=0, filter=None,
+                     figsize=(15, 5), **kwds):
         """
         Plots the weights of a given backtest over time.
 
@@ -243,6 +244,7 @@ class Result(ffn.GroupStats):
             * filter (list, str): filter columns for specific columns. Filter
                 is simply passed as is to DataFrame[filter], so use something
                 that makes sense with a DataFrame.
+            * figsize ((width, height)): figure size
             * kwds (dict): Keywords passed to plot
 
         """
@@ -253,9 +255,10 @@ class Result(ffn.GroupStats):
         else:
             data = self.backtests[key].weights
 
-        data.plot(**kwds)
+        data.plot(figsize=figsize, **kwds)
 
-    def plot_security_weights(self, backtest=0, filter=None, **kwds):
+    def plot_security_weights(self, backtest=0, filter=None,
+                              figsize=(15, 5), **kwds):
         """
         Plots the security weights of a given backtest over time.
 
@@ -265,6 +268,7 @@ class Result(ffn.GroupStats):
             * filter (list, str): filter columns for specific columns. Filter
                 is simply passed as is to DataFrame[filter], so use something
                 that makes sense with a DataFrame.
+            * figsize ((width, height)): figure size
             * kwds (dict): Keywords passed to plot
 
         """
@@ -275,7 +279,7 @@ class Result(ffn.GroupStats):
         else:
             data = self.backtests[key].security_weights
 
-        data.plot(**kwds)
+        data.plot(figsize=figsize, **kwds)
 
     def plot_histogram(self, backtest=0, **kwds):
         """
