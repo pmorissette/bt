@@ -17,6 +17,10 @@ body {
     background: @white;
 }
 
+h1 {
+    padding-bottom: 40px;
+}
+
 a:link, a:visited {
     color: @green;
     text-decoration: none;
@@ -70,6 +74,11 @@ aside {
             a:link, a:visited {
                 color: @gray2;
             }
+            ul {
+                margin: 10px 0 0 0;
+                padding-left: 30px;
+                font-size: 16px;
+            }
         }
     }
 
@@ -80,6 +89,14 @@ aside {
     input[type=text] {
         width: 85%;
     }
+}
+
+li.toctree-l1.current {
+    font-weight: 700;
+}
+
+li.toctree-l2 {
+    font-weight: @weight1;
 }
 
 span.viewcode-link {
@@ -99,7 +116,7 @@ div.document {
 
 div.documentwrapper {
     margin-left: 280px;
-    padding: 0;
+    padding: 0 0 0 20px;
 }
 
 div.body {
@@ -120,6 +137,11 @@ div.highlight {
     .border-radius(10px);
 }
 
+div.highlight-python {
+    max-width: 90%;
+    margin: 20px auto;
+}
+
 div.ipynotebook {
     background: #fff;
     padding-right: 20px;
@@ -127,9 +149,23 @@ div.ipynotebook {
     .border-radius(10px);
 }
 
+img.align-center {
+    display: block;
+    margin: 0 auto;
+    padding: 15px 0px;
+}
+
+img.pynb {
+    background: #fff;
+    padding: 20px;
+    display: block;
+    margin: 20px auto;
+    max-width: 85%;
+}
+
 @media (max-width: 800px) {
     div.documentwrapper {
-        padding-top: 160px;
+        padding-top: 200px;
         margin: 0px 10px;
     }
     h1, .section {

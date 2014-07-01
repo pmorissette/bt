@@ -56,3 +56,6 @@ docs/_build/
 
 # vim .swp
 *.swp
+
+# notebooks
+docs/source/.ipynb_checkpoints/
