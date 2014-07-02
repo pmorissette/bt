@@ -23,6 +23,7 @@ on January 1, 2010 for the purposes of this demo.
     print data.head()
 
 .. parsed-literal::
+    :class: pynb-result
 
                    spy    agg
     Date                     
@@ -65,7 +66,7 @@ a thin wrapper around **ffn.GroupStats** that adds some helper methods.
 
 
 .. image:: _static/intro_8_0.png
-	:class: pynb
+    :class: pynb
 
 
 .. code:: python
@@ -74,6 +75,7 @@ a thin wrapper around **ffn.GroupStats** that adds some helper methods.
     res.display()
 
 .. parsed-literal::
+    :class: pynb-result
 
     Stat                 s1
     -------------------  ----------
@@ -134,7 +136,7 @@ a thin wrapper around **ffn.GroupStats** that adds some helper methods.
 
 
 .. image:: _static/intro_10_0.png
-	:class: pynb
+    :class: pynb
 
 
 .. code:: python
@@ -144,7 +146,7 @@ a thin wrapper around **ffn.GroupStats** that adds some helper methods.
 
 
 .. image:: _static/intro_11_0.png
-	:class: pynb
+    :class: pynb
 
 
 Modifying a Strategy
@@ -171,7 +173,7 @@ different algos. See below:
 
 
 .. image:: _static/intro_13_0.png
-	:class: pynb
+    :class: pynb
 
 
 .. code:: python
@@ -179,6 +181,7 @@ different algos. See below:
     res2.display()
 
 .. parsed-literal::
+    :class: pynb-result
 
     Stat                 s1          s2
     -------------------  ----------  ----------

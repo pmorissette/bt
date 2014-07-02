@@ -2,7 +2,7 @@ TMPREPO=/tmp/docs/bt
 
 default: build_dev
 
-.PHONY: dist upload docs css notebooks pages serve
+.PHONY: dist upload docs pages serve
 
 dist:
 	python setup.py sdist
@@ -10,17 +10,9 @@ dist:
 upload: dist
 	twine upload dist/*
 
-docs: css notebooks
+docs: 
 	$(MAKE) -C docs/ clean
 	$(MAKE) -C docs/ html
-
-css:
-	lessc --clean-css docs/source/_themes/klink/static/less/klink.less docs/source/_themes/klink/static/css/klink.css
-	- cp docs/source/_themes/klink/static/css/klink.css docs/build/html/_static/css/klink.css
-
-notebooks:
-	cd docs/source; \
-	python convertnb.py
 
 pages: 
 	- rm -rf $(TMPREPO)
