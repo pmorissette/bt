@@ -1,0 +1,255 @@
+@import "vendor/3L.less";
+@import "vendor/font-awesome/less/font-awesome.less";
+
+@white: #f7f8f9;
+@green: #29b96e;
+@green2: #39ff98;
+@green3: #0e4026;
+@green4: #1c7f4c;
+@gray: #333;
+@gray2: #777;
+@gray3: #999;
+@border: #e3e3e3;
+@weight1: 400;
+@orange: #ff9f80;
+
+.normalize();
+
+body {
+    font-family: "Open Sans", "Helvetica Neue", sans-serif;
+    font-weight: @weight1;
+    color: @gray;
+    background: @white;
+}
+
+h1 {
+    padding-bottom: 40px;
+}
+
+a:link, a:visited {
+    color: @green;
+    text-decoration: none;
+}
+
+a:hover, a:active {
+    text-decoration: underline;
+}
+
+* > a.headerlink {
+    display: none;
+}
+
+dd {
+    color: @gray3;
+    font-weight: @weight1;
+}
+
+dl.function > dt, dl.class > dt, dl.method > dt {
+    color: @gray;
+    font-weight: bold;
+}
+
+dl.function > dd > p, dl.class > dd > p, dl.method > dd > p {
+    max-width: 85%;
+}
+
+input {
+    background: transparent;
+    border: 1px solid @gray3;
+    .border-radius(3px);
+    padding: 2px 5px;
+    color: @gray2;
+    outline: none;
+    &:focus {
+        background: white;
+    }
+}
+
+aside {
+    position: fixed;
+    top: 25px;
+    width: 240px;
+    color: @gray3;
+    padding-left: 20px;
+
+    &>ul {
+        list-style: none;
+        margin: 0 4px;
+        padding: 0;
+        &>li {
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: @gray2;
+            a:link, a:visited {
+                color: @gray2;
+            }
+            ul {
+                margin: 10px 0 0 0;
+                padding-left: 30px;
+                font-size: 16px;
+            }
+        }
+    }
+
+    input[type=submit] {
+        display: none;
+    }
+
+    input[type=text] {
+        width: 85%;
+    }
+}
+
+.literal {
+    color: @green;
+    font-size: 1em;
+    padding: 1px 2px;
+}
+
+.note
+    {
+    background: darken(@green, 5);
+    border: 1px solid @border;
+    .border-radius(6px);
+    padding: 10px 20px 10px 70px;
+    position: relative;
+    color: white;
+    .admonition-title {display: none;}
+    a { color: lighten(@orange, 30);}
+    &:before
+        {
+        content: @fa-var-info-circle;
+        .fa;
+        font-size: 2em;
+        display: block;
+        position: absolute;
+        margin: auto;
+        top: 0;
+        bottom: 0;
+        left: 20px;
+        width: 32px;
+        height: 32px;
+        }
+    .literal, .highlight-note
+        {
+        color: white;
+        background: darken(@green2, 3);
+        padding: 1px 3px;
+        .border-radius(2px);
+        }
+    .highlight-note
+        {
+        padding: 1px 10px;
+        pre:before
+            {
+            content: "$ ";
+            color: @orange;
+            }
+        }
+    }
+
+li.toctree-l1.current {
+    font-weight: 700;
+}
+
+li.toctree-l2 {
+    font-weight: @weight1;
+}
+
+span.viewcode-link {
+    display: block;
+    position: absolute;
+    right: 0px;
+    font-size: .8em;
+    color: @green;
+}
+
+div.document {
+    max-width: 1000px;
+    margin: 20px auto;
+    position: relative;
+    min-height: 550px;
+}
+
+div.documentwrapper {
+    margin-left: 280px;
+    padding: 0 0 0 20px;
+}
+
+div.body {
+    padding-top: 10px;
+}
+
+div.footer {
+    font-size: .8em;
+    text-align: center;
+    margin: 40px 0;
+    color: @gray3;
+}
+
+.code-view {
+    background: white;
+    padding: 10px 20px;
+    border: 1px solid @border;
+    .border-radius(6px);
+    font-family: "Inconsolata", monospace, serif;
+}
+
+.highlight {
+    background: transparent !important;
+
+    pre {
+        .code-view;
+    }
+}
+
+.code {
+    background: transparent !important;
+
+    pre {
+        .code-view;
+    }
+}
+
+
+img.align-center {
+    display: block;
+    margin: 0 auto;
+    padding: 15px 0px;
+}
+
+img.pynb {
+    background: #fff;
+    padding: 20px;
+    display: block;
+    margin: 20px auto;
+    max-width: 85%;
+}
+
+div.pynb-result {
+    font-size: 0.9em;
+    max-width: 90%;
+    margin: 0 auto;
+}
+
+@media (max-width: 800px) {
+    div.documentwrapper {
+        padding-top: 200px;
+        margin: 0px 10px;
+    }
+    h1, .section {
+        margin: 0px !important;
+    }
+    aside {
+        position: static;
+        width: 100%;
+        margin: 5px 20px;
+        padding: 5px;
+    }
+    #logo {
+        position: absolute;
+        top: 0px;
+        left: 50%;
+        margin-left: -75px;
+    }
+}
