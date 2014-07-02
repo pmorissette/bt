@@ -2,7 +2,7 @@ TMPREPO=/tmp/docs/bt
 
 default: build_dev
 
-.PHONY: dist upload docs pages serve
+.PHONY: dist upload docs pages serve klink
 
 dist:
 	python setup.py sdist
@@ -37,3 +37,6 @@ clean:
 	- rm -rf bt.egg-info
 	- find . -name '*.so' -delete
 	- find . -name '*.c' -delete
+
+klink:
+	git subtree pull --prefix=docs/source/_themes/klink --squash klink master
