@@ -1,11 +1,11 @@
-bt - A Flexible Backtesting Framework for Python
-================================================
+bt - Flexible Backtesting for Python
+====================================
 
 What is bt?
 -----------
 
 **bt** is a flexible backtesting framework for Python used to test quantitative
-trading strategies. Backtesting is the process of testing a strategy over a given 
+trading strategies. **Backtesting** is the process of testing a strategy over a given 
 data set. This framework allows you to easily create strategies that mix and match 
 different :class:`Algos <bt.core.Algo>`. It aims to foster the creation of easily testable, re-usable and 
 flexible blocks of strategy logic to facilitate the rapid development of complex 
@@ -149,5 +149,4 @@ Future development efforts will focus on:
 
     Overview <index>
     Installation Guide <install>
-    Getting Started <quickstart>
     API <bt>

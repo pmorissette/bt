@@ -5,17 +5,14 @@
     # %pylab inline
     
     import bt
+                
 A Simple Strategy Backtest
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
-Let's create a simple strategy. We will create a monthly rebalanced,
-long-only strategy where we place equal weights on each asset in our
-universe of assets.
+Let's create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.
 
-First, we will download some data. By default, **bt.get** downloads the
-Adjusted Close from Yahoo! Finance. We will download some data starting
-on January 1, 2010 for the purposes of this demo.
-
+First, we will download some data. By default, :func:`bt.get <bt.get>` downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.
+                
 .. code:: python
 
     # fetch some data
@@ -36,9 +33,9 @@ on January 1, 2010 for the purposes of this demo.
     [5 rows x 2 columns]
 
 
-Once we have our data, we will create our strategy. The **Strategy**
-object contains the strategy logic by combining various **Algos**.
-
+                
+Once we have our data, we will create our strategy. The :class:`Strategy <bt.core.Strategy>` object contains the strategy logic by combining various :class:`Algos <bt.core.Algo>`. 
+                
 .. code:: python
 
     # create the strategy
@@ -46,19 +43,19 @@ object contains the strategy logic by combining various **Algos**.
                            bt.algos.SelectAll(),
                            bt.algos.WeighEqually(),
                            bt.algos.Rebalance()])
-Finally, we will create a **Backtest**, which is the logical combination
-of a strategy with a data set.
+                
+Finally, we will create a :class:`Backtest <bt.backtest.Backtest>`, which is the logical combination of a strategy with a data set.
 
 Once this is done, we can run the backtest and analyze the results.
-
+                
 .. code:: python
 
     # create a backtest and run it
     test = bt.Backtest(s, data)
     res = bt.run(test)
-Now we can analyze the results of our backtest. The **Result** object is
-a thin wrapper around **ffn.GroupStats** that adds some helper methods.
-
+                
+Now we can analyze the results of our backtest. The :object:`Result <bt.backtest.Result>` object is a thin wrapper around `ffn.GroupStats <http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats>`__ that adds some helper methods.
+                
 .. code:: python
 
     # first let's see an equity curve
@@ -149,14 +146,12 @@ a thin wrapper around **ffn.GroupStats** that adds some helper methods.
     :class: pynb
 
 
+                
 Modifying a Strategy
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
-Now what if we ran this strategy weekly and also used some risk parity
-style approach by using weights that are proportional to the inverse of
-each asset's volatility? Well, all we have to do is plug in some
-different algos. See below:
-
+Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset's volatility? Well, all we have to do is plug in some different algos. See below:
+                
 .. code:: python
 
     # create our new strategy
