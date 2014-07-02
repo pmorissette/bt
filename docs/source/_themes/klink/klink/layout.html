@@ -19,7 +19,6 @@
             <a href="{{ pathto('index') }}" id="logo" title={{project}}><img class="logo" src="{{ pathto('_static/' + theme_logo, 1) }}" width="150px" height="150px" title={{project}} /></a>
             {% endif %}
             
-            <h2>Documentation</h2>
             {{ toctree() }}
 
             {% if theme_github %}
