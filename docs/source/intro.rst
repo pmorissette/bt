@@ -11,7 +11,7 @@ A Simple Strategy Backtest
 
 Let's create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.
 
-First, we will download some data. By default, :func:`bt.get <bt.get>` downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.
+First, we will download some data. By default, :func:`bt.get (alias for ffn.get) <ffn.data.get>` downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.
                 
 .. code:: python
 
@@ -54,7 +54,7 @@ Once this is done, we can run the backtest and analyze the results.
     test = bt.Backtest(s, data)
     res = bt.run(test)
                 
-Now we can analyze the results of our backtest. The :object:`Result <bt.backtest.Result>` object is a thin wrapper around `ffn.GroupStats <http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats>`__ that adds some helper methods.
+Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.Result>` object is a thin wrapper around `ffn.GroupStats <http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats>`__ that adds some helper methods.
                 
 .. code:: python
 

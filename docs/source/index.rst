@@ -53,7 +53,7 @@ Features
 * **Detailed Statistics**
     Furthermore, bt calculates a bunch of stats relating to a backtest and offers a quick way to compare
     these various statistics across many different backtests via :class:`Results'
-    <bt.backtests.Results>` display methods.
+    <bt.backtests.Result>` display methods.
 
 
 Roadmap
@@ -82,5 +82,6 @@ Future development efforts will focus on:
 
     Overview <index>
     Installation Guide <install>
-    Tree Structure <tree>
+    All About Algos <algos>
+    The Tree Structure <tree>
     API <bt>

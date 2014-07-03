@@ -930,7 +930,7 @@ class AlgoStack(Algo):
     Algo in the stack is run. Execution stops if one Algo returns False.
 
     Args:
-        * algos (*list): List of algos.
+        * algos (list): List of algos.
 
     """
 

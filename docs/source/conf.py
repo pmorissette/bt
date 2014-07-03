@@ -26,7 +26,7 @@ html_theme_path = ['_themes/klink']
 html_theme = 'klink'
 html_theme_options = {
     'github': 'pmorissette/bt',
-    'analytics_id': 'UA-52308448-1'
+    'analytics_id': 'UA-52308448-3'
 }
 
 # -- General configuration -----------------------------------------------------
@@ -36,7 +36,9 @@ html_theme_options = {
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.intersphinx']
+
+intersphinx_mapping = {'ffn': ('http://pmorissette.github.io/ffn', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
