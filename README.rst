@@ -25,6 +25,7 @@ Numerous libraries exist for machine learning, signal processing and statistics 
 re-inventing the wheel - something that happens all too often when using other
 languages that don't have the same wealth of high-quality, open-source projects.
 
+bt is built atop `ffn <https://github.com/pmorissette/ffn>`_ - a financial function library for Python. Check it out!
 
 Features
 ---------
