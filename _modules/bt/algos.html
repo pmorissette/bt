@@ -1,0 +1,1073 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bt.algos &mdash; bt 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/css/klink.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="bt 0.1.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+            <link rel="shortcut icon" href="../../_static/favicon.ico">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for bt.algos</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A collection of Algos used to create Strategy logic.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">bt</span>
+<span class="kn">from</span> <span class="nn">bt.core</span> <span class="kn">import</span> <span class="n">Algo</span><span class="p">,</span> <span class="n">AlgoStack</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+
+<div class="viewcode-block" id="run_always"><a class="viewcode-back" href="../../bt.html#bt.algos.run_always">[docs]</a><span class="k">def</span> <span class="nf">run_always</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run always decorator to be used with Algo</span>
+<span class="sd">    to ensure stack runs the decorated Algo</span>
+<span class="sd">    on each pass, regardless of failures in the stack.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">run_always</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="n">f</span>
+
+</div>
+<div class="viewcode-block" id="PrintDate"><a class="viewcode-back" href="../../bt.html#bt.algos.PrintDate">[docs]</a><span class="k">class</span> <span class="nc">PrintDate</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This Algo simply print&#39;s the current date.</span>
+
+<span class="sd">    Can be useful for debugging purposes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="PrintTempData"><a class="viewcode-back" href="../../bt.html#bt.algos.PrintTempData">[docs]</a><span class="k">class</span> <span class="nc">PrintTempData</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This Algo prints the temp data.</span>
+
+<span class="sd">    Useful for debugging.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="RunOnce"><a class="viewcode-back" href="../../bt.html#bt.algos.RunOnce">[docs]</a><span class="k">class</span> <span class="nc">RunOnce</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns True on first run then returns False.</span>
+
+<span class="sd">    As the name says, the algo only runs once. Useful in situations</span>
+<span class="sd">    where we want to run the logic once (buy and hold for example).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunOnce</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># if it hasn&#39;t run then we will</span>
+        <span class="c"># run it and set flag</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="c"># return false to stop future execution</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+</div>
+<div class="viewcode-block" id="RunWeekly"><a class="viewcode-back" href="../../bt.html#bt.algos.RunWeekly">[docs]</a><span class="k">class</span> <span class="nc">RunWeekly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns True on week change.</span>
+
+<span class="sd">    Returns True if the target.now&#39;s week has changed</span>
+<span class="sd">    since the last run, if not returns False. Useful for</span>
+<span class="sd">    weekly rebalancing strategies.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This algo will typically run on the first day of the</span>
+<span class="sd">        week (assuming we have daily data)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunWeekly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># get last date</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
+
+        <span class="c"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="c"># create pandas.Timestamp for useful .week property</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">now</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">week</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">week</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+</div>
+<div class="viewcode-block" id="RunMonthly"><a class="viewcode-back" href="../../bt.html#bt.algos.RunMonthly">[docs]</a><span class="k">class</span> <span class="nc">RunMonthly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns True on month change.</span>
+
+<span class="sd">    Returns True if the target.now&#39;s month has changed</span>
+<span class="sd">    since the last run, if not returns False. Useful for</span>
+<span class="sd">    monthly rebalancing strategies.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This algo will typically run on the first day of the</span>
+<span class="sd">        month (assuming we have daily data)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunMonthly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># get last date</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
+
+        <span class="c"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">month</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">month</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+</div>
+<div class="viewcode-block" id="RunYearly"><a class="viewcode-back" href="../../bt.html#bt.algos.RunYearly">[docs]</a><span class="k">class</span> <span class="nc">RunYearly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns True on year change.</span>
+
+<span class="sd">    Returns True if the target.now&#39;s year has changed</span>
+<span class="sd">    since the last run, if not returns False. Useful for</span>
+<span class="sd">    yearly rebalancing strategies.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This algo will typically run on the first day of the</span>
+<span class="sd">        year (assuming we have daily data)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunYearly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># get last date</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
+
+        <span class="c"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">year</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+</div>
+<div class="viewcode-block" id="RunOnDate"><a class="viewcode-back" href="../../bt.html#bt.algos.RunOnDate">[docs]</a><span class="k">class</span> <span class="nc">RunOnDate</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns True on a specific set of dates.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * dates (list): List of dates to run Algo on.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">dates</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            * dates (*args): A list of dates. Dates will be parsed</span>
+<span class="sd">                by pandas.to_datetime so pass anything that it can</span>
+<span class="sd">                parse. Typically, you will pass a string &#39;yyyy-mm-dd&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunOnDate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="c"># parse dates and save</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dates</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dates</span>
+
+</div>
+<div class="viewcode-block" id="SelectAll"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectAll">[docs]</a><span class="k">class</span> <span class="nc">SelectAll</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;selected&#39;] with all securities (based on universe).</span>
+
+<span class="sd">    Selects all the securities and saves them in temp[&#39;selected&#39;].</span>
+<span class="sd">    By default, SelectAll does not include securities that have no</span>
+<span class="sd">    data (nan) on current date.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * include_no_data (bool): Include securities that do not have data?</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectAll</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span> <span class="o">=</span> <span class="n">include_no_data</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="SelectThese"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectThese">[docs]</a><span class="k">class</span> <span class="nc">SelectThese</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;selected&#39;] with a set list of tickers.</span>
+
+<span class="sd">    Sets the temp[&#39;selected&#39;] to a set list of tickers.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * ticker (list): List of tickers to select.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickers</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectThese</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tickers</span> <span class="o">=</span> <span class="n">tickers</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tickers</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="SelectHasData"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectHasData">[docs]</a><span class="k">class</span> <span class="nc">SelectHasData</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;selected&#39;] based on all items in universe that meet</span>
+<span class="sd">    data requirements.</span>
+
+<span class="sd">    This is a more advanced version of SelectAll. Useful for selecting</span>
+<span class="sd">    tickers that need a certain amount of data for future algos to run</span>
+<span class="sd">    properly.</span>
+
+<span class="sd">    For example, if we need the items with 3 months of data or more,</span>
+<span class="sd">    we could use this Algo with a lookback period of 3 months.</span>
+
+<span class="sd">    When providing a lookback period, it is also wise to provide a min_count.</span>
+<span class="sd">    This is basically the number of data points needed within the lookback</span>
+<span class="sd">    period for a series to be considered valid. For example, in our 3 month</span>
+<span class="sd">    lookback above, we might want to specify the min_count as being</span>
+<span class="sd">    57 -&gt; a typical trading month has give or take 20 trading days. If we</span>
+<span class="sd">    factor in some holidays, we can use 57 or 58. It&#39;s really up to you.</span>
+
+<span class="sd">    If you don&#39;t specify min_count, min_count will default to ffn&#39;s</span>
+<span class="sd">    get_num_days_required.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * lookback (DateOffset): A DateOffset that determines the lookback</span>
+<span class="sd">            period.</span>
+<span class="sd">        * min_count (int): Minimum number of days required for a series to be</span>
+<span class="sd">            considered valid. If not provided, ffn&#39;s get_num_days_required is</span>
+<span class="sd">            used to estimate the number of points required.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                 <span class="n">min_count</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectHasData</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
+        <span class="k">if</span> <span class="n">min_count</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">min_count</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">get_num_days_required</span><span class="p">(</span><span class="n">lookback</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_count</span> <span class="o">=</span> <span class="n">min_count</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;selected&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span>
+
+        <span class="n">filt</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:]</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="n">filt</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="n">cnt</span><span class="p">[</span><span class="n">cnt</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_count</span><span class="p">]</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cnt</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="SelectN"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectN">[docs]</a><span class="k">class</span> <span class="nc">SelectN</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;selected&#39;] based on ranking temp[&#39;stat&#39;].</span>
+
+<span class="sd">    Selects the top or botton N items based on temp[&#39;stat&#39;].</span>
+<span class="sd">    This is usually some kind of metric that will be computed in a</span>
+<span class="sd">    previous Algo and will be used for ranking purposes. Can select</span>
+<span class="sd">    top or bottom N based on sort_descending parameter.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * n (int): select top n items.</span>
+<span class="sd">        * sort_descending (bool): Should the stat be sorted in descending order</span>
+<span class="sd">            before selecting the first n items?</span>
+<span class="sd">        * all_or_none (bool): If true, only populates temp[&#39;selected&#39;] if we</span>
+<span class="sd">            have n items. If we have less than n, then temp[&#39;selected&#39;] = [].</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * stat</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">sort_descending</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                 <span class="n">all_or_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;n cannot be negative&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ascending</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">sort_descending</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_or_none</span> <span class="o">=</span> <span class="n">all_or_none</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">stat</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;stat&#39;</span><span class="p">]</span>
+        <span class="n">stat</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ascending</span><span class="p">)</span>
+
+        <span class="c"># handle percent n</span>
+        <span class="n">keep_n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">keep_n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">))</span>
+
+        <span class="n">sel</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[:</span><span class="n">keep_n</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_or_none</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">keep_n</span><span class="p">:</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="SelectMomentum"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectMomentum">[docs]</a><span class="k">class</span> <span class="nc">SelectMomentum</span><span class="p">(</span><span class="n">AlgoStack</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;selected&#39;] based on a simple momentum filter.</span>
+
+<span class="sd">    Selects the top n securities based on the total return over</span>
+<span class="sd">    a given lookback period. This is just a wrapper around an</span>
+<span class="sd">    AlgoStack with two algos: StatTotalReturn and SelectN.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * n (int): select first N elements</span>
+<span class="sd">        * lookback (DateOffset): lookback period for total return</span>
+<span class="sd">            calculation</span>
+<span class="sd">        * sort_descending (bool): Sort descending (highest return is best)</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                 <span class="n">sort_descending</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectMomentum</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="n">StatTotalReturn</span><span class="p">(</span><span class="n">lookback</span><span class="o">=</span><span class="n">lookback</span><span class="p">),</span>
+            <span class="n">SelectN</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">sort_descending</span><span class="o">=</span><span class="n">sort_descending</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="SelectRandomly"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectRandomly">[docs]</a><span class="k">class</span> <span class="nc">SelectRandomly</span><span class="p">(</span><span class="n">AlgoStack</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;selected&#39;] based on a random subset of</span>
+<span class="sd">    the items currently in temp[&#39;selected&#39;].</span>
+
+<span class="sd">    Selects n random elements from the list stored in temp[&#39;selected&#39;].</span>
+<span class="sd">    This is useful for benchmarking against a strategy where we believe</span>
+<span class="sd">    the selection algorithm is adding value.</span>
+
+<span class="sd">    For example, if we are testing a momentum strategy and we want to see if</span>
+<span class="sd">    selecting securities based on momentum is better than just selecting</span>
+<span class="sd">    securities randomly, we could use this Algo to create a random Strategy</span>
+<span class="sd">    used for random benchmarking.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Another selection algorithm should be use prior to this Algo to</span>
+<span class="sd">        populate temp[&#39;selected&#39;]. This will typically be SelectAll.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * n (int): Select N elements randomly.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectRandomly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="StatTotalReturn"><a class="viewcode-back" href="../../bt.html#bt.algos.StatTotalReturn">[docs]</a><span class="k">class</span> <span class="nc">StatTotalReturn</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;stat&#39;] with total returns over a given period.</span>
+
+<span class="sd">    Sets the &#39;stat&#39; based on the total return of each element in</span>
+<span class="sd">    temp[&#39;selected&#39;] over a given lookback period. The total return</span>
+<span class="sd">    is determined by ffn&#39;s calc_total_return.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * lookback (DateOffset): lookback period.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * stat</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">)):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">StatTotalReturn</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:]</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prc</span><span class="o">.</span><span class="n">calc_total_return</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="WeighEqually"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighEqually">[docs]</a><span class="k">class</span> <span class="nc">WeighEqually</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;weights&#39;] by calculating equal weights for all items in</span>
+<span class="sd">    selected.</span>
+
+<span class="sd">    Equal weight Algo. Sets the &#39;weights&#39; to 1/n for each item in &#39;selected&#39;.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighEqually</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">w</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="WeighSpecified"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighSpecified">[docs]</a><span class="k">class</span> <span class="nc">WeighSpecified</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;weights&#39;] based on a provided dict of ticker:weights.</span>
+
+<span class="sd">    Sets the weights based on pre-specified targets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * weights (dict): target weights -&gt; ticker: weight</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">weights</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighSpecified</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># added copy to make sure these are not overwritten</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="WeighInvVol"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighInvVol">[docs]</a><span class="k">class</span> <span class="nc">WeighInvVol</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;weights&#39;] based on the inverse volatility Algo.</span>
+
+<span class="sd">    Sets the target weights based on ffn&#39;s calc_inv_vol_weights. This</span>
+<span class="sd">    is a commonly used technique for risk parity portfolios. The least</span>
+<span class="sd">    volatile elements receive the highest weight under this scheme. Weights</span>
+<span class="sd">    are proportional to the inverse of their volatility.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * lookback (DateOffset): lookback period for estimating volatility</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">)):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighInvVol</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mf">1.</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:]</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_inv_vol_weights</span><span class="p">(</span>
+            <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="WeighMeanVar"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighMeanVar">[docs]</a><span class="k">class</span> <span class="nc">WeighMeanVar</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;weights&#39;] based on mean-variance optimization.</span>
+
+<span class="sd">    Sets the target weights based on ffn&#39;s calc_mean_var_weights. This is a</span>
+<span class="sd">    Python implementation of Markowitz&#39;s mean-variance optimization.</span>
+
+<span class="sd">    See:</span>
+<span class="sd">        http://en.wikipedia.org/wiki/Modern_portfolio_theory#The_efficient_frontier_with_no_risk-free_asset</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * lookback (DateOffset): lookback period for estimating volatility</span>
+<span class="sd">        * bounds ((min, max)): tuple specifying the min and max weights for</span>
+<span class="sd">            each asset in the optimization.</span>
+<span class="sd">        * covar_method (str): method used to estimate the covariance. See ffn&#39;s</span>
+<span class="sd">            calc_mean_var_weights for more details.</span>
+<span class="sd">        * rf (float): risk-free rate used in optimization.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                 <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">covar_method</span><span class="o">=</span><span class="s">&#39;ledoit-wolf&#39;</span><span class="p">,</span>
+                 <span class="n">rf</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighMeanVar</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">=</span> <span class="n">covar_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rf</span> <span class="o">=</span> <span class="n">rf</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mf">1.</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:]</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_mean_var_weights</span><span class="p">(</span>
+            <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">weight_bounds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span>
+            <span class="n">covar_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span><span class="p">,</span> <span class="n">rf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="WeighRandomly"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighRandomly">[docs]</a><span class="k">class</span> <span class="nc">WeighRandomly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;weights&#39;] based on a random weight vector.</span>
+
+<span class="sd">    Sets random target weights for each security in &#39;selected&#39;.</span>
+<span class="sd">    This is useful for benchmarking against a strategy where we believe</span>
+<span class="sd">    the weighing algorithm is adding value.</span>
+
+<span class="sd">    For example, if we are testing a low-vol strategy and we want to see if</span>
+<span class="sd">    our weighing strategy is better than just weighing</span>
+<span class="sd">    securities randomly, we could use this Algo to create a random Strategy</span>
+<span class="sd">    used for random benchmarking.</span>
+
+<span class="sd">    This is an Algo wrapper around ffn&#39;s random_weights function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * bounds ((low, high)): Tuple including low and high bounds for each</span>
+<span class="sd">            security</span>
+<span class="sd">        * weight_sum (float): What should the weights sum up to?</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">weight_sum</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighRandomly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span> <span class="o">=</span> <span class="n">weight_sum</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span>
+
+        <span class="n">w</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">rw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">random_weights</span><span class="p">(</span>
+                <span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="n">rw</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="LimitDeltas"><a class="viewcode-back" href="../../bt.html#bt.algos.LimitDeltas">[docs]</a><span class="k">class</span> <span class="nc">LimitDeltas</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Modifies temp[&#39;weights&#39;] based on weight delta limits.</span>
+
+<span class="sd">    Basically, this can be used if we want to restrict how much a security&#39;s</span>
+<span class="sd">    target weight can change from day to day. Useful when we want to be more</span>
+<span class="sd">    conservative about how much we could actually trade on a given day without</span>
+<span class="sd">    affecting the market.</span>
+
+<span class="sd">    For example, if we have a strategy that is currently long 100% one</span>
+<span class="sd">    security, and the weighing Algo sets the new weight to 0%, but we</span>
+<span class="sd">    use this Algo with a limit of 0.1, the new target weight will</span>
+<span class="sd">    be 90% instead of 0%.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * limit (float, dict): Weight delta limit. If float, this will be a</span>
+<span class="sd">            global limit for all securities. If dict, you may specify by-ticker</span>
+<span class="sd">            limit.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LimitDeltas</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">=</span> <span class="n">limit</span>
+        <span class="c"># determine if global or specific</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">limit</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">+</span> <span class="n">tw</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="n">tw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">tw</span> <span class="k">else</span> <span class="mf">0.</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="n">tgt</span> <span class="o">-</span> <span class="n">cur</span>
+
+            <span class="c"># check if we need to limit</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">:</span>
+                    <span class="n">tw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">delta</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># make sure we have a limit defined in case of limit dict</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">:</span>
+                    <span class="n">lmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">lmt</span><span class="p">:</span>
+                        <span class="n">tw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur</span> <span class="o">+</span> <span class="p">(</span><span class="n">lmt</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">delta</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="LimitWeights"><a class="viewcode-back" href="../../bt.html#bt.algos.LimitWeights">[docs]</a><span class="k">class</span> <span class="nc">LimitWeights</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Modifies temp[&#39;weights&#39;] based on weight limits.</span>
+
+<span class="sd">    This is an Algo wrapper around ffn&#39;s limit_weights. The purpose of this</span>
+<span class="sd">    Algo is to limit the weight of any one specifc asset. For example, some</span>
+<span class="sd">    Algos will set some rather extreme weights that may not be acceptable.</span>
+<span class="sd">    Therefore, we can use this Algo to limit the extreme weights. The excess</span>
+<span class="sd">    weight is then redistributed to the other assets, proportionally to</span>
+<span class="sd">    their current weights.</span>
+
+<span class="sd">    See ffn&#39;s limit_weights for more information.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * limit (float): Weight limit.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LimitWeights</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">=</span> <span class="n">limit</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">limit_weights</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="CapitalFlow"><a class="viewcode-back" href="../../bt.html#bt.algos.CapitalFlow">[docs]</a><span class="k">class</span> <span class="nc">CapitalFlow</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Used to model capital flows. Flows can either be inflows or outflows.</span>
+
+<span class="sd">    This Algo can be used to model capital flows. For example, a pension</span>
+<span class="sd">    fund might have inflows every month or year due to contributions. This</span>
+<span class="sd">    Algo will affect the capital of the target node without affecting returns</span>
+<span class="sd">    for the node.</span>
+
+<span class="sd">    Since this is modeled as an adjustment, the capital will remain in the</span>
+<span class="sd">    strategy until a re-allocation/rebalancement is made.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * amount (float): Amount of adjustment</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        CapitalFlow constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * amount (float): Amount to adjust by</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CapitalFlow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amount</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amount</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="Rebalance"><a class="viewcode-back" href="../../bt.html#bt.algos.Rebalance">[docs]</a><span class="k">class</span> <span class="nc">Rebalance</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rebalances capital based on temp[&#39;weights&#39;]</span>
+
+<span class="sd">    Rebalances capital based on temp[&#39;weights&#39;]. Also closes</span>
+<span class="sd">    positions if open but not in target_weights. This is typically</span>
+<span class="sd">    the last Algo called once the target weights have been set.</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Rebalance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+
+        <span class="c"># de-allocate children that are not in targets</span>
+        <span class="n">not_in</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">not_in</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+        <span class="c"># save value because it will change after each call to allocate</span>
+        <span class="c"># use it as base in rebalance calls</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">rebalance</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">child</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="RebalanceOverTime"><a class="viewcode-back" href="../../bt.html#bt.algos.RebalanceOverTime">[docs]</a><span class="k">class</span> <span class="nc">RebalanceOverTime</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Similar to Rebalance but rebalances to target</span>
+<span class="sd">    weight over n periods.</span>
+
+<span class="sd">    Rebalances towards a target weight over a n periods. Splits up the weight</span>
+<span class="sd">    delta over n periods.</span>
+
+<span class="sd">    This can be useful if we want to make more conservative rebalacing</span>
+<span class="sd">    assumptions. Some strategies can produce large swings in allocations. It</span>
+<span class="sd">    might not be reasonable to assume that this rebalancing can occur at the</span>
+<span class="sd">    end of one specific period. Therefore, this algo can be used to simulate</span>
+<span class="sd">    rebalancing over n periods.</span>
+
+<span class="sd">    This has typically been used in monthly strategies where we want to spread</span>
+<span class="sd">    out the rebalancing over 5 or 10 days.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This Algo will require the run_always wrapper in the above case. For</span>
+<span class="sd">        example, the RunMonthly will return True on the first day, and</span>
+<span class="sd">        RebalanceOverTime will be &#39;armed&#39;. However, RunMonthly will return</span>
+<span class="sd">        False the rest days of the month. Therefore, we must specify that we</span>
+<span class="sd">        want to always run this algo.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * n (int): number of periods over which rebalancing takes place.</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RebalanceOverTime</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rb</span> <span class="o">=</span> <span class="n">Rebalance</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># new weights specified - update rebalance data</span>
+        <span class="k">if</span> <span class="s">&#39;weights&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+        <span class="c"># if _weights are not None, we have some work to do</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">:</span>
+            <span class="n">tgt</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c"># scale delta relative to # of periods left and set that as the new</span>
+            <span class="c"># target</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">:</span>
+                <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> \
+                    <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.</span>
+                <span class="n">dlt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">curr</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>
+                <span class="n">tgt</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr</span> <span class="o">+</span> <span class="n">dlt</span>
+
+            <span class="c"># mock weights and call real Rebalance</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tgt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rb</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+            <span class="c"># dec _days_left. If 0, set to None &amp; set _weights to None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">-=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="Require"><a class="viewcode-back" href="../../bt.html#bt.algos.Require">[docs]</a><span class="k">class</span> <span class="nc">Require</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flow control Algo.</span>
+
+<span class="sd">    This algo returns the value of a predicate</span>
+<span class="sd">    on an temp entry. Useful for controlling</span>
+<span class="sd">    flow.</span>
+
+<span class="sd">    For example, we might want to make sure we have some items selected.</span>
+<span class="sd">    We could pass a lambda function that checks the len of &#39;selected&#39;:</span>
+
+<span class="sd">        pred=lambda x: len(x) == 0</span>
+<span class="sd">        item=&#39;selected&#39;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * pred (Algo): Function that returns a Bool given the strategy. This</span>
+<span class="sd">            is the definition of an Algo. However, this is typically used</span>
+<span class="sd">            with a simple lambda function.</span>
+<span class="sd">        * item (str): An item within temp.</span>
+<span class="sd">        * if_none (bool): Result if the item required is not in temp or if it&#39;s</span>
+<span class="sd">            value if None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">if_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Require</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">item</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pred</span> <span class="o">=</span> <span class="n">pred</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">if_none</span> <span class="o">=</span> <span class="n">if_none</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">if_none</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">if_none</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algos.html"> All About Algos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>

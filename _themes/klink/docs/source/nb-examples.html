@@ -1,0 +1,224 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>&lt;no title&gt; &mdash; bt 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="bt 0.1.2 documentation" href="../../../../index.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+            <link rel="shortcut icon" href="../../../../_static/favicon.ico">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">ffn</span>
+<span class="c">#%pylab inline</span>
+</pre></div>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="s">&#39;this is a printed line&#39;</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-python"><pre>this is a printed line</pre>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">data</span> <span class="o">=</span> <span class="n">ffn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;aapl,msft,yhoo&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-python"><pre>             aapl   msft   yhoo
+Date
+2010-01-04  29.22  27.48  17.10
+2010-01-05  29.27  27.49  17.23
+2010-01-06  28.81  27.32  17.17
+2010-01-07  28.75  27.03  16.70
+2010-01-08  28.94  27.22  16.70
+
+[5 rows x 3 columns]</pre>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+<div style="max-height:1000px;max-width:1500px;overflow:auto;">
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>aapl</th>
+      <th>msft</th>
+      <th>yhoo</th>
+    </tr>
+    <tr>
+      <th>Date</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2010-01-04</th>
+      <td> 29.22</td>
+      <td> 27.48</td>
+      <td> 17.10</td>
+    </tr>
+    <tr>
+      <th>2010-01-05</th>
+      <td> 29.27</td>
+      <td> 27.49</td>
+      <td> 17.23</td>
+    </tr>
+    <tr>
+      <th>2010-01-06</th>
+      <td> 28.81</td>
+      <td> 27.32</td>
+      <td> 17.17</td>
+    </tr>
+    <tr>
+      <th>2010-01-07</th>
+      <td> 28.75</td>
+      <td> 27.03</td>
+      <td> 16.70</td>
+    </tr>
+    <tr>
+      <th>2010-01-08</th>
+      <td> 28.94</td>
+      <td> 27.22</td>
+      <td> 16.70</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 3 columns</p>
+</div><div class="code python highlight-python"><div class="highlight"><pre><span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-python"><pre>&lt;matplotlib.axes.AxesSubplot at 0x7fbae88b19d0&gt;</pre>
+</div>
+<img alt="../../../../_images/nb-examples_4_1.png" class="pynb" src="../../../../_images/nb-examples_4_1.png" />
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># this is a comment</span>
+<span class="n">data</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">corr</span><span class="p">()</span><span class="o">.</span><span class="n">as_format</span><span class="p">(</span><span class="s">&#39;.2f&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div style="max-height:1000px;max-width:1500px;overflow:auto;">
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>aapl</th>
+      <th>msft</th>
+      <th>yhoo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>aapl</th>
+      <td> 1.00</td>
+      <td> 0.35</td>
+      <td> 0.28</td>
+    </tr>
+    <tr>
+      <th>msft</th>
+      <td> 0.35</td>
+      <td> 1.00</td>
+      <td> 0.37</td>
+    </tr>
+    <tr>
+      <th>yhoo</th>
+      <td> 0.28</td>
+      <td> 0.37</td>
+      <td> 1.00</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 3 columns</p>
+</div>
+
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../../../../index.html" id="logo" title=bt><img class="logo" src="../../../../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algos.html"> All About Algos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>

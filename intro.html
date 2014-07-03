@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bt - Flexible Backtesting for Python &mdash; bt 0.1.2 documentation</title>
+    <title>A Simple Strategy Backtest &mdash; bt 0.1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -25,8 +25,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="bt 0.1.2 documentation" href="#" />
-    <link rel="next" title="bt - Flexible Backtesting for Python" href="" />
+    <link rel="top" title="bt 0.1.2 documentation" href="index.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -43,34 +42,14 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="bt-flexible-backtesting-for-python">
-<h1>bt - Flexible Backtesting for Python<a class="headerlink" href="#bt-flexible-backtesting-for-python" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="what-is-bt">
-<h2>What is bt?<a class="headerlink" href="#what-is-bt" title="Permalink to this headline">¶</a></h2>
-<p><strong>bt</strong> is a flexible backtesting framework for Python used to test quantitative
-trading strategies. <strong>Backtesting</strong> is the process of testing a strategy over a given
-data set. This framework allows you to easily create strategies that mix and match
-different <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">Algos</span></tt></a>. It aims to foster the creation of easily testable, re-usable and
-flexible blocks of strategy logic to facilitate the rapid development of complex
-trading strategies.</p>
-<p>The goal: to save <strong>quants</strong> from re-inventing the wheel and let them focus on the
-important part of the job - strategy development.</p>
-<p><strong>bt</strong> is coded in <strong>Python</strong> and joins a vibrant and rich ecosystem for data analysis.
-Numerous libraries exist for machine learning, signal processing and statistics and can be leveraged to avoid
-re-inventing the wheel - something that happens all too often when using other
-languages that don&#8217;t have the same wealth of high-quality, open-source projects.</p>
-</div>
-<div class="section" id="a-quick-example">
-<h2>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h2>
-<p>Here is a quick taste of bt:</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># to see our plots</span>
+  <div class="code python highlight-python"><div class="highlight"><pre><span class="c"># to see our plots</span>
 <span class="c"># %pylab inline</span>
 
 <span class="kn">import</span> <span class="nn">bt</span>
 </pre></div>
 </div>
 <div class="section" id="a-simple-strategy-backtest">
-<h3>A Simple Strategy Backtest<a class="headerlink" href="#a-simple-strategy-backtest" title="Permalink to this headline">¶</a></h3>
+<h1>A Simple Strategy Backtest<a class="headerlink" href="#a-simple-strategy-backtest" title="Permalink to this headline">¶</a></h1>
 <p>Let&#8217;s create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.</p>
 <p>First, we will download some data. By default, <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.data.get" title="(in ffn v0.1)"><tt class="xref py py-func docutils literal"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></tt></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="c"># fetch some data</span>
@@ -176,7 +155,7 @@ Win 12m %            100.00%</pre>
 <img alt="_images/intro_11_0.png" class="pynb" src="_images/intro_11_0.png" />
 </div>
 <div class="section" id="modifying-a-strategy">
-<h3>Modifying a Strategy<a class="headerlink" href="#modifying-a-strategy" title="Permalink to this headline">¶</a></h3>
+<h1>Modifying a Strategy<a class="headerlink" href="#modifying-a-strategy" title="Permalink to this headline">¶</a></h1>
 <p>Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset&#8217;s volatility? Well, all we have to do is plug in some different algos. See below:</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="c"># create our new strategy</span>
 <span class="n">s2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;s2&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunWeekly</span><span class="p">(),</span>
@@ -246,80 +225,6 @@ Avg. Down Month      -1.44%      -0.66%
 Win Year %           100.00%     100.00%
 Win 12m %            100.00%     97.67%</pre>
 </div>
-<p>As you can see, the strategy logic is easy to understand and more importantly,
-easy to modify.  The idea of using simple, composable Algos to create strategies is one of the
-core building blocks of bt.</p>
-</div>
-</div>
-<div class="section" id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><dl class="first docutils">
-<dt><strong>Tree Structure</strong></dt>
-<dd><p class="first last"><a class="reference internal" href="tree.html"><em>The tree structure</em></a> facilitates the construction and composition of complex algorithmic trading
-strategies that are modular and re-usable. Furthermore, each tree <a class="reference internal" href="bt.html#bt.core.Node" title="bt.core.Node"><tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt></a>
-has its own <a class="reference internal" href="bt.html#bt.core.Node.prices" title="bt.core.Node.prices"><tt class="xref py py-func docutils literal"><span class="pre">price</span> <span class="pre">index</span></tt></a> that can be
-used by Algos to determine a Node&#8217;s allocation.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>Algorithm Stacks</strong></dt>
-<dd><p class="first last"><a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">Algos</span></tt></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><tt class="xref py py-class docutils literal"><span class="pre">AlgoStacks</span></tt></a> are
-another core feature that facilitate the creation of modular and re-usable strategy
-logic. Due to their modularity, these logic blocks are also easier to test -
-an important step in building robust financial solutions.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>Charting and Reporting</strong></dt>
-<dd><p class="first last">bt also provides many useful charting functions that help visualize backtest
-results. We also plan to add more charts, tables and report formats in the future,
-such as automatically generated PDF reports.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>Detailed Statistics</strong></dt>
-<dd><p class="first last">Furthermore, bt calculates a bunch of stats relating to a backtest and offers a quick way to compare
-these various statistics across many different backtests via <tt class="xref py py-class docutils literal"><span class="pre">Results'</span></tt> display methods.</p>
-</dd>
-</dl>
-</li>
-</ul>
-</div>
-<div class="section" id="roadmap">
-<h2>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this headline">¶</a></h2>
-<p>Future development efforts will focus on:</p>
-<ul>
-<li><dl class="first docutils">
-<dt><strong>Speed</strong></dt>
-<dd><p class="first last">Due to the flexible nature of bt, a trade-off had to be made between
-usability and performance. Usability will always be the priority, but we do
-wish to enhance the performance as much as possible.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>Algos</strong></dt>
-<dd><p class="first last">We will also be developing more algorithms as time goes on. We also
-encourage anyone to contribute their own algos as well.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>Charting and Reporting</strong></dt>
-<dd><p class="first last">This is another area we wish to constantly improve on
-as reporting is an important aspect of the job. Charting and reporting also
-facilitate finding bugs in strategy logic.</p>
-</dd>
-</dl>
-</li>
-</ul>
-<div class="toctree-wrapper compound">
-</div>
-</div>
 </div>
 
 
@@ -329,17 +234,11 @@ facilitate finding bugs in strategy logic.</p>
         <aside>
 
             
-            <a href="#" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
+            <a href="index.html" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href=""> Overview</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#what-is-bt">What is bt?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#a-quick-example">A Quick Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#roadmap">Roadmap</a></li>
-</ul>
-</li>
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>

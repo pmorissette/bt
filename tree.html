@@ -1,0 +1,159 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Tree Structure &mdash; bt 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="bt 0.1.2 documentation" href="index.html" />
+    <link rel="next" title="bt Package" href="bt.html" />
+    <link rel="prev" title="Algorithms" href="algos.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+            <link rel="shortcut icon" href="_static/favicon.ico">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-tree-structure">
+<h1>The Tree Structure<a class="headerlink" href="#the-tree-structure" title="Permalink to this headline">¶</a></h1>
+<p>In addition to the concept of <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">Algos</span></tt></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><tt class="xref py py-class docutils literal"><span class="pre">AlgoStacks</span></tt></a>, a tree structure lies
+at the heart of the framework.  It allows you to mix and match securities and strategies in order to express
+your sophisticated trading ideas.  Here is a very simple diagram to help explain this concept:</p>
+<img alt="simple tree structure" class="align-center" src="_images/tree1.png" />
+<p>This diagram represents the strategy we tested in the <a class="reference internal" href="index.html"><em>overview example</em></a>. A simple <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><tt class="xref py py-class docutils literal"><span class="pre">strategy</span></tt></a>
+with two children that happen to be <a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><tt class="xref py py-class docutils literal"><span class="pre">securities</span></tt></a>. However, children nodes don&#8217;t have to be
+securities. They can also be strategies. This concept is very powerful as it
+allows you to combine strategies together and allocate capital dynamically
+between different strategies as time progresses using sophisticated allocation
+logic. This is similar to what hedge funds do - they have a portfolio of strategies and dynamically allocate capital
+according to a set of rules.</p>
+<p>For example, say we didn&#8217;t mind having a passive bond allocation (AGG in the
+above graph), but we wanted to swap out the equity portion (SPY) for something a
+little more sophisticated. In this case, we will swap out the SPY node for another strategy.
+This strategy could be a momentum strategy that attempts to pick the best
+performing ETF every month (to keep it simple, let&#8217;s say it picks either the SPY
+or the EEM based on total return over the past 3 months).</p>
+<p>Here is the updated graph:</p>
+<img alt="advanced tree structure" class="align-center" src="_images/tree2.png" />
+<p>This approach allows you to build complex systems even though all of the building
+blocks may be relatively simple. Hopefully you can see how powerful this can be
+when designing and testing quantitative strategies.</p>
+<p>Oh and here&#8217;s the code for the second example - not much more complex:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">bt</span>
+
+<span class="c"># create the momentum strategy - we will specify the children (3rd argument)</span>
+<span class="c"># to limit the universe the strategy can choose from</span>
+<span class="n">mom_s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;mom_s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectMomentum</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
+                    <span class="p">[</span><span class="s">&#39;spy&#39;</span><span class="p">,</span> <span class="s">&#39;eem&#39;</span><span class="p">])</span>
+
+<span class="c"># create the master strategy - this is the top-most node in the tree</span>
+<span class="c"># Once again, we are also specifying  the children. In this case, one of the</span>
+<span class="c"># children is a Security and the other is a Strategy.</span>
+<span class="n">master</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;master&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
+                    <span class="p">[</span><span class="n">mom_s</span><span class="p">,</span> <span class="s">&#39;agg&#39;</span><span class="p">])</span>
+
+<span class="c"># create the backtest and run it</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">master</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>So there you have it. Please read the rest of the docs to have a better idea of
+all the features packed into bt.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="index.html" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href=""> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>
