@@ -1,4 +1,4 @@
-.. image:: docs/source/_static/logo.png
+.. image:: http://pmorissette.github.io/klink/_static/logo.png
 
 
 klink - A Simple & Clean Sphinx Theme
@@ -29,13 +29,21 @@ your **conf.py** file.
 IPython Notebook Integration
 ----------------------------
 
-With the klink helper function **klink.convert_notebooks()**, all notebooks will be
+With the klink helper function **convert_notebooks()**, all notebooks will be
 converted to .rst so that they can be included in your docs. This includes all
 output including images. It’s a very convenient way to create Python docs! 
 
 All you have to do is create notebooks within your source directory (same directory
 as your conf.py file). Then, you add a call to klink.convert_notebooks() in your
-conf.py.
+conf.py. You can also mix in **Mardown** cells or **Raw NBConvert** cells in
+your workbook. These will be converted to rst as well. 
+
+If you use the Raw NBConvert type cells, add a blank line at the start. There
+seems to be a bug in the rst conversion and if the cell does not begin with a
+blank line, you may run into some issues. 
+
+Using a Raw NBConvert cell with rst text inside is convenient, especially if you
+want to have links to other parts of your Sphinx docs. 
 
 Installation
 ------------
@@ -94,6 +102,9 @@ achieve this is to clone the repo into your _themes folder (create it if it does
 not exist in your docs' source dir). To change the style, I recommend editing
 the LESS files themselves. You will also need lessc to convert from less to css.
 See the css command in the Makefile for an example. 
+
+You may also want to explore the option of using **git subtree**. Here is a good
+`intro tutorial <http://makingsoftware.wordpress.com/2013/02/16/using-git-subtrees-for-repository-separation/>`__.
 
 You will also need to change your conf.py file. The following settings should
 work::

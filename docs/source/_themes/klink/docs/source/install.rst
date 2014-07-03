@@ -60,6 +60,9 @@ not exist in your docs' source dir). To change the style, I recommend editing
 the LESS files themselves. You will also need lessc to convert from less to css.
 See the css command in the Makefile for an example. 
 
+You may also want to explore the option of using **git subtree**. Here is a good
+`intro tutorial <http://makingsoftware.wordpress.com/2013/02/16/using-git-subtrees-for-repository-separation/>`__.
+
 You will also need to change your conf.py file. The following settings should
 work::
 
