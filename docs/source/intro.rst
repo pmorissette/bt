@@ -7,7 +7,7 @@
     import bt
                 
 A Simple Strategy Backtest
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let's create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.
 
@@ -148,7 +148,7 @@ Now we can analyze the results of our backtest. The :object:`Result <bt.backtest
 
                 
 Modifying a Strategy
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset's volatility? Well, all we have to do is plug in some different algos. See below:
                 
