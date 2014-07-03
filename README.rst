@@ -5,6 +5,8 @@ bt - a flexible backtesting framework written in Python
 
 bt is currently in alpha stage - if you find a bug, please submit an issue.
 
+Read the docs here: http://pmorissette.github.io/bt.
+
 What is bt?
 -----------
 
