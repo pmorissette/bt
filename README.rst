@@ -1,7 +1,7 @@
-bt
-==
+.. image:: http://pmorissette.github.io/bt/_static/logo.png
 
-bt - a flexible backtesting framework written in Python
+bt - Flexible Backtesting for Python
+====================================
 
 bt is currently in alpha stage - if you find a bug, please submit an issue.
 
