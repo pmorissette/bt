@@ -25,13 +25,23 @@ IPython Notebook Integration
 ----------------------------
 
 With the klink helper function :func:`convert_notebooks()
-<klink.convert_notebooks>`, all notebooks will be
+<klink.__init__.convert_notebooks>`, all notebooks will be
 converted to .rst so that they can be included in your docs. This includes all
 output including images. It’s a very convenient way to create Python docs! 
 
 All you have to do is create notebooks within your source directory (same directory
 as your conf.py file). Then, you add a call to klink.convert_notebooks() in your
-conf.py.
+conf.py. You can also mix in **Mardown** cells or **Raw NBConvert** cells in
+your workbook. These will be converted to rst as well. 
+
+.. note::
+
+    If you use the Raw NBConvert type cells, add a blank line at the start. There
+    seems to be a bug in the rst conversion and if the cell does not begin with a
+    blank line, you may run into some issues. 
+
+Using a Raw NBConvert cell with rst text inside is convenient, especially if you
+want to have links to other parts of your Sphinx docs. 
 
 .. include:: intro.rst
 
@@ -41,4 +51,5 @@ conf.py.
 
     Overview <index>
     Installation Guide <install>
+    Examples <examples>
     API <klink>
