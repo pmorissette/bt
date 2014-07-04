@@ -32,7 +32,7 @@
             <link rel="shortcut icon" href="../../../../_static/favicon.ico">
         
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
-        <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,500,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
   </head>
   <body>  
@@ -77,7 +77,9 @@ following code to your <strong>conf.py</strong>:</p>
 each one of your notebooks.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Place your notebooks in your docs&#8217; source dir.</p>
+<p class="last">Place your notebooks in your docs&#8217; source dir. <strong>Do not</strong> give them the same
+name as another reST file as this file will be <strong>overwriiten</strong> when you call
+klink.convert_notebooks.</p>
 </div>
 <p>Now all you have to do is use the <strong>include</strong> command to insert them into your
 docs.</p>

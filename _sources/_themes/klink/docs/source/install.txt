@@ -45,7 +45,9 @@ each one of your notebooks.
 
 .. note::
 
-    Place your notebooks in your docs' source dir.
+    Place your notebooks in your docs' source dir. **Do not** give them the same
+    name as another reST file as this file will be **overwriiten** when you call
+    klink.convert_notebooks.
 
 Now all you have to do is use the **include** command to insert them into your
 docs.

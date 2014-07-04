@@ -33,7 +33,7 @@
             <link rel="shortcut icon" href="../../_static/favicon.ico">
         
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
-        <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,500,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
   </head>
   <body>  
@@ -96,6 +96,8 @@
         <span class="k">if</span> <span class="n">lines</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
             <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">rawWatch</span> <span class="o">=</span> <span class="bp">False</span>
+
             <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
                 <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="c"># add class tags to images for css formatting</span>
@@ -105,6 +107,14 @@
                 <span class="k">elif</span> <span class="s">&#39;parsed-literal::&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
                     <span class="n">lines</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;    :class: pynb-result</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
                     <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="s">&#39;raw:: html&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">rawWatch</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="k">if</span> <span class="n">rawWatch</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s">&#39;&lt;div&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;&lt;div&#39;</span><span class="p">,</span> <span class="s">&#39;&lt;div class=&quot;pynb-result&quot;&#39;</span><span class="p">)</span>
+                        <span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span>
+                        <span class="n">rawWatch</span> <span class="o">=</span> <span class="bp">False</span>
 
                 <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -118,7 +128,7 @@
     <span class="k">return</span> <span class="n">cur_dir</span>
 
 </div>
-<span class="n">VERSION</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">VERSION</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
 <span class="n">__version__</span> <span class="o">=</span> <span class="s">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">VERSION</span><span class="p">)</span>
 <span class="n">__version_full__</span> <span class="o">=</span> <span class="n">__version__</span>
 </pre></div>

@@ -32,7 +32,7 @@
             <link rel="shortcut icon" href="../../../../_static/favicon.ico">
         
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
-        <link href='http://fonts.googleapis.com/css?family=Inconsolata:400,500,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
   </head>
   <body>  
@@ -90,6 +90,11 @@ blank line, you may run into some issues.</p>
 </div>
 <p>Using a Raw NBConvert cell with rst text inside is convenient, especially if you
 want to have links to other parts of your Sphinx docs.</p>
+<div class="admonition danger">
+<p class="first admonition-title">Danger</p>
+<p class="last">Do not name your Notebooks with the same name as another reST file in your
+source directory as the file will be <strong>overwritten</strong> when calling convert_notebooks.</p>
+</div>
 <div class="section" id="a-quick-example">
 <h3>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h3>
 <p>Here is a quick example of what it looks like. I am writing this in my
