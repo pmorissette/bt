@@ -72,6 +72,6 @@ def get_html_theme_path():
     return cur_dir
 
 
-VERSION = (0, 1, 4)
+VERSION = (0, 1, 5)
 __version__ = '.'.join(str(v) for v in VERSION)
 __version_full__ = __version__
