@@ -1,6 +1,6 @@
 TMPREPO=/tmp/docs/klink
 
-.PHONY: clean css docs serve pages
+.PHONY: clean css docs serve pages dist
 
 clean:
 	- rm -rf build
@@ -28,3 +28,6 @@ pages:
 	git add -A ; \
 	git commit -a -m 'auto-updating docs' ; \
 	git push
+
+dist:
+	python setup.py sdist upload
