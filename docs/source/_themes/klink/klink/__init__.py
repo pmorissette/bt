@@ -50,6 +50,8 @@ def convert_notebooks():
         if lines is not None:
             n = len(lines)
             i = 0
+            rawWatch = False
+
             while i < n:
                 line = lines[i]
                 # add class tags to images for css formatting
@@ -59,6 +61,14 @@ def convert_notebooks():
                 elif 'parsed-literal::' in line:
                     lines.insert(i + 1, '    :class: pynb-result\n')
                     n += 1
+                elif 'raw:: html' in line:
+                    rawWatch = True
+
+                if rawWatch:
+                    if '<div' in line:
+                        line = line.replace('<div', '<div class="pynb-result"')
+                        lines[i] = line
+                        rawWatch = False
 
                 i += 1
 
@@ -72,6 +82,6 @@ def get_html_theme_path():
     return cur_dir
 
 
-VERSION = (0, 1, 5)
+VERSION = (0, 1, 7)
 __version__ = '.'.join(str(v) for v in VERSION)
 __version_full__ = __version__

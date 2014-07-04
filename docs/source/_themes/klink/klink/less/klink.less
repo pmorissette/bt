@@ -15,11 +15,13 @@
 @purple: #ad19ff;
 @gold: #cc8c14;
 @pink: #ef40ff;
+@font1: "Open Sans", "Helvetica Neue", sans-serif;
+@font2: "Droid Sans Mono", monospace, serif;
 
 .normalize();
 
 body {
-    font-family: "Open Sans", "Helvetica Neue", sans-serif;
+    font-family: @font1;
     font-weight: @weight1;
     color: @gray;
     background: @white;
@@ -241,7 +243,7 @@ table.field-list {
 }
 
 dl tt {
-    font-family: "Open Sans", "Helvetica Neue", sans-serif;
+    font-family: @font1;
 }
 
 li.toctree-l1.current {
@@ -288,7 +290,8 @@ div.footer {
     padding: 10px 20px;
     border: 1px solid @border;
     .border-radius(6px);
-    font-family: "Inconsolata", monospace, serif;
+    font-family: @font2;
+    font-size: 0.9em;
 }
 
 .highlight {
@@ -337,9 +340,14 @@ img.logo {
 }
 
 div.pynb-result {
+    font-family: @font2;
     font-size: 0.9em;
     max-width: 98%;
     margin: 0 auto;
+    
+    table, p {
+        margin-left: 20px;
+    }
 }
 
 div#searchbox {

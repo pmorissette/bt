@@ -42,7 +42,7 @@
 
 .. raw:: html
 
-    <div style="max-height:1000px;max-width:1500px;overflow:auto;">
+    <div class="pynb-result" style="max-height:1000px;max-width:1500px;overflow:auto;">
     <table border="1" class="dataframe">
       <thead>
         <tr style="text-align: right;">
@@ -123,7 +123,7 @@
 
 .. raw:: html
 
-    <div style="max-height:1000px;max-width:1500px;overflow:auto;">
+    <div class="pynb-result" style="max-height:1000px;max-width:1500px;overflow:auto;">
     <table border="1" class="dataframe">
       <thead>
         <tr style="text-align: right;">

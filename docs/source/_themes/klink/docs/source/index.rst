@@ -43,6 +43,11 @@ your workbook. These will be converted to rst as well.
 Using a Raw NBConvert cell with rst text inside is convenient, especially if you
 want to have links to other parts of your Sphinx docs. 
 
+.. danger::
+
+    Do not name your Notebooks with the same name as another reST file in your
+    source directory as the file will be **overwritten** when calling convert_notebooks. 
+
 .. include:: intro.rst
 
 .. toctree::
