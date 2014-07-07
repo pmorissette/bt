@@ -40,6 +40,11 @@ a:hover, a:active {
     text-decoration: underline;
 }
 
+.border-round {
+    border: 1px solid @border;
+    .border-radius(6px);
+}
+
 * > a.headerlink {
     display: none;
 }
@@ -53,6 +58,26 @@ dd {
 dl.function > dt, dl.class > dt, dl.method > dt {
     color: @gray;
     font-weight: bold;
+}
+
+dl tt {
+    font-family: @font1;
+}
+
+dl.function, dl.class {
+    background: #f3f4f5;
+    padding: 10px;
+    .border-round;
+}
+
+em.property {
+    font-style: normal;
+    color: @gray3;
+}
+
+dt > em {
+    font-style: normal;
+    font-weight: 400;
 }
 
 input {
@@ -242,10 +267,6 @@ table.field-list {
     border: none;
 }
 
-dl tt {
-    font-family: @font1;
-}
-
 li.toctree-l1.current {
     font-weight: 700;
 }
@@ -260,6 +281,7 @@ span.viewcode-link {
     right: 0px;
     font-size: .8em;
     color: @green;
+    padding-right: 10px;
 }
 
 div.document {
