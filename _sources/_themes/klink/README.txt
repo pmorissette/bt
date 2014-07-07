@@ -117,3 +117,8 @@ work::
         'logo': 'logo.png'
     }
 
+
+License
+-------
+
+MIT

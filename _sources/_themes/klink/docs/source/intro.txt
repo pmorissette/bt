@@ -5,6 +5,8 @@ A Quick Example
 Here is a quick example of what it looks like. I am writing this in my
 notebook file by the way (using a Mardown cell).
 
+Here is some code + output:
+
 .. code:: python
 
     # have to comment out the magic IPython functions because of a bug
@@ -24,14 +26,6 @@ notebook file by the way (using a Mardown cell).
      -0.66617413 -0.81800771]
 
 
-Mardown
-~~~~~~~
-
-IPython currently supports markdown cells. These are converted to the
-appropriate .rst type by the klink helper function (h1, h2, p, etc.).
-The function calls IPython's nbconvert with the **--to rst** option. You
-will need an up-to-date version of pandoc for this to work properly.
-
 .. code:: python
 
     pd.Series(np.random.randn(100)).plot()
@@ -46,6 +40,19 @@ will need an up-to-date version of pandoc for this to work properly.
 
 
 
-.. image:: _static/intro_4_1.png
+.. image:: _static/intro_3_1.png
     :class: pynb
 
+
+                
+Raw NBConvert Cells
+-------------------
+
+In addition to markdown cells, you may also use **Raw NBConvert** cells. This allows you to input reST directly in your notebook. It won't look as pretty in the notebook itself, but will work great for your docs. Special reST and Sphinx markup will work within a Raw NBConvert (link, code markup, etc.).
+
+By the way, :func:`convert_notebooks <klink.__init__.convert_notebooks>` basically calls::
+
+    ipython nbconvert --to rst
+
+on all the notebooks it finds. It also handles special cases and adds special css classes for display formatting purposes. If you plan on using IPython Notebook integration, you will need an up-to-date version of `pandoc <http://johnmacfarlane.net/pandoc/>`_ for this to work properly.
+                

@@ -99,6 +99,7 @@ source directory as the file will be <strong>overwritten</strong> when calling c
 <h3>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h3>
 <p>Here is a quick example of what it looks like. I am writing this in my
 notebook file by the way (using a Mardown cell).</p>
+<p>Here is some code + output:</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="c"># have to comment out the magic IPython functions because of a bug</span>
 <span class="c">#%pylab inline</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
@@ -113,21 +114,22 @@ notebook file by the way (using a Mardown cell).</p>
   1.56377514 -0.87629984  1.64059433 -0.10259616  0.84435183  0.11718899
  -0.66617413 -0.81800771]</pre>
 </div>
-</div>
-<div class="section" id="mardown">
-<h3>Mardown<a class="headerlink" href="#mardown" title="Permalink to this headline">¶</a></h3>
-<p>IPython currently supports markdown cells. These are converted to the
-appropriate .rst type by the klink helper function (h1, h2, p, etc.).
-The function calls IPython&#8217;s nbconvert with the <strong>&#8211;to rst</strong> option. You
-will need an up-to-date version of pandoc for this to work properly.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <div class="pynb-result highlight-python"><pre>&lt;matplotlib.axes.AxesSubplot at 0x7f28246381d0&gt;</pre>
 </div>
-<img alt="../../../../_images/intro_4_1.png" class="pynb" src="../../../../_images/intro_4_1.png" />
-<div class="toctree-wrapper compound">
+<img alt="../../../../_images/intro_3_1.png" class="pynb" src="../../../../_images/intro_3_1.png" />
 </div>
+</div>
+<div class="section" id="raw-nbconvert-cells">
+<h2>Raw NBConvert Cells<a class="headerlink" href="#raw-nbconvert-cells" title="Permalink to this headline">¶</a></h2>
+<p>In addition to markdown cells, you may also use <strong>Raw NBConvert</strong> cells. This allows you to input reST directly in your notebook. It won&#8217;t look as pretty in the notebook itself, but will work great for your docs. Special reST and Sphinx markup will work within a Raw NBConvert (link, code markup, etc.).</p>
+<p>By the way, <a class="reference internal" href="klink.html#klink.__init__.convert_notebooks" title="klink.__init__.convert_notebooks"><tt class="xref py py-func docutils literal"><span class="pre">convert_notebooks</span></tt></a> basically calls:</p>
+<div class="highlight-python"><pre>ipython nbconvert --to rst</pre>
+</div>
+<p>on all the notebooks it finds. It also handles special cases and adds special css classes for display formatting purposes. If you plan on using IPython Notebook integration, you will need an up-to-date version of <a class="reference external" href="http://johnmacfarlane.net/pandoc/">pandoc</a> for this to work properly.</p>
+<div class="toctree-wrapper compound">
 </div>
 </div>
 </div>

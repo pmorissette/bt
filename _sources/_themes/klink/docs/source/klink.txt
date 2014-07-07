@@ -8,3 +8,9 @@ klink API
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+.. automodule:: klink.demo
+    :members:
+    :undoc-members:
+    :show-inheritance:
