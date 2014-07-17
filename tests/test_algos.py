@@ -335,7 +335,7 @@ def test_weigh_inv_vol():
 def test_weigh_mean_var(mock_mv):
     algo = algos.WeighMeanVar(lookback=pd.DateOffset(days=5))
 
-    mock_mv.return_value = {'c1': 0.3, 'c2': 0.7}
+    mock_mv.return_value = pd.Series({'c1': 0.3, 'c2': 0.7})
 
     s = bt.Strategy('s')
 

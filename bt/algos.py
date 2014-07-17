@@ -406,6 +406,40 @@ class SelectMomentum(AlgoStack):
             SelectN(n=n, sort_descending=sort_descending))
 
 
+class SelectWhere(Algo):
+
+    """
+    Selects securities based on an indicator DataFrame.
+
+    Selects securities where the value is True on the current date
+    (target.now).  The signal is expected to be a DataFrame of boolean
+    values with the same dimensions as the target.universe DataFrame.
+
+    For example, this could be the result of a pandas boolean comparison such
+    as data > 100.
+
+    Args:
+        * signal (DataFrame): Boolean DataFrame containing selection logic.
+
+    Sets:
+        * selected
+
+    """
+
+    def __init__(self, signal):
+        self.signal = signal
+
+    def __call__(self, target):
+        # get signal Series at target.now
+        sig = self.signal.ix[target.now]
+        # get tickers where True
+        selected = sig.index[sig]
+        # save as list
+        target.temp['selected'] = list(selected)
+
+        return True
+
+
 class SelectRandomly(AlgoStack):
 
     """
@@ -538,6 +572,35 @@ class WeighSpecified(Algo):
         return True
 
 
+class WeighTarget(Algo):
+
+    """
+    Sets target weights based on a target weight DataFrame.
+
+    The target weight dataFrame is expected to be of same dimension
+    as the target.universe.
+
+    Args:
+        * weights (DataFrame): DataFrame containing the target weights
+
+    Sets:
+        * weights
+
+    """
+
+    def __init__(self, weights):
+        self.weights = weights
+
+    def __call__(self, target):
+        # get current target weights
+        w = self.weights.ix[target.now]
+
+        # dropna and save
+        target.temp['weights'] = w.dropna()
+
+        return True
+
+
 class WeighInvVol(Algo):
 
     """
@@ -575,8 +638,9 @@ class WeighInvVol(Algo):
             return True
 
         prc = target.universe[selected].ix[target.now - self.lookback:]
-        target.temp['weights'] = bt.ffn.calc_inv_vol_weights(
+        tw = bt.ffn.calc_inv_vol_weights(
             prc.to_returns().dropna())
+        target.temp['weights'] = tw.dropna()
         return True
 
 
@@ -628,10 +692,11 @@ class WeighMeanVar(Algo):
             return True
 
         prc = target.universe[selected].ix[target.now - self.lookback:]
-        target.temp['weights'] = bt.ffn.calc_mean_var_weights(
+        tw = bt.ffn.calc_mean_var_weights(
             prc.to_returns().dropna(), weight_bounds=self.bounds,
             covar_method=self.covar_method, rf=self.rf)
 
+        target.temp['weights'] = tw.dropna()
         return True
 
 
@@ -926,6 +991,7 @@ class RebalanceOverTime(Algo):
 
 
 class Require(Algo):
+
     """
     Flow control Algo.
 
