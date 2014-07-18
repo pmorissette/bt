@@ -90,7 +90,8 @@ So there we have it. Our selection Algo.
 
 .. note:: 
 
-    By the way, this Algo already exists - I just wanted to show you how you would code it from scratch.
+    By the way, this Algo already exists - I just wanted to show you how you would code it from scratch. 
+    :class:`Here is the code <bt.algos.SelectWhere>`.
 
 All we have to do now is pass in a signal matrix. In our case, it's quite easy::
 
@@ -399,8 +400,8 @@ Now let's move on with the Strategy & Backtest.
                 
 Ok great so there we have our basic moving average crossover strategy. 
 
-Exploring the tree structure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Exploring the Tree Structure
+----------------------------
 
 So far, we have explored strategies that allocate capital to securities. But what if we wanted to test a strategy that allocated capital to sub-strategies?
 
@@ -473,9 +474,9 @@ Let's see how this looks:
                 
 As we can see above, the process is a bit more involved, but it works. It is not very elegant though, and obtaining security-level allocation information is problematic. 
 
-Luckily, bt has built-in functionality for dealing with strategies of strategies. It uses the same general principal as demonstrated above but does it seamlessly. Basically, when a strategy is a child of another strategy, it will create a "paper trade" version of itself internally. This will run the strategy in isolation and the result of that backtest will be used to populate the **price** property of the strategy.
+Luckily, bt has built-in functionality for dealing with strategies of strategies. It uses the same general principal as demonstrated above but does it seamlessly. Basically, when a strategy is a child of another strategy, it will create a "paper trade" version of itself internally. As we run our strategy, it will run its internal "paper version" and use the returns from that strategy to populate the **price** property.
 
-This means that when the parent strategy can use the price information (which reflects the returns of the strategy had it been employed) to determine the appropriate allocation. Again, this is basically the same process as above, just packed into 1 step.
+This means that the parent strategy can use the price information (which reflects the returns of the strategy had it been employed) to determine the appropriate allocation. Again, this is basically the same process as above, just packed into 1 step.
 
 Perhaps some code will help:
                 
