@@ -2,6 +2,7 @@
 Contains the core building blocks of the framework.
 """
 import math
+from copy import deepcopy
 
 import pandas as pd
 import numpy as np
@@ -263,6 +264,7 @@ class StrategyBase(Node):
     _net_flows = cy.declare(cy.double)
     _last_value = cy.declare(cy.double)
     _last_price = cy.declare(cy.double)
+    _paper_trade = cy.declare(cy.bint)
 
     def __init__(self, name, children=None, parent=None):
         Node.__init__(self, name, children=children, parent=parent)
@@ -278,6 +280,8 @@ class StrategyBase(Node):
 
         # default commission function
         self.commission_fn = self._dflt_comm_fn
+
+        self._paper_trade = False
 
     @property
     def price(self):
@@ -336,6 +340,23 @@ class StrategyBase(Node):
         Setup strategy with universe. This will speed up future calculations
         and updates.
         """
+        # save full universe in case we need it
+        self._original_data = universe
+
+        # determine if needs paper trading
+        # and setup if so
+        if self is not self.parent:
+            self._paper_trade = True
+            self._paper_amount = 1000000
+
+            paper = deepcopy(self)
+            paper.parent = paper
+            paper.root = paper
+            paper._paper_trade = False
+            paper.setup(self._original_data)
+            paper.adjust(self._paper_amount)
+            self._paper = paper
+
         # setup universe
         funiverse = universe
 
@@ -357,6 +378,7 @@ class StrategyBase(Node):
             funiverse = pd.DataFrame(funiverse)
 
         self._universe = funiverse
+        # holds filtered universe
         self._funiverse = funiverse
         self._last_chk = None
 
@@ -446,12 +468,21 @@ class StrategyBase(Node):
                 try:
                     c._weight = c.value / val
                 except ZeroDivisionError:
-                    c._weight = 0
+                    c._weight = 0.0
 
         # if we have strategy children, we will need to update them in universe
         if self._has_strat_children:
             for c in self._strat_children:
                 self._universe.loc[date, c] = self.children[c].price
+
+        # update paper trade if necessary
+        if newpt and self._paper_trade:
+            self._paper.update(date)
+            self._paper.run()
+            self._paper.update(date)
+            # update price
+            self._price = self._paper.price
+            self._prices[date] = self._price
 
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint)
     def adjust(self, amount, update=True, flow=True):

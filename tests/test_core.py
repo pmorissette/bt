@@ -1,5 +1,6 @@
 import copy
 
+import bt
 from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 import pandas as pd
 from nose.tools import assert_almost_equal as aae
@@ -1706,3 +1707,42 @@ def test_strategy_tree_proper_universes():
     assert len(child1.universe.columns) == 2
     assert 'b' in child1.universe.columns
     assert 'c' in child1.universe.columns
+
+
+def test_strategy_tree_paper():
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['a'], data=100.)
+    data['a'].ix[dts[1]] = 101
+    data['a'].ix[dts[2]] = 102
+
+    s = Strategy('s',
+                 [bt.algos.SelectWhere(data > 100),
+                  bt.algos.WeighEqually(),
+                  bt.algos.Rebalance()])
+
+    m = Strategy('m', [], [s])
+
+    m.setup(data)
+    m.update(dts[0])
+    m.run()
+
+    assert m.price == 100
+    assert s.price == 100
+    assert s._paper_trade == True
+    assert s._paper.price == 100
+
+    s.update(dts[1])
+    m.run()
+
+    assert m.price == 100
+    assert m.value == 0
+    assert s.value == 0
+    assert s.price == 99.9901
+
+    s.update(dts[2])
+    m.run()
+
+    assert m.price == 100
+    assert m.value == 0
+    assert s.value == 0
+    aae(s.price, 100.9801, 4)
