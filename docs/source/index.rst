@@ -86,4 +86,5 @@ Future development efforts will focus on:
     Installation Guide <install>
     All About Algos <algos>
     The Tree Structure <tree>
+    Examples <examples>
     API <bt>
