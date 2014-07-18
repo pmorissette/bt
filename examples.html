@@ -1,0 +1,537 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Examples &mdash; bt 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="bt 0.1.2 documentation" href="index.html" />
+    <link rel="next" title="bt Package" href="bt.html" />
+    <link rel="prev" title="The Tree Structure" href="tree.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+            <link rel="shortcut icon" href="_static/favicon.ico">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<p>Here are a few examples to give you a better idea of what <strong>bt</strong> is all about.</p>
+<div class="section" id="sma-strategy">
+<h2>SMA Strategy<a class="headerlink" href="#sma-strategy" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s start off with a Simple Moving Average (SMA) strategy. We will start with a simple version of the strategy, namely:</p>
+<ul class="simple">
+<li><strong>Select</strong> the securities that are currently above their 50 day moving average</li>
+<li><strong>Weigh</strong> each selected security equally</li>
+<li><strong>Rebalance</strong> the portfolio to reflect the target weights</li>
+</ul>
+<p>This should be pretty simple to build. The only thing missing above is the calculation of the simple moving average. When should this take place?</p>
+<p>Given the flexibility of <strong>bt</strong>, there is no strict rule. The average calculation could be performed in an Algo, but that would be pretty inefficient. A better way would be to calculate the moving average at the beginning - before starting the backtest. After all, all the data is known in advance.</p>
+<p>Now that we know what we have to do, let&#8217;s get started. First we will download some data and calculate the simple moving average.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">bt</span>
+<span class="c">#%pylab inline</span>
+</pre></div>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># download data</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;aapl,msft,c,gs,ge&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">)</span>
+
+<span class="c"># calculate moving average DataFrame using pandas&#39; rolling_mean</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="c"># a rolling mean is a moving average, right?</span>
+<span class="n">sma</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">rolling_mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It&#8217;s always a good idea to plot your data to make sure it looks ok. So let&#8217;s see how the data + sma plot looks like.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># let&#39;s see what the data looks like - this is by no means a pretty chart, but it does the job</span>
+<span class="n">plot</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sma</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_4_0.png" class="pynb" src="_images/examples-nb_4_0.png" />
+<p>Looks legit.</p>
+<p>Now that we have our data, we will need to create our security selection logic. Let&#8217;s create a basic Algo that will select the securities that are above their moving average.</p>
+<p>Before we do that, let&#8217;s think about how we will code it. We could pass the SMA data and then extract the row (from the sma DataFrame) on the current date, compare the values to the current prices, and then keep a list of those securities where the price is above the SMA. This is the most straightforward approach. However, this is not very re-usable because the logic within the Algo will be quite specific to the task at hand and if we wish to change the logic, we will have to write a new algo.</p>
+<p>For example, what if we wanted to select securities that were below their sma? Or what if we only wanted securities that were 5% above their sma?</p>
+<p>What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let&#8217;s see how the implementation looks like.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">SelectWhere</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Selects securities based on an indicator DataFrame.</span>
+
+<span class="sd">    Selects securities where the value is True on the current date (target.now).</span>
+<span class="sd">    The signal is expected to be a DataFrame of boolean values of same dimension</span>
+<span class="sd">    as the target.universe.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * signal (DataFrame): DataFrame containing the signal (boolean DataFrame)</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># get signal on target.now</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+        <span class="c"># get indices where true as list</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">sig</span><span class="p">])</span>
+
+        <span class="c"># save in temp - this will be used by the weighing algo</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selected</span>
+
+        <span class="c"># return True because we want to keep on moving down the stack</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>So there we have it. Our selection Algo.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">By the way, this Algo already exists - I just wanted to show you how you would code it from scratch.
+<a class="reference internal" href="bt.html#bt.algos.SelectWhere" title="bt.algos.SelectWhere"><tt class="xref py py-class docutils literal"><span class="pre">Here</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">code</span></tt></a>.</p>
+</div>
+<p>All we have to do now is pass in a signal matrix. In our case, it&#8217;s quite easy:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">signal</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span>
+</pre></div>
+</div>
+<p>Simple, concise and more importantly, fast! Let&#8217;s move on and test the strategy.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># first we create the Strategy</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;above50sma&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">),</span>
+                               <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                               <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
+
+<span class="c"># now we create the Backtest</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+<span class="c"># and let&#39;s run it!</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>So just to recap, we created the strategy, created the backtest by joining Strategy+Data, and ran the backtest. Let&#8217;s see the results.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># what does the equity curve look like?</span>
+<span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s">&#39;d&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_10_0.png" class="pynb" src="_images/examples-nb_10_0.png" />
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># and some performance stats</span>
+<span class="n">res</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-python"><pre>Stat                 above50sma
+-------------------  ------------
+Start                2010-01-04
+End                  2014-07-17
+
+Total Return         19.92%
+Daily Sharpe         0.30
+CAGR                 4.09%
+Max Drawdown         -33.75%
+
+MTD                  1.92%
+3m                   7.17%
+6m                   -4.39%
+YTD                  -7.68%
+1Y                   -4.46%
+3Y (ann.)            12.30%
+5Y (ann.)            4.09%
+10Y (ann.)           4.09%
+Since Incep. (ann.)  4.09%
+
+Daily Sharpe         0.30
+Daily Mean (ann.)    5.91%
+Daily Vol (ann.)     19.43%
+Daily Skew           -0.70
+Daily Kurt           4.42
+Best Day             5.77%
+Worst Day            -8.00%
+
+Monthly Sharpe       0.29
+Monthly Mean (ann.)  6.66%
+Monthly Vol (ann.)   22.72%
+Monthly Skew         -0.78
+Monthly Kurt         0.36
+Best Month           12.57%
+Worst Month          -16.28%
+
+Yearly Sharpe        0.35
+Yearly Mean          8.33%
+Yearly Vol           23.68%
+Yearly Skew          0.06
+Yearly Kurt          -4.59
+Best Year            33.39%
+Worst Year           -15.66%
+
+Avg. Drawdown        -4.68%
+Avg. Drawdown Days   84.83
+Avg. Up Month        4.68%
+Avg. Down Month      -5.93%
+Win Year %           50.00%
+Win 12m %            61.36%</pre>
+</div>
+<p>Nothing stellar but at least you learnt something along the way (I hope).</p>
+<p>Oh, and one more thing. If you were to write your own &#8220;library&#8221; of backtests, you might want to write yourself a helper function that would allow you to test different parameters and securities. That function might look something like this:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;above_sma&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Long securities that are above their n period</span>
+<span class="sd">    Simple Moving Averages with equal weights.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># download data</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
+    <span class="c"># calc sma</span>
+    <span class="n">sma</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">rolling_mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sma_per</span><span class="p">)</span>
+
+    <span class="c"># create strategy</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">),</span>
+                           <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                           <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
+
+    <span class="c"># now we create the backtest</span>
+    <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This function allows us to easily generate backtests. We could easily compare a few different SMA periods. Also, let&#8217;s see if we can beat a long-only allocation to the SPY.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># simple backtest to test long-only allocation</span>
+<span class="k">def</span> <span class="nf">long_only_ew</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;long_only_ew&#39;</span><span class="p">):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunOnce</span><span class="p">(),</span>
+                           <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                           <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                           <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+<span class="c"># create the backtests</span>
+<span class="n">tickers</span> <span class="o">=</span> <span class="s">&#39;aapl,msft,c,gs,ge&#39;</span>
+<span class="n">sma10</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;sma10&#39;</span><span class="p">)</span>
+<span class="n">sma20</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;sma20&#39;</span><span class="p">)</span>
+<span class="n">sma40</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;sma40&#39;</span><span class="p">)</span>
+<span class="n">benchmark</span> <span class="o">=</span> <span class="n">long_only_ew</span><span class="p">(</span><span class="s">&#39;spy&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;spy&#39;</span><span class="p">)</span>
+
+<span class="c"># run all the backtests!</span>
+<span class="n">res2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">sma10</span><span class="p">,</span> <span class="n">sma20</span><span class="p">,</span> <span class="n">sma40</span><span class="p">,</span> <span class="n">benchmark</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_16_0.png" class="pynb" src="_images/examples-nb_16_0.png" />
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-python"><pre>Stat                 sma10       sma20       sma40       spy
+-------------------  ----------  ----------  ----------  ----------
+Start                2010-01-04  2010-01-04  2010-01-04  2010-01-04
+End                  2014-07-17  2014-07-17  2014-07-17  2014-07-17
+
+Total Return         28.92%      44.81%      33.33%      89.21%
+Daily Sharpe         0.38        0.53        0.43        0.95
+CAGR                 5.77%       8.51%       6.55%       15.11%
+Max Drawdown         -24.99%     -27.91%     -35.40%     -18.61%
+
+MTD                  1.86%       0.89%       1.94%       -0.01%
+3m                   5.48%       3.96%       6.79%       5.50%
+6m                   -1.27%      -7.90%      4.78%       7.56%
+YTD                  -3.57%      -10.33%     1.50%       6.95%
+1Y                   4.38%       0.77%       3.11%       18.82%
+3Y (ann.)            8.39%       12.72%      10.78%      16.86%
+5Y (ann.)            5.77%       8.51%       6.55%       15.11%
+10Y (ann.)           5.77%       8.51%       6.55%       15.11%
+Since Incep. (ann.)  5.77%       8.51%       6.55%       15.11%
+
+Daily Sharpe         0.38        0.53        0.43        0.95
+Daily Mean (ann.)    7.58%       9.99%       8.15%       15.40%
+Daily Vol (ann.)     19.82%      19.00%      18.91%      16.20%
+Daily Skew           -0.41       -0.61       -0.51       -0.41
+Daily Kurt           6.90        4.37        3.10        4.30
+Best Day             9.54%       5.77%       5.77%       4.65%
+Worst Day            -8.00%      -8.00%      -5.68%      -6.51%
+
+Monthly Sharpe       0.45        0.50        0.40        1.23
+Monthly Mean (ann.)  9.51%       10.39%      8.84%       16.33%
+Monthly Vol (ann.)   21.09%      20.80%      22.17%      13.30%
+Monthly Skew         -0.38       -0.20       -0.30       -0.30
+Monthly Kurt         1.77        -0.15       -0.29       0.40
+Best Month           18.24%      12.48%      12.90%      10.92%
+Worst Month          -17.36%     -14.74%     -15.31%     -7.94%
+
+Yearly Sharpe        0.32        0.33        0.32        1.07
+Yearly Mean          6.48%       9.34%       7.18%       14.28%
+Yearly Vol           20.57%      28.31%      22.42%      13.35%
+Yearly Skew          -0.09       0.64        -0.73       1.00
+Yearly Kurt          -2.83       -2.09       -0.96       0.33
+Best Year            28.84%      44.96%      28.64%      32.30%
+Worst Year           -16.88%     -16.26%     -21.80%     1.90%
+
+Avg. Drawdown        -6.41%      -4.64%      -5.23%      -1.76%
+Avg. Drawdown Days   87.56       49.45       140.82      17.28
+Avg. Up Month        4.34%       5.01%       5.01%       3.38%
+Avg. Down Month      -4.79%      -4.72%      -5.48%      -3.04%
+Win Year %           50.00%      50.00%      75.00%      100.00%
+Win 12m %            77.27%      75.00%      61.36%      95.45%</pre>
+</div>
+<p>And there you have it. Beating the market ain&#8217;t that easy!</p>
+</div>
+<div class="section" id="sma-crossover-strategy">
+<h2>SMA Crossover Strategy<a class="headerlink" href="#sma-crossover-strategy" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s build on the last section to test a moving average crossover strategy. The easiest way to achieve this is to build an Algo similar to SelectWhere, but for the purpose of setting target weights. Let&#8217;s call this algo WeighTarget. This algo will take a DataFrame of target weights that we will pre-calculate.</p>
+<p>Basically, when the 50 day moving average will be above the 200-day moving average, we will be long (+1 target weight). Conversely, when the 50 is below the 200, we will be short (-1 target weight).</p>
+<p>Here&#8217;s the WeighTarget implementation (this Algo also already exists in the algos module):</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WeighTarget</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets target weights based on a target weight DataFrame.</span>
+
+<span class="sd">    The target weight DataFrame is expected to be of same dimension</span>
+<span class="sd">    as the target.universe (with same column names).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * target_weights (DataFrame): DataFrame containing the target weights</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tw</span> <span class="o">=</span> <span class="n">target_weights</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># get target weights on date target.now</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+        <span class="c"># save in temp - this will be used by the weighing algo</span>
+        <span class="c"># also dropping any na&#39;s just in case they pop up</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+        <span class="c"># return True because we want to keep on moving down the stack</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>So let&#8217;s start with a simple 50-200 day sma crossover for a single security.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c">## download some data &amp; calc SMAs</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;spy&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">)</span>
+<span class="n">sma50</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">rolling_mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">sma200</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">rolling_mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+
+<span class="c">## now we need to calculate our target weight DataFrame</span>
+<span class="c"># first we will copy the sma200 DataFrame since our weights will have the same strucutre</span>
+<span class="n">tw</span> <span class="o">=</span> <span class="n">sma200</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="c"># set appropriate target weights</span>
+<span class="n">tw</span><span class="p">[</span><span class="n">sma50</span> <span class="o">&gt;</span> <span class="n">sma200</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">tw</span><span class="p">[</span><span class="n">sma50</span> <span class="o">&lt;=</span> <span class="n">sma200</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+<span class="c"># here we will set the weight to 0 - this is because the sma200 needs 200 data points before</span>
+<span class="c"># calculating its first point. Therefore, it will start with a bunch of nulls (NaNs).</span>
+<span class="n">tw</span><span class="p">[</span><span class="n">sma200</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span> <span class="o">=</span> <span class="mf">0.0</span>
+</pre></div>
+</div>
+<p>Ok so we downloaded our data, calculated the simple moving averages, and then we setup our target weight (tw) DataFrame. Let&#8217;s take a look at our target weights to see if they make any sense.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># plot the target weights + chart of price &amp; SMAs</span>
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sma50</span><span class="p">,</span> <span class="n">sma200</span><span class="p">)</span>
+<span class="n">tmp</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;tw&#39;</span><span class="p">,</span> <span class="s">&#39;price&#39;</span><span class="p">,</span> <span class="s">&#39;sma50&#39;</span><span class="p">,</span> <span class="s">&#39;sma200&#39;</span><span class="p">]</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="n">secondary_y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;tw&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_24_0.png" class="pynb" src="_images/examples-nb_24_0.png" />
+<p>As mentioned earlier, it&#8217;s always a good idea to plot your strategy data. It is usually easier to spot logic/programming errors this way, especially when dealing with lots of data.</p>
+<p>Now let&#8217;s move on with the Strategy &amp; Backtest.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">ma_cross</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;ma_cross&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">WeighTarget</span><span class="p">(</span><span class="n">tw</span><span class="p">),</span>
+                                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">ma_cross</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_27_0.png" class="pynb" src="_images/examples-nb_27_0.png" />
+<p>Ok great so there we have our basic moving average crossover strategy.</p>
+</div>
+<div class="section" id="exploring-the-tree-structure">
+<h2>Exploring the Tree Structure<a class="headerlink" href="#exploring-the-tree-structure" title="Permalink to this headline">¶</a></h2>
+<p>So far, we have explored strategies that allocate capital to securities. But what if we wanted to test a strategy that allocated capital to sub-strategies?</p>
+<p>The most straightforward way would be to test the different sub-strategies, extract their equity curves and create &#8220;synthetic securities&#8221; that would basically just represent the returns achieved from allocating capital to the different sub-strategies.</p>
+<p>Let&#8217;s see how this looks:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># first let&#39;s create a helper function to create a ma cross backtest</span>
+<span class="k">def</span> <span class="nf">ma_cross</span><span class="p">(</span><span class="n">ticker</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">,</span>
+             <span class="n">short_ma</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">long_ma</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;ma_cross&#39;</span><span class="p">):</span>
+    <span class="c"># these are all the same steps as above</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ticker</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
+    <span class="n">short_sma</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">rolling_mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">short_ma</span><span class="p">)</span>
+    <span class="n">long_sma</span>  <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">rolling_mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">long_ma</span><span class="p">)</span>
+
+    <span class="c"># target weights</span>
+    <span class="n">tw</span> <span class="o">=</span> <span class="n">long_sma</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tw</span><span class="p">[</span><span class="n">short_sma</span> <span class="o">&gt;</span> <span class="n">long_sma</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">tw</span><span class="p">[</span><span class="n">short_sma</span> <span class="o">&lt;=</span> <span class="n">long_sma</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+    <span class="n">tw</span><span class="p">[</span><span class="n">long_sma</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c"># here we specify the children (3rd) arguemnt to make sure the strategy</span>
+    <span class="c"># has the proper universe. This is necessary in strategies of strategies</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">WeighTarget</span><span class="p">(</span><span class="n">tw</span><span class="p">),</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span> <span class="p">[</span><span class="n">ticker</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+<span class="c"># ok now let&#39;s create a few backtests and gather the results.</span>
+<span class="c"># these will later become our &quot;synthetic securities&quot;</span>
+<span class="n">t1</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;aapl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;aapl_ma_cross&#39;</span><span class="p">)</span>
+<span class="n">t2</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;msft&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;msft_ma_cross&#39;</span><span class="p">)</span>
+
+<span class="c"># let&#39;s run these strategies now</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+
+<span class="c"># now that we have run the strategies, let&#39;s extract</span>
+<span class="c"># the data to create &quot;synthetic securities&quot;</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s">&#39;aapl_ma_cross&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="s">&#39;msft_ma_cross&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">prices</span><span class="p">)</span>
+
+<span class="c"># now we have our new data. This data is basically the equity</span>
+<span class="c"># curves of both backtested strategies. Now we can just use this</span>
+<span class="c"># to test any old strategy, just like before.</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                      <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
+                      <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
+
+<span class="c"># create and run</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_30_0.png" class="pynb" src="_images/examples-nb_30_0.png" />
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_31_0.png" class="pynb" src="_images/examples-nb_31_0.png" />
+<p>As we can see above, the process is a bit more involved, but it works. It is not very elegant though, and obtaining security-level allocation information is problematic.</p>
+<p>Luckily, bt has built-in functionality for dealing with strategies of strategies. It uses the same general principal as demonstrated above but does it seamlessly. Basically, when a strategy is a child of another strategy, it will create a &#8220;paper trade&#8221; version of itself internally. As we run our strategy, it will run its internal &#8220;paper version&#8221; and use the returns from that strategy to populate the <strong>price</strong> property.</p>
+<p>This means that the parent strategy can use the price information (which reflects the returns of the strategy had it been employed) to determine the appropriate allocation. Again, this is basically the same process as above, just packed into 1 step.</p>
+<p>Perhaps some code will help:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># once again, we will create a few backtests</span>
+<span class="c"># these will be the child strategies</span>
+<span class="n">t1</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;aapl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;aapl_ma_cross&#39;</span><span class="p">)</span>
+<span class="n">t2</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;msft&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;msft_ma_cross&#39;</span><span class="p">)</span>
+
+<span class="c"># let&#39;s extract the data object</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">t1</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">t2</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c"># now we create the parent strategy</span>
+<span class="c"># we specify the children to be the two</span>
+<span class="c"># strategies created above</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                      <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
+                      <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
+                <span class="p">[</span><span class="n">t1</span><span class="o">.</span><span class="n">strategy</span><span class="p">,</span> <span class="n">t2</span><span class="o">.</span><span class="n">strategy</span><span class="p">])</span>
+
+<span class="c"># create and run</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_34_0.png" class="pynb" src="_images/examples-nb_34_0.png" />
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/examples-nb_35_0.png" class="pynb" src="_images/examples-nb_35_0.png" />
+<p>So there you have it. Simpler, and more complete.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="index.html" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href=""> Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sma-strategy">SMA Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sma-crossover-strategy">SMA Crossover Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exploring-the-tree-structure">Exploring the Tree Structure</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>

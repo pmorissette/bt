@@ -452,6 +452,40 @@
             <span class="n">SelectN</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">sort_descending</span><span class="o">=</span><span class="n">sort_descending</span><span class="p">))</span>
 
 </div>
+<div class="viewcode-block" id="SelectWhere"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectWhere">[docs]</a><span class="k">class</span> <span class="nc">SelectWhere</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Selects securities based on an indicator DataFrame.</span>
+
+<span class="sd">    Selects securities where the value is True on the current date</span>
+<span class="sd">    (target.now).  The signal is expected to be a DataFrame of boolean</span>
+<span class="sd">    values with the same dimensions as the target.universe DataFrame.</span>
+
+<span class="sd">    For example, this could be the result of a pandas boolean comparison such</span>
+<span class="sd">    as data &gt; 100.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * signal (DataFrame): Boolean DataFrame containing selection logic.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># get signal Series at target.now</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+        <span class="c"># get tickers where True</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span>
+        <span class="c"># save as list</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
 <div class="viewcode-block" id="SelectRandomly"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectRandomly">[docs]</a><span class="k">class</span> <span class="nc">SelectRandomly</span><span class="p">(</span><span class="n">AlgoStack</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -584,6 +618,35 @@
         <span class="k">return</span> <span class="bp">True</span>
 
 </div>
+<div class="viewcode-block" id="WeighTarget"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighTarget">[docs]</a><span class="k">class</span> <span class="nc">WeighTarget</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets target weights based on a target weight DataFrame.</span>
+
+<span class="sd">    The target weight dataFrame is expected to be of same dimension</span>
+<span class="sd">    as the target.universe.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * weights (DataFrame): DataFrame containing the target weights</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c"># get current target weights</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+        <span class="c"># dropna and save</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
 <div class="viewcode-block" id="WeighInvVol"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighInvVol">[docs]</a><span class="k">class</span> <span class="nc">WeighInvVol</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -621,8 +684,9 @@
             <span class="k">return</span> <span class="bp">True</span>
 
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:]</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_inv_vol_weights</span><span class="p">(</span>
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_inv_vol_weights</span><span class="p">(</span>
             <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">())</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">True</span>
 
 </div>
@@ -674,10 +738,11 @@
             <span class="k">return</span> <span class="bp">True</span>
 
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:]</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_mean_var_weights</span><span class="p">(</span>
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_mean_var_weights</span><span class="p">(</span>
             <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">weight_bounds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span>
             <span class="n">covar_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span><span class="p">,</span> <span class="n">rf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span>
 
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">True</span>
 
 </div>
@@ -972,6 +1037,7 @@
 
 </div>
 <div class="viewcode-block" id="Require"><a class="viewcode-back" href="../../bt.html#bt.algos.Require">[docs]</a><span class="k">class</span> <span class="nc">Require</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Flow control Algo.</span>
 
@@ -1027,6 +1093,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../install.html"> Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../algos.html"> All About Algos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html"> Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../bt.html"> API</a></li>
 </ul>
 

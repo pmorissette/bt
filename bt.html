@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="top" title="bt 0.1.2 documentation" href="index.html" />
-    <link rel="prev" title="The Tree Structure" href="tree.html" />
+    <link rel="prev" title="Examples" href="examples.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -512,6 +512,30 @@ populate temp[&#8216;selected&#8217;]. This will typically be SelectAll.</dd>
 </dd></dl>
 
 <dl class="class">
+<dt id="bt.algos.SelectWhere">
+<em class="property">class </em><tt class="descclassname">bt.algos.</tt><tt class="descname">SelectWhere</tt><big>(</big><em>signal</em><big>)</big><a class="reference internal" href="_modules/bt/algos.html#SelectWhere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.SelectWhere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></tt></a></p>
+<p>Selects securities based on an indicator DataFrame.</p>
+<p>Selects securities where the value is True on the current date
+(target.now).  The signal is expected to be a DataFrame of boolean
+values with the same dimensions as the target.universe DataFrame.</p>
+<p>For example, this could be the result of a pandas boolean comparison such
+as data &gt; 100.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><ul class="first last simple">
+<li>signal (DataFrame): Boolean DataFrame containing selection logic.</li>
+</ul>
+</dd>
+<dt>Sets:</dt>
+<dd><ul class="first last simple">
+<li>selected</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
 <dt id="bt.algos.StatTotalReturn">
 <em class="property">class </em><tt class="descclassname">bt.algos.</tt><tt class="descname">StatTotalReturn</tt><big>(</big><em>lookback=&lt;DateOffset: kwds={'months': 3}&gt;</em><big>)</big><a class="reference internal" href="_modules/bt/algos.html#StatTotalReturn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.StatTotalReturn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></tt></a></p>
@@ -679,6 +703,27 @@ used for random benchmarking.</p>
 <dt>Args:</dt>
 <dd><ul class="first last simple">
 <li>weights (dict): target weights -&gt; ticker: weight</li>
+</ul>
+</dd>
+<dt>Sets:</dt>
+<dd><ul class="first last simple">
+<li>weights</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="bt.algos.WeighTarget">
+<em class="property">class </em><tt class="descclassname">bt.algos.</tt><tt class="descname">WeighTarget</tt><big>(</big><em>weights</em><big>)</big><a class="reference internal" href="_modules/bt/algos.html#WeighTarget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.WeighTarget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></tt></a></p>
+<p>Sets target weights based on a target weight DataFrame.</p>
+<p>The target weight dataFrame is expected to be of same dimension
+as the target.universe.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><ul class="first last simple">
+<li>weights (DataFrame): DataFrame containing the target weights</li>
 </ul>
 </dd>
 <dt>Sets:</dt>
@@ -1047,7 +1092,7 @@ Algo in the stack is run. Execution stops if one Algo returns False.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><ul class="first last simple">
-<li>algos (<a href="#id4"><span class="problematic" id="id5">*</span></a>list): List of algos.</li>
+<li>algos (list): List of algos.</li>
 </ul>
 </dd>
 </dl>
@@ -1645,6 +1690,7 @@ Use this data to determine strategy logic.</p>
 <li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href=""> API</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">bt</span></tt> Package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-bt.algos"><tt class="docutils literal"><span class="pre">algos</span></tt> Module</a></li>
