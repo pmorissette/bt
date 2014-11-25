@@ -83,8 +83,6 @@
 <span class="sd">    Selects securities based on an indicator DataFrame.</span>
 
 <span class="sd">    Selects securities where the value is True on the current date (target.now).</span>
-<span class="sd">    The signal is expected to be a DataFrame of boolean values of same dimension</span>
-<span class="sd">    as the target.universe.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * signal (DataFrame): DataFrame containing the signal (boolean DataFrame)</span>
@@ -98,13 +96,14 @@
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="c"># get signal on target.now</span>
-        <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
 
-        <span class="c"># get indices where true as list</span>
-        <span class="n">selected</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">sig</span><span class="p">])</span>
+            <span class="c"># get indices where true as list</span>
+            <span class="n">selected</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">sig</span><span class="p">])</span>
 
-        <span class="c"># save in temp - this will be used by the weighing algo</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selected</span>
+            <span class="c"># save in temp - this will be used by the weighing algo</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selected</span>
 
         <span class="c"># return True because we want to keep on moving down the stack</span>
         <span class="k">return</span> <span class="bp">True</span>
@@ -305,9 +304,6 @@ Win 12m %            77.27%      75.00%      61.36%      95.45%</pre>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets target weights based on a target weight DataFrame.</span>
 
-<span class="sd">    The target weight DataFrame is expected to be of same dimension</span>
-<span class="sd">    as the target.universe (with same column names).</span>
-
 <span class="sd">    Args:</span>
 <span class="sd">        * target_weights (DataFrame): DataFrame containing the target weights</span>
 
@@ -321,11 +317,12 @@ Win 12m %            77.27%      75.00%      61.36%      95.45%</pre>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="c"># get target weights on date target.now</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
 
-        <span class="c"># save in temp - this will be used by the weighing algo</span>
-        <span class="c"># also dropping any na&#39;s just in case they pop up</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="c"># save in temp - this will be used by the weighing algo</span>
+            <span class="c"># also dropping any na&#39;s just in case they pop up</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
 
         <span class="c"># return True because we want to keep on moving down the stack</span>
         <span class="k">return</span> <span class="bp">True</span>

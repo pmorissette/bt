@@ -60,8 +60,6 @@ What we could do instead is pre-calculate the selection logic DataFrame (a fast,
         Selects securities based on an indicator DataFrame.
         
         Selects securities where the value is True on the current date (target.now).
-        The signal is expected to be a DataFrame of boolean values of same dimension
-        as the target.universe.
         
         Args:
             * signal (DataFrame): DataFrame containing the signal (boolean DataFrame)
@@ -75,13 +73,14 @@ What we could do instead is pre-calculate the selection logic DataFrame (a fast,
             
         def __call__(self, target):
             # get signal on target.now
-            sig = self.signal.ix[target.now]
-            
-            # get indices where true as list
-            selected = list(sig.index[sig])
-            
-            # save in temp - this will be used by the weighing algo
-            target.temp['selected'] = selected
+            if target.now in self.signal.index:
+                sig = self.signal.ix[target.now]
+    
+                # get indices where true as list
+                selected = list(sig.index[sig])
+    
+                # save in temp - this will be used by the weighing algo
+                target.temp['selected'] = selected
             
             # return True because we want to keep on moving down the stack
             return True
@@ -318,9 +317,6 @@ Here's the WeighTarget implementation (this Algo also already exists in the algo
         """
         Sets target weights based on a target weight DataFrame.
         
-        The target weight DataFrame is expected to be of same dimension
-        as the target.universe (with same column names).
-        
         Args:
             * target_weights (DataFrame): DataFrame containing the target weights
         
@@ -334,11 +330,12 @@ Here's the WeighTarget implementation (this Algo also already exists in the algo
         
         def __call__(self, target):
             # get target weights on date target.now
-            w = self.tw.ix[target.now]                
-            
-            # save in temp - this will be used by the weighing algo
-            # also dropping any na's just in case they pop up
-            target.temp['weights'] = w.dropna()
+            if target.now in self.tw.index:
+                w = self.tw.ix[target.now]                
+    
+                # save in temp - this will be used by the weighing algo
+                # also dropping any na's just in case they pop up
+                target.temp['weights'] = w.dropna()
             
             # return True because we want to keep on moving down the stack
             return True

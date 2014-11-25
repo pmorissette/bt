@@ -517,8 +517,7 @@ populate temp[&#8216;selected&#8217;]. This will typically be SelectAll.</dd>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></tt></a></p>
 <p>Selects securities based on an indicator DataFrame.</p>
 <p>Selects securities where the value is True on the current date
-(target.now).  The signal is expected to be a DataFrame of boolean
-values with the same dimensions as the target.universe DataFrame.</p>
+(target.now) only if current date is present in signal DataFrame.</p>
 <p>For example, this could be the result of a pandas boolean comparison such
 as data &gt; 100.</p>
 <dl class="docutils">
@@ -718,8 +717,15 @@ used for random benchmarking.</p>
 <em class="property">class </em><tt class="descclassname">bt.algos.</tt><tt class="descname">WeighTarget</tt><big>(</big><em>weights</em><big>)</big><a class="reference internal" href="_modules/bt/algos.html#WeighTarget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.WeighTarget" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></tt></a></p>
 <p>Sets target weights based on a target weight DataFrame.</p>
-<p>The target weight dataFrame is expected to be of same dimension
-as the target.universe.</p>
+<p>If the target weight dataFrame is  of same dimension
+as the target.universe, the portfolio will effectively be rebalanced on each
+period. For example, if we have daily data and the target DataFrame is of
+the same shape, we will have daily rebalancing.</p>
+<p>However, if we provide a target weight dataframe that has only month end
+dates, then rebalancing only occurs monthly.</p>
+<p>Basically, if a weight is provided on a given date, the target weights are
+set and the algo moves on (presumably to a Rebalance algo). If not, not
+target weights are set.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><ul class="first last simple">
