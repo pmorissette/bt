@@ -412,8 +412,7 @@ class SelectWhere(Algo):
     Selects securities based on an indicator DataFrame.
 
     Selects securities where the value is True on the current date
-    (target.now).  The signal is expected to be a DataFrame of boolean
-    values with the same dimensions as the target.universe DataFrame.
+    (target.now) only if current date is present in signal DataFrame.
 
     For example, this could be the result of a pandas boolean comparison such
     as data > 100.
@@ -431,11 +430,12 @@ class SelectWhere(Algo):
 
     def __call__(self, target):
         # get signal Series at target.now
-        sig = self.signal.ix[target.now]
-        # get tickers where True
-        selected = sig.index[sig]
-        # save as list
-        target.temp['selected'] = list(selected)
+        if target.now in self.signal.index:
+            sig = self.signal.ix[target.now]
+            # get tickers where True
+            selected = sig.index[sig]
+            # save as list
+            target.temp['selected'] = list(selected)
 
         return True
 
@@ -577,8 +577,17 @@ class WeighTarget(Algo):
     """
     Sets target weights based on a target weight DataFrame.
 
-    The target weight dataFrame is expected to be of same dimension
-    as the target.universe.
+    If the target weight dataFrame is  of same dimension
+    as the target.universe, the portfolio will effectively be rebalanced on each
+    period. For example, if we have daily data and the target DataFrame is of
+    the same shape, we will have daily rebalancing.
+
+    However, if we provide a target weight dataframe that has only month end
+    dates, then rebalancing only occurs monthly.
+
+    Basically, if a weight is provided on a given date, the target weights are
+    set and the algo moves on (presumably to a Rebalance algo). If not, not
+    target weights are set.
 
     Args:
         * weights (DataFrame): DataFrame containing the target weights
@@ -593,10 +602,11 @@ class WeighTarget(Algo):
 
     def __call__(self, target):
         # get current target weights
-        w = self.weights.ix[target.now]
+        if target.now in self.weights.index:
+            w = self.weights.ix[target.now]
 
-        # dropna and save
-        target.temp['weights'] = w.dropna()
+            # dropna and save
+            target.temp['weights'] = w.dropna()
 
         return True
 
