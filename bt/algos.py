@@ -149,6 +149,46 @@ class RunMonthly(Algo):
         return result
 
 
+class RunQuarterly(Algo):
+
+    """
+    Returns True on quarter change.
+
+    Returns True if the target.now's month has changed
+    since the last run and the month is the first month
+    of the quarter, if not returns False. Useful for
+    quarterly rebalancing strategies.
+
+    Note:
+        This algo will typically run on the first day of the
+        quarter (assuming we have daily data)
+
+    """
+
+    def __init__(self):
+        super(RunQuarterly, self).__init__()
+        self.last_date = None
+
+    def __call__(self, target):
+        # get last date
+        now = target.now
+
+        # if none nothing to do - return false
+        if now is None:
+            return False
+
+        if self.last_date is None:
+            self.last_date = now
+            return False
+
+        result = False
+        if now.month != self.last_date.month and now.month % 3 == 1:
+            result = True
+
+        self.last_date = now
+        return result
+
+
 class RunYearly(Algo):
 
     """
