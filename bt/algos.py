@@ -252,6 +252,59 @@ class RunOnDate(Algo):
     def __call__(self, target):
         return target.now in self.dates
 
+class RunAfterDate(Algo):
+
+    """
+    Returns True after a date has passed
+
+    Args:
+        * date: Date after which to start trading
+
+    Note:
+        This is useful for algos that rely on trailing averages where you
+        don't want to start trading until some amount of data has been built up
+
+    """
+
+    def __init__(self, date):
+        """
+        Args:
+            * date: Date after which to start trading
+        """
+        super(RunAfterDate, self).__init__()
+        # parse dates and save
+        self.date = pd.to_datetime(date)
+
+    def __call__(self, target):
+        return target.now > self.date
+
+class RunAfterDays(Algo):
+
+    """
+    Returns True after a specific number of 'warmup' trading days have passed
+
+    Args:
+        * days (int): Number of trading days to wait before starting
+
+    Note:
+        This is useful for algos that rely on trailing averages where you
+        don't want to start trading until some amount of data has been built up
+
+    """
+
+    def __init__(self, days):
+        """
+        Args:
+            * days (int): Number of trading days to wait before starting
+        """
+        super(RunAfterDays, self).__init__()
+        self.days = days
+
+    def __call__(self, target):
+        if self.days > 0:
+            self.days -= 1
+            return False
+        return True
 
 class SelectAll(Algo):
 
