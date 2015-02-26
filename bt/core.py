@@ -251,8 +251,9 @@ class StrategyBase(Node):
         * weight (float): weight in parent
         * full_name (str): Name including parents' names
         * members (list): Current Strategy + strategy's children
-        * commission_fn (fn(quantity)): A function used to determine the
-            commission amount.
+        * commission_fn (fn(quantity, price)): A function used to determine the
+            commission (transaction fee) amount. Could be used to model slippage
+            (implementation shortfall).
         * capital (float): Capital amount in Strategy - cash
         * universe (DataFrame): Data universe available at the current time.
             Universe contains the data passed in when creating a Backtest. Use
@@ -647,16 +648,16 @@ class StrategyBase(Node):
 
     def set_commissions(self, fn):
         """
-        Set commission function.
+        Set commission (transaction fee) function.
 
         Args:
-            fn (fn(quantity)): Function used to determine commission amount.
+            fn (fn(quantity, price)): Function used to determine commission amount.
 
         """
         self.commission_fn = fn
 
-    @cy.locals(q=cy.double)
-    def _dflt_comm_fn(self, q):
+    @cy.locals(q=cy.double, p=cy.double)
+    def _dflt_comm_fn(self, q, p):
         return max(1, abs(q) * 0.01)
 
 
@@ -885,17 +886,18 @@ class SecurityBase(Node):
         # call parent
         self.parent.adjust(-outlay, update=update, flow=False)
 
-    @cy.locals(q=cy.double)
-    def commission(self, q):
+    @cy.locals(q=cy.double, p=cy.double)
+    def commission(self, q, p):
         """
-        Calculates the commission based on quantity. Uses the parent's
-        commission_fn.
+        Calculates the commission (transaction fee) based on quantity and price.
+        Uses the parent's commission_fn.
 
         Args:
             * q (float): quantity
+            * p (float): price
 
         """
-        return self.parent.commission_fn(q)
+        return self.parent.commission_fn(q, p)
 
     @cy.locals(q=cy.double)
     def outlay(self, q):
@@ -906,7 +908,8 @@ class SecurityBase(Node):
             * q (float): quantity
 
         """
-        return q * self._price * self.multiplier + self.commission(q)
+        return q * self._price * self.multiplier + \
+               self.commission(q, self._price * self.multiplier)
 
     def run(self):
         """
