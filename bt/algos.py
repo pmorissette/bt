@@ -451,7 +451,7 @@ class SelectN(Algo):
         self.all_or_none = all_or_none
 
     def __call__(self, target):
-        stat = target.temp['stat']
+        stat = target.temp['stat'].dropna()
         stat.sort(ascending=self.ascending)
 
         # handle percent n
