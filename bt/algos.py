@@ -482,6 +482,7 @@ class SelectMomentum(AlgoStack):
         * n (int): select first N elements
         * lookback (DateOffset): lookback period for total return
             calculation
+        * lag (DateOffset): Lag interval for total return calculation
         * sort_descending (bool): Sort descending (highest return is best)
 
     Sets:
@@ -493,9 +494,9 @@ class SelectMomentum(AlgoStack):
     """
 
     def __init__(self, n, lookback=pd.DateOffset(months=3),
-                 sort_descending=True):
+                 lag=pd.DateOffset(days=0), sort_descending=True):
         super(SelectMomentum, self).__init__(
-            StatTotalReturn(lookback=lookback),
+            StatTotalReturn(lookback=lookback, lag=lag),
             SelectN(n=n, sort_descending=sort_descending))
 
 
@@ -588,6 +589,8 @@ class StatTotalReturn(Algo):
 
     Args:
         * lookback (DateOffset): lookback period.
+        * lag (DateOffset): Lag interval. Total return is calculated in
+            the inteval [now - lookback - lag, now - lag]
 
     Sets:
         * stat
@@ -597,13 +600,16 @@ class StatTotalReturn(Algo):
 
     """
 
-    def __init__(self, lookback=pd.DateOffset(months=3)):
+    def __init__(self, lookback=pd.DateOffset(months=3),
+                 lag=pd.DateOffset(days=0)):
         super(StatTotalReturn, self).__init__()
         self.lookback = lookback
+        self.lag = lag
 
     def __call__(self, target):
         selected = target.temp['selected']
-        prc = target.universe[selected].ix[target.now - self.lookback:]
+        t0 = target.now - self.lag
+        prc = target.universe[selected].ix[t0 - self.lookback:t0]
         target.temp['stat'] = prc.calc_total_return()
         return True
 
