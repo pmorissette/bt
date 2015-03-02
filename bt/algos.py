@@ -401,12 +401,13 @@ class SelectHasData(Algo):
     """
 
     def __init__(self, lookback=pd.DateOffset(months=3),
-                 min_count=None):
+                 min_count=None, include_no_data=False):
         super(SelectHasData, self).__init__()
         self.lookback = lookback
         if min_count is None:
             min_count = bt.ffn.get_num_days_required(lookback)
         self.min_count = min_count
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
         if 'selected' in target.temp:
@@ -417,6 +418,8 @@ class SelectHasData(Algo):
         filt = target.universe[selected].ix[target.now - self.lookback:]
         cnt = filt.count()
         cnt = cnt[cnt >= self.min_count]
+        if not self.include_no_data:
+            cnt = cnt[target.universe[selected].ix[target.now] > 0]
         target.temp['selected'] = list(cnt.index)
         return True
 
