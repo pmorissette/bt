@@ -313,7 +313,7 @@ class SelectAll(Algo):
 
     Selects all the securities and saves them in temp['selected'].
     By default, SelectAll does not include securities that have no
-    data (nan) on current date.
+    data (nan) on current date or those whose price is zero.
 
     Args:
         * include_no_data (bool): Include securities that do not have data?
@@ -331,8 +331,8 @@ class SelectAll(Algo):
         if self.include_no_data:
             target.temp['selected'] = target.universe.columns
         else:
-            target.temp['selected'] = list(
-                target.universe.ix[target.now].dropna().index)
+            universe = target.universe.ix[target.now].dropna()
+            target.temp['selected'] = list(universe[universe > 0].index)
         return True
 
 
