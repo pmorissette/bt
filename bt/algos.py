@@ -486,6 +486,9 @@ class SelectMomentum(AlgoStack):
     a given lookback period. This is just a wrapper around an
     AlgoStack with two algos: StatTotalReturn and SelectN.
 
+    Note, that SelectAll() or similar should be called before
+    SelectMomentum(), as StatTotalReturn uses values of temp['selected']
+
     Args:
         * n (int): select first N elements
         * lookback (DateOffset): lookback period for total return
