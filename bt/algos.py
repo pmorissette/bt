@@ -524,8 +524,9 @@ class SelectWhere(Algo):
 
     """
 
-    def __init__(self, signal):
+    def __init__(self, signal, include_no_data=False):
         self.signal = signal
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
         # get signal Series at target.now
@@ -534,6 +535,9 @@ class SelectWhere(Algo):
             # get tickers where True
             selected = sig.index[sig]
             # save as list
+            if not self.include_no_data:
+                universe = target.universe[list(selected)].ix[target.now].dropna()
+                selected = list(universe[universe > 0].index)
             target.temp['selected'] = list(selected)
 
         return True
