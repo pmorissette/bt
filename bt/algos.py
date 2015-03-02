@@ -573,15 +573,24 @@ class SelectRandomly(AlgoStack):
 
     """
 
-    def __init__(self, n=None):
+    def __init__(self, n=None, include_no_data=False):
         super(SelectRandomly, self).__init__()
         self.n = n
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
-        sel = target.temp['selected']
+        if 'selected' in target.temp:
+            sel = target.temp['selected']
+        else:
+            sel = target.universe.columns
+
+        if not self.include_no_data:
+            universe = target.universe[list(sel)].ix[target.now].dropna()
+            sel = list(universe[universe > 0].index)
 
         if self.n is not None:
-            sel = random.sample(sel, self.n)
+            n = self.n if self.n < len(sel) else len(sel)
+            sel = random.sample(sel, n)
 
         target.temp['selected'] = sel
         return True
