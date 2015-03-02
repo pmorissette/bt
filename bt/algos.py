@@ -1015,6 +1015,43 @@ class CapitalFlow(Algo):
         return True
 
 
+class CloseDead(Algo):
+
+    """
+    Closes all positions for which prices are equal to zero (we assume
+    that these stocks are dead) and removes them from temp['weights'] if
+    they enter it by any chance.
+    To be called before Rebalance().
+
+    In a normal workflow it is not needed, as those securities will not
+    be selected by SelectAll(include_no_data=False) or similar method, and
+    Rebalance() closes positions that are not in temp['weights'] anyway.
+    However in case when for some reasons include_no_data=False could not
+    be used or some modified weighting method is used, CloseDead() will
+    allow to avoid errors.
+
+    Requires:
+        * weights
+
+    """
+
+    def __init__(self):
+        super(CloseDead, self).__init__()
+
+    def __call__(self, target):
+        if 'weights' not in target.temp:
+            return True
+
+        targets = target.temp['weights']
+        for c in target.children:
+            if target.universe[c].ix[target.now] <= 0:
+                target.close(c)
+                if c in targets:
+                    del targets[c]
+
+        return True
+
+
 class Rebalance(Algo):
 
     """
