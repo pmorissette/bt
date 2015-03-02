@@ -351,12 +351,17 @@ class SelectThese(Algo):
 
     """
 
-    def __init__(self, tickers):
+    def __init__(self, tickers, include_no_data=False):
         super(SelectThese, self).__init__()
         self.tickers = tickers
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
-        target.temp['selected'] = self.tickers
+        if self.include_no_data:
+            target.temp['selected'] = self.tickers
+        else:
+            universe = target.universe[self.tickers].ix[target.now].dropna()
+            target.temp['selected'] = list(universe[universe > 0].index)
         return True
 
 
