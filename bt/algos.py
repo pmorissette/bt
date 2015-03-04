@@ -313,7 +313,7 @@ class SelectAll(Algo):
 
     Selects all the securities and saves them in temp['selected'].
     By default, SelectAll does not include securities that have no
-    data (nan) on current date.
+    data (nan) on current date or those whose price is zero.
 
     Args:
         * include_no_data (bool): Include securities that do not have data?
@@ -331,8 +331,8 @@ class SelectAll(Algo):
         if self.include_no_data:
             target.temp['selected'] = target.universe.columns
         else:
-            target.temp['selected'] = list(
-                target.universe.ix[target.now].dropna().index)
+            universe = target.universe.ix[target.now].dropna()
+            target.temp['selected'] = list(universe[universe > 0].index)
         return True
 
 
@@ -351,12 +351,17 @@ class SelectThese(Algo):
 
     """
 
-    def __init__(self, tickers):
+    def __init__(self, tickers, include_no_data=False):
         super(SelectThese, self).__init__()
         self.tickers = tickers
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
-        target.temp['selected'] = self.tickers
+        if self.include_no_data:
+            target.temp['selected'] = self.tickers
+        else:
+            universe = target.universe[self.tickers].ix[target.now].dropna()
+            target.temp['selected'] = list(universe[universe > 0].index)
         return True
 
 
@@ -396,12 +401,13 @@ class SelectHasData(Algo):
     """
 
     def __init__(self, lookback=pd.DateOffset(months=3),
-                 min_count=None):
+                 min_count=None, include_no_data=False):
         super(SelectHasData, self).__init__()
         self.lookback = lookback
         if min_count is None:
             min_count = bt.ffn.get_num_days_required(lookback)
         self.min_count = min_count
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
         if 'selected' in target.temp:
@@ -412,6 +418,8 @@ class SelectHasData(Algo):
         filt = target.universe[selected].ix[target.now - self.lookback:]
         cnt = filt.count()
         cnt = cnt[cnt >= self.min_count]
+        if not self.include_no_data:
+            cnt = cnt[target.universe[selected].ix[target.now] > 0]
         target.temp['selected'] = list(cnt.index)
         return True
 
@@ -478,6 +486,9 @@ class SelectMomentum(AlgoStack):
     a given lookback period. This is just a wrapper around an
     AlgoStack with two algos: StatTotalReturn and SelectN.
 
+    Note, that SelectAll() or similar should be called before
+    SelectMomentum(), as StatTotalReturn uses values of temp['selected']
+
     Args:
         * n (int): select first N elements
         * lookback (DateOffset): lookback period for total return
@@ -519,8 +530,9 @@ class SelectWhere(Algo):
 
     """
 
-    def __init__(self, signal):
+    def __init__(self, signal, include_no_data=False):
         self.signal = signal
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
         # get signal Series at target.now
@@ -529,6 +541,9 @@ class SelectWhere(Algo):
             # get tickers where True
             selected = sig.index[sig]
             # save as list
+            if not self.include_no_data:
+                universe = target.universe[list(selected)].ix[target.now].dropna()
+                selected = list(universe[universe > 0].index)
             target.temp['selected'] = list(selected)
 
         return True
@@ -564,15 +579,24 @@ class SelectRandomly(AlgoStack):
 
     """
 
-    def __init__(self, n=None):
+    def __init__(self, n=None, include_no_data=False):
         super(SelectRandomly, self).__init__()
         self.n = n
+        self.include_no_data = include_no_data
 
     def __call__(self, target):
-        sel = target.temp['selected']
+        if 'selected' in target.temp:
+            sel = target.temp['selected']
+        else:
+            sel = target.universe.columns
+
+        if not self.include_no_data:
+            universe = target.universe[list(sel)].ix[target.now].dropna()
+            sel = list(universe[universe > 0].index)
 
         if self.n is not None:
-            sel = random.sample(sel, self.n)
+            n = self.n if self.n < len(sel) else len(sel)
+            sel = random.sample(sel, n)
 
         target.temp['selected'] = sel
         return True
@@ -988,6 +1012,43 @@ class CapitalFlow(Algo):
 
     def __call__(self, target):
         target.adjust(self.amount)
+        return True
+
+
+class CloseDead(Algo):
+
+    """
+    Closes all positions for which prices are equal to zero (we assume
+    that these stocks are dead) and removes them from temp['weights'] if
+    they enter it by any chance.
+    To be called before Rebalance().
+
+    In a normal workflow it is not needed, as those securities will not
+    be selected by SelectAll(include_no_data=False) or similar method, and
+    Rebalance() closes positions that are not in temp['weights'] anyway.
+    However in case when for some reasons include_no_data=False could not
+    be used or some modified weighting method is used, CloseDead() will
+    allow to avoid errors.
+
+    Requires:
+        * weights
+
+    """
+
+    def __init__(self):
+        super(CloseDead, self).__init__()
+
+    def __call__(self, target):
+        if 'weights' not in target.temp:
+            return True
+
+        targets = target.temp['weights']
+        for c in target.children:
+            if target.universe[c].ix[target.now] <= 0:
+                target.close(c)
+                if c in targets:
+                    del targets[c]
+
         return True
 
 
