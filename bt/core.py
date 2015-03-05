@@ -334,7 +334,7 @@ class StrategyBase(Node):
     @property
     def fees(self):
         """
-        TimeSeries of unallocated capital.
+        TimeSeries of fees.
         """
         # no stale check needed
         return self._fees
