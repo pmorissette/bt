@@ -253,7 +253,8 @@ class StrategyBase(Node):
         * members (list): Current Strategy + strategy's children
         * commission_fn (fn(quantity, price)): A function used to determine the
             commission (transaction fee) amount. Could be used to model slippage
-            (implementation shortfall).
+            (implementation shortfall). Note that often fees are symmetric for buy
+            and sell and absolute value of quantity should be used for calculation.
         * capital (float): Capital amount in Strategy - cash
         * universe (DataFrame): Data universe available at the current time.
             Universe contains the data passed in when creating a Backtest. Use
@@ -265,6 +266,7 @@ class StrategyBase(Node):
     _net_flows = cy.declare(cy.double)
     _last_value = cy.declare(cy.double)
     _last_price = cy.declare(cy.double)
+    _last_fee = cy.declare(cy.double)
     _paper_trade = cy.declare(cy.bint)
 
     def __init__(self, name, children=None, parent=None):
@@ -278,6 +280,7 @@ class StrategyBase(Node):
         self._net_flows = 0
         self._last_value = 0
         self._last_price = 100
+        self._last_fee = 0
 
         # default commission function
         self.commission_fn = self._dflt_comm_fn
@@ -319,6 +322,22 @@ class StrategyBase(Node):
         """
         # no stale check needed
         return self._capital
+
+    @property
+    def cash(self):
+        """
+        TimeSeries of unallocated capital.
+        """
+        # no stale check needed
+        return self._cash
+
+    @property
+    def fees(self):
+        """
+        TimeSeries of unallocated capital.
+        """
+        # no stale check needed
+        return self._fees
 
     @property
     def universe(self):
@@ -403,11 +422,13 @@ class StrategyBase(Node):
 
         # setup internal data
         self.data = pd.DataFrame(index=funiverse.index,
-                                 columns=['price', 'value'],
+                                 columns=['price', 'value', 'cash', 'fees'],
                                  data=0.0)
 
         self._prices = self.data['price']
         self._values = self.data['value']
+        self._cash = self.data['cash']
+        self._fees = self.data['fees']
 
         # setup children as well - use original universe here - don't want to
         # pollute with potential strategy children in funiverse
@@ -431,6 +452,7 @@ class StrategyBase(Node):
             self._net_flows = 0
             self._last_price = self._price
             self._last_value = self._value
+            self._last_fee = 0.0
             newpt = True
 
         # update now
@@ -494,6 +516,12 @@ class StrategyBase(Node):
             for c in self._strat_children:
                 self._universe.loc[date, c] = self.children[c].price
 
+        # Cash should track the unallocated capital at the end of the day, so
+        # we should update it every time we call "update".
+        # Same for fess
+        self._cash[self.now] = self._capital
+        self._fees[self.now] = self._last_fee
+
         # update paper trade if necessary
         if newpt and self._paper_trade:
             self._paper.update(date)
@@ -503,10 +531,10 @@ class StrategyBase(Node):
             self._price = self._paper.price
             self._prices[date] = self._price
 
-    @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint)
-    def adjust(self, amount, update=True, flow=True):
+    @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint, fees=cy.double)
+    def adjust(self, amount, update=True, flow=True, fee=0.0):
         """
-        Adjust captial - used to inject capital to a Strategy. This injection
+        Adjust capital - used to inject capital to a Strategy. This injection
         of capital will have no effect on the children.
 
         Args:
@@ -519,6 +547,7 @@ class StrategyBase(Node):
         """
         # adjust capital
         self._capital += amount
+        self._last_fee += fee
 
         # if flow - increment net_flows - this will not affect
         # performance. Commissions and other fees are not flows since
@@ -875,6 +904,8 @@ class SecurityBase(Node):
         # never be selected by SelectAll, SelectN etc. I.e. we should not open the
         # position at zero price. At the same time, we are able to close it at zero
         # price, because at that point amount=0.
+        # Note also that we don't erase the position in an asset which price has
+        # dropped to zero (though the weight will indeed be = 0)
         if amount == 0:
             return
 
@@ -917,10 +948,10 @@ class SecurityBase(Node):
         # parent passed down amount so we want to pass
         # -outlay back up to parent to adjust for capital
         # used
-        outlay = self.outlay(q)
+        outlay, fee = self.outlay(q)
 
         # call parent
-        self.parent.adjust(-outlay, update=update, flow=False)
+        self.parent.adjust(-outlay, update=update, flow=False, fee=fee)
 
     @cy.locals(q=cy.double, p=cy.double)
     def commission(self, q, p):
@@ -938,14 +969,17 @@ class SecurityBase(Node):
     @cy.locals(q=cy.double)
     def outlay(self, q):
         """
-        Determines the cash outlay necessary given a quantity q.
+        Determines the complete cash outlay (including commission) necessary
+        given a quantity q.
+        Second returning parameter is a commission itself.
 
         Args:
             * q (float): quantity
 
         """
-        return q * self._price * self.multiplier + \
-               self.commission(q, self._price * self.multiplier)
+        fee = self.commission(q, self._price * self.multiplier)
+        full_outlay = q * self._price * self.multiplier + fee
+        return full_outlay, fee
 
     def run(self):
         """
