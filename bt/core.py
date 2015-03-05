@@ -321,6 +321,14 @@ class StrategyBase(Node):
         return self._capital
 
     @property
+    def cash(self):
+        """
+        TimeSeries of unallocated capital.
+        """
+        # no stale check needed
+        return self._cash
+
+    @property
     def universe(self):
         """
         Data universe available at the current time.
@@ -403,11 +411,13 @@ class StrategyBase(Node):
 
         # setup internal data
         self.data = pd.DataFrame(index=funiverse.index,
-                                 columns=['price', 'value'],
+                                 columns=['price', 'value', 'cash', 'fees'],
                                  data=0.0)
 
         self._prices = self.data['price']
         self._values = self.data['value']
+        self._cash = self.data['cash']
+        self._fees = self.data['fees']
 
         # setup children as well - use original universe here - don't want to
         # pollute with potential strategy children in funiverse
@@ -493,6 +503,10 @@ class StrategyBase(Node):
         if self._has_strat_children:
             for c in self._strat_children:
                 self._universe.loc[date, c] = self.children[c].price
+
+        # Cash should track the unallocated capital at the end of the day, so
+        # we should update it every time we call "update"
+        self._cash[self.now] = self._capital
 
         # update paper trade if necessary
         if newpt and self._paper_trade:
