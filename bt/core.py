@@ -900,6 +900,10 @@ class SecurityBase(Node):
             self.update(self.parent.now)
 
         # ignore 0 alloc
+        # Note that if the price of security has dropped to zero, then it should
+        # never be selected by SelectAll, SelectN etc. I.e. we should not open the
+        # position at zero price. At the same time, we are able to close it at zero
+        # price, because at that point amount=0.
         if amount == 0:
             return
 
