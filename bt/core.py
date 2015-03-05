@@ -734,7 +734,7 @@ class SecurityBase(Node):
         Current price.
         """
         # if accessing and stale - update first
-        if not self._needupdate:
+        if self._needupdate:
             self.update(self.root.now)
         return self._price
 
@@ -744,7 +744,7 @@ class SecurityBase(Node):
         TimeSeries of prices.
         """
         # if accessing and stale - update first
-        if not self._needupdate:
+        if self._needupdate:
             self.update(self.root.now)
         return self._prices.ix[:self.now]
 
@@ -754,7 +754,7 @@ class SecurityBase(Node):
         TimeSeries of values.
         """
         # if accessing and stale - update first
-        if not self._needupdate:
+        if self._needupdate:
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
