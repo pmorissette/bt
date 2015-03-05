@@ -890,9 +890,11 @@ class SecurityBase(Node):
         if amount == -self._value:
             q = -self._position
         else:
-            if amount > 0:
+            if (self._position > 0) or ((self._position == 0) and (amount > 0)):
+                # if we're going long or changing long position
                 q = math.floor(amount / (self._price * self.multiplier))
             else:
+                # if we're going short or changing short position
                 q = math.ceil(amount / (self._price * self.multiplier))
 
         # if q is 0 nothing to do
