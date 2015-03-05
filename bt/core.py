@@ -283,6 +283,7 @@ class StrategyBase(Node):
         self.commission_fn = self._dflt_comm_fn
 
         self._paper_trade = False
+        self._positions = None
 
     @property
     def price(self):
@@ -335,6 +336,23 @@ class StrategyBase(Node):
             self._last_chk = self.now
             self._funiverse = self._universe.ix[:self.now]
             return self._funiverse
+
+    @property
+    def positions(self):
+        """
+        TimeSeries of positions.
+        """
+        # if accessing and stale - update first
+        if self.root.stale:
+            self.root.update(self.root.now, None)
+
+        if self._positions is not None:
+            return self._positions
+        else:
+            vals = pd.DataFrame({x.name: x.positions for x in self.members
+                                 if isinstance(x, SecurityBase)})
+            self._positions = vals
+            return vals
 
     def setup(self, universe):
         """
@@ -716,7 +734,7 @@ class SecurityBase(Node):
         Current price.
         """
         # if accessing and stale - update first
-        if not self._needupdate:
+        if self._needupdate:
             self.update(self.root.now)
         return self._price
 
@@ -726,7 +744,7 @@ class SecurityBase(Node):
         TimeSeries of prices.
         """
         # if accessing and stale - update first
-        if not self._needupdate:
+        if self._needupdate:
             self.update(self.root.now)
         return self._prices.ix[:self.now]
 
@@ -736,7 +754,7 @@ class SecurityBase(Node):
         TimeSeries of values.
         """
         # if accessing and stale - update first
-        if not self._needupdate:
+        if self._needupdate:
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
@@ -749,6 +767,18 @@ class SecurityBase(Node):
         """
         # no stale check needed
         return self._position
+
+    @property
+    def positions(self):
+        """
+        TimeSeries of positions.
+        """
+        # if accessing and stale - update first
+        if self._needupdate:
+            self.update(self.root.now)
+        if self.root.stale:
+            self.root.update(self.root.now, None)
+        return self._positions.ix[:self.now]
 
     def setup(self, universe):
         """

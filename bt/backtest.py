@@ -161,7 +161,7 @@ class Backtest(object):
     @property
     def weights(self):
         """
-        DataFrame of  each component's weight over time
+        DataFrame of each component's weight over time
         """
         if self._weights is not None:
             return self._weights
@@ -171,6 +171,13 @@ class Backtest(object):
             vals = vals.div(self.strategy.values, axis=0)
             self._weights = vals
             return vals
+
+    @property
+    def positions(self):
+        """
+        DataFrame of each component's position over time
+        """
+        return self.strategy.positions
 
     @property
     def security_weights(self):
