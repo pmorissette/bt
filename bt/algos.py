@@ -68,6 +68,44 @@ class RunOnce(Algo):
         return False
 
 
+class RunDaily(Algo):
+
+    """
+    Returns True on day change.
+
+    Returns True if the target.now's day has changed
+    since the last run, if not returns False. Useful for
+    daily rebalancing strategies.
+
+    """
+
+    def __init__(self):
+        super(RunDaily, self).__init__()
+        self.last_date = None
+
+    def __call__(self, target):
+        # get last date
+        now = target.now
+
+        # if none nothing to do - return false
+        if now is None:
+            return False
+
+        # create pandas.Timestamp for useful .week property
+        now = pd.Timestamp(now)
+
+        if self.last_date is None:
+            self.last_date = now
+            return False
+
+        result = False
+        if now.date() != self.last_date.date():
+            result = True
+
+        self.last_date = now
+        return result
+
+
 class RunWeekly(Algo):
 
     """
@@ -182,7 +220,7 @@ class RunQuarterly(Algo):
             return False
 
         result = False
-        if now.month != self.last_date.month and now.month % 3 == 1:
+        if now.quarter != self.last_date.quarter:
             result = True
 
         self.last_date = now
@@ -252,6 +290,7 @@ class RunOnDate(Algo):
     def __call__(self, target):
         return target.now in self.dates
 
+
 class RunAfterDate(Algo):
 
     """
@@ -277,6 +316,7 @@ class RunAfterDate(Algo):
 
     def __call__(self, target):
         return target.now > self.date
+
 
 class RunAfterDays(Algo):
 
@@ -305,6 +345,7 @@ class RunAfterDays(Algo):
             self.days -= 1
             return False
         return True
+
 
 class SelectAll(Algo):
 
@@ -542,7 +583,8 @@ class SelectWhere(Algo):
             selected = sig.index[sig]
             # save as list
             if not self.include_no_data:
-                universe = target.universe[list(selected)].ix[target.now].dropna()
+                universe = target.universe[
+                    list(selected)].ix[target.now].dropna()
                 selected = list(universe[universe > 0].index)
             target.temp['selected'] = list(selected)
 
@@ -731,7 +773,9 @@ class WeighTarget(Algo):
             # dropna and save
             target.temp['weights'] = w.dropna()
 
-        return True
+            return True
+        else:
+            return False
 
 
 class WeighInvVol(Algo):
