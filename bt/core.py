@@ -268,6 +268,7 @@ class StrategyBase(Node):
     _last_price = cy.declare(cy.double)
     _last_fee = cy.declare(cy.double)
     _paper_trade = cy.declare(cy.bint)
+    bankrupt = cy.declare(cy.bint)
 
     def __init__(self, name, children=None, parent=None):
         Node.__init__(self, name, children=children, parent=parent)
@@ -287,6 +288,7 @@ class StrategyBase(Node):
 
         self._paper_trade = False
         self._positions = None
+        self.bankrupt = False
 
     @property
     def price(self):
@@ -420,6 +422,9 @@ class StrategyBase(Node):
         self._funiverse = funiverse
         self._last_chk = None
 
+        # We're not bankrupt yet
+        self.bankrupt = False
+
         # setup internal data
         self.data = pd.DataFrame(index=funiverse.index,
                                  columns=['price', 'value', 'cash', 'fees'],
@@ -470,8 +475,10 @@ class StrategyBase(Node):
                 val += c.value
 
         if self.root == self:
-            if val < 0:
-                raise ValueError('negative root node value!')
+            if (val < 0) and not self.bankrupt:
+                # Declare a bankruptcy
+                self.bankrupt = True
+                self.flatten()
 
         # update data if this value is different or
         # if now has changed - avoid all this if not since it

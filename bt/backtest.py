@@ -151,9 +151,10 @@ class Backtest(object):
         # loop through dates
         for dt in self.dates:
             self.strategy.update(dt)
-            self.strategy.run()
-            # need update after to save weights, values and such
-            self.strategy.update(dt)
+            if not self.strategy.bankrupt:
+                self.strategy.run()
+                # need update after to save weights, values and such
+                self.strategy.update(dt)
 
         self.stats = self.strategy.prices.calc_perf_stats()
         self._original_prices = self.strategy.prices
