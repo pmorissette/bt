@@ -713,6 +713,10 @@ class StrategyBase(Node):
         """
         self.commission_fn = fn
 
+        for c in self._childrenv:
+            if isinstance(c, StrategyBase):
+                c.set_commissions(fn)
+
     @cy.locals(q=cy.double, p=cy.double)
     def _dflt_comm_fn(self, q, p):
         return max(1, abs(q) * 0.01)
