@@ -253,8 +253,9 @@ class StrategyBase(Node):
         * members (list): Current Strategy + strategy's children
         * commission_fn (fn(quantity, price)): A function used to determine the
             commission (transaction fee) amount. Could be used to model slippage
-            (implementation shortfall). Note that often fees are symmetric for buy
-            and sell and absolute value of quantity should be used for calculation.
+            (implementation shortfall). Note that often fees are symmetric for
+            buy and sell and absolute value of quantity should be used for
+            calculation.
         * capital (float): Capital amount in Strategy - cash
         * universe (DataFrame): Data universe available at the current time.
             Universe contains the data passed in when creating a Backtest. Use
@@ -525,7 +526,7 @@ class StrategyBase(Node):
 
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".
-        # Same for fess
+        # Same for fees
         self._cash[self.now] = self._capital
         self._fees[self.now] = self._last_fee
 
@@ -705,7 +706,8 @@ class StrategyBase(Node):
         Set commission (transaction fee) function.
 
         Args:
-            fn (fn(quantity, price)): Function used to determine commission amount.
+            fn (fn(quantity, price)): Function used to determine commission
+            amount.
 
         """
         self.commission_fn = fn
@@ -908,9 +910,9 @@ class SecurityBase(Node):
 
         # ignore 0 alloc
         # Note that if the price of security has dropped to zero, then it should
-        # never be selected by SelectAll, SelectN etc. I.e. we should not open the
-        # position at zero price. At the same time, we are able to close it at zero
-        # price, because at that point amount=0.
+        # never be selected by SelectAll, SelectN etc. I.e. we should not open
+        # the position at zero price. At the same time, we are able to close
+        # it at zero price, because at that point amount=0.
         # Note also that we don't erase the position in an asset which price has
         # dropped to zero (though the weight will indeed be = 0)
         if amount == 0:
