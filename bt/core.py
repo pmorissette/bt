@@ -75,7 +75,8 @@ class Node(object):
                             tmp[c] = SecurityBase(c)
                             ut.append(c)
                         else:
-                            tmp[c.name] = c
+                            # deepcopy object for possible later reuse
+                            tmp[c.name] = deepcopy(c)
 
                             # if strategy, turn on flag and add name to list
                             # strategy children have special treatment
