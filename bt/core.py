@@ -487,7 +487,7 @@ class StrategyBase(Node):
         # won't change
         if newpt or self._value != val:
             self._value = val
-            self._values[date] = val
+            self._values.at[date] = val
 
             try:
                 ret = self._value / (self._last_value
@@ -507,7 +507,7 @@ class StrategyBase(Node):
                                              self._value))
 
             self._price = self._last_price * (1 + ret)
-            self._prices[date] = self._price
+            self._prices.at[date] = self._price
 
         # update children weights
         if self.children is not None:
@@ -523,13 +523,14 @@ class StrategyBase(Node):
         # if we have strategy children, we will need to update them in universe
         if self._has_strat_children:
             for c in self._strat_children:
+                # TODO: optimize ".loc" here as well
                 self._universe.loc[date, c] = self.children[c].price
 
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".
         # Same for fees
-        self._cash[self.now] = self._capital
-        self._fees[self.now] = self._last_fee
+        self._cash.at[self.now] = self._capital
+        self._fees.at[self.now] = self._last_fee
 
         # update paper trade if necessary
         if newpt and self._paper_trade:
@@ -538,7 +539,7 @@ class StrategyBase(Node):
             self._paper.update(date)
             # update price
             self._price = self._paper.price
-            self._prices[date] = self._price
+            self._prices.at[date] = self._price
 
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint, fees=cy.double)
     def adjust(self, amount, update=True, flow=True, fee=0.0):
@@ -874,18 +875,18 @@ class SecurityBase(Node):
             self.now = date
 
             if self._prices_set:
-                self._price = self._prices[self.now]
+                self._price = self._prices.at[self.now]
             # traditional data update
             elif data is not None:
                 prc = data[self.name]
                 self._price = prc
                 self._prices[date] = prc
 
-        self._positions[date] = self._position
+        self._positions.at[date] = self._position
         self._last_pos = self._position
 
         self._value = self._position * self._price * self.multiplier
-        self._values[date] = self._value
+        self._values.at[date] = self._value
 
         if self._weight == 0 and self._position == 0:
             self._needupdate = False
