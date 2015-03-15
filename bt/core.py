@@ -489,7 +489,7 @@ class StrategyBase(Node):
         # won't change
         if newpt or self._value != val:
             self._value = val
-            self._values.iat[inow] = val
+            self._values.values[inow] = val
 
             try:
                 ret = self._value / (self._last_value
@@ -509,7 +509,7 @@ class StrategyBase(Node):
                                              self._value))
 
             self._price = self._last_price * (1 + ret)
-            self._prices.iat[inow] = self._price
+            self._prices.values[inow] = self._price
 
         # update children weights
         if self.children is not None:
@@ -531,8 +531,8 @@ class StrategyBase(Node):
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".
         # Same for fees
-        self._cash.iat[inow] = self._capital
-        self._fees.iat[inow] = self._last_fee
+        self._cash.values[inow] = self._capital
+        self._fees.values[inow] = self._last_fee
 
         # update paper trade if necessary
         if newpt and self._paper_trade:
@@ -541,7 +541,7 @@ class StrategyBase(Node):
             self._paper.update(date)
             # update price
             self._price = self._paper.price
-            self._prices.iat[inow] = self._price
+            self._prices.values[inow] = self._price
 
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint, fees=cy.double)
     def adjust(self, amount, update=True, flow=True, fee=0.0):
@@ -880,18 +880,18 @@ class SecurityBase(Node):
             self.now = date
 
             if self._prices_set:
-                self._price = self._prices.iat[inow]
+                self._price = self._prices.values[inow]
             # traditional data update
             elif data is not None:
                 prc = data[self.name]
                 self._price = prc
-                self._prices.iat[inow] = prc
+                self._prices.values[inow] = prc
 
-        self._positions.iat[inow] = self._position
+        self._positions.values[inow] = self._position
         self._last_pos = self._position
 
         self._value = self._position * self._price * self.multiplier
-        self._values.iat[inow] = self._value
+        self._values.values[inow] = self._value
 
         if self._weight == 0 and self._position == 0:
             self._needupdate = False
