@@ -12,6 +12,9 @@ def test_node_tree():
     c2 = Node('c2')
     p = Node('p', children=[c1, c2])
 
+    c1 = p['c1']
+    c2 = p['c2']
+
     assert len(p.children) == 2
     assert 'c1' in p.children
     assert 'c2' in p.children
@@ -19,6 +22,9 @@ def test_node_tree():
     assert p == c2.parent
 
     m = Node('m', children=[p])
+    p = m['p']
+    c1 = p['c1']
+    c2 = p['c2']
 
     assert len(m.children) == 1
     assert 'p' in m.children
@@ -35,6 +41,9 @@ def test_strategybase_tree():
     s2 = SecurityBase('s2')
     s = StrategyBase('p', [s1, s2])
 
+    s1 = s['s1']
+    s2 = s['s2']
+
     assert len(s.children) == 2
     assert 's1' in s.children
     assert 's2' in s.children
@@ -46,6 +55,9 @@ def test_node_members():
     s1 = SecurityBase('s1')
     s2 = SecurityBase('s2')
     s = StrategyBase('p', [s1, s2])
+
+    s1 = s['s1']
+    s2 = s['s2']
 
     actual = s.members
     assert len(actual) == 3
@@ -67,15 +79,20 @@ def test_node_full_name():
     s2 = SecurityBase('s2')
     s = StrategyBase('p', [s1, s2])
 
+    # we cannot access s1 and s2 directly since they are copied
+    # we must therefore access through s
     assert s.full_name == 'p'
-    assert s1.full_name == 'p>s1'
-    assert s2.full_name == 'p>s2'
+    assert s['s1'].full_name == 'p>s1'
+    assert s['s2'].full_name == 'p>s2'
 
 
 def test_security_setup_prices():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -99,6 +116,8 @@ def test_security_setup_prices():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -123,6 +142,9 @@ def test_strategybase_tree_setup():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -202,6 +224,9 @@ def test_strategybase_tree_allocate():
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
 
+    c1 = s['c1']
+    c2 = s['c2']
+
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
     data['c1'][dts[1]] = 105
@@ -236,6 +261,8 @@ def test_strategybase_tree_allocate_child_from_strategy():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -275,6 +302,14 @@ def test_strategybase_tree_allocate_level2():
     s1 = StrategyBase('s1', [c1, c2])
     s2 = StrategyBase('s2', [c12, c22])
     m = StrategyBase('m', [s1, s2])
+
+    s1 = m['s1']
+    s2 = m['s2']
+
+    c1 = s1['c1']
+    c2 = s1['c2']
+    c12 = s2['c1']
+    c22 = s2['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -328,6 +363,9 @@ def test_strategybase_tree_allocate_long_short():
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
 
+    c1 = s['c1']
+    c2 = s['c2']
+
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
     data['c1'][dts[1]] = 105
@@ -377,6 +415,9 @@ def test_strategybase_tree_allocate_update():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -774,6 +815,9 @@ def test_strategybase_multiple_calls_preset_secs():
     c2 = SecurityBase('c2')
     s = StrategyBase('s', [c1, c2])
 
+    c1 = s['c1']
+    c2 = s['c2']
+
     dts = pd.date_range('2010-01-01', periods=5)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
 
@@ -785,8 +829,6 @@ def test_strategybase_multiple_calls_preset_secs():
     data.c1[dts[4]] = 105
 
     s.setup(data)
-    #c1.setup(dts, data.c1)
-    #c2.setup(dts, data.c2)
 
     # define strategy logic
     def algo(target):
@@ -847,8 +889,6 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c2.value == 1000
     assert c2.weight == 1000.0 / 1049.0
     assert c2.price == 100
-
-    #assert c1.price == 95
 
     # run t1 - close out c2, open c1
     s.run(s)
@@ -1263,18 +1303,17 @@ def test_fail_if_root_value_negative():
     data['c2'][dts[0]] = 95
     s.setup(data)
 
-    try:
-        s.adjust(-100)
-        # trigger update
-        s.update(dts[0])
-        assert False
-    except ValueError, e:
-        if not 'negative root node value' in str(e):
-            assert False
+    s.adjust(-100)
+    # trigger update
+    s.update(dts[0])
+
+    assert s.bankrupt
 
     # make sure only triggered if root negative
     c1 = StrategyBase('c1')
     s = StrategyBase('s', children=[c1])
+    c1 = s['c1']
+
     s.setup(data)
 
     s.adjust(1000)
@@ -1282,14 +1321,11 @@ def test_fail_if_root_value_negative():
     s.update(dts[0])
 
     # now make it trigger
-    try:
-        c1.adjust(-1000)
-        # trigger update
-        s.update(dts[0])
-        assert False
-    except ValueError, e:
-        if not 'negative root node value' in str(e):
-            assert False
+    c1.adjust(-1000)
+    # trigger update
+    s.update(dts[0])
+
+    assert s.bankrupt
 
 
 def test_fail_if_0_base_in_return_calc():
@@ -1301,6 +1337,7 @@ def test_fail_if_0_base_in_return_calc():
     # must setup tree because if not negative root error pops up first
     c1 = StrategyBase('c1')
     s = StrategyBase('s', children=[c1])
+    c1 = s['c1']
     s.setup(data)
 
     s.adjust(1000)
@@ -1315,7 +1352,7 @@ def test_fail_if_0_base_in_return_calc():
         s.update(dts[1])
         assert False
     except ZeroDivisionError, e:
-        if not 'Could not update' in str(e):
+        if 'Could not update' not in str(e):
             assert False
 
 
@@ -1323,6 +1360,9 @@ def test_strategybase_tree_rebalance():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -1379,6 +1419,9 @@ def test_strategybase_tree_rebalance_to_0():
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
 
+    c1 = s['c1']
+    c2 = s['c2']
+
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
     data['c1'][dts[1]] = 105
@@ -1425,6 +1468,15 @@ def test_strategybase_tree_rebalance_level2():
     s1 = StrategyBase('s1', [c1, c2])
     s2 = StrategyBase('s2', [c12, c22])
     m = StrategyBase('m', [s1, s2])
+
+    s1 = m['s1']
+    s2 = m['s2']
+
+    c1 = s1['c1']
+    c2 = s1['c2']
+
+    c12 = s2['c1']
+    c22 = s2['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -1497,6 +1549,9 @@ def test_strategybase_tree_rebalance_base():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -1615,7 +1670,7 @@ def test_set_commissions():
     s.allocate(500, 'c1')
     assert s.capital == 499
 
-    s.set_commissions(lambda x: 0.0)
+    s.set_commissions(lambda x, y: 0.0)
     s.allocate(-500, 'c1')
     assert s.capital == 999
 
@@ -1625,10 +1680,13 @@ def test_strategy_tree_proper_return_calcs():
     s2 = StrategyBase('s2')
     m = StrategyBase('m', [s1, s2])
 
+    s1 = m['s1']
+    s2 = m['s2']
+
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    data['c1'][dts[1]] = 105
-    data['c2'][dts[1]] = 95
+    data.loc['c1', dts[1]] = 105
+    data.loc['c2', dts[1]] = 95
 
     m.setup(data)
 
@@ -1648,7 +1706,6 @@ def test_strategy_tree_proper_return_calcs():
     # now allocate directly to child
     s1.allocate(500)
 
-    print m.capital
     assert m.capital == 500
     assert m.value == 1000
     assert m.price == 100
@@ -1685,9 +1742,13 @@ def test_strategy_tree_proper_return_calcs():
 
 
 def test_strategy_tree_proper_universes():
-    do_nothing = lambda x: 1 == 1
+    def do_nothing(x):
+        return True
+
     child1 = Strategy('c1', [do_nothing], ['b', 'c'])
     master = Strategy('m', [do_nothing], [child1, 'a'])
+
+    child1 = master['c1']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(
@@ -1721,6 +1782,7 @@ def test_strategy_tree_paper():
                   bt.algos.Rebalance()])
 
     m = Strategy('m', [], [s])
+    s = m['s']
 
     m.setup(data)
     m.update(dts[0])
@@ -1728,7 +1790,7 @@ def test_strategy_tree_paper():
 
     assert m.price == 100
     assert s.price == 100
-    assert s._paper_trade == True
+    assert s._paper_trade
     assert s._paper.price == 100
 
     s.update(dts[1])

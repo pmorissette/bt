@@ -51,6 +51,8 @@ def test_initial_capital_set():
 
 def test_run_loop():
     s = mock.MagicMock()
+    # run loop checks on this
+    s.bankrupt = False
     data = pd.DataFrame(index=pd.date_range('2010-01-01', periods=5),
                         columns=['a', 'b'], data=100)
 
