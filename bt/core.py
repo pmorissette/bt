@@ -465,7 +465,10 @@ class StrategyBase(Node):
         # update now
         self.now = date
         if inow is None:
-            inow = self.data.index.get_loc(date)
+            if self.now == 0:
+                inow = 0
+            else:
+                inow = self.data.index.get_loc(date)
 
         # update children if any and calculate value
         val = self._capital  # default if no children
@@ -872,7 +875,10 @@ class SecurityBase(Node):
             return
 
         if inow is None:
-            inow = self.data.index.get_loc(date)
+            if date == 0:
+                inow = 0
+            else:
+                inow = self.data.index.get_loc(date)
 
         # date change - update price
         if date != self.now:
