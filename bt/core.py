@@ -186,7 +186,7 @@ class Node(object):
 
         self._childrenv = self.children.values()
 
-    def update(self, date, data=None):
+    def update(self, date, data=None, inow=None):
         """
         Update Node with latest date, and optionally some data.
         """
@@ -443,7 +443,7 @@ class StrategyBase(Node):
             [c.setup(universe) for c in self._childrenv]
 
     @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double)
-    def update(self, date, data=None):
+    def update(self, date, data=None, inow=None):
         """
         Update strategy. Updates prices, values, weight, etc.
         """
@@ -464,6 +464,11 @@ class StrategyBase(Node):
 
         # update now
         self.now = date
+        if inow is None:
+            if self.now == 0:
+                inow = 0
+            else:
+                inow = self.data.index.get_loc(date)
 
         # update children if any and calculate value
         val = self._capital  # default if no children
@@ -473,7 +478,7 @@ class StrategyBase(Node):
                 # avoid useless update call
                 if c._issec and not c._needupdate:
                     continue
-                c.update(date, data)
+                c.update(date, data, inow)
                 val += c.value
 
         if self.root == self:
@@ -487,7 +492,7 @@ class StrategyBase(Node):
         # won't change
         if newpt or self._value != val:
             self._value = val
-            self._values[date] = val
+            self._values.values[inow] = val
 
             try:
                 ret = self._value / (self._last_value
@@ -507,7 +512,7 @@ class StrategyBase(Node):
                                              self._value))
 
             self._price = self._last_price * (1 + ret)
-            self._prices[date] = self._price
+            self._prices.values[inow] = self._price
 
         # update children weights
         if self.children is not None:
@@ -523,13 +528,14 @@ class StrategyBase(Node):
         # if we have strategy children, we will need to update them in universe
         if self._has_strat_children:
             for c in self._strat_children:
+                # TODO: optimize ".loc" here as well
                 self._universe.loc[date, c] = self.children[c].price
 
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".
         # Same for fees
-        self._cash[self.now] = self._capital
-        self._fees[self.now] = self._last_fee
+        self._cash.values[inow] = self._capital
+        self._fees.values[inow] = self._last_fee
 
         # update paper trade if necessary
         if newpt and self._paper_trade:
@@ -538,7 +544,7 @@ class StrategyBase(Node):
             self._paper.update(date)
             # update price
             self._price = self._paper.price
-            self._prices[date] = self._price
+            self._prices.values[inow] = self._price
 
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint, fees=cy.double)
     def adjust(self, amount, update=True, flow=True, fee=0.0):
@@ -856,7 +862,7 @@ class SecurityBase(Node):
         self._positions = self.data['position']
 
     @cy.locals(prc=cy.double)
-    def update(self, date, data=None):
+    def update(self, date, data=None, inow=None):
         """
         Update security with a given date and optionally, some data.
         This will update price, value, weight, etc.
@@ -868,24 +874,30 @@ class SecurityBase(Node):
         if date == self.now and self._last_pos == self._position:
             return
 
+        if inow is None:
+            if date == 0:
+                inow = 0
+            else:
+                inow = self.data.index.get_loc(date)
+
         # date change - update price
         if date != self.now:
             # update now
             self.now = date
 
             if self._prices_set:
-                self._price = self._prices[self.now]
+                self._price = self._prices.values[inow]
             # traditional data update
             elif data is not None:
                 prc = data[self.name]
                 self._price = prc
-                self._prices[date] = prc
+                self._prices.values[inow] = prc
 
-        self._positions[date] = self._position
+        self._positions.values[inow] = self._position
         self._last_pos = self._position
 
         self._value = self._position * self._price * self.multiplier
-        self._values[date] = self._value
+        self._values.values[inow] = self._value
 
         if self._weight == 0 and self._position == 0:
             self._needupdate = False
