@@ -208,6 +208,22 @@ class Backtest(object):
 
             return vals
 
+    @property
+    def herfindahl_index(self):
+        """
+        Calculate Herfindahl-Hirschman Index (HHI) for the portfolio.
+        For each given day, HHI is defined as a sum of squared weights of
+        securities in a portfolio; and varies from 1/N to 1.
+        Value of 1/N would correspond to an equally weighted portfolio and
+        value of 1 corresponds to an extreme case when all amount is invested
+        in a single asset.
+
+        1 / HHI is often considered as "an effective number of assets" in
+        a given portfolio
+        """
+        w = self.security_weights
+        return (w ** 2).sum(axis=1)
+
 
 class Result(ffn.GroupStats):
 
