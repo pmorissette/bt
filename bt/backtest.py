@@ -118,6 +118,12 @@ class Backtest(object):
                  initial_capital=1000000.0,
                  commissions=None):
 
+        if data.columns.duplicated().any():
+            cols = data.columns[data.columns.duplicated().tolist()].tolist()
+            raise Exception(
+                'data provided has some duplicate column names: \n%s \n'
+                'Please remove duplicates!' % cols)
+
         # we want to reuse strategy logic - copy it!
         # basically strategy is a template
         self.strategy = deepcopy(strategy)
@@ -371,7 +377,7 @@ class RandomBenchmarkResult(Result):
             * kwargs (dict): Passed to pandas hist function.
 
         """
-        if not statistic in self.r_stats.index:
+        if statistic not in self.r_stats.index:
             raise ValueError("Invalid statistic. Valid statistics"
                              "are the statistics in self.stats")
 
