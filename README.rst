@@ -105,3 +105,11 @@ This environment allows you to plot your charts in-line and also allows you to
 easily add surrounding text with Markdown. You can easily create Notebooks that
 you can share with colleagues and you can also save them as PDFs. If you are not
 yet convinced, head over to their website.
+
+Special Thanks
+--------------
+
+A special thanks to the following contributors for their involvement with the project:
+
+* Vladimir Filimonov `@vfilimonov <https://github.com/vfilimonov>`_ 
+
