@@ -44,6 +44,47 @@ class PrintTempData(Algo):
         return True
 
 
+class PrintInfo(Algo):
+
+    """
+    Prints out info associated with the target strategy.
+
+    Useful for debugging purposes.
+
+    Ex:
+
+        Add this Algo to the stack:
+            PrintInfo('Strategy date is {now}')
+
+    This will print out the date (now) on each call.
+    Basically, you provide a string that will be formatted with target.__dict__
+    Therefore, any property you want to examine can be provided inside curly
+    braces.
+
+    """
+
+    def __init__(self, fmt_string='{full_name} {now}'):
+        self.fmt_string = fmt_string
+
+    def __call__(self, target):
+        print self.fmt_string.format(target.__dict__)
+        return True
+
+
+class Debug(Algo):
+
+    """
+    Utility Algo that calls pdb.set_trace when triggered.
+
+    In the debug session, target is available and can be examined.
+    """
+
+    def __call__(self, target):
+        import pdb
+        pdb.set_trace()
+        return True
+
+
 class RunOnce(Algo):
 
     """

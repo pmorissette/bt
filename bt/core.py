@@ -222,6 +222,9 @@ class Node(object):
         else:
             return '%s>%s' % (self.parent.full_name, self.name)
 
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.full_name)
+
 
 class StrategyBase(Node):
 
@@ -1132,5 +1135,5 @@ class Strategy(StrategyBase):
         self.stack(self)
 
         # run children
-        for c in self.children.values():
+        for c in self._childrenv:
             c.run()
