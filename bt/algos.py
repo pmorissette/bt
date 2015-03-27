@@ -47,19 +47,20 @@ class PrintTempData(Algo):
 class PrintInfo(Algo):
 
     """
-    Prints out info associated with the target strategy.
+    Prints out info associated with the target strategy. Useful for debugging
+    purposes.
 
-    Useful for debugging purposes.
+    Args:
+        * fmt_string (str): A string that will later be formatted with the
+            target object's __dict__ attribute. Therefore, you should provide
+            what you want to examine within curly braces ( { } )
 
     Ex:
+        PrintInfo('Strategy {name} : {now}')
 
-        Add this Algo to the stack:
-            PrintInfo('Strategy date is {now}')
 
-    This will print out the date (now) on each call.
+    This will print out the name and the date (now) on each call.
     Basically, you provide a string that will be formatted with target.__dict__
-    Therefore, any property you want to examine can be provided inside curly
-    braces.
 
     """
 
@@ -386,6 +387,45 @@ class RunAfterDays(Algo):
             self.days -= 1
             return False
         return True
+
+
+class RunEveryNPeriods(Algo):
+
+    """
+    This algo runs every n periods.
+
+    Args:
+        * n (int): Run each n periods
+        * offset (int): Applies to the first run. If 0, this algo will run the
+            first time it is called.
+
+    This Algo can be useful for the following type of strategy:
+        Each month, select the top 5 performers. Hold them for 3 months.
+
+    You could then create 3 strategies with different offsets and create a
+    master strategy that would allocate equal amounts of capital to each.
+
+    """
+
+    def __init__(self, n, offset=0):
+        self.n = n
+        self.offset = offset
+        self.idx = n - offset - 1
+        self.lcall = 0
+
+    def __call__(self, target):
+        # ignore multiple calls on same period
+        if self.lcall == target.now:
+            return False
+        else:
+            self.lcall = target.now
+            # run when idx == (n-1)
+            if self.idx == (self.n - 1):
+                self.idx = 0
+                return True
+            else:
+                self.idx += 1
+                return False
 
 
 class SelectAll(Algo):
