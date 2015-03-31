@@ -1024,6 +1024,9 @@ class LimitWeights(Algo):
             return True
 
         tw = target.temp['weights']
+        if len(tw) == 0:
+            return True
+        
         tw = bt.ffn.limit_weights(tw, self.limit)
         target.temp['weights'] = tw
 
