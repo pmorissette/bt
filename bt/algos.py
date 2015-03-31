@@ -536,6 +536,8 @@ class SelectMomentum(AlgoStack):
             calculation
         * lag (DateOffset): Lag interval for total return calculation
         * sort_descending (bool): Sort descending (highest return is best)
+        * all_or_none (bool): If true, only populates temp['selected'] if we
+            have n items. If we have less than n, then temp['selected'] = [].
 
     Sets:
         * selected
@@ -546,10 +548,12 @@ class SelectMomentum(AlgoStack):
     """
 
     def __init__(self, n, lookback=pd.DateOffset(months=3),
-                 lag=pd.DateOffset(days=0), sort_descending=True):
+                 lag=pd.DateOffset(days=0), sort_descending=True,
+                 all_or_none=False):
         super(SelectMomentum, self).__init__(
             StatTotalReturn(lookback=lookback, lag=lag),
-            SelectN(n=n, sort_descending=sort_descending))
+            SelectN(n=n, sort_descending=sort_descending,
+                    all_or_none=all_or_none))
 
 
 class SelectWhere(Algo):
