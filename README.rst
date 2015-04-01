@@ -113,3 +113,8 @@ A special thanks to the following contributors for their involvement with the pr
 
 * Vladimir Filimonov `@vfilimonov <https://github.com/vfilimonov>`_ 
 
+
+License
+-------
+
+MIT
