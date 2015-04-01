@@ -590,12 +590,59 @@ def test_require():
     target = mock.MagicMock()
     target.temp = {}
 
-    pred = lambda x: len(x) > 0
-    algo = algos.Require(pred, 'selected')
+    algo = algos.Require(lambda x: len(x) > 0, 'selected')
     assert not algo(target)
 
     target.temp['selected'] = []
     assert not algo(target)
 
     target.temp['selected'] = ['a', 'b']
+    assert algo(target)
+
+
+def test_run_every_n_periods():
+    target = mock.MagicMock()
+    target.temp = {}
+
+    algo = algos.RunEveryNPeriods(n=3, offset=0)
+
+    target.now = pd.to_datetime('2010-01-01')
+    assert algo(target)
+    # run again w/ no date change should not trigger
+    assert not algo(target)
+
+    target.now = pd.to_datetime('2010-01-02')
+    assert not algo(target)
+
+    target.now = pd.to_datetime('2010-01-03')
+    assert not algo(target)
+
+    target.now = pd.to_datetime('2010-01-04')
+    assert algo(target)
+
+    target.now = pd.to_datetime('2010-01-05')
+    assert not algo(target)
+
+
+def test_run_every_n_periods_offset():
+    target = mock.MagicMock()
+    target.temp = {}
+
+    algo = algos.RunEveryNPeriods(n=3, offset=1)
+
+    target.now = pd.to_datetime('2010-01-01')
+    assert not algo(target)
+    # run again w/ no date change should not trigger
+    assert not algo(target)
+
+    target.now = pd.to_datetime('2010-01-02')
+    assert algo(target)
+
+    target.now = pd.to_datetime('2010-01-03')
+    assert not algo(target)
+
+    target.now = pd.to_datetime('2010-01-04')
+    assert not algo(target)
+
+    target.now = pd.to_datetime('2010-01-05')
     assert algo(target)
