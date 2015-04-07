@@ -96,6 +96,8 @@ class Node(object):
         if parent is None:
             self.parent = self
             self.root = self
+            # by default all positions are integer
+            self.integer_positions = True
         else:
             self.parent = parent
             self.root = parent.root
@@ -131,6 +133,22 @@ class Node(object):
 
     def __getitem__(self, key):
         return self.children[key]
+
+    def use_integer_positions(self, integer_positions):
+        """
+        Set indicator to use (or not) integer positions for give strategy or
+        security.
+
+        By default all positions in number of stocks should be integer.
+        However this may lead to unexpected results when working with adjusted
+        prices of stocks. Because of series of reverse splits of stocks, the
+        adjusted prices back in time might be high. Thus rounding of desired
+        amount of stocks to buy may lead to having 0, and thus ignoring this
+        stock from backtesting.
+        """
+        self.integer_positions = integer_positions
+        for c in self._childrenv:
+            c.use_integer_positions(integer_positions)
 
     @property
     def prices(self):
@@ -179,6 +197,8 @@ class Node(object):
     def _add_child(self, child):
         child.parent = self
         child.root = self.root
+        child.integer_positions = self.integer_positions
+
         if self.children is None:
             self.children = {child.name: child}
         else:
@@ -954,12 +974,14 @@ class SecurityBase(Node):
         if amount == -self._value:
             q = -self._position
         else:
-            if (self._position > 0) or ((self._position == 0) and (amount > 0)):
-                # if we're going long or changing long position
-                q = math.floor(amount / (self._price * self.multiplier))
-            else:
-                # if we're going short or changing short position
-                q = math.ceil(amount / (self._price * self.multiplier))
+            q = amount / (self._price * self.multiplier)
+            if self.integer_positions:
+                if (self._position > 0) or ((self._position == 0) and (amount > 0)):
+                    # if we're going long or changing long position
+                    q = math.floor(q)
+                else:
+                    # if we're going short or changing short position
+                    q = math.ceil(q)
 
         # if q is 0 nothing to do
         if q == 0 or np.isnan(q):

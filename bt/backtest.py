@@ -116,7 +116,8 @@ class Backtest(object):
     def __init__(self, strategy, data,
                  name=None,
                  initial_capital=1000000.0,
-                 commissions=None):
+                 commissions=None,
+                 integer_positions=True):
 
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
@@ -127,6 +128,8 @@ class Backtest(object):
         # we want to reuse strategy logic - copy it!
         # basically strategy is a template
         self.strategy = deepcopy(strategy)
+        self.strategy.use_integer_positions(integer_positions)
+
         self.data = data
         self.dates = data.index
         self.initial_capital = initial_capital
