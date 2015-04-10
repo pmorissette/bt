@@ -884,9 +884,11 @@ class WeighInvVol(Algo):
 
     """
 
-    def __init__(self, lookback=pd.DateOffset(months=3)):
+    def __init__(self, lookback=pd.DateOffset(months=3),
+                 lag=pd.DateOffset(days=0)):
         super(WeighInvVol, self).__init__()
         self.lookback = lookback
+        self.lag = lag
 
     def __call__(self, target):
         selected = target.temp['selected']
@@ -899,7 +901,8 @@ class WeighInvVol(Algo):
             target.temp['weights'] = {selected[0]: 1.}
             return True
 
-        prc = target.universe[selected].ix[target.now - self.lookback:]
+        t0 = target.now - self.lag
+        prc = target.universe[selected].ix[t0 - self.lookback:t0]
         tw = bt.ffn.calc_inv_vol_weights(
             prc.to_returns().dropna())
         target.temp['weights'] = tw.dropna()
@@ -935,9 +938,10 @@ class WeighMeanVar(Algo):
 
     def __init__(self, lookback=pd.DateOffset(months=3),
                  bounds=(0., 1.), covar_method='ledoit-wolf',
-                 rf=0.):
+                 rf=0., lag=pd.DateOffset(days=0)):
         super(WeighMeanVar, self).__init__()
         self.lookback = lookback
+        self.lag = lag
         self.bounds = bounds
         self.covar_method = covar_method
         self.rf = rf
@@ -953,7 +957,8 @@ class WeighMeanVar(Algo):
             target.temp['weights'] = {selected[0]: 1.}
             return True
 
-        prc = target.universe[selected].ix[target.now - self.lookback:]
+        t0 = target.now - self.lag
+        prc = target.universe[selected].ix[t0 - self.lookback:t0]
         tw = bt.ffn.calc_mean_var_weights(
             prc.to_returns().dropna(), weight_bounds=self.bounds,
             covar_method=self.covar_method, rf=self.rf)
