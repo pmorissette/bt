@@ -27,7 +27,7 @@ class PrintDate(Algo):
     """
 
     def __call__(self, target):
-        print target.now
+        print(target.now)
         return True
 
 
@@ -40,7 +40,7 @@ class PrintTempData(Algo):
     """
 
     def __call__(self, target):
-        print target.temp
+        print(target.temp)
         return True
 
 
@@ -68,7 +68,7 @@ class PrintInfo(Algo):
         self.fmt_string = fmt_string
 
     def __call__(self, target):
-        print self.fmt_string.format(target.__dict__)
+        print(self.fmt_string.format(target.__dict__))
         return True
 
 
@@ -1009,7 +1009,7 @@ class WeighRandomly(Algo):
         try:
             rw = bt.ffn.random_weights(
                 n, self.bounds, self.weight_sum)
-            w = dict(zip(sel, rw))
+            w = dict(list(zip(sel, rw)))
         except ValueError:
             pass
 
@@ -1055,7 +1055,7 @@ class LimitDeltas(Algo):
 
     def __call__(self, target):
         tw = target.temp['weights']
-        all_keys = set(target.children.keys() + tw.keys())
+        all_keys = set(list(target.children.keys()) + list(tw.keys()))
 
         for k in all_keys:
             tgt = tw[k] if k in tw else 0.
@@ -1220,7 +1220,7 @@ class Rebalance(Algo):
         # save value because it will change after each call to allocate
         # use it as base in rebalance calls
         base = target.value
-        for item in targets.iteritems():
+        for item in targets.items():
             target.rebalance(item[1], child=item[0], base=base)
 
         return True

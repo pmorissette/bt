@@ -109,7 +109,7 @@ class Node(object):
             self._universe_tickers = None
         self.children = children
 
-        self._childrenv = children.values()
+        self._childrenv = list(children.values())
         for c in self._childrenv:
             c.parent = self
             c.root = self.root
@@ -204,7 +204,7 @@ class Node(object):
         else:
             self.children[child.name] = child
 
-        self._childrenv = self.children.values()
+        self._childrenv = list(self.children.values())
 
     def update(self, date, data=None, inow=None):
         """
@@ -231,7 +231,7 @@ class Node(object):
         children.
         """
         res = [self]
-        for c in self.children.values():
+        for c in list(self.children.values()):
             res.extend(c.members)
         return res
 
