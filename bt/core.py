@@ -520,6 +520,8 @@ class StrategyBase(Node):
             try:
                 ret = self._value / (self._last_value
                                      + self._net_flows) - 1
+                if ret != ret: # means _weight == NaN
+                    raise ZeroDivisionError
             except ZeroDivisionError:
                 if self._value == 0:
                     ret = 0
@@ -545,6 +547,8 @@ class StrategyBase(Node):
                     continue
                 try:
                     c._weight = c.value / val
+                    if c._weight != c._weight: # means _weight == NaN
+                        c._weight = 0.0
                 except ZeroDivisionError:
                     c._weight = 0.0
 
