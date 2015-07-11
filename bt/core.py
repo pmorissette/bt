@@ -519,9 +519,10 @@ class StrategyBase(Node):
             self._values.values[inow] = val
 
             try:
-                ret = self._value / (self._last_value
-                                     + self._net_flows) - 1
-            except ZeroDivisionError:
+                with np.errstate(divide='raise', invalid='raise'):
+                    ret = self._value / (self._last_value
+                                         + self._net_flows) - 1
+            except (ZeroDivisionError, FloatingPointError):
                 if self._value == 0:
                     ret = 0
                 else:
