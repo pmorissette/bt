@@ -1,6 +1,7 @@
 """
 Contains the core building blocks of the framework.
 """
+from __future__ import division
 import math
 from copy import deepcopy
 
