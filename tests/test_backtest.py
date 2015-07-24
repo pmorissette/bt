@@ -1,3 +1,4 @@
+from __future__ import division
 import bt
 import pandas as pd
 import mock

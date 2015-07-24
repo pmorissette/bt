@@ -1,6 +1,7 @@
 """
 A collection of Algos used to create Strategy logic.
 """
+from __future__ import division
 import bt
 from bt.core import Algo, AlgoStack
 import pandas as pd
@@ -1112,7 +1113,7 @@ class LimitWeights(Algo):
         tw = target.temp['weights']
         if len(tw) == 0:
             return True
-        
+
         tw = bt.ffn.limit_weights(tw, self.limit)
         target.temp['weights'] = tw
 

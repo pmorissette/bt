@@ -1,6 +1,7 @@
 """
 Contains backtesting logic and objects.
 """
+from __future__ import division
 from copy import deepcopy
 import bt
 import ffn
