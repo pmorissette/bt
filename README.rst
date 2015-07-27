@@ -88,7 +88,8 @@ Distribution <https://store.continuum.io/cshop/anaconda/>`_, especially on Windo
 comes with many of the required packages pre-installed, including pip. Once Anaconda is installed, the above 
 command should complete the installation. 
 
-bt should be compatible with Python 2.7. 
+bt should be compatible with Python 2.7 and Python 3 thanks to the contributions
+made by fellow users.
 
 Recommended Setup
 -----------------
