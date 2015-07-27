@@ -1,3 +1,4 @@
+from __future__ import division
 import copy
 
 import bt
@@ -1351,7 +1352,7 @@ def test_fail_if_0_base_in_return_calc():
         c1.adjust(-100)
         s.update(dts[1])
         assert False
-    except ZeroDivisionError, e:
+    except ZeroDivisionError as e:
         if 'Could not update' not in str(e):
             assert False
 
