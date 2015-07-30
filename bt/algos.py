@@ -2,6 +2,7 @@
 A collection of Algos used to create Strategy logic.
 """
 from __future__ import division
+from future.utils import iteritems
 import bt
 from bt.core import Algo, AlgoStack
 import pandas as pd
@@ -1221,7 +1222,7 @@ class Rebalance(Algo):
         # save value because it will change after each call to allocate
         # use it as base in rebalance calls
         base = target.value
-        for item in targets.items():
+        for item in iteritems(targets):
             target.rebalance(item[1], child=item[0], base=base)
 
         return True
