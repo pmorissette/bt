@@ -393,13 +393,10 @@ class StrategyBase(Node):
         if self.root.stale:
             self.root.update(self.root.now, None)
 
-        if self._positions is not None:
-            return self._positions
-        else:
-            vals = pd.DataFrame({x.name: x.positions for x in self.members
-                                 if isinstance(x, SecurityBase)})
-            self._positions = vals
-            return vals
+        vals = pd.DataFrame({x.name: x.positions for x in self.members
+                                if isinstance(x, SecurityBase)})
+        self._positions = vals
+        return vals
 
     def setup(self, universe):
         """
