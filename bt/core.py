@@ -515,11 +515,10 @@ class StrategyBase(Node):
             self._value = val
             self._values.values[inow] = val
 
-            try:
-                with np.errstate(divide='raise', invalid='raise'):
-                    ret = self._value / (self._last_value
-                                         + self._net_flows) - 1
-            except (ZeroDivisionError, FloatingPointError):
+            bottom = self._last_value + self._net_flows
+            if bottom != 0:
+                ret = self._value / (self._last_value + self._net_flows) - 1
+            else:
                 if self._value == 0:
                     ret = 0
                 else:
@@ -542,10 +541,10 @@ class StrategyBase(Node):
                 # avoid useless update call
                 if c._issec and not c._needupdate:
                     continue
-                try:
-                    with np.errstate(divide='raise', invalid='raise'):
-                        c._weight = c.value / val
-                except (ZeroDivisionError, FloatingPointError):
+
+                if val != 0:
+                    c._weight = c.value / val
+                else:
                     c._weight = 0.0
 
         # if we have strategy children, we will need to update them in universe
@@ -974,8 +973,7 @@ class SecurityBase(Node):
         if amount == -self._value:
             q = -self._position
         else:
-            with np.errstate(divide='raise', invalid='raise'):
-                q = amount / (self._price * self.multiplier)
+            q = amount / (self._price * self.multiplier)
             if self.integer_positions:
                 if (self._position > 0) or ((self._position == 0) and (amount > 0)):
                     # if we're going long or changing long position
