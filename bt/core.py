@@ -975,7 +975,8 @@ class SecurityBase(Node):
         else:
             q = amount / (self._price * self.multiplier)
             if self.integer_positions:
-                if (self._position > 0) or ((self._position == 0) and (amount > 0)):
+                if (self._position > 0) or ((self._position == 0) and (
+                        amount > 0)):
                     # if we're going long or changing long position
                     q = math.floor(q)
                 else:
