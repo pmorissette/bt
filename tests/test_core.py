@@ -1753,9 +1753,9 @@ def test_strategy_tree_proper_universes():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(
-        {'a': pd.TimeSeries(data=1, index=dts, name='a'),
-         'b': pd.TimeSeries(data=2, index=dts, name='b'),
-         'c': pd.TimeSeries(data=3, index=dts, name='c')})
+        {'a': pd.Series(data=1, index=dts, name='a'),
+         'b': pd.Series(data=2, index=dts, name='b'),
+         'c': pd.Series(data=3, index=dts, name='c')})
 
     master.setup(data)
 
@@ -1809,3 +1809,48 @@ def test_strategy_tree_paper():
     assert m.value == 0
     assert s.value == 0
     aae(s.price, 100.9801, 4)
+
+
+def test_outlays():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    # allocate 1000 to strategy
+    s.adjust(1000)
+
+    # now let's see what happens when we allocate 500 to each child
+    c1.allocate(500)
+    c2.allocate(500)
+
+    # out update
+    s.update(dts[i])
+
+    assert c1.data['outlay'][dts[0]] == (4 * 105)
+    assert c2.data['outlay'][dts[0]] == (5 * 95)
+
+    i = 1
+    s.update(dts[i], data.ix[dts[i]])
+
+    c1.allocate(-400)
+    c2.allocate(100)
+
+    # out update
+    s.update(dts[i])
+
+    print c1.data['outlay']
+    assert c1.data['outlay'][dts[1]] == (-4 * 100)
+    assert c2.data['outlay'][dts[1]] == 100

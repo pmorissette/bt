@@ -271,11 +271,14 @@ class StrategyBase(Node):
             updating
         * prices (TimeSeries): Prices of the Strategy - basically an index that
             reflects the value of the strategy over time.
+        * outlays (DataFrame): Outlays for each SecurityBase child
         * price (float): last price
         * value (float): last value
         * weight (float): weight in parent
         * full_name (str): Name including parents' names
         * members (list): Current Strategy + strategy's children
+        * securities (list): List of strategy children that are of type
+            SecurityBase
         * commission_fn (fn(quantity, price)): A function used to determine the
             commission (transaction fee) amount. Could be used to model slippage
             (implementation shortfall). Note that often fees are symmetric for
@@ -383,6 +386,20 @@ class StrategyBase(Node):
             self._last_chk = self.now
             self._funiverse = self._universe.ix[:self.now]
             return self._funiverse
+
+    @property
+    def securities(self):
+        """
+        Returns a list of children that are of type SecurityBase
+        """
+        return [x for x in self.members if isinstance(x, SecurityBase)]
+
+    @property
+    def outlays(self):
+        """
+        Returns a DataFrame of outlays for each child SecurityBase
+        """
+        return pd.DataFrame({x.name: x.outlays for x in self.securities})
 
     @property
     def positions(self):
@@ -771,6 +788,10 @@ class SecurityBase(Node):
             updating
         * prices (TimeSeries): Security prices.
         * price (float): last price
+        * outlays (TimeSeries): Series of outlays. Positive outlays mean capital
+            was allocated to security and security consumed that amount.
+            Negative outlays are the opposite. This can be useful for
+            calculating turnover at the strategy level.
         * value (float): last value - basically position * price * multiplier
         * weight (float): weight in parent
         * full_name (str): Name including parents' names
@@ -784,6 +805,7 @@ class SecurityBase(Node):
     multiplier = cy.declare(cy.double)
     _prices_set = cy.declare(cy.bint)
     _needupdate = cy.declare(cy.bint)
+    _outlay = cy.declare(cy.double)
 
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1):
@@ -798,6 +820,7 @@ class SecurityBase(Node):
         self._last_pos = 0
         self._issec = True
         self._needupdate = True
+        self._outlay = 0
 
     @property
     def price(self):
@@ -851,6 +874,17 @@ class SecurityBase(Node):
             self.root.update(self.root.now, None)
         return self._positions.ix[:self.now]
 
+    @property
+    def outlays(self):
+        """
+        TimeSeries of outlays. Positive outlays (buys) mean this security
+        received and consumed capital (capital was allocated to it). Negative
+        outlays are the opposite (the security close/sold, and returned capital
+        to parent).
+        """
+        # if accessing and stale - update first
+        return self._outlays.ix[:self.now]
+
     def setup(self, universe):
         """
         Setup Security with universe. Speeds up future runs.
@@ -882,6 +916,10 @@ class SecurityBase(Node):
 
         self._values = self.data['value']
         self._positions = self.data['position']
+
+        # add _outlay
+        self.data['outlay'] = 0.
+        self._outlays = self.data['outlay']
 
     @cy.locals(prc=cy.double)
     def update(self, date, data=None, inow=None):
@@ -923,6 +961,12 @@ class SecurityBase(Node):
 
         if self._weight == 0 and self._position == 0:
             self._needupdate = False
+
+        # save outlay to outlays
+        if self._outlay != 0:
+            self._outlays.values[inow] = self._outlay
+            # reset outlay back to 0
+            self._outlay = 0
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double)
     def allocate(self, amount, update=True):
@@ -999,10 +1043,13 @@ class SecurityBase(Node):
         # parent passed down amount so we want to pass
         # -outlay back up to parent to adjust for capital
         # used
-        outlay, fee = self.outlay(q)
+        full_outlay, outlay, fee = self.outlay(q)
+
+        # store outlay for future reference
+        self._outlay += outlay
 
         # call parent
-        self.parent.adjust(-outlay, update=update, flow=False, fee=fee)
+        self.parent.adjust(-full_outlay, update=update, flow=False, fee=fee)
 
     @cy.locals(q=cy.double, p=cy.double)
     def commission(self, q, p):
@@ -1029,8 +1076,8 @@ class SecurityBase(Node):
 
         """
         fee = self.commission(q, self._price * self.multiplier)
-        full_outlay = q * self._price * self.multiplier + fee
-        return full_outlay, fee
+        outlay = q * self._price * self.multiplier
+        return outlay + fee, outlay, fee
 
     def run(self):
         """
