@@ -6,6 +6,7 @@ from copy import deepcopy
 import bt
 import ffn
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 
 
@@ -233,6 +234,30 @@ class Backtest(object):
         """
         w = self.security_weights
         return (w ** 2).sum(axis=1)
+
+    @property
+    def turnover(self):
+        """
+        Calculate the turnover for the backtest.
+
+        This function will calculate the turnover for the strategy. Turnover is
+        defined as the lesser of positive or negative outlays divided by NAV
+        """
+        s = self.strategy
+        outlays = s.outlays
+
+        # seperate positive and negative outlays, sum them up, and keep min
+        outlaysp = outlays[outlays >= 0].fillna(value=0).sum(axis=1)
+        outlaysn = np.abs(outlays[outlays < 0].fillna(value=0).sum(axis=1))
+
+        # merge and keep minimum
+        min_outlay = pd.DataFrame(
+            {'pos': outlaysp, 'neg': outlaysn}).min(axis=1)
+
+        # turnover is defined as min outlay / nav
+        mrg = pd.DataFrame({'outlay': min_outlay, 'nav': s.values})
+
+        return mrg['outlay'] / mrg['nav']
 
 
 class Result(ffn.GroupStats):

@@ -64,3 +64,33 @@ def test_run_loop():
 
     assert s.update.call_count == 10
     assert s.run.call_count == 5
+
+
+def test_turnover():
+    dts = pd.date_range('2010-01-01', periods=5)
+    data = pd.DataFrame(index=dts, columns=['a', 'b'], data=100)
+
+    data['a'][dts[1]] = 105
+    data['b'][dts[1]] = 95
+
+    data['a'][dts[2]] = 110
+    data['b'][dts[2]] = 90
+
+    data['a'][dts[3]] = 115
+    data['b'][dts[3]] = 85
+
+    s = bt.Strategy('s', [bt.algos.SelectAll(),
+                          bt.algos.WeighEqually(),
+                          bt.algos.Rebalance()])
+
+    t = bt.Backtest(s, data, commissions=lambda x, y: 0)
+    res = bt.run(t)
+
+    t = res.backtests['s']
+
+    # these numbers were (tediously) calculated in excel
+    assert t.turnover[dts[0]] == 0. / 1000000
+    assert t.turnover[dts[1]] == 24985.  / 1000000
+    assert t.turnover[dts[2]] == 24970. / 997490
+    assert t.turnover[dts[3]] == 25160. / 992455
+    assert t.turnover[dts[4]] == 76100. / 1015285
