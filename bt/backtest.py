@@ -98,7 +98,7 @@ class Backtest(object):
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
             Strategy.
-        * commission (fn(quantity)): The commission function to be used.
+        * commissions (fn(quantity)): The commission function to be used.
 
     Attributes:
         * strategy (Strategy): The Backtest's Strategy. This will be a deepcopy
