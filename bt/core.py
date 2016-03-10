@@ -280,10 +280,10 @@ class StrategyBase(Node):
         * securities (list): List of strategy children that are of type
             SecurityBase
         * commission_fn (fn(quantity, price)): A function used to determine the
-            commission (transaction fee) amount. Could be used to model slippage
-            (implementation shortfall). Note that often fees are symmetric for
-            buy and sell and absolute value of quantity should be used for
-            calculation.
+            commission (transaction fee) amount. Could be used to model
+            slippage (implementation shortfall). Note that often fees are
+            symmetric for buy and sell and absolute value of quantity should
+            be used for calculation.
         * capital (float): Capital amount in Strategy - cash
         * universe (DataFrame): Data universe available at the current time.
             Universe contains the data passed in when creating a Backtest. Use
@@ -788,9 +788,9 @@ class SecurityBase(Node):
             updating
         * prices (TimeSeries): Security prices.
         * price (float): last price
-        * outlays (TimeSeries): Series of outlays. Positive outlays mean capital
-            was allocated to security and security consumed that amount.
-            Negative outlays are the opposite. This can be useful for
+        * outlays (TimeSeries): Series of outlays. Positive outlays mean
+            capital was allocated to security and security consumed that
+            amount.  Negative outlays are the opposite. This can be useful for
             calculating turnover at the strategy level.
         * value (float): last value - basically position * price * multiplier
         * weight (float): weight in parent
@@ -992,12 +992,12 @@ class SecurityBase(Node):
             self.update(self.parent.now)
 
         # ignore 0 alloc
-        # Note that if the price of security has dropped to zero, then it should
-        # never be selected by SelectAll, SelectN etc. I.e. we should not open
-        # the position at zero price. At the same time, we are able to close
-        # it at zero price, because at that point amount=0.
-        # Note also that we don't erase the position in an asset which price has
-        # dropped to zero (though the weight will indeed be = 0)
+        # Note that if the price of security has dropped to zero, then it
+        # should never be selected by SelectAll, SelectN etc. I.e. we should
+        # not open the position at zero price. At the same time, we are able
+        # to close it at zero price, because at that point amount=0.
+        # Note also that we don't erase the position in an asset which price
+        # has dropped to zero (though the weight will indeed be = 0)
         if amount == 0:
             return
 
@@ -1054,8 +1054,8 @@ class SecurityBase(Node):
     @cy.locals(q=cy.double, p=cy.double)
     def commission(self, q, p):
         """
-        Calculates the commission (transaction fee) based on quantity and price.
-        Uses the parent's commission_fn.
+        Calculates the commission (transaction fee) based on quantity and
+        price.  Uses the parent's commission_fn.
 
         Args:
             * q (float): quantity
