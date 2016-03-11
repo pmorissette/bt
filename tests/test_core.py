@@ -4,6 +4,7 @@ import copy
 import bt
 from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 import pandas as pd
+import numpy as np
 from nose.tools import assert_almost_equal as aae
 import mock
 
@@ -218,6 +219,39 @@ def test_strategybase_tree_update():
 
     c1.price == 100
     c2.price == 100
+
+
+def test_update_fails_if_price_is_nan_and_position_open():
+    c1 = SecurityBase('c1')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1'], data=100)
+    data['c1'][dts[1]] = np.nan
+
+    c1.setup(data)
+
+    i = 0
+    # mock in position
+    c1._position = 100
+    c1.update(dts[i], data.ix[dts[i]])
+
+    # test normal case - position & non-nan price
+    assert c1._value == 100 * 100
+
+    i = 1
+    # this should fail, because we have non-zero position, and price is nan, so
+    # bt has no way of updating the _value
+    try:
+        c1.update(dts[i], data.ix[dts[i]])
+        assert False
+    except Exception as e:
+        assert e.message.startswith('Position is open')
+
+    # on the other hand, if position was 0, this should be fine, and update
+    # value to 0
+    c1._position = 0
+    c1.update(dts[i], data.ix[dts[i]])
+    assert c1._value == 0
 
 
 def test_strategybase_tree_allocate():

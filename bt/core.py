@@ -958,7 +958,16 @@ class SecurityBase(Node):
         self._positions.values[inow] = self._position
         self._last_pos = self._position
 
-        self._value = self._position * self._price * self.multiplier
+        if np.isnan(self._price):
+            if self._position == 0:
+                self._value = 0
+            else:
+                raise Exception(
+                    'Position is open (non-zero) and latest price is NaN '
+                    'for security %s. Cannot update node value.' % self.name)
+        else:
+            self._value = self._position * self._price * self.multiplier
+
         self._values.values[inow] = self._value
 
         if self._weight == 0 and self._position == 0:
