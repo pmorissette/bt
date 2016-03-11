@@ -730,7 +730,9 @@ class StrategyBase(Node):
         # flatten if children not None
         if c.children is not None and len(c.children) != 0:
             c.flatten()
-        c.allocate(-c.value)
+
+        if c.value != 0. and not np.isnan(c.value):
+            c.allocate(-c.value)
 
     def flatten(self):
         """
