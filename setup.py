@@ -41,7 +41,8 @@ setup(
     keywords='python finance quant backtesting strategies',
     url='https://github.com/pmorissette/bt',
     install_requires=[
-        'ffn'
+        'ffn',
+        'pyprind'
     ],
     packages=['bt'],
     long_description=local_file('README.rst').read(),

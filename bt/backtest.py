@@ -8,6 +8,7 @@ import ffn
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+import pyprind
 
 
 def run(*backtests):
@@ -99,6 +100,7 @@ class Backtest(object):
         * initial_capital (float): Initial amount of capital passed to
             Strategy.
         * commissions (fn(quantity)): The commission function to be used.
+        * progress_bar (Bool): Display progress bar while running backtest
 
     Attributes:
         * strategy (Strategy): The Backtest's Strategy. This will be a deepcopy
@@ -119,7 +121,8 @@ class Backtest(object):
                  name=None,
                  initial_capital=1000000.0,
                  commissions=None,
-                 integer_positions=True):
+                 integer_positions=True,
+                 progress_bar=True):
 
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
@@ -136,6 +139,7 @@ class Backtest(object):
         self.dates = data.index
         self.initial_capital = initial_capital
         self.name = name if name is not None else strategy.name
+        self.progress_bar = progress_bar
 
         if commissions:
             self.strategy.set_commissions(commissions)
@@ -160,12 +164,25 @@ class Backtest(object):
         self.strategy.adjust(self.initial_capital)
 
         # loop through dates
+        # init progress bar
+        if self.progress_bar:
+            bar = pyprind.ProgBar(len(self.dates), title=self.name, stream=1)
+
         for dt in self.dates:
+            # update progress bar
+            if self.progress_bar:
+                bar.update()
+
+            # update strategy
             self.strategy.update(dt)
+
             if not self.strategy.bankrupt:
                 self.strategy.run()
                 # need update after to save weights, values and such
                 self.strategy.update(dt)
+            else:
+                if self.progress_bar:
+                    bar.stop()
 
         self.stats = self.strategy.prices.calc_perf_stats()
         self._original_prices = self.strategy.prices
