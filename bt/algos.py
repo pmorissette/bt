@@ -1214,10 +1214,19 @@ class Rebalance(Algo):
 
         targets = target.temp['weights']
 
-        # de-allocate children that are not in targets
-        not_in = [x for x in target.children if x not in targets]
-        for c in not_in:
-            target.close(c)
+        # de-allocate children that are not in targets and have non-zero value
+        # (open positions)
+        for cname in target.children:
+            # if this child is in our targets, we don't want to close it out
+            if cname in targets:
+                continue
+
+            # get child and value
+            c = target.children[cname]
+            v = c.value
+            # if non-zero and non-null, we need to close it out
+            if v != 0. and not np.isnan(v):
+                target.close(cname)
 
         # save value because it will change after each call to allocate
         # use it as base in rebalance calls
