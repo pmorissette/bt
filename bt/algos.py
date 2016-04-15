@@ -1203,6 +1203,12 @@ class Rebalance(Algo):
 
     Requires:
         * weights
+        * cash (optional): You can set a 'cash' value on temp. This should be a
+            number between 0-1 and determines the amount of cash to set aside.
+            For example, if cash=0.3, the strategy will allocate 70% of its
+            value to the provided weights, and the remaining 30% will be kept
+            in cash. If this value is not provided (default), the full value
+            of the strategy is allocated to securities.
 
     """
 
@@ -1232,6 +1238,12 @@ class Rebalance(Algo):
         # save value because it will change after each call to allocate
         # use it as base in rebalance calls
         base = target.value
+
+        # If cash is set (it should be a value between 0-1 representing the
+        # proportion of cash to keep), calculate the new 'base'
+        if 'cash' in target.temp:
+            base = base * (1 - target.temp['cash'])
+
         for item in iteritems(targets):
             target.rebalance(item[1], child=item[0], base=base)
 
