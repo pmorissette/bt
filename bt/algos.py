@@ -584,7 +584,8 @@ class SelectN(Algo):
 
     def __call__(self, target):
         stat = target.temp['stat'].dropna()
-        stat.sort(ascending=self.ascending)
+        stat.sort_values(ascending=self.ascending,
+                         inplace=True)
 
         # handle percent n
         keep_n = self.n
