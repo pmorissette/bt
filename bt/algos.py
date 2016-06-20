@@ -332,7 +332,7 @@ class RunOnDate(Algo):
         self.dates = [pd.to_datetime(d) for d in dates]
 
     def __call__(self, target):
-        return target.now in self.dates
+        return target.now in self.dates[0]
 
 
 class RunAfterDate(Algo):
