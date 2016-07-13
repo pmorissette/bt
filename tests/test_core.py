@@ -4,6 +4,7 @@ import copy
 import bt
 from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 import pandas as pd
+import numpy as np
 from nose.tools import assert_almost_equal as aae
 import mock
 
@@ -218,6 +219,39 @@ def test_strategybase_tree_update():
 
     c1.price == 100
     c2.price == 100
+
+
+def test_update_fails_if_price_is_nan_and_position_open():
+    c1 = SecurityBase('c1')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1'], data=100)
+    data['c1'][dts[1]] = np.nan
+
+    c1.setup(data)
+
+    i = 0
+    # mock in position
+    c1._position = 100
+    c1.update(dts[i], data.ix[dts[i]])
+
+    # test normal case - position & non-nan price
+    assert c1._value == 100 * 100
+
+    i = 1
+    # this should fail, because we have non-zero position, and price is nan, so
+    # bt has no way of updating the _value
+    try:
+        c1.update(dts[i], data.ix[dts[i]])
+        assert False
+    except Exception as e:
+        assert e.message.startswith('Position is open')
+
+    # on the other hand, if position was 0, this should be fine, and update
+    # value to 0
+    c1._position = 0
+    c1.update(dts[i], data.ix[dts[i]])
+    assert c1._value == 0
 
 
 def test_strategybase_tree_allocate():
@@ -1753,9 +1787,9 @@ def test_strategy_tree_proper_universes():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(
-        {'a': pd.TimeSeries(data=1, index=dts, name='a'),
-         'b': pd.TimeSeries(data=2, index=dts, name='b'),
-         'c': pd.TimeSeries(data=3, index=dts, name='c')})
+        {'a': pd.Series(data=1, index=dts, name='a'),
+         'b': pd.Series(data=2, index=dts, name='b'),
+         'c': pd.Series(data=3, index=dts, name='c')})
 
     master.setup(data)
 
@@ -1809,3 +1843,48 @@ def test_strategy_tree_paper():
     assert m.value == 0
     assert s.value == 0
     aae(s.price, 100.9801, 4)
+
+
+def test_outlays():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    # allocate 1000 to strategy
+    s.adjust(1000)
+
+    # now let's see what happens when we allocate 500 to each child
+    c1.allocate(500)
+    c2.allocate(500)
+
+    # out update
+    s.update(dts[i])
+
+    assert c1.data['outlay'][dts[0]] == (4 * 105)
+    assert c2.data['outlay'][dts[0]] == (5 * 95)
+
+    i = 1
+    s.update(dts[i], data.ix[dts[i]])
+
+    c1.allocate(-400)
+    c2.allocate(100)
+
+    # out update
+    s.update(dts[i])
+
+    print c1.data['outlay']
+    assert c1.data['outlay'][dts[1]] == (-4 * 100)
+    assert c2.data['outlay'][dts[1]] == 100

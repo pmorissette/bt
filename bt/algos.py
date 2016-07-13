@@ -584,7 +584,8 @@ class SelectN(Algo):
 
     def __call__(self, target):
         stat = target.temp['stat'].dropna()
-        stat.sort(ascending=self.ascending)
+        stat.sort_values(ascending=self.ascending,
+                         inplace=True)
 
         # handle percent n
         keep_n = self.n
@@ -830,9 +831,9 @@ class WeighTarget(Algo):
     Sets target weights based on a target weight DataFrame.
 
     If the target weight dataFrame is  of same dimension
-    as the target.universe, the portfolio will effectively be rebalanced on each
-    period. For example, if we have daily data and the target DataFrame is of
-    the same shape, we will have daily rebalancing.
+    as the target.universe, the portfolio will effectively be rebalanced on
+    each period. For example, if we have daily data and the target DataFrame
+    is of the same shape, we will have daily rebalancing.
 
     However, if we provide a target weight dataframe that has only month end
     dates, then rebalancing only occurs monthly.
@@ -1202,6 +1203,12 @@ class Rebalance(Algo):
 
     Requires:
         * weights
+        * cash (optional): You can set a 'cash' value on temp. This should be a
+            number between 0-1 and determines the amount of cash to set aside.
+            For example, if cash=0.3, the strategy will allocate 70% of its
+            value to the provided weights, and the remaining 30% will be kept
+            in cash. If this value is not provided (default), the full value
+            of the strategy is allocated to securities.
 
     """
 
@@ -1214,14 +1221,29 @@ class Rebalance(Algo):
 
         targets = target.temp['weights']
 
-        # de-allocate children that are not in targets
-        not_in = [x for x in target.children if x not in targets]
-        for c in not_in:
-            target.close(c)
+        # de-allocate children that are not in targets and have non-zero value
+        # (open positions)
+        for cname in target.children:
+            # if this child is in our targets, we don't want to close it out
+            if cname in targets:
+                continue
+
+            # get child and value
+            c = target.children[cname]
+            v = c.value
+            # if non-zero and non-null, we need to close it out
+            if v != 0. and not np.isnan(v):
+                target.close(cname)
 
         # save value because it will change after each call to allocate
         # use it as base in rebalance calls
         base = target.value
+
+        # If cash is set (it should be a value between 0-1 representing the
+        # proportion of cash to keep), calculate the new 'base'
+        if 'cash' in target.temp:
+            base = base * (1 - target.temp['cash'])
+
         for item in iteritems(targets):
             target.rebalance(item[1], child=item[0], base=base)
 

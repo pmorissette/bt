@@ -6,7 +6,9 @@ from copy import deepcopy
 import bt
 import ffn
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
+import pyprind
 
 
 def run(*backtests):
@@ -97,7 +99,8 @@ class Backtest(object):
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
             Strategy.
-        * commission (fn(quantity)): The commission function to be used.
+        * commissions (fn(quantity)): The commission function to be used.
+        * progress_bar (Bool): Display progress bar while running backtest
 
     Attributes:
         * strategy (Strategy): The Backtest's Strategy. This will be a deepcopy
@@ -118,7 +121,8 @@ class Backtest(object):
                  name=None,
                  initial_capital=1000000.0,
                  commissions=None,
-                 integer_positions=True):
+                 integer_positions=True,
+                 progress_bar=True):
 
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
@@ -135,6 +139,7 @@ class Backtest(object):
         self.dates = data.index
         self.initial_capital = initial_capital
         self.name = name if name is not None else strategy.name
+        self.progress_bar = progress_bar
 
         if commissions:
             self.strategy.set_commissions(commissions)
@@ -159,12 +164,25 @@ class Backtest(object):
         self.strategy.adjust(self.initial_capital)
 
         # loop through dates
+        # init progress bar
+        if self.progress_bar:
+            bar = pyprind.ProgBar(len(self.dates), title=self.name, stream=1)
+
         for dt in self.dates:
+            # update progress bar
+            if self.progress_bar:
+                bar.update()
+
+            # update strategy
             self.strategy.update(dt)
+
             if not self.strategy.bankrupt:
                 self.strategy.run()
                 # need update after to save weights, values and such
                 self.strategy.update(dt)
+            else:
+                if self.progress_bar:
+                    bar.stop()
 
         self.stats = self.strategy.prices.calc_perf_stats()
         self._original_prices = self.strategy.prices
@@ -233,6 +251,30 @@ class Backtest(object):
         """
         w = self.security_weights
         return (w ** 2).sum(axis=1)
+
+    @property
+    def turnover(self):
+        """
+        Calculate the turnover for the backtest.
+
+        This function will calculate the turnover for the strategy. Turnover is
+        defined as the lesser of positive or negative outlays divided by NAV
+        """
+        s = self.strategy
+        outlays = s.outlays
+
+        # seperate positive and negative outlays, sum them up, and keep min
+        outlaysp = outlays[outlays >= 0].fillna(value=0).sum(axis=1)
+        outlaysn = np.abs(outlays[outlays < 0].fillna(value=0).sum(axis=1))
+
+        # merge and keep minimum
+        min_outlay = pd.DataFrame(
+            {'pos': outlaysp, 'neg': outlaysn}).min(axis=1)
+
+        # turnover is defined as min outlay / nav
+        mrg = pd.DataFrame({'outlay': min_outlay, 'nav': s.values})
+
+        return mrg['outlay'] / mrg['nav']
 
 
 class Result(ffn.GroupStats):
