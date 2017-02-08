@@ -378,6 +378,49 @@ class Result(ffn.GroupStats):
         # default case assume ok
         return backtest
 
+    def get_transactions(self, strategy_name=None):
+        """
+        Helper function that returns the transactions in the following format:
+
+            dt, security | quantity, price
+
+        The result is a MultiIndex DataFrame.
+
+        Args:
+            * strategy_name (str): If none, it will take the first backtest's
+                strategy (self.backtest_list[0].name)
+
+        """
+        if strategy_name is None:
+            self.backtest_list[0].name
+
+        # extract strategy given strategy_name
+        s = self.backtests[strategy_name].strategy
+
+        # get prices for each security in the strategy & create unstacked
+        # series
+        prc = pd.DataFrame({x.name: x.prices for x in s.securities}).unstack()
+
+        # get security positions
+        positions = pd.DataFrame({x.name: x.positions for x in s.securities})
+        # trades are diff
+        trades = positions.diff()
+        # must adjust first row
+        trades.iloc[0] = positions.iloc[0]
+        # now convert to unstacked series, dropping nans along the way
+        trades = trades[trades != 0].unstack().dropna()
+
+        res = pd.DataFrame({'price': prc, 'quantity': trades}).dropna(
+            subset=['quantity'])
+
+        # set names
+        res.index.names = ['Security', 'Date']
+
+        # swap levels so that we have (date, security) as index and sort
+        res = res.swaplevel().sort_index()
+
+        return res
+
 
 class RandomBenchmarkResult(Result):
 
