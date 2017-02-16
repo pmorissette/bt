@@ -159,12 +159,51 @@ def test_rebalance():
     s.temp['weights'] = {'c1': 1}
 
     assert algo(s)
-    assert s.value == 999
-    assert s.capital == -1
+    assert s.value == 1000
+    assert s.capital == 0
     c1 = s['c1']
     assert c1.value == 1000
     assert c1.position == 10
-    assert c1.weight == 1000.0 / 999
+    assert c1.weight == 1.
+
+    s.temp['weights'] = {'c2': 1}
+
+    assert algo(s)
+    assert s.value == 1000
+    assert s.capital == 0
+    c2 = s['c2']
+    assert c1.value == 0
+    assert c1.position == 0
+    assert c1.weight == 0
+    assert c2.value == 1000
+    assert c2.position == 10
+    assert c2.weight == 1.
+
+
+def test_rebalance_with_commissions():
+    algo = algos.Rebalance()
+
+    s = bt.Strategy('s')
+    s.set_commissions(lambda q, p: 1)
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+    s.adjust(1000)
+    s.update(dts[0])
+
+    s.temp['weights'] = {'c1': 1}
+
+    assert algo(s)
+    assert s.value == 999
+    assert s.capital == 99
+    c1 = s['c1']
+    assert c1.value == 900
+    assert c1.position == 9
+    assert c1.weight == 900 / 999.
 
     s.temp['weights'] = {'c2': 1}
 
@@ -177,13 +216,14 @@ def test_rebalance():
     assert c1.weight == 0
     assert c2.value == 900
     assert c2.position == 9
-    assert c2.weight == 900.0 / 997
+    assert c2.weight == 900. / 997
 
 
 def test_rebalance_with_cash():
     algo = algos.Rebalance()
 
     s = bt.Strategy('s')
+    s.set_commissions(lambda q, p: 1)
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -200,11 +240,11 @@ def test_rebalance_with_cash():
 
     assert algo(s)
     assert s.value == 999
-    assert s.capital == 499
+    assert s.capital == 599
     c1 = s['c1']
-    assert c1.value == 500
-    assert c1.position == 5
-    assert c1.weight == 500.0 / 999
+    assert c1.value == 400
+    assert c1.position == 4
+    assert c1.weight == 400.0 / 999
 
     s.temp['weights'] = {'c2': 1}
     # change cash amount

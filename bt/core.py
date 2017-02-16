@@ -137,7 +137,7 @@ class Node(object):
 
     def use_integer_positions(self, integer_positions):
         """
-        Set indicator to use (or not) integer positions for give strategy or
+        Set indicator to use (or not) integer positions for a given strategy or
         security.
 
         By default all positions in number of stocks should be integer.
@@ -766,7 +766,7 @@ class StrategyBase(Node):
 
     @cy.locals(q=cy.double, p=cy.double)
     def _dflt_comm_fn(self, q, p):
-        return max(1, abs(q) * 0.01)
+        return 0.
 
 
 class SecurityBase(Node):
@@ -979,7 +979,8 @@ class SecurityBase(Node):
             # reset outlay back to 0
             self._outlay = 0
 
-    @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double)
+    @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double,
+               i=cy.int)
     def allocate(self, amount, update=True):
         """
         This allocates capital to the Security. This is the method used to
@@ -1040,6 +1041,48 @@ class SecurityBase(Node):
 
         # if q is 0 nothing to do
         if q == 0 or np.isnan(q):
+            return
+
+        # unless we are closing out a position (q == -position)
+        # we want to ensure that
+        #
+        # - In the event of a positive amount, this indicates the maximum
+        # amount a given security can use up for a purchse. Therefore, if
+        # commissions push us above this amount, we cannot buy `q`, and must
+        # decrease its value
+        #
+        # - In the event of a negative amount, we want to 'raise' at least the
+        # amount indicated, no less. Therefore, if we have commission, we must
+        # sell additional units to fund this requirement. As such, q must once
+        # again decrease.
+        #
+        if not q == -self._position:
+            full_outlay, _, _ = self.outlay(q)
+
+            # if full outlay > amount, we must decrease the magnitude of `q`
+            # this can potentially lead to an infinite loop if the commission
+            # per share > price per share. Howerver, we cannot really detect
+            # that in advance since the function can be non-linear (say a fn
+            # like max(1, abs(q) * 0.01). Nevertheless, we want to avoid these
+            # situtaions.
+            # cap the maximum number of iterations to 1e4 and raise exception
+            # if we get there
+            i = 0
+            while full_outlay > amount and q != 0:
+                q = q - 1
+                full_outlay, _, _ = self.outlay(q)
+                i = i + 1
+                if i > 1e4:
+                    raise Exception(
+                        'Potentially infinite loop detected. This occured '
+                        'while trying to reduce the amount of shares purchased'
+                        ' to respect the outlay <= amount rule. This is most '
+                        'likely due to a commission function that outputs a '
+                        'commission that is greater than the amount of cash '
+                        'a short sale can raise.')
+
+        # if last step led to q == 0, then we can return just like above
+        if q == 0:
             return
 
         # this security will need an update, even if pos is 0 (for example if

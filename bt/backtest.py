@@ -99,7 +99,8 @@ class Backtest(object):
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
             Strategy.
-        * commissions (fn(quantity)): The commission function to be used.
+        * commissions (fn(quantity, price)): The commission function
+        to be used. Ex: commissions=lambda q, p: max(1, abs(q) * 0.01)
         * progress_bar (Bool): Display progress bar while running backtest
 
     Attributes:
@@ -141,7 +142,7 @@ class Backtest(object):
         self.name = name if name is not None else strategy.name
         self.progress_bar = progress_bar
 
-        if commissions:
+        if commissions is not None:
             self.strategy.set_commissions(commissions)
 
         self.stats = {}

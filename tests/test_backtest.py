@@ -1,6 +1,7 @@
 from __future__ import division
 import bt
 import pandas as pd
+import numpy as np
 import mock
 
 
@@ -89,8 +90,8 @@ def test_turnover():
     t = res.backtests['s']
 
     # these numbers were (tediously) calculated in excel
-    assert t.turnover[dts[0]] == 0. / 1000000
-    assert t.turnover[dts[1]] == 24985. / 1000000
-    assert t.turnover[dts[2]] == 24970. / 997490
-    assert t.turnover[dts[3]] == 25160. / 992455
-    assert t.turnover[dts[4]] == 76100. / 1015285
+    assert np.allclose(t.turnover[dts[0]], 0. / 1000000)
+    assert np.allclose(t.turnover[dts[1]], 24985. / 1000000)
+    assert np.allclose(t.turnover[dts[2]], 24970. / 997490)
+    assert np.allclose(t.turnover[dts[3]], 25160. / 992455)
+    assert np.allclose(t.turnover[dts[4]], 76100. / 1015285)

@@ -286,9 +286,9 @@ def test_strategybase_tree_allocate():
 
     assert c1.position == 5
     assert c1.value == 500
-    assert s.capital == 1000 - 501
-    assert s.value == 999
-    assert c1.weight == 500.0 / 999
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert c1.weight == 500.0 / 1000
     assert c2.weight == 0
 
 
@@ -323,9 +323,9 @@ def test_strategybase_tree_allocate_child_from_strategy():
 
     assert c1.position == 5
     assert c1.value == 500
-    assert s.capital == 1000 - 501
-    assert s.value == 999
-    assert c1.weight == 500.0 / 999
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert c1.weight == 500.0 / 1000
     assert c2.weight == 0
 
 
@@ -379,15 +379,15 @@ def test_strategybase_tree_allocate_level2():
     # now allocate directly to child of child
     c1.allocate(200)
 
-    assert s1.value == 499
-    assert s1.capital == 500 - 201
+    assert s1.value == 500
+    assert s1.capital == 500 - 200
     assert c1.value == 200
-    assert c1.weight == 200.0 / 499
+    assert c1.weight == 200.0 / 500
     assert c1.position == 2
 
     assert m.capital == 1000 - 500
-    assert m.value == 999
-    assert s1.weight == 499.0 / 999
+    assert m.value == 1000
+    assert s1.weight == 500.0 / 1000
     assert s2.weight == 0
 
     assert c12.value == 0
@@ -416,25 +416,25 @@ def test_strategybase_tree_allocate_long_short():
 
     assert c1.position == 5
     assert c1.value == 500
-    assert c1.weight == 500.0 / 999
-    assert s.capital == 1000 - 501
-    assert s.value == 999
+    assert c1.weight == 500.0 / 1000
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
 
     c1.allocate(-200)
 
     assert c1.position == 3
     assert c1.value == 300
-    assert c1.weight == 300.0 / 998
-    assert s.capital == 1000 - 501 + 199
-    assert s.value == 998
+    assert c1.weight == 300.0 / 1000
+    assert s.capital == 1000 - 500 + 200
+    assert s.value == 1000
 
     c1.allocate(-400)
 
     assert c1.position == -1
     assert c1.value == -100
-    assert c1.weight == -100.0 / 997
-    assert s.capital == 1000 - 501 + 199 + 399
-    assert s.value == 997
+    assert c1.weight == -100.0 / 1000
+    assert s.capital == 1000 - 500 + 200 + 400
+    assert s.value == 1000
 
     # close up
     c1.allocate(-c1.value)
@@ -442,8 +442,8 @@ def test_strategybase_tree_allocate_long_short():
     assert c1.position == 0
     assert c1.value == 0
     assert c1.weight == 0
-    assert s.capital == 1000 - 501 + 199 + 399 - 101
-    assert s.value == 996
+    assert s.capital == 1000 - 500 + 200 + 400 - 100
+    assert s.value == 1000
 
 
 def test_strategybase_tree_allocate_update():
@@ -475,20 +475,20 @@ def test_strategybase_tree_allocate_update():
 
     assert c1.position == 5
     assert c1.value == 500
-    assert c1.weight == 500.0 / 999
-    assert s.capital == 1000 - 501
-    assert s.value == 999
-    assert s.price == 99.9
+    assert c1.weight == 500.0 / 1000
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert s.price == 100
 
     i = 1
     s.update(dts[i], data.ix[dts[i]])
 
     assert c1.position == 5
     assert c1.value == 525
-    assert c1.weight == 525.0 / 1024
-    assert s.capital == 1000 - 501
-    assert s.value == 1024
-    assert s.price == 102.4
+    assert c1.weight == 525.0 / 1025
+    assert s.capital == 1000 - 500
+    assert s.value == 1025
+    assert np.allclose(s.price, 102.5)
 
 
 def test_strategybase_universe():
@@ -533,7 +533,7 @@ def test_strategybase_allocate():
 
     assert c1.position == 1
     assert c1.value == 100
-    assert s.value == 999
+    assert s.value == 1000
 
 
 def test_strategybase_close():
@@ -553,13 +553,13 @@ def test_strategybase_close():
 
     assert c1.position == 1
     assert c1.value == 100
-    assert s.value == 999
+    assert s.value == 1000
 
     s.close('c1')
 
     assert c1.position == 0
     assert c1.value == 0
-    assert s.value == 998
+    assert s.value == 1000
 
 
 def test_strategybase_flatten():
@@ -583,13 +583,13 @@ def test_strategybase_flatten():
     assert c1.value == 100
     assert c2.position == 1
     assert c2.value == 100
-    assert s.value == 998
+    assert s.value == 1000
 
     s.flatten()
 
     assert c1.position == 0
     assert c1.value == 0
-    assert s.value == 996
+    assert s.value == 1000
 
 
 def test_strategybase_multiple_calls():
@@ -637,12 +637,12 @@ def test_strategybase_multiple_calls():
     s.run(s)
 
     assert len(s.children) == 1
-    assert s.value == 999
-    assert s.capital == 49
+    assert s.value == 1000
+    assert s.capital == 50
 
     c2 = s['c2']
     assert c2.value == 950
-    assert c2.weight == 950.0 / 999
+    assert c2.weight == 950.0 / 1000
     assert c2.price == 95
 
     # update out t0
@@ -650,37 +650,37 @@ def test_strategybase_multiple_calls():
 
     c2 == s['c2']
     assert len(s.children) == 1
-    assert s.value == 999
-    assert s.capital == 49
+    assert s.value == 1000
+    assert s.capital == 50
 
     assert c2.value == 950
-    assert c2.weight == 950.0 / 999
+    assert c2.weight == 950.0 / 1000
     assert c2.price == 95
 
     # update t1
     i = 1
     s.update(dts[i])
 
-    assert s.value == 1049
-    assert s.capital == 49
+    assert s.value == 1050
+    assert s.capital == 50
     assert len(s.children) == 1
 
     assert 'c2' in s.children
     c2 == s['c2']
     assert c2.value == 1000
-    assert c2.weight == 1000.0 / 1049.0
+    assert c2.weight == 1000.0 / 1050.0
     assert c2.price == 100
 
     # run t1 - close out c2, open c1
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 1047
-    assert s.capital == 2
+    assert s.value == 1050
+    assert s.capital == 5
 
     c1 = s['c1']
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1047
+    assert c1.weight == 1045.0 / 1050
     assert c1.price == 95
 
     assert c2.value == 0
@@ -691,12 +691,12 @@ def test_strategybase_multiple_calls():
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1047
-    assert s.capital == 2
+    assert s.value == 1050
+    assert s.capital == 5
 
     assert c1 == s['c1']
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1047
+    assert c1.weight == 1045.0 / 1050
     assert c1.price == 95
 
     assert c2.value == 0
@@ -708,11 +708,11 @@ def test_strategybase_multiple_calls():
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1102
-    assert s.capital == 2
+    assert s.value == 1105
+    assert s.capital == 5
 
     assert c1.value == 1100
-    assert c1.weight == 1100.0 / 1102
+    assert c1.weight == 1100.0 / 1105
     assert c1.price == 100
 
     assert c2.value == 0
@@ -723,30 +723,30 @@ def test_strategybase_multiple_calls():
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 1100
-    assert s.capital == 55
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update out t2
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1100
-    assert s.capital == 55
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update t3
@@ -754,45 +754,45 @@ def test_strategybase_multiple_calls():
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1100
-    assert s.capital == 55
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # run t3
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 1098
-    assert s.capital == 53
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update out t3
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1098
-    assert s.capital == 53
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update t4
@@ -800,8 +800,8 @@ def test_strategybase_multiple_calls():
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1098
-    assert s.capital == 53
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
@@ -811,37 +811,37 @@ def test_strategybase_multiple_calls():
     assert len(c1.prices) == 5
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # run t4
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 1096
-    assert s.capital == 51
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1096
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update out t4
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1096
-    assert s.capital == 51
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1096
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
 
@@ -895,41 +895,41 @@ def test_strategybase_multiple_calls_preset_secs():
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 999
-    assert s.capital == 49
+    assert s.value == 1000
+    assert s.capital == 50
 
     assert c2.value == 950
-    assert c2.weight == 950.0 / 999
+    assert c2.weight == 950.0 / 1000
     assert c2.price == 95
 
     # update out t0
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 999
-    assert s.capital == 49
+    assert s.value == 1000
+    assert s.capital == 50
 
     assert c2.value == 950
-    assert c2.weight == 950.0 / 999
+    assert c2.weight == 950.0 / 1000
     assert c2.price == 95
 
     # update t1
     i = 1
     s.update(dts[i])
 
-    assert s.value == 1049
-    assert s.capital == 49
+    assert s.value == 1050
+    assert s.capital == 50
     assert len(s.children) == 2
 
     assert c2.value == 1000
-    assert c2.weight == 1000.0 / 1049.0
+    assert c2.weight == 1000.0 / 1050.
     assert c2.price == 100
 
     # run t1 - close out c2, open c1
     s.run(s)
 
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1047
+    assert c1.weight == 1045.0 / 1050
     assert c1.price == 95
 
     assert c2.value == 0
@@ -937,18 +937,18 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c2.price == 100
 
     assert len(s.children) == 2
-    assert s.value == 1047
-    assert s.capital == 2
+    assert s.value == 1050
+    assert s.capital == 5
 
     # update out t1
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1047
-    assert s.capital == 2
+    assert s.value == 1050
+    assert s.capital == 5
 
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1047
+    assert c1.weight == 1045.0 / 1050
     assert c1.price == 95
 
     assert c2.value == 0
@@ -960,11 +960,11 @@ def test_strategybase_multiple_calls_preset_secs():
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1102
-    assert s.capital == 2
+    assert s.value == 1105
+    assert s.capital == 5
 
     assert c1.value == 1100
-    assert c1.weight == 1100.0 / 1102
+    assert c1.weight == 1100.0 / 1105
     assert c1.price == 100
 
     assert c2.value == 0
@@ -975,30 +975,30 @@ def test_strategybase_multiple_calls_preset_secs():
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 1100
-    assert s.capital == 55
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update out t2
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1100
-    assert s.capital == 55
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update t3
@@ -1006,45 +1006,45 @@ def test_strategybase_multiple_calls_preset_secs():
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1100
-    assert s.capital == 55
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # run t3
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 1098
-    assert s.capital == 53
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update out t3
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1098
-    assert s.capital == 53
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update t4
@@ -1052,8 +1052,8 @@ def test_strategybase_multiple_calls_preset_secs():
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1098
-    assert s.capital == 53
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
@@ -1063,42 +1063,43 @@ def test_strategybase_multiple_calls_preset_secs():
     assert len(c1.prices) == 5
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # run t4
     s.run(s)
 
     assert len(s.children) == 2
-    assert s.value == 1096
-    assert s.capital == 51
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1096
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
     # update out t4
     s.update(dts[i])
 
     assert len(s.children) == 2
-    assert s.value == 1096
-    assert s.capital == 51
+    assert s.value == 1105
+    assert s.capital == 60
 
     assert c1.value == 0
     assert c1.weight == 0
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1096
+    assert c2.weight == 1045.0 / 1105
     assert c2.price == 95
 
 
 def test_strategybase_multiple_calls_no_post_update():
     s = StrategyBase('s')
+    s.set_commissions(lambda q, p: 1)
 
     dts = pd.date_range('2010-01-01', periods=5)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -1287,6 +1288,7 @@ def test_strategybase_prices():
     data = pd.DataFrame(index=dts, data=rawd, columns=['a'])
 
     s = StrategyBase('s')
+    s.set_commissions(lambda q, p: 1)
     s.setup(data)
 
     # buy 100 shares on day 1 - hold until end
@@ -1395,6 +1397,7 @@ def test_strategybase_tree_rebalance():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+    s.set_commissions(lambda q, p: 1)
 
     c1 = s['c1']
     c2 = s['c2']
@@ -1419,11 +1422,11 @@ def test_strategybase_tree_rebalance():
     # now rebalance c1
     s.rebalance(0.5, 'c1')
 
-    assert c1.position == 5
-    assert c1.value == 500
-    assert s.capital == 1000 - 501
+    assert c1.position == 4
+    assert c1.value == 400
+    assert s.capital == 1000 - 401
     assert s.value == 999
-    assert c1.weight == 500.0 / 999
+    assert c1.weight == 400.0 / 999
     assert c2.weight == 0
 
 
@@ -1479,9 +1482,9 @@ def test_strategybase_tree_rebalance_to_0():
 
     assert c1.position == 5
     assert c1.value == 500
-    assert s.capital == 1000 - 501
-    assert s.value == 999
-    assert c1.weight == 500.0 / 999
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert c1.weight == 500.0 / 1000
     assert c2.weight == 0
 
     # now rebalance c1
@@ -1489,8 +1492,8 @@ def test_strategybase_tree_rebalance_to_0():
 
     assert c1.position == 0
     assert c1.value == 0
-    assert s.capital == 1000 - 501 + 499
-    assert s.value == 998
+    assert s.capital == 1000
+    assert s.value == 1000
     assert c1.weight == 0
     assert c2.weight == 0
 
@@ -1544,15 +1547,15 @@ def test_strategybase_tree_rebalance_level2():
     # now allocate directly to child of child
     s1.rebalance(0.4, 'c1')
 
-    assert s1.value == 499
-    assert s1.capital == 500 - 201
+    assert s1.value == 500
+    assert s1.capital == 500 - 200
     assert c1.value == 200
-    assert c1.weight == 200.0 / 499
+    assert c1.weight == 200.0 / 500
     assert c1.position == 2
 
     assert m.capital == 1000 - 500
-    assert m.value == 999
-    assert s1.weight == 499.0 / 999
+    assert m.value == 1000
+    assert s1.weight == 500.0 / 1000
     assert s2.weight == 0
 
     assert c12.value == 0
@@ -1560,21 +1563,21 @@ def test_strategybase_tree_rebalance_level2():
     # now rebalance child s1 again and make sure c1 also gets proportional
     # increase
     m.rebalance(0.8, 's1')
-    assert s1.value == 798.2
-    aae(m.capital, 199.8, 1)
-    assert m.value == 998
-    assert s1.weight == 798.2 / 998
+    assert s1.value == 800
+    aae(m.capital, 200, 1)
+    assert m.value == 1000
+    assert s1.weight == 800 / 1000
     assert s2.weight == 0
     assert c1.value == 300.0
-    assert c1.weight == 300.0 / 798.2
+    assert c1.weight == 300.0 / 800
     assert c1.position == 3
 
     # now rebalance child s1 to 0 - should close out s1 and c1 as well
     m.rebalance(0, 's1')
 
     assert s1.value == 0
-    assert m.capital == 997
-    assert m.value == 997
+    assert m.capital == 1000
+    assert m.value == 1000
     assert s1.weight == 0
     assert s2.weight == 0
     assert c1.weight == 0
@@ -1584,6 +1587,7 @@ def test_strategybase_tree_rebalance_base():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+    s.set_commissions(lambda q, p: 1)
 
     c1 = s['c1']
     c2 = s['c2']
@@ -1609,21 +1613,21 @@ def test_strategybase_tree_rebalance_base():
     # since value changes after first call
     s.rebalance(0.5, 'c1')
 
-    assert c1.position == 5
-    assert c1.value == 500
-    assert s.capital == 1000 - 501
+    assert c1.position == 4
+    assert c1.value == 400
+    assert s.capital == 1000 - 401
     assert s.value == 999
-    assert c1.weight == 500.0 / 999
+    assert c1.weight == 400.0 / 999
     assert c2.weight == 0
 
     s.rebalance(0.5, 'c2')
 
     assert c2.position == 4
     assert c2.value == 400
-    assert s.capital == 1000 - 501 - 401
+    assert s.capital == 1000 - 401 - 401
     assert s.value == 998
     assert c2.weight == 400.0 / 998
-    assert c1.weight == 500.0 / 998
+    assert c1.weight == 400.0 / 998
 
     # close out everything
     s.flatten()
@@ -1640,21 +1644,21 @@ def test_strategybase_tree_rebalance_base():
     base = s.value
     s.rebalance(0.5, 'c1', base=base)
 
-    assert c1.position == 5
-    assert c1.value == 500
-    assert s.capital == 1000 - 501
+    assert c1.position == 4
+    assert c1.value == 400
+    assert s.capital == 1000 - 401
     assert s.value == 999
-    assert c1.weight == 500.0 / 999
+    assert c1.weight == 400.0 / 999
     assert c2.weight == 0
 
     s.rebalance(0.5, 'c2', base=base)
 
-    assert c2.position == 5
-    assert c2.value == 500
-    assert s.capital == 1000 - 501 - 501
+    assert c2.position == 4
+    assert c2.value == 400
+    assert s.capital == 1000 - 401 - 401
     assert s.value == 998
-    assert c2.weight == 500.0 / 998
-    assert c1.weight == 500.0 / 998
+    assert c2.weight == 400.0 / 998
+    assert c1.weight == 400.0 / 998
 
 
 def test_algo_stack():
@@ -1698,15 +1702,16 @@ def test_set_commissions():
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
 
+    s.set_commissions(lambda x, y: 1.0)
     s.setup(data)
     s.update(dts[0])
     s.adjust(1000)
 
     s.allocate(500, 'c1')
-    assert s.capital == 499
+    assert s.capital == 599
 
     s.set_commissions(lambda x, y: 0.0)
-    s.allocate(-500, 'c1')
+    s.allocate(-400, 'c1')
     assert s.capital == 999
 
 
@@ -1766,13 +1771,13 @@ def test_strategy_tree_proper_return_calcs():
     s1.allocate(500, 'c1')
 
     assert m.capital == 0
-    assert m.value == 999
-    assert m.price == 99.9
-    assert s1.value == 499
-    assert s1.weight == 499.0 / 999.0
-    assert s1.price == 99.8
+    assert m.value == 1000
+    assert m.price == 100
+    assert s1.value == 500
+    assert s1.weight == 500.0 / 1000
+    assert s1.price == 100
     assert s2.value == 500
-    assert s2.weight == 500.0 / 999.0
+    assert s2.weight == 500.0 / 1000.0
     assert s2.price == 100
 
 
@@ -1834,7 +1839,7 @@ def test_strategy_tree_paper():
     assert m.price == 100
     assert m.value == 0
     assert s.value == 0
-    assert s.price == 99.9901
+    assert s.price == 100
 
     s.update(dts[2])
     m.run()
@@ -1842,7 +1847,7 @@ def test_strategy_tree_paper():
     assert m.price == 100
     assert m.value == 0
     assert s.value == 0
-    aae(s.price, 100.9801, 4)
+    assert np.allclose(s.price, 100. * (102 / 101.))
 
 
 def test_outlays():
@@ -1888,3 +1893,125 @@ def test_outlays():
     print c1.data['outlay']
     assert c1.data['outlay'][dts[1]] == (-4 * 100)
     assert c2.data['outlay'][dts[1]] == 100
+
+
+def test_child_weight_above_1():
+    # check for child weights not exceeding 1
+    s = StrategyBase('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(np.random.randn(3, 2) + 100,
+                        index=dts, columns=['c1', 'c2'])
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    s.adjust(1e6)
+    s.allocate(1e6, 'c1')
+    c1 = s['c1']
+
+    assert c1.weight <= 1
+
+
+def test_fixed_commissions():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+    # fixed $1 commission per transaction
+    s.set_commissions(lambda q, p: 1)
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    # allocate 1000 to strategy
+    s.adjust(1000)
+
+    # now let's see what happens when we allocate 500 to each child
+    c1.allocate(500)
+    c2.allocate(500)
+
+    # out update
+    s.update(dts[i])
+
+    assert c1.value == 400
+    assert c2.value == 400
+    assert s.capital == 198
+
+    # de-alloc 100 from c1. This should force c1 to sell 2 units to raise at
+    # least 100 (because of commissions)
+    c1.allocate(-100)
+    s.update(dts[i])
+
+    assert c1.value == 200
+    assert s.capital == 198 + 199
+
+    # allocate 100 to c2. This should leave things unchaged, since c2 cannot
+    # buy one unit since the commission will cause total outlay to exceed
+    # allocation
+    c2.allocate(100)
+    s.update(dts[i])
+
+    assert c2.value == 400
+    assert s.capital == 198 + 199
+
+    # ok try again w/ 101 allocation. This time, it should work
+    c2.allocate(101)
+    s.update(dts[i])
+
+    assert c2.value == 500
+    assert s.capital == 198 + 199 - 101
+
+    # ok now let's close the whole position. Since we are closing, we expect
+    # the allocation to go through, even though the outlay > amount
+    c2.allocate(-500)
+    s.update(dts[i])
+
+    assert c2.value == 0
+    assert s.capital == 198 + 199 - 101 + 499
+
+    # now we are going to go short c2
+    # we want to 'raise' 100 dollars. Since we need at a minimum 100, but we
+    # also have commisisons, we will actually short 2 units in order to raise
+    # at least 100
+    c2.allocate(-100)
+    s.update(dts[i])
+
+    assert c2.value == -200
+    assert s.capital == 198 + 199 - 101 + 499 + 199
+
+
+def test_degenerate_shorting():
+    # can have situation where you short infinitely if commission/share > share
+    # price
+    c1 = SecurityBase('c1')
+    s = StrategyBase('p', [c1])
+    # $1/share commission
+    s.set_commissions(lambda q, p: abs(q) * 1)
+
+    c1 = s['c1']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    # c1 trades at 0.01
+    data = pd.DataFrame(index=dts, columns=['c1'], data=0.01)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    s.adjust(1000)
+
+    try:
+        c1.allocate(-10)
+        assert False
+    except Exception, e:
+        assert 'infinite' in e.message
