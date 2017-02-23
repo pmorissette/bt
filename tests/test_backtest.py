@@ -22,8 +22,9 @@ def test_backtest_dates_set():
 
     actual = bt.Backtest(s, data, progress_bar=False)
 
-    assert len(actual.dates) == len(data.index)
-    assert actual.dates[0] == data.index[0]
+    # must account for 't0' addition
+    assert len(actual.dates) == len(data.index) + 1
+    assert actual.dates[1] == data.index[0]
     assert actual.dates[-1] == data.index[-1]
 
 
@@ -63,7 +64,8 @@ def test_run_loop():
 
     s = actual.strategy
 
-    assert s.update.call_count == 10
+    # account for first update call to 'setup' initial state
+    assert s.update.call_count == 10 + 1
     assert s.run.call_count == 5
 
 

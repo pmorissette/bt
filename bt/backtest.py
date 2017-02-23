@@ -136,6 +136,18 @@ class Backtest(object):
         self.strategy = deepcopy(strategy)
         self.strategy.use_integer_positions(integer_positions)
 
+        # add virtual row at t0-1day with NaNs
+        # this is so that any trading action at t0 can be evaluated relative to
+        # a clean starting point. This is related to #83. Basically, if you
+        # have a big trade / commision on day 0, then the Strategy.prices will
+        # be adjusted at 0, and hide the 'total' return. The series should
+        # start at 100, but may start at 90, for example. Here, we add a
+        # starting point at t0-1day, and this is the reference starting point
+        data = pd.concat([
+            pd.DataFrame(np.nan, columns=data.columns,
+                         index=[data.index[0] - pd.DateOffset(days=1)]),
+            data])
+
         self.data = data
         self.dates = data.index
         self.initial_capital = initial_capital
@@ -169,7 +181,12 @@ class Backtest(object):
         if self.progress_bar:
             bar = pyprind.ProgBar(len(self.dates), title=self.name, stream=1)
 
-        for dt in self.dates:
+        # since there is a dummy row at time 0, start backtest at date 1.
+        # we must still update for t0
+        self.strategy.update(self.dates[0])
+
+        # and for the backtest loop, start at date 1
+        for dt in self.dates[1:]:
             # update progress bar
             if self.progress_bar:
                 bar.update()
