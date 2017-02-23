@@ -80,7 +80,6 @@ Future development efforts will focus on:
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
 
     Overview <index>
     Installation Guide <install>

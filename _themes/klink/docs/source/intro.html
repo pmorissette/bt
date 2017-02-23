@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -7,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>A Quick Example &mdash; bt 0.1.2 documentation</title>
+    <title>A Quick Example &mdash; bt 0.2.3 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -15,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.1.2',
+        VERSION:     '0.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +24,7 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-    <link rel="top" title="bt 0.1.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="bt 0.2.3 documentation" href="../../../../index.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -35,12 +34,12 @@
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="a-quick-example">
 <h1>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h1>
@@ -56,22 +55,25 @@ notebook file by the way (using a Mardown cell).</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><pre>[-0.81256785 -1.16630768  0.27555802  0.57729188 -0.64691411  0.62288591
+<div class="pynb-result highlight-python"><div class="highlight"><pre>[-0.81256785 -1.16630768  0.27555802  0.57729188 -0.64691411  0.62288591
   0.27943851  0.10512695  0.23808598 -1.45293996 -0.24394825 -0.14631097
   1.56377514 -0.87629984  1.64059433 -0.10259616  0.84435183  0.11718899
- -0.66617413 -0.81800771]</pre>
+ -0.66617413 -0.81800771]
+</pre></div>
 </div>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><pre>&lt;matplotlib.axes.AxesSubplot at 0x7f28246381d0&gt;</pre>
+<div class="pynb-result highlight-python"><div class="highlight"><pre>&lt;matplotlib.axes.AxesSubplot at 0x7f28246381d0&gt;
+</pre></div>
 </div>
 <img alt="../../../../_images/intro_3_1.png" class="pynb" src="../../../../_images/intro_3_1.png" />
 <div class="section" id="raw-nbconvert-cells">
 <h2>Raw NBConvert Cells<a class="headerlink" href="#raw-nbconvert-cells" title="Permalink to this headline">¶</a></h2>
 <p>In addition to markdown cells, you may also use <strong>Raw NBConvert</strong> cells. This allows you to input reST directly in your notebook. It won&#8217;t look as pretty in the notebook itself, but will work great for your docs. Special reST and Sphinx markup will work within a Raw NBConvert (link, code markup, etc.).</p>
-<p>By the way, <a class="reference internal" href="klink.html#klink.__init__.convert_notebooks" title="klink.__init__.convert_notebooks"><tt class="xref py py-func docutils literal"><span class="pre">convert_notebooks</span></tt></a> basically calls:</p>
-<div class="highlight-python"><pre>ipython nbconvert --to rst</pre>
+<p>By the way, <a class="reference internal" href="klink.html#klink.__init__.convert_notebooks" title="klink.__init__.convert_notebooks"><code class="xref py py-func docutils literal"><span class="pre">convert_notebooks</span></code></a> basically calls:</p>
+<div class="highlight-python"><div class="highlight"><pre>ipython nbconvert --to rst
+</pre></div>
 </div>
 <p>on all the notebooks it finds. It also handles special cases and adds special css classes for display formatting purposes. If you plan on using IPython Notebook integration, you will need an up-to-date version of <a class="reference external" href="http://johnmacfarlane.net/pandoc/">pandoc</a> for this to work properly.</p>
 </div>
@@ -102,7 +104,7 @@ notebook file by the way (using a Mardown cell).</p>
                 <li><a href="https://github.com/pmorissette/bt">Github</a></li>
             </ul>
             
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
       <input type="text" name="q" />

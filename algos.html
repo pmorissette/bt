@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -7,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Algorithms &mdash; bt 0.1.2 documentation</title>
+    <title>Algorithms &mdash; bt 0.2.3 documentation</title>
     
     <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.1.2',
+        URL_ROOT:    './',
+        VERSION:     '0.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="bt 0.1.2 documentation" href="index.html" />
+    <link rel="top" title="bt 0.2.3 documentation" href="index.html" />
     <link rel="next" title="The Tree Structure" href="tree.html" />
     <link rel="prev" title="Getting Started" href="install.html" />
          
@@ -37,32 +36,32 @@
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="algorithms">
 <h1>Algorithms<a class="headerlink" href="#algorithms" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
-<p>One of the core building blocks of bt is the <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">Algo</span></tt></a> and the
-closely related <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><tt class="xref py py-class docutils literal"><span class="pre">AlgoStack</span></tt></a>.</p>
+<p>One of the core building blocks of bt is the <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">Algo</span></code></a> and the
+closely related <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal"><span class="pre">AlgoStack</span></code></a>.</p>
 <img alt="algo stack" class="align-center" src="_images/stack.png" />
 <div class="section" id="algos">
 <h3>Algos<a class="headerlink" href="#algos" title="Permalink to this headline">¶</a></h3>
 <p>An Algo is essentially a function that returns True or False. It takes a single
-argument that is the <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><tt class="xref py py-class docutils literal"><span class="pre">Strategy</span></tt></a> being tested. An Algo should ideally
+argument that is the <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal"><span class="pre">Strategy</span></code></a> being tested. An Algo should ideally
 only serve one specific purpose. This purpose can control execution flow, it can
 control security selection, security allocation, etc. For example,
 you can have an Algo that checks if the month has changed (such as
-<a class="reference internal" href="bt.html#bt.algos.RunMonthly" title="bt.algos.RunMonthly"><tt class="xref py py-class docutils literal"><span class="pre">bt.algos.RunMonthly</span></tt></a>). If it has, this Algo return True, if not, False.</p>
+<a class="reference internal" href="bt.html#bt.algos.RunMonthly" title="bt.algos.RunMonthly"><code class="xref py py-class docutils literal"><span class="pre">bt.algos.RunMonthly</span></code></a>). If it has, this Algo return True, if not, False.</p>
 </div>
 <div class="section" id="algo-stacks">
 <h3>Algo Stacks<a class="headerlink" href="#algo-stacks" title="Permalink to this headline">¶</a></h3>
-<p>An <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><tt class="xref py py-class docutils literal"><span class="pre">AlgoStack</span></tt></a> is a class that groups together many
+<p>An <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal"><span class="pre">AlgoStack</span></code></a> is a class that groups together many
 Algos and runs them one after another as long as each Algo returns True. As soon
 as an Algo returns False, the AlgoStack stops its execution and returns False
 (an AlgoStack is an Algo after all).  This allows us to combine different Algos
@@ -81,7 +80,7 @@ development.</p>
 generated by Algos. Temporary data is refreshed on each data change whereas
 permanent data is not altered.</p>
 <p>Algos usually <strong>set</strong> and/or <strong>require</strong> values in the temp or perm objects. For example,
-the <a class="reference internal" href="bt.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><tt class="xref py py-class docutils literal"><span class="pre">bt.algos.WeighEqually</span></tt></a> Algo sets the &#8216;weights&#8217; key in temp, and
+the <a class="reference internal" href="bt.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><code class="xref py py-class docutils literal"><span class="pre">bt.algos.WeighEqually</span></code></a> Algo sets the &#8216;weights&#8217; key in temp, and
 it requires the &#8216;selected&#8217; key in temp.</p>
 <p>For example, let&#8217;s take a simple select -&gt; weight -&gt; allocate logic chain. We
 would break this strategy up into 3 Algos:</p>
@@ -109,7 +108,7 @@ are well documented and properly used (by the way, this may not be a great way
 to go about this problem. If you have a better idea, please let me know!).</p>
 <p class="last">Developpers should add a section in the docstring that outlines
 the &#8220;sets&#8221; and the &#8220;requires&#8221;. See the doctrings of
-<a class="reference internal" href="bt.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><tt class="xref py py-class docutils literal"><span class="pre">bt.algos.WeighEqually</span></tt></a> for an example.</p>
+<a class="reference internal" href="bt.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><code class="xref py py-class docutils literal"><span class="pre">bt.algos.WeighEqually</span></code></a> for an example.</p>
 </div>
 </div>
 <div class="section" id="implementation">
@@ -154,7 +153,13 @@ implement them as a basic function that takes one argument - the Strategy:</p>
             
             
             <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html"> Overview</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#what-is-bt">What is bt?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#a-quick-example">A Quick Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#features">Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#roadmap">Roadmap</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href=""> All About Algos</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
@@ -173,7 +178,7 @@ implement them as a basic function that takes one argument - the Strategy:</p>
                 <li><a href="https://github.com/pmorissette/bt">Github</a></li>
             </ul>
             
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />

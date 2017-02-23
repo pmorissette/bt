@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -7,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Tree Structure &mdash; bt 0.1.2 documentation</title>
+    <title>The Tree Structure &mdash; bt 0.2.3 documentation</title>
     
     <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.1.2',
+        URL_ROOT:    './',
+        VERSION:     '0.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="bt 0.1.2 documentation" href="index.html" />
+    <link rel="top" title="bt 0.2.3 documentation" href="index.html" />
     <link rel="next" title="Examples" href="examples.html" />
     <link rel="prev" title="Algorithms" href="algos.html" />
          
@@ -37,21 +36,21 @@
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="the-tree-structure">
 <h1>The Tree Structure<a class="headerlink" href="#the-tree-structure" title="Permalink to this headline">¶</a></h1>
-<p>In addition to the concept of <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><tt class="xref py py-class docutils literal"><span class="pre">Algos</span></tt></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><tt class="xref py py-class docutils literal"><span class="pre">AlgoStacks</span></tt></a>, a tree structure lies
+<p>In addition to the concept of <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">Algos</span></code></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal"><span class="pre">AlgoStacks</span></code></a>, a tree structure lies
 at the heart of the framework.  It allows you to mix and match securities and strategies in order to express
 your sophisticated trading ideas.  Here is a very simple diagram to help explain this concept:</p>
 <img alt="simple tree structure" class="align-center" src="_images/tree1.png" />
-<p>This diagram represents the strategy we tested in the <a class="reference internal" href="index.html"><em>overview example</em></a>. A simple <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><tt class="xref py py-class docutils literal"><span class="pre">strategy</span></tt></a>
-with two children that happen to be <a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><tt class="xref py py-class docutils literal"><span class="pre">securities</span></tt></a>. However, children nodes don&#8217;t have to be
+<p>This diagram represents the strategy we tested in the <a class="reference internal" href="index.html"><em>overview example</em></a>. A simple <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal"><span class="pre">strategy</span></code></a>
+with two children that happen to be <a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal"><span class="pre">securities</span></code></a>. However, children nodes don&#8217;t have to be
 securities. They can also be strategies. This concept is very powerful as it
 allows you to combine strategies together and allocate capital dynamically
 between different strategies as time progresses using sophisticated allocation
@@ -109,7 +108,13 @@ all the features packed into bt.</p>
             
             
             <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html"> Overview</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#what-is-bt">What is bt?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#a-quick-example">A Quick Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#features">Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#roadmap">Roadmap</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href=""> The Tree Structure</a></li>
@@ -123,7 +128,7 @@ all the features packed into bt.</p>
                 <li><a href="https://github.com/pmorissette/bt">Github</a></li>
             </ul>
             
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
