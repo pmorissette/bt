@@ -2,12 +2,12 @@ TMPREPO=/tmp/docs/bt
 
 default: build_dev
 
-.PHONY: dist upload docs pages serve klink
+.PHONY: dist upload docs pages serve klink notebooks
 
 dist:
 	python setup.py sdist
 
-upload: dist
+upload: clean dist
 	twine upload dist/*
 
 docs: 
@@ -16,7 +16,7 @@ docs:
 
 pages: 
 	- rm -rf $(TMPREPO)
-	git clone -b gh-pages git@github.com:pmorissette/bt.git $(TMPREPO)
+	git clone -b gh-pages https://github.com/pmorissette/bt.git $(TMPREPO)
 	rm -rf $(TMPREPO)/*
 	cp -r docs/build/html/* $(TMPREPO)
 	cd $(TMPREPO); \
@@ -26,7 +26,7 @@ pages:
 
 serve:
 	cd docs/build/html; \
-	python -m SimpleHTTPServer
+	python -m SimpleHTTPServer 9087
 
 build_dev:
 	- python setup.py build_ext --inplace
@@ -40,3 +40,7 @@ clean:
 
 klink:
 	git subtree pull --prefix=docs/source/_themes/klink --squash klink master
+
+notebooks:
+	cd docs/source; \
+	ipython notebook --no-browser --ip=*
