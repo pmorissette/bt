@@ -167,7 +167,10 @@ class Backtest(object):
         """
         Runs the Backtest.
         """
-        # set run flag
+        if self.has_run:
+            return
+
+        # set run flag to avoid running same test more than once
         self.has_run = True
 
         # setup strategy
