@@ -42,7 +42,7 @@ setup(
     url='https://github.com/pmorissette/bt',
     install_requires=[
         'ffn',
-        'pyprind>=2'
+        'pyprind>=2.10'
     ],
     packages=['bt'],
     long_description=local_file('README.rst').read(),
