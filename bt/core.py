@@ -594,9 +594,12 @@ class StrategyBase(Node):
         Args:
             * amount (float): Amount to adjust by.
             * update (bool): Force update?
-            * flow (bool): Is this adjustment a flow? Basically a flow will
-                have an impact on the price index. Examples of flows are
-                commissions.
+            * flow (bool): Is this adjustment a flow? A flow will not have an
+                impact on the performance (price index). Example of flows are
+                simply capital injections (say a monthly contribution to a
+                portfolio). This should not be reflected in the returns. A
+                non-flow (flow=False) does impact performance. A good example
+                of this is a commission, or a dividend.
 
         """
         # adjust capital
