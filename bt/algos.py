@@ -726,7 +726,7 @@ class SelectRandomly(AlgoStack):
 
         if self.n is not None:
             n = self.n if self.n < len(sel) else len(sel)
-            sel = random.sample(sel, n)
+            sel = random.sample(sel, int(n))
 
         target.temp['selected'] = sel
         return True
