@@ -343,7 +343,7 @@ def test_select_has_data_preselected():
 
 
 @mock.patch('bt.ffn.calc_erc_weights')
-def test_weigh_mean_var(mock_erc):
+def test_weigh_erc(mock_erc):
     algo = algos.WeighERC(lookback=pd.DateOffset(days=5))
 
     mock_erc.return_value = pd.Series({'c1': 0.3, 'c2': 0.7})
