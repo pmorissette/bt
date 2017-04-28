@@ -912,6 +912,91 @@ class WeighInvVol(Algo):
         return True
 
 
+class WeighERC(Algo):
+
+    """
+    Sets temp['weights'] based on equal risk contribution algorithm.
+
+    Sets the target weights based on ffn's calc_erc_weights. This
+    is an extension of the inverse volatility risk parity portfolio in
+    which the correlation of asset returns is incorporated into the
+    calculation of risk contribution of each asset.
+
+    The resulting portfolio is similar to a minimum variance portfolio
+    subject to a diversification constraint on the weights of its components
+    and its volatility is located between those of the minimum variance and
+    equally-weighted portfolios (Maillard 2008).
+
+    See:
+        https://en.wikipedia.org/wiki/Risk_parity
+
+    Args:
+        * lookback (DateOffset): lookback period for estimating covariance
+        * initial_weights (list): Starting asset weights [default inverse vol].
+        * risk_weights (list): Risk target weights [default equal weight].
+        * covar_method (str): method used to estimate the covariance. See ffn's
+            calc_erc_weights for more details. (default ledoit-wolf).
+        * risk_parity_method (str): Risk parity estimation method. see ffn's
+            calc_erc_weights for more details. (default ccd).
+        * maximum_iterations (int): Maximum iterations in iterative solutions
+            (default 100).
+        * tolerance (float): Tolerance level in iterative solutions (default 1E-8).
+
+
+    Sets:
+        * weights
+
+    Requires:
+        * selected
+
+    """
+
+    def __init__(self,
+                 lookback=pd.DateOffset(months=3),
+                 initial_weights=None,
+                 risk_weights=None,
+                 covar_method='ledoit-wolf',
+                 risk_parity_method='ccd',
+                 maximum_iterations=100,
+                 tolerance=1E-8,
+                 lag=pd.DateOffset(days=0)):
+
+        super(WeighERC, self).__init__()
+        self.lookback = lookback
+        self.initial_weights = initial_weights
+        self.risk_weights = risk_weights
+        self.covar_method = covar_method
+        self.risk_parity_method = risk_parity_method
+        self.maximum_iterations = maximum_iterations
+        self.tolerance = tolerance
+        self.lag = lag
+
+    def __call__(self, target):
+        selected = target.temp['selected']
+
+        if len(selected) == 0:
+            target.temp['weights'] = {}
+            return True
+
+        if len(selected) == 1:
+            target.temp['weights'] = {selected[0]: 1.}
+            return True
+
+        t0 = target.now - self.lag
+        prc = target.universe[selected].ix[t0 - self.lookback:t0]
+        tw = bt.ffn.calc_erc_weights(
+            prc.to_returns().dropna(),
+            initial_weights=self.initial_weights,
+            risk_weights=self.risk_weights,
+            covar_method=self.covar_method,
+            risk_parity_method=self.risk_parity_method,
+            maximum_iterations=self.maximum_iterations,
+            tolerance=self.tolerance)
+
+        target.temp['weights'] = tw.dropna()
+        return True
+
+
 class WeighMeanVar(Algo):
 
     """
