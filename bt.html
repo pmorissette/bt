@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bt Package &mdash; bt 0.2.3 documentation</title>
+    <title>bt Package &#8212; bt 0.2.5 documentation</title>
     
     <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,17 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.3',
+        VERSION:     '0.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="bt 0.2.3 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Examples" href="examples.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -95,7 +97,7 @@ allow to avoid errors.</p>
 
 <dl class="class">
 <dt id="bt.algos.Debug">
-<em class="property">class </em><code class="descclassname">bt.algos.</code><code class="descname">Debug</code><a class="reference internal" href="_modules/bt/algos.html#Debug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.Debug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.algos.</code><code class="descname">Debug</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/algos.html#Debug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.Debug" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></code></a></p>
 <p>Utility Algo that calls pdb.set_trace when triggered.</p>
 <p>In the debug session, target is available and can be examined.</p>
@@ -116,12 +118,11 @@ use this Algo with a limit of 0.1, the new target weight will
 be 90% instead of 0%.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>limit (float, dict): Weight delta limit. If float, this will be a</dt>
-<dd><p class="first last">global limit for all securities. If dict, you may specify by-ticker
-limit.</p>
-</dd>
+<dd>global limit for all securities. If dict, you may specify by-ticker
+limit.</dd>
 </dl>
 </li>
 </ul>
@@ -172,7 +173,7 @@ their current weights.</p>
 
 <dl class="class">
 <dt id="bt.algos.PrintDate">
-<em class="property">class </em><code class="descclassname">bt.algos.</code><code class="descname">PrintDate</code><a class="reference internal" href="_modules/bt/algos.html#PrintDate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.PrintDate" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.algos.</code><code class="descname">PrintDate</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/algos.html#PrintDate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.PrintDate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></code></a></p>
 <p>This Algo simply print&#8217;s the current date.</p>
 <p>Can be useful for debugging purposes.</p>
@@ -186,12 +187,11 @@ their current weights.</p>
 purposes.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>fmt_string (str): A string that will later be formatted with the</dt>
-<dd><p class="first last">target object&#8217;s __dict__ attribute. Therefore, you should provide
-what you want to examine within curly braces ( { } )</p>
-</dd>
+<dd>target object&#8217;s __dict__ attribute. Therefore, you should provide
+what you want to examine within curly braces ( { } )</dd>
 </dl>
 </li>
 </ul>
@@ -205,7 +205,7 @@ Basically, you provide a string that will be formatted with target.__dict__</p>
 
 <dl class="class">
 <dt id="bt.algos.PrintTempData">
-<em class="property">class </em><code class="descclassname">bt.algos.</code><code class="descname">PrintTempData</code><a class="reference internal" href="_modules/bt/algos.html#PrintTempData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.PrintTempData" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.algos.</code><code class="descname">PrintTempData</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/algos.html#PrintTempData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.PrintTempData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></code></a></p>
 <p>This Algo prints the temp data.</p>
 <p>Useful for debugging.</p>
@@ -221,17 +221,15 @@ positions if open but not in target_weights. This is typically
 the last Algo called once the target weights have been set.</p>
 <dl class="docutils">
 <dt>Requires:</dt>
-<dd><ul class="first last">
-<li><p class="first">weights</p>
-</li>
+<dd><ul class="first last simple">
+<li>weights</li>
 <li><dl class="first docutils">
 <dt>cash (optional): You can set a &#8216;cash&#8217; value on temp. This should be a</dt>
-<dd><p class="first last">number between 0-1 and determines the amount of cash to set aside.
+<dd>number between 0-1 and determines the amount of cash to set aside.
 For example, if cash=0.3, the strategy will allocate 70% of its
 value to the provided weights, and the remaining 30% will be kept
 in cash. If this value is not provided (default), the full value
-of the strategy is allocated to securities.</p>
-</dd>
+of the strategy is allocated to securities.</dd>
 </dl>
 </li>
 </ul>
@@ -289,20 +287,17 @@ We could pass a lambda function that checks the len of &#8216;selected&#8217;:</
 item=&#8217;selected&#8217;</div></blockquote>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>pred (Algo): Function that returns a Bool given the strategy. This</dt>
-<dd><p class="first last">is the definition of an Algo. However, this is typically used
-with a simple lambda function.</p>
-</dd>
+<dd>is the definition of an Algo. However, this is typically used
+with a simple lambda function.</dd>
 </dl>
 </li>
-<li><p class="first">item (str): An item within temp.</p>
-</li>
+<li>item (str): An item within temp.</li>
 <li><dl class="first docutils">
 <dt>if_none (bool): Result if the item required is not in temp or if it&#8217;s</dt>
-<dd><p class="first last">value if None</p>
-</dd>
+<dd>value if None</dd>
 </dl>
 </li>
 </ul>
@@ -361,13 +356,11 @@ daily rebalancing strategies.</p>
 <p>This algo runs every n periods.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">n (int): Run each n periods</p>
-</li>
+<dd><ul class="first last simple">
+<li>n (int): Run each n periods</li>
 <li><dl class="first docutils">
 <dt>offset (int): Applies to the first run. If 0, this algo will run the</dt>
-<dd><p class="first last">first time it is called.</p>
-</dd>
+<dd>first time it is called.</dd>
 </dl>
 </li>
 </ul>
@@ -506,18 +499,16 @@ factor in some holidays, we can use 57 or 58. It&#8217;s really up to you.</p>
 get_num_days_required.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>lookback (DateOffset): A DateOffset that determines the lookback</dt>
-<dd><p class="first last">period.</p>
-</dd>
+<dd>period.</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>min_count (int): Minimum number of days required for a series to be</dt>
-<dd><p class="first last">considered valid. If not provided, ffn&#8217;s get_num_days_required is
-used to estimate the number of points required.</p>
-</dd>
+<dd>considered valid. If not provided, ffn&#8217;s get_num_days_required is
+used to estimate the number of points required.</dd>
 </dl>
 </li>
 </ul>
@@ -542,23 +533,18 @@ AlgoStack with two algos: StatTotalReturn and SelectN.</p>
 SelectMomentum(), as StatTotalReturn uses values of temp[&#8216;selected&#8217;]</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">n (int): select first N elements</p>
-</li>
+<dd><ul class="first last simple">
+<li>n (int): select first N elements</li>
 <li><dl class="first docutils">
 <dt>lookback (DateOffset): lookback period for total return</dt>
-<dd><p class="first last">calculation</p>
-</dd>
+<dd>calculation</dd>
 </dl>
 </li>
-<li><p class="first">lag (DateOffset): Lag interval for total return calculation</p>
-</li>
-<li><p class="first">sort_descending (bool): Sort descending (highest return is best)</p>
-</li>
+<li>lag (DateOffset): Lag interval for total return calculation</li>
+<li>sort_descending (bool): Sort descending (highest return is best)</li>
 <li><dl class="first docutils">
 <dt>all_or_none (bool): If true, only populates temp[&#8216;selected&#8217;] if we</dt>
-<dd><p class="first last">have n items. If we have less than n, then temp[&#8216;selected&#8217;] = [].</p>
-</dd>
+<dd>have n items. If we have less than n, then temp[&#8216;selected&#8217;] = [].</dd>
 </dl>
 </li>
 </ul>
@@ -587,19 +573,16 @@ previous Algo and will be used for ranking purposes. Can select
 top or bottom N based on sort_descending parameter.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">n (int): select top n items.</p>
-</li>
+<dd><ul class="first last simple">
+<li>n (int): select top n items.</li>
 <li><dl class="first docutils">
 <dt>sort_descending (bool): Should the stat be sorted in descending order</dt>
-<dd><p class="first last">before selecting the first n items?</p>
-</dd>
+<dd>before selecting the first n items?</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>all_or_none (bool): If true, only populates temp[&#8216;selected&#8217;] if we</dt>
-<dd><p class="first last">have n items. If we have less than n, then temp[&#8216;selected&#8217;] = [].</p>
-</dd>
+<dd>have n items. If we have less than n, then temp[&#8216;selected&#8217;] = [].</dd>
 </dl>
 </li>
 </ul>
@@ -705,13 +688,11 @@ temp[&#8216;selected&#8217;] over a given lookback period. The total return
 is determined by ffn&#8217;s calc_total_return.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">lookback (DateOffset): lookback period.</p>
-</li>
+<dd><ul class="first last simple">
+<li>lookback (DateOffset): lookback period.</li>
 <li><dl class="first docutils">
 <dt>lag (DateOffset): Lag interval. Total return is calculated in</dt>
-<dd><p class="first last">the inteval [now - lookback - lag, now - lag]</p>
-</dd>
+<dd>the inteval [now - lookback - lag, now - lag]</dd>
 </dl>
 </li>
 </ul>
@@ -719,6 +700,58 @@ is determined by ffn&#8217;s calc_total_return.</p>
 <dt>Sets:</dt>
 <dd><ul class="first last simple">
 <li>stat</li>
+</ul>
+</dd>
+<dt>Requires:</dt>
+<dd><ul class="first last simple">
+<li>selected</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="bt.algos.WeighERC">
+<em class="property">class </em><code class="descclassname">bt.algos.</code><code class="descname">WeighERC</code><span class="sig-paren">(</span><em>lookback=&lt;DateOffset: kwds={'months': 3}&gt;</em>, <em>initial_weights=None</em>, <em>risk_weights=None</em>, <em>covar_method='ledoit-wolf'</em>, <em>risk_parity_method='ccd'</em>, <em>maximum_iterations=100</em>, <em>tolerance=1e-08</em>, <em>lag=&lt;DateOffset: kwds={'days': 0}&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/algos.html#WeighERC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.algos.WeighERC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></code></a></p>
+<p>Sets temp[&#8216;weights&#8217;] based on equal risk contribution algorithm.</p>
+<p>Sets the target weights based on ffn&#8217;s calc_erc_weights. This
+is an extension of the inverse volatility risk parity portfolio in
+which the correlation of asset returns is incorporated into the
+calculation of risk contribution of each asset.</p>
+<p>The resulting portfolio is similar to a minimum variance portfolio
+subject to a diversification constraint on the weights of its components
+and its volatility is located between those of the minimum variance and
+equally-weighted portfolios (Maillard 2008).</p>
+<dl class="docutils">
+<dt>See:</dt>
+<dd><a class="reference external" href="https://en.wikipedia.org/wiki/Risk_parity">https://en.wikipedia.org/wiki/Risk_parity</a></dd>
+<dt>Args:</dt>
+<dd><ul class="first last simple">
+<li>lookback (DateOffset): lookback period for estimating covariance</li>
+<li>initial_weights (list): Starting asset weights [default inverse vol].</li>
+<li>risk_weights (list): Risk target weights [default equal weight].</li>
+<li><dl class="first docutils">
+<dt>covar_method (str): method used to estimate the covariance. See ffn&#8217;s</dt>
+<dd>calc_erc_weights for more details. (default ledoit-wolf).</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>risk_parity_method (str): Risk parity estimation method. see ffn&#8217;s</dt>
+<dd>calc_erc_weights for more details. (default ccd).</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>maximum_iterations (int): Maximum iterations in iterative solutions</dt>
+<dd>(default 100).</dd>
+</dl>
+</li>
+<li>tolerance (float): Tolerance level in iterative solutions (default 1E-8).</li>
+</ul>
+</dd>
+<dt>Sets:</dt>
+<dd><ul class="first last simple">
+<li>weights</li>
 </ul>
 </dd>
 <dt>Requires:</dt>
@@ -789,23 +822,19 @@ Python implementation of Markowitz&#8217;s mean-variance optimization.</p>
 <dt>See:</dt>
 <dd><a class="reference external" href="http://en.wikipedia.org/wiki/Modern_portfolio_theory#The_efficient_frontier_with_no_risk-free_asset">http://en.wikipedia.org/wiki/Modern_portfolio_theory#The_efficient_frontier_with_no_risk-free_asset</a></dd>
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">lookback (DateOffset): lookback period for estimating volatility</p>
-</li>
+<dd><ul class="first last simple">
+<li>lookback (DateOffset): lookback period for estimating volatility</li>
 <li><dl class="first docutils">
 <dt>bounds ((min, max)): tuple specifying the min and max weights for</dt>
-<dd><p class="first last">each asset in the optimization.</p>
-</dd>
+<dd>each asset in the optimization.</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>covar_method (str): method used to estimate the covariance. See ffn&#8217;s</dt>
-<dd><p class="first last">calc_mean_var_weights for more details.</p>
-</dd>
+<dd>calc_mean_var_weights for more details.</dd>
 </dl>
 </li>
-<li><p class="first">rf (float): risk-free rate used in optimization.</p>
-</li>
+<li>rf (float): risk-free rate used in optimization.</li>
 </ul>
 </dd>
 <dt>Sets:</dt>
@@ -836,15 +865,13 @@ used for random benchmarking.</p>
 <p>This is an Algo wrapper around ffn&#8217;s random_weights function.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>bounds ((low, high)): Tuple including low and high bounds for each</dt>
-<dd><p class="first last">security</p>
-</dd>
+<dd>security</dd>
 </dl>
 </li>
-<li><p class="first">weight_sum (float): What should the weights sum up to?</p>
-</li>
+<li>weight_sum (float): What should the weights sum up to?</li>
 </ul>
 </dd>
 <dt>Sets:</dt>
@@ -933,55 +960,41 @@ produce a Result.</p>
 backtests. To access the backtested strategy, simply access
 the strategy attribute.</dd>
 <dt>Args:</dt>
-<dd><ul class="first">
-<li><p class="first">strategy (Strategy, Node, StrategyBase): The Strategy to be tested.</p>
-</li>
+<dd><ul class="first simple">
+<li>strategy (Strategy, Node, StrategyBase): The Strategy to be tested.</li>
 <li><dl class="first docutils">
 <dt>data (DataFrame): DataFrame containing data used in backtest. This</dt>
-<dd><p class="first last">will be the Strategy&#8217;s &#8220;universe&#8221;.</p>
-</dd>
+<dd>will be the Strategy&#8217;s &#8220;universe&#8221;.</dd>
 </dl>
 </li>
-<li><p class="first">name (str): Backtest name - defaults to strategy name</p>
-</li>
+<li>name (str): Backtest name - defaults to strategy name</li>
 <li><dl class="first docutils">
 <dt>initial_capital (float): Initial amount of capital passed to</dt>
-<dd><p class="first last">Strategy.</p>
-</dd>
+<dd>Strategy.</dd>
 </dl>
 </li>
-<li><p class="first">commissions (fn(quantity, price)): The commission function</p>
-</li>
+<li>commissions (fn(quantity, price)): The commission function</li>
 </ul>
 <p class="last">to be used. Ex: commissions=lambda q, p: max(1, abs(q) * 0.01)
 * progress_bar (Bool): Display progress bar while running backtest</p>
 </dd>
 <dt>Attributes:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>strategy (Strategy): The Backtest&#8217;s Strategy. This will be a deepcopy</dt>
-<dd><p class="first last">of the Strategy that was passed in.</p>
-</dd>
+<dd>of the Strategy that was passed in.</dd>
 </dl>
 </li>
-<li><p class="first">data (DataFrame): Data passed in</p>
-</li>
-<li><p class="first">dates (DateTimeIndex): Data&#8217;s index</p>
-</li>
-<li><p class="first">initial_capital (float): Initial capital</p>
-</li>
-<li><p class="first">name (str): Backtest name</p>
-</li>
-<li><p class="first">stats (ffn.PerformanceStats): Performance statistics</p>
-</li>
-<li><p class="first">has_run (bool): Run flag</p>
-</li>
-<li><p class="first">weights (DataFrame): Weights of each component over time</p>
-</li>
+<li>data (DataFrame): Data passed in</li>
+<li>dates (DateTimeIndex): Data&#8217;s index</li>
+<li>initial_capital (float): Initial capital</li>
+<li>name (str): Backtest name</li>
+<li>stats (ffn.PerformanceStats): Performance statistics</li>
+<li>has_run (bool): Run flag</li>
+<li>weights (DataFrame): Weights of each component over time</li>
 <li><dl class="first docutils">
 <dt>security_weights (DataFrame): Weights of each security as a</dt>
-<dd><p class="first last">percentage of the whole portfolio over time</p>
-</dd>
+<dd>percentage of the whole portfolio over time</dd>
 </dl>
 </li>
 </ul>
@@ -1066,21 +1079,16 @@ statistic.</p>
 than the random versions.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>statistic (str): Statistic - any numeric statistic in</dt>
-<dd><p class="first last">Result is valid.</p>
-</dd>
+<dd>Result is valid.</dd>
 </dl>
 </li>
-<li><p class="first">figsize ((x, y)): Figure size</p>
-</li>
-<li><p class="first">title (str): Chart title</p>
-</li>
-<li><p class="first">bins (int): Number of bins</p>
-</li>
-<li><p class="first">kwargs (dict): Passed to pandas hist function.</p>
-</li>
+<li>figsize ((x, y)): Figure size</li>
+<li>title (str): Chart title</li>
+<li>bins (int): Number of bins</li>
+<li>kwargs (dict): Passed to pandas hist function.</li>
 </ul>
 </dd>
 </dl>
@@ -1091,7 +1099,7 @@ than the random versions.</p>
 <dl class="class">
 <dt id="bt.backtest.Result">
 <em class="property">class </em><code class="descclassname">bt.backtest.</code><code class="descname">Result</code><span class="sig-paren">(</span><em>*backtests</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/backtest.html#Result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.backtest.Result" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats" title="(in ffn v0.2.1)"><code class="xref py py-class docutils literal"><span class="pre">ffn.core.GroupStats</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats" title="(in ffn v0.2.2)"><code class="xref py py-class docutils literal"><span class="pre">ffn.core.GroupStats</span></code></a></p>
 <p>Based on ffn&#8217;s GroupStats with a few extra helper methods.</p>
 <dl class="docutils">
 <dt>Args:</dt>
@@ -1112,11 +1120,10 @@ than the random versions.</p>
 <dd><p>Display monthly returns for a specific backtest.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>backtest (str, int): Backtest. Can be either a index (int) or the</dt>
-<dd><p class="first last">name (str)</p>
-</dd>
+<dd>name (str)</dd>
 </dl>
 </li>
 </ul>
@@ -1133,11 +1140,10 @@ than the random versions.</p>
 <p>The result is a MultiIndex DataFrame.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>strategy_name (str): If none, it will take the first backtest&#8217;s</dt>
-<dd><p class="first last">strategy (self.backtest_list[0].name)</p>
-</dd>
+<dd>strategy (self.backtest_list[0].name)</dd>
 </dl>
 </li>
 </ul>
@@ -1151,15 +1157,13 @@ than the random versions.</p>
 <dd><p>Plots the return histogram of a given backtest over time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>backtest (str, int): Backtest. Can be either a index (int) or the</dt>
-<dd><p class="first last">name (str)</p>
-</dd>
+<dd>name (str)</dd>
 </dl>
 </li>
-<li><p class="first">kwds (dict): Keywords passed to plot_histogram</p>
-</li>
+<li>kwds (dict): Keywords passed to plot_histogram</li>
 </ul>
 </dd>
 </dl>
@@ -1171,24 +1175,20 @@ than the random versions.</p>
 <dd><p>Plots the security weights of a given backtest over time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>backtest (str, int): Backtest. Can be either a index (int) or the</dt>
-<dd><p class="first last">name (str)</p>
-</dd>
+<dd>name (str)</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>filter (list, str): filter columns for specific columns. Filter</dt>
-<dd><p class="first last">is simply passed as is to DataFrame[filter], so use something
-that makes sense with a DataFrame.</p>
-</dd>
+<dd>is simply passed as is to DataFrame[filter], so use something
+that makes sense with a DataFrame.</dd>
 </dl>
 </li>
-<li><p class="first">figsize ((width, height)): figure size</p>
-</li>
-<li><p class="first">kwds (dict): Keywords passed to plot</p>
-</li>
+<li>figsize ((width, height)): figure size</li>
+<li>kwds (dict): Keywords passed to plot</li>
 </ul>
 </dd>
 </dl>
@@ -1200,24 +1200,20 @@ that makes sense with a DataFrame.</p>
 <dd><p>Plots the weights of a given backtest over time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>backtest (str, int): Backtest. Can be either a index (int) or the</dt>
-<dd><p class="first last">name (str)</p>
-</dd>
+<dd>name (str)</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>filter (list, str): filter columns for specific columns. Filter</dt>
-<dd><p class="first last">is simply passed as is to DataFrame[filter], so use something
-that makes sense with a DataFrame.</p>
-</dd>
+<dd>is simply passed as is to DataFrame[filter], so use something
+that makes sense with a DataFrame.</dd>
 </dl>
 </li>
-<li><p class="first">figsize ((width, height)): figure size</p>
-</li>
-<li><p class="first">kwds (dict): Keywords passed to plot</p>
-</li>
+<li>figsize ((width, height)): figure size</li>
+<li>kwds (dict): Keywords passed to plot</li>
 </ul>
 </dd>
 </dl>
@@ -1238,18 +1234,15 @@ randomly picking weight? Or randomly picking the selected
 securities?</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">backtest (Backtest): A backtest you want to benchmark</p>
-</li>
+<dd><ul class="first last simple">
+<li>backtest (Backtest): A backtest you want to benchmark</li>
 <li><dl class="first docutils">
 <dt>random_strategy (Strategy): A strategy you want to benchmark</dt>
-<dd><p class="first last">against. The strategy should have a random component to
-emulate skilless behavior.</p>
-</dd>
+<dd>against. The strategy should have a random component to
+emulate skilless behavior.</dd>
 </dl>
 </li>
-<li><p class="first">nsim (int): number of random strategies to create.</p>
-</li>
+<li>nsim (int): number of random strategies to create.</li>
 </ul>
 </dd>
 <dt>Returns:</dt>
@@ -1274,12 +1267,12 @@ object containing the results of the backtests.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="core-module">
-<h2><code class="xref py py-mod docutils literal"><span class="pre">core</span></code> Module<a class="headerlink" href="#core-module" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-bt.core"></span><p>Contains the core building blocks of the framework.</p>
+<div class="section" id="module-bt.core">
+<span id="core-module"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">core</span></code> Module<a class="headerlink" href="#module-bt.core" title="Permalink to this headline">¶</a></h2>
+<p>Contains the core building blocks of the framework.</p>
 <dl class="class">
 <dt id="bt.core.Algo">
-<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">Algo</code><a class="headerlink" href="#bt.core.Algo" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">Algo</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Algo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Algo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Algos are used to modularize strategy logic so that strategy logic becomes
 modular, composable, more testable and less error prone. Basically, the
@@ -1307,7 +1300,7 @@ simple function may also be used if no state preservation is neceesary.</p>
 
 <dl class="class">
 <dt id="bt.core.AlgoStack">
-<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">AlgoStack</code><a class="headerlink" href="#bt.core.AlgoStack" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">AlgoStack</code><span class="sig-paren">(</span><em>*algos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#AlgoStack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.AlgoStack" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">bt.core.Algo</span></code></a></p>
 <p>An AlgoStack derives from Algo runs multiple Algos until a
 failure is encountered.</p>
@@ -1324,73 +1317,58 @@ Algo in the stack is run. Execution stops if one Algo returns False.</p>
 
 <dl class="class">
 <dt id="bt.core.Node">
-<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">Node</code><a class="headerlink" href="#bt.core.Node" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">Node</code><span class="sig-paren">(</span><em>name</em>, <em>parent=None</em>, <em>children=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>The Node is the main building block in bt&#8217;s tree structure design.
 Both StrategyBase and SecurityBase inherit Node. It contains the
 core functionality of a tree node.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">name (str): The Node name</p>
-</li>
-<li><p class="first">parent (Node): The parent Node</p>
-</li>
+<dd><ul class="first last simple">
+<li>name (str): The Node name</li>
+<li>parent (Node): The parent Node</li>
 <li><dl class="first docutils">
 <dt>children (dict, list): A collection of children. If dict,</dt>
-<dd><p class="first last">the format is {name: child}, if list then list of children.</p>
-</dd>
+<dd>the format is {name: child}, if list then list of children.</dd>
 </dl>
 </li>
 </ul>
 </dd>
 <dt>Attributes:</dt>
-<dd><ul class="first last">
-<li><p class="first">name (str): Node name</p>
-</li>
-<li><p class="first">parent (Node): Node parent</p>
-</li>
-<li><p class="first">root (Node): Root node of the tree (topmost node)</p>
-</li>
-<li><p class="first">children (dict): Node&#8217;s children</p>
-</li>
-<li><p class="first">now (datetime): Used when backtesting to store current date</p>
-</li>
+<dd><ul class="first last simple">
+<li>name (str): Node name</li>
+<li>parent (Node): Node parent</li>
+<li>root (Node): Root node of the tree (topmost node)</li>
+<li>children (dict): Node&#8217;s children</li>
+<li>now (datetime): Used when backtesting to store current date</li>
 <li><dl class="first docutils">
 <dt>stale (bool): Flag used to determine if Node is stale and need</dt>
-<dd><p class="first last">updating</p>
-</dd>
+<dd>updating</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>prices (TimeSeries): Prices of the Node. Prices for a security will</dt>
-<dd><p class="first last">be the security&#8217;s price, for a strategy it will be an index that
-reflects the value of the strategy over time.</p>
-</dd>
+<dd>be the security&#8217;s price, for a strategy it will be an index that
+reflects the value of the strategy over time.</dd>
 </dl>
 </li>
-<li><p class="first">price (float): last price</p>
-</li>
-<li><p class="first">value (float): last value</p>
-</li>
-<li><p class="first">weight (float): weight in parent</p>
-</li>
-<li><p class="first">full_name (str): Name including parents&#8217; names</p>
-</li>
-<li><p class="first">members (list): Current Node + node&#8217;s children</p>
-</li>
+<li>price (float): last price</li>
+<li>value (float): last value</li>
+<li>weight (float): weight in parent</li>
+<li>full_name (str): Name including parents&#8217; names</li>
+<li>members (list): Current Node + node&#8217;s children</li>
 </ul>
 </dd>
 </dl>
 <dl class="method">
 <dt id="bt.core.Node.adjust">
-<code class="descname">adjust</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.Node.adjust" title="Permalink to this definition">¶</a></dt>
+<code class="descname">adjust</code><span class="sig-paren">(</span><em>amount</em>, <em>update=True</em>, <em>isflow=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Node.adjust"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Node.adjust" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adjust Node value by amount.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="bt.core.Node.allocate">
-<code class="descname">allocate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.Node.allocate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">allocate</code><span class="sig-paren">(</span><em>amount</em>, <em>update=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Node.allocate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Node.allocate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocate capital to Node.</p>
 </dd></dl>
 
@@ -1420,19 +1398,19 @@ children.</p>
 
 <dl class="method">
 <dt id="bt.core.Node.setup">
-<code class="descname">setup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.Node.setup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setup</code><span class="sig-paren">(</span><em>dates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Node.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Node.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup method used to initialize a Node with a set of dates.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="bt.core.Node.update">
-<code class="descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.Node.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>date</em>, <em>data=None</em>, <em>inow=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Node.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Node.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update Node with latest date, and optionally some data.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="bt.core.Node.use_integer_positions">
-<code class="descname">use_integer_positions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.Node.use_integer_positions" title="Permalink to this definition">¶</a></dt>
+<code class="descname">use_integer_positions</code><span class="sig-paren">(</span><em>integer_positions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Node.use_integer_positions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Node.use_integer_positions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set indicator to use (or not) integer positions for a given strategy or
 security.</p>
 <p>By default all positions in number of stocks should be integer.
@@ -1459,68 +1437,53 @@ stock from backtesting.</p>
 
 <dl class="class">
 <dt id="bt.core.SecurityBase">
-<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">SecurityBase</code><a class="headerlink" href="#bt.core.SecurityBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">SecurityBase</code><span class="sig-paren">(</span><em>name</em>, <em>multiplier=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#SecurityBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.SecurityBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal"><span class="pre">bt.core.Node</span></code></a></p>
 <p>Security Node. Used to define a security within a tree.
 A Security&#8217;s has no children. It simply models an asset that can be bought
 or sold.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">name (str): Security name</p>
-</li>
+<dd><ul class="first last simple">
+<li>name (str): Security name</li>
 <li><dl class="first docutils">
 <dt>multiplier (float): security multiplier - typically used for</dt>
-<dd><p class="first last">derivatives.</p>
-</dd>
+<dd>derivatives.</dd>
 </dl>
 </li>
 </ul>
 </dd>
 <dt>Attributes:</dt>
-<dd><ul class="first last">
-<li><p class="first">name (str): Security name</p>
-</li>
-<li><p class="first">parent (Security): Security parent</p>
-</li>
-<li><p class="first">root (Security): Root node of the tree (topmost node)</p>
-</li>
-<li><p class="first">now (datetime): Used when backtesting to store current date</p>
-</li>
+<dd><ul class="first last simple">
+<li>name (str): Security name</li>
+<li>parent (Security): Security parent</li>
+<li>root (Security): Root node of the tree (topmost node)</li>
+<li>now (datetime): Used when backtesting to store current date</li>
 <li><dl class="first docutils">
 <dt>stale (bool): Flag used to determine if Security is stale and need</dt>
-<dd><p class="first last">updating</p>
-</dd>
+<dd>updating</dd>
 </dl>
 </li>
-<li><p class="first">prices (TimeSeries): Security prices.</p>
-</li>
-<li><p class="first">price (float): last price</p>
-</li>
+<li>prices (TimeSeries): Security prices.</li>
+<li>price (float): last price</li>
 <li><dl class="first docutils">
 <dt>outlays (TimeSeries): Series of outlays. Positive outlays mean</dt>
-<dd><p class="first last">capital was allocated to security and security consumed that
+<dd>capital was allocated to security and security consumed that
 amount.  Negative outlays are the opposite. This can be useful for
-calculating turnover at the strategy level.</p>
-</dd>
+calculating turnover at the strategy level.</dd>
 </dl>
 </li>
-<li><p class="first">value (float): last value - basically position * price * multiplier</p>
-</li>
-<li><p class="first">weight (float): weight in parent</p>
-</li>
-<li><p class="first">full_name (str): Name including parents&#8217; names</p>
-</li>
-<li><p class="first">members (list): Current Security + strategy&#8217;s children</p>
-</li>
-<li><p class="first">position (float): Current position (quantity).</p>
-</li>
+<li>value (float): last value - basically position * price * multiplier</li>
+<li>weight (float): weight in parent</li>
+<li>full_name (str): Name including parents&#8217; names</li>
+<li>members (list): Current Security + strategy&#8217;s children</li>
+<li>position (float): Current position (quantity).</li>
 </ul>
 </dd>
 </dl>
 <dl class="method">
 <dt id="bt.core.SecurityBase.allocate">
-<code class="descname">allocate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.allocate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">allocate</code><span class="sig-paren">(</span><em>amount</em>, <em>update=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#SecurityBase.allocate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.SecurityBase.allocate" title="Permalink to this definition">¶</a></dt>
 <dd><p>This allocates capital to the Security. This is the method used to
 buy/sell the security.</p>
 <p>A given amount of shares will be determined on the current price, a
@@ -1539,7 +1502,7 @@ adjustment.</p>
 
 <dl class="method">
 <dt id="bt.core.SecurityBase.commission">
-<code class="descname">commission</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.commission" title="Permalink to this definition">¶</a></dt>
+<code class="descname">commission</code><span class="sig-paren">(</span><em>q</em>, <em>p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#SecurityBase.commission"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.SecurityBase.commission" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the commission (transaction fee) based on quantity and
 price.  Uses the parent&#8217;s commission_fn.</p>
 <dl class="docutils">
@@ -1552,9 +1515,14 @@ price.  Uses the parent&#8217;s commission_fn.</p>
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="bt.core.SecurityBase.multiplier">
+<code class="descname">multiplier</code><em class="property"> = 0.0</em><a class="headerlink" href="#bt.core.SecurityBase.multiplier" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="bt.core.SecurityBase.outlay">
-<code class="descname">outlay</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.outlay" title="Permalink to this definition">¶</a></dt>
+<code class="descname">outlay</code><span class="sig-paren">(</span><em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#SecurityBase.outlay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.SecurityBase.outlay" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines the complete cash outlay (including commission) necessary
 given a quantity q.
 Second returning parameter is a commission itself.</p>
@@ -1602,21 +1570,20 @@ to parent).</p>
 
 <dl class="method">
 <dt id="bt.core.SecurityBase.run">
-<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.run" title="Permalink to this definition">¶</a></dt>
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#SecurityBase.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.SecurityBase.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Does nothing - securities have nothing to do on run.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="bt.core.SecurityBase.setup">
-<code class="descname">setup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.setup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setup</code><span class="sig-paren">(</span><em>universe</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#SecurityBase.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.SecurityBase.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup Security with universe. Speeds up future runs.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
+<dd><ul class="first last simple">
 <li><dl class="first docutils">
 <dt>universe (DataFrame): DataFrame of prices with security&#8217;s name as</dt>
-<dd><p class="first last">one of the columns.</p>
-</dd>
+<dd>one of the columns.</dd>
 </dl>
 </li>
 </ul>
@@ -1626,7 +1593,7 @@ to parent).</p>
 
 <dl class="method">
 <dt id="bt.core.SecurityBase.update">
-<code class="descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>date</em>, <em>data=None</em>, <em>inow=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#SecurityBase.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.SecurityBase.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update security with a given date and optionally, some data.
 This will update price, value, weight, etc.</p>
 </dd></dl>
@@ -1641,7 +1608,7 @@ This will update price, value, weight, etc.</p>
 
 <dl class="class">
 <dt id="bt.core.Strategy">
-<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">Strategy</code><a class="headerlink" href="#bt.core.Strategy" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">Strategy</code><span class="sig-paren">(</span><em>name</em>, <em>algos=[]</em>, <em>children=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Strategy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.StrategyBase" title="bt.core.StrategyBase"><code class="xref py py-class docutils literal"><span class="pre">bt.core.StrategyBase</span></code></a></p>
 <p>Strategy expands on the StrategyBase and incorporates Algos.</p>
 <p>Basically, a Strategy is built by passing in a set of algos. These algos
@@ -1650,33 +1617,27 @@ will be placed in an Algo stack and the run function will call the stack.</p>
 perm for permanent data, temp for temporary data.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">name (str): Strategy name</p>
-</li>
-<li><p class="first">algos (list): List of Algos to be passed into an AlgoStack</p>
-</li>
+<dd><ul class="first last simple">
+<li>name (str): Strategy name</li>
+<li>algos (list): List of Algos to be passed into an AlgoStack</li>
 <li><dl class="first docutils">
 <dt>children (dict, list): Children - useful when you want to create</dt>
-<dd><p class="first last">strategies of strategies</p>
-</dd>
+<dd>strategies of strategies</dd>
 </dl>
 </li>
 </ul>
 </dd>
 <dt>Attributes:</dt>
-<dd><ul class="first last">
-<li><p class="first">stack (AlgoStack): The stack</p>
-</li>
+<dd><ul class="first last simple">
+<li>stack (AlgoStack): The stack</li>
 <li><dl class="first docutils">
 <dt>temp (dict): A dict containing temporary data - cleared on each call</dt>
-<dd><p class="first last">to run. This can be used to pass info to other algos.</p>
-</dd>
+<dd>to run. This can be used to pass info to other algos.</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>perm (dict): Permanent data used to pass info from one algo to</dt>
-<dd><p class="first last">another. Not cleared on each pass.</p>
-</dd>
+<dd>another. Not cleared on each pass.</dd>
 </dl>
 </li>
 </ul>
@@ -1684,92 +1645,72 @@ perm for permanent data, temp for temporary data.</p>
 </dl>
 <dl class="method">
 <dt id="bt.core.Strategy.run">
-<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.Strategy.run" title="Permalink to this definition">¶</a></dt>
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#Strategy.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.Strategy.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="bt.core.StrategyBase">
-<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">StrategyBase</code><a class="headerlink" href="#bt.core.StrategyBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bt.core.</code><code class="descname">StrategyBase</code><span class="sig-paren">(</span><em>name</em>, <em>children=None</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal"><span class="pre">bt.core.Node</span></code></a></p>
 <p>Strategy Node. Used to define strategy logic within a tree.
 A Strategy&#8217;s role is to allocate capital to it&#8217;s children
 based on a function.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">name (str): Strategy name</p>
-</li>
+<dd><ul class="first last simple">
+<li>name (str): Strategy name</li>
 <li><dl class="first docutils">
 <dt>children (dict, list): A collection of children. If dict,</dt>
-<dd><p class="first last">the format is {name: child}, if list then list of children.
-Children can be any type of Node.</p>
-</dd>
+<dd>the format is {name: child}, if list then list of children.
+Children can be any type of Node.</dd>
 </dl>
 </li>
-<li><p class="first">parent (Node): The parent Node</p>
-</li>
+<li>parent (Node): The parent Node</li>
 </ul>
 </dd>
 <dt>Attributes:</dt>
-<dd><ul class="first last">
-<li><p class="first">name (str): Strategy name</p>
-</li>
-<li><p class="first">parent (Strategy): Strategy parent</p>
-</li>
-<li><p class="first">root (Strategy): Root node of the tree (topmost node)</p>
-</li>
-<li><p class="first">children (dict): Strategy&#8217;s children</p>
-</li>
-<li><p class="first">now (datetime): Used when backtesting to store current date</p>
-</li>
+<dd><ul class="first last simple">
+<li>name (str): Strategy name</li>
+<li>parent (Strategy): Strategy parent</li>
+<li>root (Strategy): Root node of the tree (topmost node)</li>
+<li>children (dict): Strategy&#8217;s children</li>
+<li>now (datetime): Used when backtesting to store current date</li>
 <li><dl class="first docutils">
 <dt>stale (bool): Flag used to determine if Strategy is stale and need</dt>
-<dd><p class="first last">updating</p>
-</dd>
+<dd>updating</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>prices (TimeSeries): Prices of the Strategy - basically an index that</dt>
-<dd><p class="first last">reflects the value of the strategy over time.</p>
-</dd>
+<dd>reflects the value of the strategy over time.</dd>
 </dl>
 </li>
-<li><p class="first">outlays (DataFrame): Outlays for each SecurityBase child</p>
-</li>
-<li><p class="first">price (float): last price</p>
-</li>
-<li><p class="first">value (float): last value</p>
-</li>
-<li><p class="first">weight (float): weight in parent</p>
-</li>
-<li><p class="first">full_name (str): Name including parents&#8217; names</p>
-</li>
-<li><p class="first">members (list): Current Strategy + strategy&#8217;s children</p>
-</li>
+<li>outlays (DataFrame): Outlays for each SecurityBase child</li>
+<li>price (float): last price</li>
+<li>value (float): last value</li>
+<li>weight (float): weight in parent</li>
+<li>full_name (str): Name including parents&#8217; names</li>
+<li>members (list): Current Strategy + strategy&#8217;s children</li>
 <li><dl class="first docutils">
 <dt>securities (list): List of strategy children that are of type</dt>
-<dd><p class="first last">SecurityBase</p>
-</dd>
+<dd>SecurityBase</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>commission_fn (fn(quantity, price)): A function used to determine the</dt>
-<dd><p class="first last">commission (transaction fee) amount. Could be used to model
+<dd>commission (transaction fee) amount. Could be used to model
 slippage (implementation shortfall). Note that often fees are
 symmetric for buy and sell and absolute value of quantity should
-be used for calculation.</p>
-</dd>
+be used for calculation.</dd>
 </dl>
 </li>
-<li><p class="first">capital (float): Capital amount in Strategy - cash</p>
-</li>
+<li>capital (float): Capital amount in Strategy - cash</li>
 <li><dl class="first docutils">
 <dt>universe (DataFrame): Data universe available at the current time.</dt>
-<dd><p class="first last">Universe contains the data passed in when creating a Backtest. Use
-this data to determine strategy logic.</p>
-</dd>
+<dd>Universe contains the data passed in when creating a Backtest. Use
+this data to determine strategy logic.</dd>
 </dl>
 </li>
 </ul>
@@ -1777,21 +1718,21 @@ this data to determine strategy logic.</p>
 </dl>
 <dl class="method">
 <dt id="bt.core.StrategyBase.adjust">
-<code class="descname">adjust</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.adjust" title="Permalink to this definition">¶</a></dt>
+<code class="descname">adjust</code><span class="sig-paren">(</span><em>amount</em>, <em>update=True</em>, <em>flow=True</em>, <em>fee=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.adjust"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.adjust" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adjust capital - used to inject capital to a Strategy. This injection
 of capital will have no effect on the children.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">amount (float): Amount to adjust by.</p>
-</li>
-<li><p class="first">update (bool): Force update?</p>
-</li>
+<dd><ul class="first last simple">
+<li>amount (float): Amount to adjust by.</li>
+<li>update (bool): Force update?</li>
 <li><dl class="first docutils">
-<dt>flow (bool): Is this adjustment a flow? Basically a flow will</dt>
-<dd><p class="first last">have an impact on the price index. Examples of flows are
-commissions.</p>
-</dd>
+<dt>flow (bool): Is this adjustment a flow? A flow will not have an</dt>
+<dd>impact on the performance (price index). Example of flows are
+simply capital injections (say a monthly contribution to a
+portfolio). This should not be reflected in the returns. A
+non-flow (flow=False) does impact performance. A good example
+of this is a commission, or a dividend.</dd>
 </dl>
 </li>
 </ul>
@@ -1801,7 +1742,7 @@ commissions.</p>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.allocate">
-<code class="descname">allocate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.allocate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">allocate</code><span class="sig-paren">(</span><em>amount</em>, <em>child=None</em>, <em>update=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.allocate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.allocate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allocate capital to Strategy. By default, capital is allocated
 recursively down the children, proportionally to the children&#8217;s
 weights.  If a child is specified, capital will be allocated
@@ -1811,21 +1752,23 @@ from the parent&#8217;s &#8220;account&#8221; to offset the allocation. If there
 remaining capital after allocation, it will remain in Strategy.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">amount (float): Amount to allocate.</p>
-</li>
+<dd><ul class="first last simple">
+<li>amount (float): Amount to allocate.</li>
 <li><dl class="first docutils">
 <dt>child (str): If specified, allocation will be directed to child</dt>
-<dd><p class="first last">only. Specified by name.</p>
-</dd>
+<dd>only. Specified by name.</dd>
 </dl>
 </li>
-<li><p class="first">update (bool): Force update.</p>
-</li>
+<li>update (bool): Force update.</li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="bt.core.StrategyBase.bankrupt">
+<code class="descname">bankrupt</code><em class="property"> = False</em><a class="headerlink" href="#bt.core.StrategyBase.bankrupt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="bt.core.StrategyBase.capital">
@@ -1841,7 +1784,7 @@ remaining capital after allocation, it will remain in Strategy.</p>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.close">
-<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.close" title="Permalink to this definition">¶</a></dt>
+<code class="descname">close</code><span class="sig-paren">(</span><em>child</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close a child position - alias for rebalance(0, child). This will also
 flatten (close out all) the child&#8217;s children.</p>
 <dl class="docutils">
@@ -1861,7 +1804,7 @@ flatten (close out all) the child&#8217;s children.</p>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.flatten">
-<code class="descname">flatten</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.flatten" title="Permalink to this definition">¶</a></dt>
+<code class="descname">flatten</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.flatten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.flatten" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close all child positions.</p>
 </dd></dl>
 
@@ -1891,7 +1834,7 @@ flatten (close out all) the child&#8217;s children.</p>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.rebalance">
-<code class="descname">rebalance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.rebalance" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rebalance</code><span class="sig-paren">(</span><em>weight</em>, <em>child</em>, <em>base=nan</em>, <em>update=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.rebalance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.rebalance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rebalance a child to a given weight.</p>
 <p>This is a helper method to simplify code logic. This method is used
 when we want to se the weight of a particular child to a set amount.
@@ -1899,25 +1842,21 @@ It is similar to allocate, but it calculates the appropriate allocation
 based on the current weight.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><ul class="first last">
-<li><p class="first">weight (float): The target weight. Usually between -1.0 and 1.0.</p>
-</li>
-<li><p class="first">child (str): child to allocate to - specified by name.</p>
-</li>
+<dd><ul class="first last simple">
+<li>weight (float): The target weight. Usually between -1.0 and 1.0.</li>
+<li>child (str): child to allocate to - specified by name.</li>
 <li><dl class="first docutils">
 <dt>base (float): If specified, this is the base amount all weight</dt>
-<dd><p class="first last">delta calculations will be based off of. This is useful when we
+<dd>delta calculations will be based off of. This is useful when we
 determine a set of weights and want to rebalance each child
 given these new weights. However, as we iterate through each
 child and call this method, the base (which is by default the
 current value) will change. Therefore, we can set this base to
 the original value before the iteration to ensure the proper
-allocations are made.</p>
-</dd>
+allocations are made.</dd>
 </dl>
 </li>
-<li><p class="first">update (bool): Force update?</p>
-</li>
+<li>update (bool): Force update?</li>
 </ul>
 </dd>
 </dl>
@@ -1925,7 +1864,7 @@ allocations are made.</p>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.run">
-<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.run" title="Permalink to this definition">¶</a></dt>
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the main logic method. Override this method to provide some
 algorithm to execute on each date change. This method is called by
 backtester.</p>
@@ -1939,7 +1878,7 @@ backtester.</p>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.set_commissions">
-<code class="descname">set_commissions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.set_commissions" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_commissions</code><span class="sig-paren">(</span><em>fn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.set_commissions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.set_commissions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set commission (transaction fee) function.</p>
 <dl class="docutils">
 <dt>Args:</dt>
@@ -1950,7 +1889,7 @@ amount.</dd>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.setup">
-<code class="descname">setup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.setup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setup</code><span class="sig-paren">(</span><em>universe</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup strategy with universe. This will speed up future calculations
 and updates.</p>
 </dd></dl>
@@ -1965,7 +1904,7 @@ Use this data to determine strategy logic.</p>
 
 <dl class="method">
 <dt id="bt.core.StrategyBase.update">
-<code class="descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.StrategyBase.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>date</em>, <em>data=None</em>, <em>inow=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bt/core.html#StrategyBase.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bt.core.StrategyBase.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update strategy. Updates prices, values, weight, etc.</p>
 </dd></dl>
 
@@ -1996,11 +1935,11 @@ Use this data to determine strategy logic.</p>
 <li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href=""> API</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"> API</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id1"><code class="docutils literal"><span class="pre">bt</span></code> Package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-bt.algos"><code class="docutils literal"><span class="pre">algos</span></code> Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-bt.backtest"><code class="docutils literal"><span class="pre">backtest</span></code> Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#core-module"><code class="docutils literal"><span class="pre">core</span></code> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bt.core"><code class="docutils literal"><span class="pre">core</span></code> Module</a></li>
 </ul>
 </li>
 </ul>
@@ -2014,14 +1953,11 @@ Use this data to determine strategy logic.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </aside>

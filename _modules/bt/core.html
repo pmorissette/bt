@@ -1,0 +1,1369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bt.core &#8212; bt 0.2.5 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/css/klink.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.2.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+            <link rel="shortcut icon" href="../../_static/favicon.ico">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bt.core</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Contains the core building blocks of the framework.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">cython</span> <span class="k">as</span> <span class="nn">cy</span>
+
+
+<div class="viewcode-block" id="Node"><a class="viewcode-back" href="../../bt.html#bt.core.Node">[docs]</a><span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The Node is the main building block in bt&#39;s tree structure design.</span>
+<span class="sd">    Both StrategyBase and SecurityBase inherit Node. It contains the</span>
+<span class="sd">    core functionality of a tree node.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * name (str): The Node name</span>
+<span class="sd">        * parent (Node): The parent Node</span>
+<span class="sd">        * children (dict, list): A collection of children. If dict,</span>
+<span class="sd">            the format is {name: child}, if list then list of children.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        * name (str): Node name</span>
+<span class="sd">        * parent (Node): Node parent</span>
+<span class="sd">        * root (Node): Root node of the tree (topmost node)</span>
+<span class="sd">        * children (dict): Node&#39;s children</span>
+<span class="sd">        * now (datetime): Used when backtesting to store current date</span>
+<span class="sd">        * stale (bool): Flag used to determine if Node is stale and need</span>
+<span class="sd">            updating</span>
+<span class="sd">        * prices (TimeSeries): Prices of the Node. Prices for a security will</span>
+<span class="sd">            be the security&#39;s price, for a strategy it will be an index that</span>
+<span class="sd">            reflects the value of the strategy over time.</span>
+<span class="sd">        * price (float): last price</span>
+<span class="sd">        * value (float): last value</span>
+<span class="sd">        * weight (float): weight in parent</span>
+<span class="sd">        * full_name (str): Name including parents&#39; names</span>
+<span class="sd">        * members (list): Current Node + node&#39;s children</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_price</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_value</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_weight</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_issec</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">)</span>
+    <span class="n">_has_strat_children</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># strategy children helpers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_has_strat_children</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_strat_children</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># if children is not None, we assume that we want to limit the</span>
+        <span class="c1"># available children space to the provided list.</span>
+        <span class="k">if</span> <span class="n">children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="c1"># if all strings - just save as universe_filter</span>
+                <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">children</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_universe_tickers</span> <span class="o">=</span> <span class="n">children</span>
+                    <span class="c1"># empty dict - don&#39;t want to uselessly create</span>
+                    <span class="c1"># tons of children when they might not be needed</span>
+                    <span class="n">children</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># this will be case if we pass in children</span>
+                    <span class="c1"># (say a bunch of sub-strategies)</span>
+                    <span class="n">tmp</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">ut</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                            <span class="n">tmp</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">SecurityBase</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                            <span class="n">ut</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># deepcopy object for possible later reuse</span>
+                            <span class="n">tmp</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+                            <span class="c1"># if strategy, turn on flag and add name to list</span>
+                            <span class="c1"># strategy children have special treatment</span>
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">StrategyBase</span><span class="p">):</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_has_strat_children</span> <span class="o">=</span> <span class="kc">True</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_strat_children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                            <span class="c1"># if not strategy, then we will want to add this to</span>
+                            <span class="c1"># universe_tickers to filter on setup</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">ut</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+                    <span class="n">children</span> <span class="o">=</span> <span class="n">tmp</span>
+                    <span class="c1"># we want to keep whole universe in this case</span>
+                    <span class="c1"># so set to None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_universe_tickers</span> <span class="o">=</span> <span class="n">ut</span>
+
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="c1"># by default all positions are integer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integer_positions</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">root</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">_add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># default children</span>
+        <span class="k">if</span> <span class="n">children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_universe_tickers</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="n">children</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">children</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
+
+        <span class="c1"># set default value for now</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># make sure root has stale flag</span>
+        <span class="c1"># used to avoid unncessary update</span>
+        <span class="c1"># sometimes we change values in the tree and we know that we will need</span>
+        <span class="c1"># to update if another node tries to access a given value (say weight).</span>
+        <span class="c1"># This avoid calling the update until it is actually needed.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># helper vars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># is security flag - used to avoid updating 0 pos securities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_issec</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Node.use_integer_positions"><a class="viewcode-back" href="../../bt.html#bt.core.Node.use_integer_positions">[docs]</a>    <span class="k">def</span> <span class="nf">use_integer_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">integer_positions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set indicator to use (or not) integer positions for a given strategy or</span>
+<span class="sd">        security.</span>
+
+<span class="sd">        By default all positions in number of stocks should be integer.</span>
+<span class="sd">        However this may lead to unexpected results when working with adjusted</span>
+<span class="sd">        prices of stocks. Because of series of reverse splits of stocks, the</span>
+<span class="sd">        adjusted prices back in time might be high. Thus rounding of desired</span>
+<span class="sd">        amount of stocks to buy may lead to having 0, and thus ignoring this</span>
+<span class="sd">        stock from backtesting.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integer_positions</span> <span class="o">=</span> <span class="n">integer_positions</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">use_integer_positions</span><span class="p">(</span><span class="n">integer_positions</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">prices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A TimeSeries of the Node&#39;s price.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># can optimize depending on type -</span>
+        <span class="c1"># securities don&#39;t need to check stale to</span>
+        <span class="c1"># return latest prices, whereas strategies do...</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">price</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current price of the Node</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># can optimize depending on type -</span>
+        <span class="c1"># securities don&#39;t need to check stale to</span>
+        <span class="c1"># return latest prices, whereas strategies do...</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current value of the Node</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">weight</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current weight of the Node (with respect to the parent).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span>
+
+<div class="viewcode-block" id="Node.setup"><a class="viewcode-back" href="../../bt.html#bt.core.Node.setup">[docs]</a>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dates</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setup method used to initialize a Node with a set of dates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">integer_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integer_positions</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">{</span><span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">child</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+<div class="viewcode-block" id="Node.update"><a class="viewcode-back" href="../../bt.html#bt.core.Node.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inow</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update Node with latest date, and optionally some data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Node.adjust"><a class="viewcode-back" href="../../bt.html#bt.core.Node.adjust">[docs]</a>    <span class="k">def</span> <span class="nf">adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">isflow</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adjust Node value by amount.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Node.allocate"><a class="viewcode-back" href="../../bt.html#bt.core.Node.allocate">[docs]</a>    <span class="k">def</span> <span class="nf">allocate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Allocate capital to Node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">members</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Node members. Members include current node as well as Node&#39;s</span>
+<span class="sd">        children.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">members</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">full_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&gt;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;&lt;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StrategyBase"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase">[docs]</a><span class="k">class</span> <span class="nc">StrategyBase</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Strategy Node. Used to define strategy logic within a tree.</span>
+<span class="sd">    A Strategy&#39;s role is to allocate capital to it&#39;s children</span>
+<span class="sd">    based on a function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * name (str): Strategy name</span>
+<span class="sd">        * children (dict, list): A collection of children. If dict,</span>
+<span class="sd">            the format is {name: child}, if list then list of children.</span>
+<span class="sd">            Children can be any type of Node.</span>
+<span class="sd">        * parent (Node): The parent Node</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        * name (str): Strategy name</span>
+<span class="sd">        * parent (Strategy): Strategy parent</span>
+<span class="sd">        * root (Strategy): Root node of the tree (topmost node)</span>
+<span class="sd">        * children (dict): Strategy&#39;s children</span>
+<span class="sd">        * now (datetime): Used when backtesting to store current date</span>
+<span class="sd">        * stale (bool): Flag used to determine if Strategy is stale and need</span>
+<span class="sd">            updating</span>
+<span class="sd">        * prices (TimeSeries): Prices of the Strategy - basically an index that</span>
+<span class="sd">            reflects the value of the strategy over time.</span>
+<span class="sd">        * outlays (DataFrame): Outlays for each SecurityBase child</span>
+<span class="sd">        * price (float): last price</span>
+<span class="sd">        * value (float): last value</span>
+<span class="sd">        * weight (float): weight in parent</span>
+<span class="sd">        * full_name (str): Name including parents&#39; names</span>
+<span class="sd">        * members (list): Current Strategy + strategy&#39;s children</span>
+<span class="sd">        * securities (list): List of strategy children that are of type</span>
+<span class="sd">            SecurityBase</span>
+<span class="sd">        * commission_fn (fn(quantity, price)): A function used to determine the</span>
+<span class="sd">            commission (transaction fee) amount. Could be used to model</span>
+<span class="sd">            slippage (implementation shortfall). Note that often fees are</span>
+<span class="sd">            symmetric for buy and sell and absolute value of quantity should</span>
+<span class="sd">            be used for calculation.</span>
+<span class="sd">        * capital (float): Capital amount in Strategy - cash</span>
+<span class="sd">        * universe (DataFrame): Data universe available at the current time.</span>
+<span class="sd">            Universe contains the data passed in when creating a Backtest. Use</span>
+<span class="sd">            this data to determine strategy logic.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_capital</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_net_flows</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_last_value</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_last_price</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_last_fee</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_paper_trade</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">)</span>
+    <span class="n">bankrupt</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">Node</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_capital</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="mi">100</span>
+
+        <span class="c1"># helper vars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_net_flows</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_price</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_fee</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># default commission function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commission_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dflt_comm_fn</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paper_trade</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bankrupt</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">price</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current price.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">prices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of prices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span><span class="o">.</span><span class="n">ix</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">ix</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">capital</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current capital - amount of unallocated capital left in strategy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># no stale check needed</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_capital</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of unallocated capital.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># no stale check needed</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cash</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fees</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of fees.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># no stale check needed</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fees</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">universe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Data universe available at the current time.</span>
+<span class="sd">        Universe contains the data passed in when creating a Backtest.</span>
+<span class="sd">        Use this data to determine strategy logic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># avoid windowing every time</span>
+        <span class="c1"># if calling and on same date return</span>
+        <span class="c1"># cached value</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_chk</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_funiverse</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_chk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_funiverse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_universe</span><span class="o">.</span><span class="n">ix</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_funiverse</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">securities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of children that are of type SecurityBase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">SecurityBase</span><span class="p">)]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">outlays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a DataFrame of outlays for each child SecurityBase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">outlays</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">securities</span><span class="p">})</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">positions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of positions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if accessing and stale - update first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">positions</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span>
+                             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">SecurityBase</span><span class="p">)})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positions</span> <span class="o">=</span> <span class="n">vals</span>
+        <span class="k">return</span> <span class="n">vals</span>
+
+<div class="viewcode-block" id="StrategyBase.setup"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.setup">[docs]</a>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">universe</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setup strategy with universe. This will speed up future calculations</span>
+<span class="sd">        and updates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># save full universe in case we need it</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_original_data</span> <span class="o">=</span> <span class="n">universe</span>
+
+        <span class="c1"># determine if needs paper trading</span>
+        <span class="c1"># and setup if so</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paper_trade</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paper_amount</span> <span class="o">=</span> <span class="mi">1000000</span>
+
+            <span class="n">paper</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">paper</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">paper</span>
+            <span class="n">paper</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">paper</span>
+            <span class="n">paper</span><span class="o">.</span><span class="n">_paper_trade</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">paper</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_original_data</span><span class="p">)</span>
+            <span class="n">paper</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_paper_amount</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paper</span> <span class="o">=</span> <span class="n">paper</span>
+
+        <span class="c1"># setup universe</span>
+        <span class="n">funiverse</span> <span class="o">=</span> <span class="n">universe</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_universe_tickers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># if we have universe_tickers defined, limit universe to</span>
+            <span class="c1"># those tickers</span>
+            <span class="n">valid_filter</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+                                <span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_universe_tickers</span><span class="p">))</span>
+
+            <span class="n">funiverse</span> <span class="o">=</span> <span class="n">universe</span><span class="p">[</span><span class="n">valid_filter</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="c1"># if we have strat children, we will need to create their columns</span>
+            <span class="c1"># in the new universe</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_strat_children</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strat_children</span><span class="p">:</span>
+                    <span class="n">funiverse</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+            <span class="c1"># must create to avoid pandas warning</span>
+            <span class="n">funiverse</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">funiverse</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_universe</span> <span class="o">=</span> <span class="n">funiverse</span>
+        <span class="c1"># holds filtered universe</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_funiverse</span> <span class="o">=</span> <span class="n">funiverse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_chk</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># We&#39;re not bankrupt yet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bankrupt</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># setup internal data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">funiverse</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                 <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;cash&#39;</span><span class="p">,</span> <span class="s1">&#39;fees&#39;</span><span class="p">],</span>
+                                 <span class="n">data</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cash</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;cash&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fees</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;fees&#39;</span><span class="p">]</span>
+
+        <span class="c1"># setup children as well - use original universe here - don&#39;t want to</span>
+        <span class="c1"># pollute with potential strategy children in funiverse</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">universe</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">]</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">newpt</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">ret</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+<div class="viewcode-block" id="StrategyBase.update"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inow</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update strategy. Updates prices, values, weight, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># resolve stale state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># update helpers on date change</span>
+        <span class="c1"># also set newpt flag</span>
+        <span class="n">newpt</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">newpt</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">date</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_net_flows</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_fee</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">newpt</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># update now</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">=</span> <span class="n">date</span>
+        <span class="k">if</span> <span class="n">inow</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">inow</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">inow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># update children if any and calculate value</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_capital</span>  <span class="c1"># default if no children</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
+                <span class="c1"># avoid useless update call</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">_issec</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">_needupdate</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">inow</span><span class="p">)</span>
+                <span class="n">val</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bankrupt</span><span class="p">:</span>
+                <span class="c1"># Declare a bankruptcy</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bankrupt</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="c1"># update data if this value is different or</span>
+        <span class="c1"># if now has changed - avoid all this if not since it</span>
+        <span class="c1"># won&#39;t change</span>
+        <span class="k">if</span> <span class="n">newpt</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">!=</span> <span class="n">val</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+            <span class="n">bottom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_value</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_net_flows</span>
+            <span class="k">if</span> <span class="n">bottom</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_value</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_net_flows</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">(</span>
+                        <span class="s1">&#39;Could not update </span><span class="si">%s</span><span class="s1">. Last value &#39;</span>
+                        <span class="s1">&#39;was </span><span class="si">%s</span><span class="s1"> and net flows were </span><span class="si">%s</span><span class="s1">. Current&#39;</span>
+                        <span class="s1">&#39;value is </span><span class="si">%s</span><span class="s1">. Therefore, &#39;</span>
+                        <span class="s1">&#39;we are dividing by zero to obtain the return &#39;</span>
+                        <span class="s1">&#39;for the period.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_last_value</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_net_flows</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_price</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">ret</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span>
+
+        <span class="c1"># update children weights</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
+                <span class="c1"># avoid useless update call</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">_issec</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">_needupdate</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="n">val</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">c</span><span class="o">.</span><span class="n">_weight</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="n">val</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">c</span><span class="o">.</span><span class="n">_weight</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="c1"># if we have strategy children, we will need to update them in universe</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_strat_children</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strat_children</span><span class="p">:</span>
+                <span class="c1"># TODO: optimize &quot;.loc&quot; here as well</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">price</span>
+
+        <span class="c1"># Cash should track the unallocated capital at the end of the day, so</span>
+        <span class="c1"># we should update it every time we call &quot;update&quot;.</span>
+        <span class="c1"># Same for fees</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cash</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_capital</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fees</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_fee</span>
+
+        <span class="c1"># update paper trade if necessary</span>
+        <span class="k">if</span> <span class="n">newpt</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paper_trade</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paper</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paper</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_paper</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+            <span class="c1"># update price</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paper</span><span class="o">.</span><span class="n">price</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">,</span> <span class="n">fees</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+<div class="viewcode-block" id="StrategyBase.adjust"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.adjust">[docs]</a>    <span class="k">def</span> <span class="nf">adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fee</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adjust capital - used to inject capital to a Strategy. This injection</span>
+<span class="sd">        of capital will have no effect on the children.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * amount (float): Amount to adjust by.</span>
+<span class="sd">            * update (bool): Force update?</span>
+<span class="sd">            * flow (bool): Is this adjustment a flow? A flow will not have an</span>
+<span class="sd">                impact on the performance (price index). Example of flows are</span>
+<span class="sd">                simply capital injections (say a monthly contribution to a</span>
+<span class="sd">                portfolio). This should not be reflected in the returns. A</span>
+<span class="sd">                non-flow (flow=False) does impact performance. A good example</span>
+<span class="sd">                of this is a commission, or a dividend.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># adjust capital</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_capital</span> <span class="o">+=</span> <span class="n">amount</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_fee</span> <span class="o">+=</span> <span class="n">fee</span>
+
+        <span class="c1"># if flow - increment net_flows - this will not affect</span>
+        <span class="c1"># performance. Commissions and other fees are not flows since</span>
+        <span class="c1"># they have a performance impact</span>
+        <span class="k">if</span> <span class="n">flow</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_net_flows</span> <span class="o">+=</span> <span class="n">amount</span>
+
+        <span class="k">if</span> <span class="n">update</span><span class="p">:</span>
+            <span class="c1"># indicates that data is now stale and must</span>
+            <span class="c1"># be updated before access</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">)</span>
+<div class="viewcode-block" id="StrategyBase.allocate"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.allocate">[docs]</a>    <span class="k">def</span> <span class="nf">allocate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Allocate capital to Strategy. By default, capital is allocated</span>
+<span class="sd">        recursively down the children, proportionally to the children&#39;s</span>
+<span class="sd">        weights.  If a child is specified, capital will be allocated</span>
+<span class="sd">        to that specific child.</span>
+
+<span class="sd">        Allocation also have a side-effect. They will deduct the same amount</span>
+<span class="sd">        from the parent&#39;s &quot;account&quot; to offset the allocation. If there is</span>
+<span class="sd">        remaining capital after allocation, it will remain in Strategy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * amount (float): Amount to allocate.</span>
+<span class="sd">            * child (str): If specified, allocation will be directed to child</span>
+<span class="sd">                only. Specified by name.</span>
+<span class="sd">            * update (bool): Force update.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># allocate to child</span>
+        <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">SecurityBase</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_universe</span><span class="p">)</span>
+                <span class="c1"># update to bring up to speed</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+                <span class="c1"># add child to tree</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add_child</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+            <span class="c1"># allocate to child</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">child</span><span class="p">]</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span>
+        <span class="c1"># allocate to self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># adjust parent&#39;s capital</span>
+            <span class="c1"># no need to update now - avoids repetition</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="o">-</span><span class="n">amount</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># do NOT set as flow - parent will be another strategy</span>
+                <span class="c1"># and therefore should not incur flow</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="o">-</span><span class="n">amount</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># adjust self&#39;s capital</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">amount</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># push allocation down to children if any</span>
+            <span class="c1"># use _weight to avoid triggering an update</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">amount</span> <span class="o">*</span> <span class="n">c</span><span class="o">.</span><span class="n">_weight</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">]</span>
+
+            <span class="c1"># mark as stale if update requested</span>
+            <span class="k">if</span> <span class="n">update</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+<div class="viewcode-block" id="StrategyBase.rebalance"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.rebalance">[docs]</a>    <span class="k">def</span> <span class="nf">rebalance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rebalance a child to a given weight.</span>
+
+<span class="sd">        This is a helper method to simplify code logic. This method is used</span>
+<span class="sd">        when we want to se the weight of a particular child to a set amount.</span>
+<span class="sd">        It is similar to allocate, but it calculates the appropriate allocation</span>
+<span class="sd">        based on the current weight.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * weight (float): The target weight. Usually between -1.0 and 1.0.</span>
+<span class="sd">            * child (str): child to allocate to - specified by name.</span>
+<span class="sd">            * base (float): If specified, this is the base amount all weight</span>
+<span class="sd">                delta calculations will be based off of. This is useful when we</span>
+<span class="sd">                determine a set of weights and want to rebalance each child</span>
+<span class="sd">                given these new weights. However, as we iterate through each</span>
+<span class="sd">                child and call this method, the base (which is by default the</span>
+<span class="sd">                current value) will change. Therefore, we can set this base to</span>
+<span class="sd">                the original value before the iteration to ensure the proper</span>
+<span class="sd">                allocations are made.</span>
+<span class="sd">            * update (bool): Force update?</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if weight is 0 - we want to close child</span>
+        <span class="k">if</span> <span class="n">weight</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span>
+
+        <span class="c1"># if no base specified use self&#39;s value</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="c1"># else make sure we have child</span>
+        <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">SecurityBase</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_universe</span><span class="p">)</span>
+            <span class="c1"># update child to bring up to speed</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_child</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+        <span class="c1"># allocate to child</span>
+        <span class="c1"># figure out weight delta</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">child</span><span class="p">]</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">weight</span> <span class="o">-</span> <span class="n">c</span><span class="o">.</span><span class="n">weight</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">delta</span> <span class="o">*</span> <span class="n">base</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StrategyBase.close"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close a child position - alias for rebalance(0, child). This will also</span>
+<span class="sd">        flatten (close out all) the child&#39;s children.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * child (str): Child, specified by name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">child</span><span class="p">]</span>
+        <span class="c1"># flatten if children not None</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="mf">0.</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StrategyBase.flatten"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.flatten">[docs]</a>    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close all child positions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># go right to base alloc</span>
+        <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="o">-</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="StrategyBase.run"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the main logic method. Override this method to provide some</span>
+<span class="sd">        algorithm to execute on each date change. This method is called by</span>
+<span class="sd">        backtester.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="StrategyBase.set_commissions"><a class="viewcode-back" href="../../bt.html#bt.core.StrategyBase.set_commissions">[docs]</a>    <span class="k">def</span> <span class="nf">set_commissions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set commission (transaction fee) function.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fn (fn(quantity, price)): Function used to determine commission</span>
+<span class="sd">            amount.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commission_fn</span> <span class="o">=</span> <span class="n">fn</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">StrategyBase</span><span class="p">):</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">set_commissions</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_dflt_comm_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">0.</span></div>
+
+
+<div class="viewcode-block" id="SecurityBase"><a class="viewcode-back" href="../../bt.html#bt.core.SecurityBase">[docs]</a><span class="k">class</span> <span class="nc">SecurityBase</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Security Node. Used to define a security within a tree.</span>
+<span class="sd">    A Security&#39;s has no children. It simply models an asset that can be bought</span>
+<span class="sd">    or sold.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * name (str): Security name</span>
+<span class="sd">        * multiplier (float): security multiplier - typically used for</span>
+<span class="sd">            derivatives.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        * name (str): Security name</span>
+<span class="sd">        * parent (Security): Security parent</span>
+<span class="sd">        * root (Security): Root node of the tree (topmost node)</span>
+<span class="sd">        * now (datetime): Used when backtesting to store current date</span>
+<span class="sd">        * stale (bool): Flag used to determine if Security is stale and need</span>
+<span class="sd">            updating</span>
+<span class="sd">        * prices (TimeSeries): Security prices.</span>
+<span class="sd">        * price (float): last price</span>
+<span class="sd">        * outlays (TimeSeries): Series of outlays. Positive outlays mean</span>
+<span class="sd">            capital was allocated to security and security consumed that</span>
+<span class="sd">            amount.  Negative outlays are the opposite. This can be useful for</span>
+<span class="sd">            calculating turnover at the strategy level.</span>
+<span class="sd">        * value (float): last value - basically position * price * multiplier</span>
+<span class="sd">        * weight (float): weight in parent</span>
+<span class="sd">        * full_name (str): Name including parents&#39; names</span>
+<span class="sd">        * members (list): Current Security + strategy&#39;s children</span>
+<span class="sd">        * position (float): Current position (quantity).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_last_pos</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_position</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">multiplier</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="n">_prices_set</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">)</span>
+    <span class="n">_needupdate</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">)</span>
+    <span class="n">_outlay</span> <span class="o">=</span> <span class="n">cy</span><span class="o">.</span><span class="n">declare</span><span class="p">(</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">multiplier</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">Node</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span> <span class="o">=</span> <span class="n">multiplier</span>
+
+        <span class="c1"># opt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_pos</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_issec</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outlay</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">price</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current price.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if accessing and stale - update first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">prices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of prices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if accessing and stale - update first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span><span class="o">.</span><span class="n">ix</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if accessing and stale - update first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">ix</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current position</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># no stale check needed</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">positions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of positions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if accessing and stale - update first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_positions</span><span class="o">.</span><span class="n">ix</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">outlays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TimeSeries of outlays. Positive outlays (buys) mean this security</span>
+<span class="sd">        received and consumed capital (capital was allocated to it). Negative</span>
+<span class="sd">        outlays are the opposite (the security close/sold, and returned capital</span>
+<span class="sd">        to parent).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if accessing and stale - update first</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outlays</span><span class="o">.</span><span class="n">ix</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+
+<div class="viewcode-block" id="SecurityBase.setup"><a class="viewcode-back" href="../../bt.html#bt.core.SecurityBase.setup">[docs]</a>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">universe</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setup Security with universe. Speeds up future runs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * universe (DataFrame): DataFrame of prices with security&#39;s name as</span>
+<span class="sd">                one of the columns.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if we already have all the prices, we will store them to speed up</span>
+        <span class="c1"># future udpates</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">prices</span> <span class="o">=</span> <span class="n">universe</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">prices</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># setup internal data</span>
+        <span class="k">if</span> <span class="n">prices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span> <span class="o">=</span> <span class="n">prices</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">universe</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                     <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;position&#39;</span><span class="p">],</span>
+                                     <span class="n">data</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prices_set</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">universe</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                     <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;position&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prices_set</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">]</span>
+
+        <span class="c1"># add _outlay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;outlay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outlays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;outlay&#39;</span><span class="p">]</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">prc</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+<div class="viewcode-block" id="SecurityBase.update"><a class="viewcode-back" href="../../bt.html#bt.core.SecurityBase.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inow</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update security with a given date and optionally, some data.</span>
+<span class="sd">        This will update price, value, weight, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># filter for internal calls when position has not changed - nothing to</span>
+        <span class="c1"># do. Internal calls (stale root calls) have None data. Also want to</span>
+        <span class="c1"># make sure date has not changed, because then we do indeed want to</span>
+        <span class="c1"># update.</span>
+        <span class="k">if</span> <span class="n">date</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_pos</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">inow</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">date</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">inow</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">inow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># date change - update price</span>
+        <span class="k">if</span> <span class="n">date</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
+            <span class="c1"># update now</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">=</span> <span class="n">date</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prices_set</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span>
+            <span class="c1"># traditional data update</span>
+            <span class="k">elif</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">prc</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="n">prc</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_prices</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="n">prc</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positions</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_price</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s1">&#39;Position is open (non-zero) and latest price is NaN &#39;</span>
+                    <span class="s1">&#39;for security </span><span class="si">%s</span><span class="s1">. Cannot update node value.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># save outlay to outlays</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outlay</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outlays</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">inow</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outlay</span>
+            <span class="c1"># reset outlay back to 0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outlay</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">bint</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">outlay</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span>
+               <span class="n">i</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<div class="viewcode-block" id="SecurityBase.allocate"><a class="viewcode-back" href="../../bt.html#bt.core.SecurityBase.allocate">[docs]</a>    <span class="k">def</span> <span class="nf">allocate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This allocates capital to the Security. This is the method used to</span>
+<span class="sd">        buy/sell the security.</span>
+
+<span class="sd">        A given amount of shares will be determined on the current price, a</span>
+<span class="sd">        commisison will be calculated based on the parent&#39;s commission fn, and</span>
+<span class="sd">        any remaining capital will be passed back up  to parent as an</span>
+<span class="sd">        adjustment.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * amount (float): Amount of adjustment.</span>
+<span class="sd">            * update (bool): Force update?</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># will need to update if this has been idle for a while...</span>
+        <span class="c1"># update if needupdate or if now is stale</span>
+        <span class="c1"># fetch parent&#39;s now since our now is stale</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+
+        <span class="c1"># ignore 0 alloc</span>
+        <span class="c1"># Note that if the price of security has dropped to zero, then it</span>
+        <span class="c1"># should never be selected by SelectAll, SelectN etc. I.e. we should</span>
+        <span class="c1"># not open the position at zero price. At the same time, we are able</span>
+        <span class="c1"># to close it at zero price, because at that point amount=0.</span>
+        <span class="c1"># Note also that we don&#39;t erase the position in an asset which price</span>
+        <span class="c1"># has dropped to zero (though the weight will indeed be = 0)</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="bp">self</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot allocate capital to a parentless security&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_price</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot allocate capital to &#39;</span>
+                <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> because price is </span><span class="si">%s</span><span class="s1"> as of </span><span class="si">%s</span><span class="s1">&#39;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">now</span><span class="p">))</span>
+
+        <span class="c1"># buy/sell</span>
+        <span class="c1"># determine quantity - must also factor in commission</span>
+        <span class="c1"># closing out?</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">==</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_position</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">amount</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">integer_positions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                        <span class="n">amount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)):</span>
+                    <span class="c1"># if we&#39;re going long or changing long position</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># if we&#39;re going short or changing short position</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+        <span class="c1"># if q is 0 nothing to do</span>
+        <span class="k">if</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">q</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="c1"># unless we are closing out a position (q == -position)</span>
+        <span class="c1"># we want to ensure that</span>
+        <span class="c1">#</span>
+        <span class="c1"># - In the event of a positive amount, this indicates the maximum</span>
+        <span class="c1"># amount a given security can use up for a purchse. Therefore, if</span>
+        <span class="c1"># commissions push us above this amount, we cannot buy `q`, and must</span>
+        <span class="c1"># decrease its value</span>
+        <span class="c1">#</span>
+        <span class="c1"># - In the event of a negative amount, we want to &#39;raise&#39; at least the</span>
+        <span class="c1"># amount indicated, no less. Therefore, if we have commission, we must</span>
+        <span class="c1"># sell additional units to fund this requirement. As such, q must once</span>
+        <span class="c1"># again decrease.</span>
+        <span class="c1">#</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">q</span> <span class="o">==</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_position</span><span class="p">:</span>
+            <span class="n">full_outlay</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outlay</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+            <span class="c1"># if full outlay &gt; amount, we must decrease the magnitude of `q`</span>
+            <span class="c1"># this can potentially lead to an infinite loop if the commission</span>
+            <span class="c1"># per share &gt; price per share. Howerver, we cannot really detect</span>
+            <span class="c1"># that in advance since the function can be non-linear (say a fn</span>
+            <span class="c1"># like max(1, abs(q) * 0.01). Nevertheless, we want to avoid these</span>
+            <span class="c1"># situtaions.</span>
+            <span class="c1"># cap the maximum number of iterations to 1e4 and raise exception</span>
+            <span class="c1"># if we get there</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">full_outlay</span> <span class="o">&gt;</span> <span class="n">amount</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">q</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">full_outlay</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outlay</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mf">1e4</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                        <span class="s1">&#39;Potentially infinite loop detected. This occured &#39;</span>
+                        <span class="s1">&#39;while trying to reduce the amount of shares purchased&#39;</span>
+                        <span class="s1">&#39; to respect the outlay &lt;= amount rule. This is most &#39;</span>
+                        <span class="s1">&#39;likely due to a commission function that outputs a &#39;</span>
+                        <span class="s1">&#39;commission that is greater than the amount of cash &#39;</span>
+                        <span class="s1">&#39;a short sale can raise.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># if last step led to q == 0, then we can return just like above</span>
+        <span class="k">if</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># this security will need an update, even if pos is 0 (for example if</span>
+        <span class="c1"># we close the positions, value and pos is 0, but still need to do that</span>
+        <span class="c1"># last update)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_needupdate</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># adjust position &amp; value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">+=</span> <span class="n">q</span>
+
+        <span class="c1"># calculate proper adjustment for parent</span>
+        <span class="c1"># parent passed down amount so we want to pass</span>
+        <span class="c1"># -outlay back up to parent to adjust for capital</span>
+        <span class="c1"># used</span>
+        <span class="n">full_outlay</span><span class="p">,</span> <span class="n">outlay</span><span class="p">,</span> <span class="n">fee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outlay</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+        <span class="c1"># store outlay for future reference</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outlay</span> <span class="o">+=</span> <span class="n">outlay</span>
+
+        <span class="c1"># call parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="o">-</span><span class="n">full_outlay</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fee</span><span class="o">=</span><span class="n">fee</span><span class="p">)</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+<div class="viewcode-block" id="SecurityBase.commission"><a class="viewcode-back" href="../../bt.html#bt.core.SecurityBase.commission">[docs]</a>    <span class="k">def</span> <span class="nf">commission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the commission (transaction fee) based on quantity and</span>
+<span class="sd">        price.  Uses the parent&#39;s commission_fn.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * q (float): quantity</span>
+<span class="sd">            * p (float): price</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">commission_fn</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span></div>
+
+    <span class="nd">@cy</span><span class="o">.</span><span class="n">locals</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">cy</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+<div class="viewcode-block" id="SecurityBase.outlay"><a class="viewcode-back" href="../../bt.html#bt.core.SecurityBase.outlay">[docs]</a>    <span class="k">def</span> <span class="nf">outlay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines the complete cash outlay (including commission) necessary</span>
+<span class="sd">        given a quantity q.</span>
+<span class="sd">        Second returning parameter is a commission itself.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            * q (float): quantity</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commission</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span><span class="p">)</span>
+        <span class="n">outlay</span> <span class="o">=</span> <span class="n">q</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplier</span>
+        <span class="k">return</span> <span class="n">outlay</span> <span class="o">+</span> <span class="n">fee</span><span class="p">,</span> <span class="n">outlay</span><span class="p">,</span> <span class="n">fee</span></div>
+
+<div class="viewcode-block" id="SecurityBase.run"><a class="viewcode-back" href="../../bt.html#bt.core.SecurityBase.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Does nothing - securities have nothing to do on run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="Algo"><a class="viewcode-back" href="../../bt.html#bt.core.Algo">[docs]</a><span class="k">class</span> <span class="nc">Algo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Algos are used to modularize strategy logic so that strategy logic becomes</span>
+<span class="sd">    modular, composable, more testable and less error prone. Basically, the</span>
+<span class="sd">    Algo should follow the unix philosophy - do one thing well.</span>
+
+<span class="sd">    In practice, algos are simply a function that receives one argument, the</span>
+<span class="sd">    Strategy (refered to as target) and are expected to return a bool.</span>
+
+<span class="sd">    When some state preservation is necessary between calls, the Algo</span>
+<span class="sd">    object can be used (this object). The __call___ method should be</span>
+<span class="sd">    implemented and logic defined therein to mimic a function call. A</span>
+<span class="sd">    simple function may also be used if no state preservation is neceesary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * name (str): Algo name</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Algo name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> not implemented!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AlgoStack"><a class="viewcode-back" href="../../bt.html#bt.core.AlgoStack">[docs]</a><span class="k">class</span> <span class="nc">AlgoStack</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An AlgoStack derives from Algo runs multiple Algos until a</span>
+<span class="sd">    failure is encountered.</span>
+
+<span class="sd">    The purpose of an AlgoStack is to group a logic set of Algos together. Each</span>
+<span class="sd">    Algo in the stack is run. Execution stops if one Algo returns False.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * algos (list): List of algos.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">algos</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AlgoStack</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">algos</span> <span class="o">=</span> <span class="n">algos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_run_always</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;run_always&#39;</span><span class="p">)</span>
+                                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">algos</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c1"># normal runing mode</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_run_always</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">algo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">algos</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">algo</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># run mode when at least one algo has a run_always attribute</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># store result in res</span>
+            <span class="c1"># allows continuation to check for and run</span>
+            <span class="c1"># algos that have run_always set to True</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">for</span> <span class="n">algo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">algos</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="n">algo</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">algo</span><span class="p">,</span> <span class="s1">&#39;run_always&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">algo</span><span class="o">.</span><span class="n">run_always</span><span class="p">:</span>
+                        <span class="n">algo</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="Strategy"><a class="viewcode-back" href="../../bt.html#bt.core.Strategy">[docs]</a><span class="k">class</span> <span class="nc">Strategy</span><span class="p">(</span><span class="n">StrategyBase</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Strategy expands on the StrategyBase and incorporates Algos.</span>
+
+<span class="sd">    Basically, a Strategy is built by passing in a set of algos. These algos</span>
+<span class="sd">    will be placed in an Algo stack and the run function will call the stack.</span>
+
+<span class="sd">    Furthermore, two class attributes are created to pass data between algos.</span>
+<span class="sd">    perm for permanent data, temp for temporary data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * name (str): Strategy name</span>
+<span class="sd">        * algos (list): List of Algos to be passed into an AlgoStack</span>
+<span class="sd">        * children (dict, list): Children - useful when you want to create</span>
+<span class="sd">            strategies of strategies</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        * stack (AlgoStack): The stack</span>
+<span class="sd">        * temp (dict): A dict containing temporary data - cleared on each call</span>
+<span class="sd">            to run. This can be used to pass info to other algos.</span>
+<span class="sd">        * perm (dict): Permanent data used to pass info from one algo to</span>
+<span class="sd">            another. Not cleared on each pass.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">algos</span><span class="o">=</span><span class="p">[],</span> <span class="n">children</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Strategy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="n">AlgoStack</span><span class="p">(</span><span class="o">*</span><span class="n">algos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">perm</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="Strategy.run"><a class="viewcode-back" href="../../bt.html#bt.core.Strategy.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># clear out temp data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># run algo stack</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># run children</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algos.html"> All About Algos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html"> Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>

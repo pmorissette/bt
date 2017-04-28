@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bt.algos &mdash; bt 0.2.3 documentation</title>
+    <title>bt.algos &#8212; bt 0.2.5 documentation</title>
     
     <link rel="stylesheet" href="../../_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,18 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.3',
+        VERSION:     '0.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-    <link rel="top" title="bt 0.2.3 documentation" href="../../index.html" />
-    <link rel="up" title="Module code" href="../index.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -43,15 +44,15 @@
           <div class="body" role="main">
             
   <h1>Source code for bt.algos</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">A collection of Algos used to create Strategy logic.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
-<span class="kn">from</span> <span class="nn">future.utils</span> <span class="kn">import</span> <span class="n">iteritems</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">future.utils</span> <span class="k">import</span> <span class="n">iteritems</span>
 <span class="kn">import</span> <span class="nn">bt</span>
-<span class="kn">from</span> <span class="nn">bt.core</span> <span class="kn">import</span> <span class="n">Algo</span><span class="p">,</span> <span class="n">AlgoStack</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">bt.core</span> <span class="k">import</span> <span class="n">Algo</span><span class="p">,</span> <span class="n">AlgoStack</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">random</span>
 
 
@@ -61,10 +62,10 @@
 <span class="sd">    to ensure stack runs the decorated Algo</span>
 <span class="sd">    on each pass, regardless of failures in the stack.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">f</span><span class="o">.</span><span class="n">run_always</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="k">return</span> <span class="n">f</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">run_always</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">f</span></div>
 
-</div>
+
 <div class="viewcode-block" id="PrintDate"><a class="viewcode-back" href="../../bt.html#bt.algos.PrintDate">[docs]</a><span class="k">class</span> <span class="nc">PrintDate</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -74,10 +75,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">print</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="PrintTempData"><a class="viewcode-back" href="../../bt.html#bt.algos.PrintTempData">[docs]</a><span class="k">class</span> <span class="nc">PrintTempData</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -87,10 +88,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">print</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="PrintInfo"><a class="viewcode-back" href="../../bt.html#bt.algos.PrintInfo">[docs]</a><span class="k">class</span> <span class="nc">PrintInfo</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -111,14 +112,14 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt_string</span><span class="o">=</span><span class="s">&#39;{full_name} {now}&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt_string</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{full_name}</span><span class="s1"> </span><span class="si">{now}</span><span class="s1">&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fmt_string</span> <span class="o">=</span> <span class="n">fmt_string</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fmt_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">__dict__</span><span class="p">))</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fmt_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="Debug"><a class="viewcode-back" href="../../bt.html#bt.algos.Debug">[docs]</a><span class="k">class</span> <span class="nc">Debug</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -130,9 +131,9 @@
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="kn">import</span> <span class="nn">pdb</span>
         <span class="n">pdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunOnce"><a class="viewcode-back" href="../../bt.html#bt.algos.RunOnce">[docs]</a><span class="k">class</span> <span class="nc">RunOnce</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -143,20 +144,20 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunOnce</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunOnce</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># if it hasn&#39;t run then we will</span>
-        <span class="c"># run it and set flag</span>
+        <span class="c1"># if it hasn&#39;t run then we will</span>
+        <span class="c1"># run it and set flag</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="c"># return false to stop future execution</span>
-        <span class="k">return</span> <span class="bp">False</span>
+        <span class="c1"># return false to stop future execution</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunDaily"><a class="viewcode-back" href="../../bt.html#bt.algos.RunDaily">[docs]</a><span class="k">class</span> <span class="nc">RunDaily</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -169,32 +170,32 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunDaily</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunDaily</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get last date</span>
+        <span class="c1"># get last date</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
 
-        <span class="c"># if none nothing to do - return false</span>
-        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+        <span class="c1"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="c"># create pandas.Timestamp for useful .week property</span>
+        <span class="c1"># create pandas.Timestamp for useful .week property</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">now</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">date</span><span class="p">():</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunWeekly"><a class="viewcode-back" href="../../bt.html#bt.algos.RunWeekly">[docs]</a><span class="k">class</span> <span class="nc">RunWeekly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -211,32 +212,32 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunWeekly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunWeekly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get last date</span>
+        <span class="c1"># get last date</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
 
-        <span class="c"># if none nothing to do - return false</span>
-        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+        <span class="c1"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="c"># create pandas.Timestamp for useful .week property</span>
+        <span class="c1"># create pandas.Timestamp for useful .week property</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">now</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">week</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">week</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunMonthly"><a class="viewcode-back" href="../../bt.html#bt.algos.RunMonthly">[docs]</a><span class="k">class</span> <span class="nc">RunMonthly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -253,29 +254,29 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunMonthly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunMonthly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get last date</span>
+        <span class="c1"># get last date</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
 
-        <span class="c"># if none nothing to do - return false</span>
-        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+        <span class="c1"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">month</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">month</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunQuarterly"><a class="viewcode-back" href="../../bt.html#bt.algos.RunQuarterly">[docs]</a><span class="k">class</span> <span class="nc">RunQuarterly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -293,29 +294,29 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunQuarterly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunQuarterly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get last date</span>
+        <span class="c1"># get last date</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
 
-        <span class="c"># if none nothing to do - return false</span>
-        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+        <span class="c1"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">quarter</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">quarter</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunYearly"><a class="viewcode-back" href="../../bt.html#bt.algos.RunYearly">[docs]</a><span class="k">class</span> <span class="nc">RunYearly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -332,29 +333,29 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunYearly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunYearly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get last date</span>
+        <span class="c1"># get last date</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
 
-        <span class="c"># if none nothing to do - return false</span>
-        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+        <span class="c1"># if none nothing to do - return false</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">now</span><span class="o">.</span><span class="n">year</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunOnDate"><a class="viewcode-back" href="../../bt.html#bt.algos.RunOnDate">[docs]</a><span class="k">class</span> <span class="nc">RunOnDate</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -372,14 +373,14 @@
 <span class="sd">                by pandas.to_datetime so pass anything that it can</span>
 <span class="sd">                parse. Typically, you will pass a string &#39;yyyy-mm-dd&#39;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunOnDate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="c"># parse dates and save</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunOnDate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># parse dates and save</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dates</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dates</span>
+        <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dates</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunAfterDate"><a class="viewcode-back" href="../../bt.html#bt.algos.RunAfterDate">[docs]</a><span class="k">class</span> <span class="nc">RunAfterDate</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -399,14 +400,14 @@
 <span class="sd">        Args:</span>
 <span class="sd">            * date: Date after which to start trading</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunAfterDate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="c"># parse dates and save</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunAfterDate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># parse dates and save</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span>
+        <span class="k">return</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunAfterDays"><a class="viewcode-back" href="../../bt.html#bt.algos.RunAfterDays">[docs]</a><span class="k">class</span> <span class="nc">RunAfterDays</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -426,16 +427,16 @@
 <span class="sd">        Args:</span>
 <span class="sd">            * days (int): Number of trading days to wait before starting</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RunAfterDays</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunAfterDays</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">days</span> <span class="o">=</span> <span class="n">days</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">days</span> <span class="o">-=</span> <span class="mi">1</span>
-            <span class="k">return</span> <span class="bp">False</span>
-        <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RunEveryNPeriods"><a class="viewcode-back" href="../../bt.html#bt.algos.RunEveryNPeriods">[docs]</a><span class="k">class</span> <span class="nc">RunEveryNPeriods</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -461,20 +462,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lcall</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># ignore multiple calls on same period</span>
+        <span class="c1"># ignore multiple calls on same period</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lcall</span> <span class="o">==</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lcall</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
-            <span class="c"># run when idx == (n-1)</span>
+            <span class="c1"># run when idx == (n-1)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">return</span> <span class="bp">True</span>
+                <span class="k">return</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="k">return</span> <span class="bp">False</span>
+                <span class="k">return</span> <span class="kc">False</span></div>
 
-</div>
+
 <div class="viewcode-block" id="SelectAll"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectAll">[docs]</a><span class="k">class</span> <span class="nc">SelectAll</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -492,19 +493,19 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SelectAll</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectAll</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span> <span class="o">=</span> <span class="n">include_no_data</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">universe</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">universe</span><span class="p">[</span><span class="n">universe</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">True</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">universe</span><span class="p">[</span><span class="n">universe</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="SelectThese"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectThese">[docs]</a><span class="k">class</span> <span class="nc">SelectThese</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -520,20 +521,20 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickers</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SelectThese</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickers</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectThese</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tickers</span> <span class="o">=</span> <span class="n">tickers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span> <span class="o">=</span> <span class="n">include_no_data</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tickers</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tickers</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">universe</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tickers</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">universe</span><span class="p">[</span><span class="n">universe</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">True</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">universe</span><span class="p">[</span><span class="n">universe</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="SelectHasData"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectHasData">[docs]</a><span class="k">class</span> <span class="nc">SelectHasData</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -570,17 +571,17 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
-                 <span class="n">min_count</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SelectHasData</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+                 <span class="n">min_count</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectHasData</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
-        <span class="k">if</span> <span class="n">min_count</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">min_count</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">min_count</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">get_num_days_required</span><span class="p">(</span><span class="n">lookback</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_count</span> <span class="o">=</span> <span class="n">min_count</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span> <span class="o">=</span> <span class="n">include_no_data</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s">&#39;selected&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;selected&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span>
 
@@ -589,10 +590,10 @@
         <span class="n">cnt</span> <span class="o">=</span> <span class="n">cnt</span><span class="p">[</span><span class="n">cnt</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_count</span><span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span><span class="p">:</span>
             <span class="n">cnt</span> <span class="o">=</span> <span class="n">cnt</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cnt</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cnt</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="SelectN"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectN">[docs]</a><span class="k">class</span> <span class="nc">SelectN</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -618,21 +619,21 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">sort_descending</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                 <span class="n">all_or_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SelectN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">sort_descending</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">all_or_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;n cannot be negative&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;n cannot be negative&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ascending</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">sort_descending</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_or_none</span> <span class="o">=</span> <span class="n">all_or_none</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">stat</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;stat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="n">stat</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;stat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
         <span class="n">stat</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ascending</span><span class="p">,</span>
-                         <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                         <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="c"># handle percent n</span>
+        <span class="c1"># handle percent n</span>
         <span class="n">keep_n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">keep_n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">))</span>
@@ -642,11 +643,11 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_or_none</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">keep_n</span><span class="p">:</span>
             <span class="n">sel</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="SelectMomentum"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectMomentum">[docs]</a><span class="k">class</span> <span class="nc">SelectMomentum</span><span class="p">(</span><span class="n">AlgoStack</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -677,14 +678,14 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
-                 <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">sort_descending</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                 <span class="n">all_or_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SelectMomentum</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+                 <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">sort_descending</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">all_or_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectMomentum</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">StatTotalReturn</span><span class="p">(</span><span class="n">lookback</span><span class="o">=</span><span class="n">lookback</span><span class="p">,</span> <span class="n">lag</span><span class="o">=</span><span class="n">lag</span><span class="p">),</span>
             <span class="n">SelectN</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">sort_descending</span><span class="o">=</span><span class="n">sort_descending</span><span class="p">,</span>
-                    <span class="n">all_or_none</span><span class="o">=</span><span class="n">all_or_none</span><span class="p">))</span>
+                    <span class="n">all_or_none</span><span class="o">=</span><span class="n">all_or_none</span><span class="p">))</span></div>
 
-</div>
+
 <div class="viewcode-block" id="SelectWhere"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectWhere">[docs]</a><span class="k">class</span> <span class="nc">SelectWhere</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -704,26 +705,26 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span> <span class="o">=</span> <span class="n">include_no_data</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get signal Series at target.now</span>
+        <span class="c1"># get signal Series at target.now</span>
         <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
-            <span class="c"># get tickers where True</span>
+            <span class="c1"># get tickers where True</span>
             <span class="n">selected</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">sig</span><span class="p">]</span>
-            <span class="c"># save as list</span>
+            <span class="c1"># save as list</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span><span class="p">:</span>
                 <span class="n">universe</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span>
                     <span class="nb">list</span><span class="p">(</span><span class="n">selected</span><span class="p">)]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
                 <span class="n">selected</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">universe</span><span class="p">[</span><span class="n">universe</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="SelectRandomly"><a class="viewcode-back" href="../../bt.html#bt.algos.SelectRandomly">[docs]</a><span class="k">class</span> <span class="nc">SelectRandomly</span><span class="p">(</span><span class="n">AlgoStack</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -754,14 +755,14 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SelectRandomly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SelectRandomly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">include_no_data</span> <span class="o">=</span> <span class="n">include_no_data</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s">&#39;selected&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;selected&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span>
 
@@ -769,14 +770,14 @@
             <span class="n">universe</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">sel</span><span class="p">)]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
             <span class="n">sel</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">universe</span><span class="p">[</span><span class="n">universe</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span>
-            <span class="n">sel</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
 
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="StatTotalReturn"><a class="viewcode-back" href="../../bt.html#bt.algos.StatTotalReturn">[docs]</a><span class="k">class</span> <span class="nc">StatTotalReturn</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -801,18 +802,18 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
                  <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">StatTotalReturn</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">StatTotalReturn</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lag</span> <span class="o">=</span> <span class="n">lag</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
         <span class="n">t0</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lag</span>
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:</span><span class="n">t0</span><span class="p">]</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prc</span><span class="o">.</span><span class="n">calc_total_return</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prc</span><span class="o">.</span><span class="n">calc_total_return</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="WeighEqually"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighEqually">[docs]</a><span class="k">class</span> <span class="nc">WeighEqually</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -830,21 +831,21 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">WeighEqually</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighEqually</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">w</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">w</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">}</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">w</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">}</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="WeighSpecified"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighSpecified">[docs]</a><span class="k">class</span> <span class="nc">WeighSpecified</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -861,15 +862,15 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">weights</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">WeighSpecified</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighSpecified</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># added copy to make sure these are not overwritten</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="c1"># added copy to make sure these are not overwritten</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="WeighTarget"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighTarget">[docs]</a><span class="k">class</span> <span class="nc">WeighTarget</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -899,18 +900,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get current target weights</span>
+        <span class="c1"># get current target weights</span>
         <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
 
-            <span class="c"># dropna and save</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="c1"># dropna and save</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
 
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
 
-</div>
+
 <div class="viewcode-block" id="WeighInvVol"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighInvVol">[docs]</a><span class="k">class</span> <span class="nc">WeighInvVol</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -934,29 +935,114 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
                  <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">WeighInvVol</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighInvVol</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lag</span> <span class="o">=</span> <span class="n">lag</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mf">1.</span><span class="p">}</span>
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mf">1.</span><span class="p">}</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
         <span class="n">t0</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lag</span>
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:</span><span class="n">t0</span><span class="p">]</span>
         <span class="n">tw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_inv_vol_weights</span><span class="p">(</span>
             <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">())</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
+<div class="viewcode-block" id="WeighERC"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighERC">[docs]</a><span class="k">class</span> <span class="nc">WeighERC</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;weights&#39;] based on equal risk contribution algorithm.</span>
+
+<span class="sd">    Sets the target weights based on ffn&#39;s calc_erc_weights. This</span>
+<span class="sd">    is an extension of the inverse volatility risk parity portfolio in</span>
+<span class="sd">    which the correlation of asset returns is incorporated into the</span>
+<span class="sd">    calculation of risk contribution of each asset.</span>
+
+<span class="sd">    The resulting portfolio is similar to a minimum variance portfolio</span>
+<span class="sd">    subject to a diversification constraint on the weights of its components</span>
+<span class="sd">    and its volatility is located between those of the minimum variance and</span>
+<span class="sd">    equally-weighted portfolios (Maillard 2008).</span>
+
+<span class="sd">    See:</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Risk_parity</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * lookback (DateOffset): lookback period for estimating covariance</span>
+<span class="sd">        * initial_weights (list): Starting asset weights [default inverse vol].</span>
+<span class="sd">        * risk_weights (list): Risk target weights [default equal weight].</span>
+<span class="sd">        * covar_method (str): method used to estimate the covariance. See ffn&#39;s</span>
+<span class="sd">            calc_erc_weights for more details. (default ledoit-wolf).</span>
+<span class="sd">        * risk_parity_method (str): Risk parity estimation method. see ffn&#39;s</span>
+<span class="sd">            calc_erc_weights for more details. (default ccd).</span>
+<span class="sd">        * maximum_iterations (int): Maximum iterations in iterative solutions</span>
+<span class="sd">            (default 100).</span>
+<span class="sd">        * tolerance (float): Tolerance level in iterative solutions (default 1E-8).</span>
+
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                 <span class="n">initial_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">risk_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">covar_method</span><span class="o">=</span><span class="s1">&#39;ledoit-wolf&#39;</span><span class="p">,</span>
+                 <span class="n">risk_parity_method</span><span class="o">=</span><span class="s1">&#39;ccd&#39;</span><span class="p">,</span>
+                 <span class="n">maximum_iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                 <span class="n">tolerance</span><span class="o">=</span><span class="mf">1E-8</span><span class="p">,</span>
+                 <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">)):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighERC</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_weights</span> <span class="o">=</span> <span class="n">initial_weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">risk_weights</span> <span class="o">=</span> <span class="n">risk_weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">=</span> <span class="n">covar_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">risk_parity_method</span> <span class="o">=</span> <span class="n">risk_parity_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maximum_iterations</span> <span class="o">=</span> <span class="n">maximum_iterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span> <span class="o">=</span> <span class="n">tolerance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lag</span> <span class="o">=</span> <span class="n">lag</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mf">1.</span><span class="p">}</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lag</span>
+        <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:</span><span class="n">t0</span><span class="p">]</span>
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">calc_erc_weights</span><span class="p">(</span>
+            <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span>
+            <span class="n">initial_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_weights</span><span class="p">,</span>
+            <span class="n">risk_weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">risk_weights</span><span class="p">,</span>
+            <span class="n">covar_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span><span class="p">,</span>
+            <span class="n">risk_parity_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">risk_parity_method</span><span class="p">,</span>
+            <span class="n">maximum_iterations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">maximum_iterations</span><span class="p">,</span>
+            <span class="n">tolerance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">)</span>
+
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
 <div class="viewcode-block" id="WeighMeanVar"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighMeanVar">[docs]</a><span class="k">class</span> <span class="nc">WeighMeanVar</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -985,9 +1071,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
-                 <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">covar_method</span><span class="o">=</span><span class="s">&#39;ledoit-wolf&#39;</span><span class="p">,</span>
+                 <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">covar_method</span><span class="o">=</span><span class="s1">&#39;ledoit-wolf&#39;</span><span class="p">,</span>
                  <span class="n">rf</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">WeighMeanVar</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighMeanVar</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lag</span> <span class="o">=</span> <span class="n">lag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
@@ -995,15 +1081,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rf</span> <span class="o">=</span> <span class="n">rf</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mf">1.</span><span class="p">}</span>
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mf">1.</span><span class="p">}</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
         <span class="n">t0</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lag</span>
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:</span><span class="n">t0</span><span class="p">]</span>
@@ -1011,10 +1097,10 @@
             <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">weight_bounds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span>
             <span class="n">covar_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span><span class="p">,</span> <span class="n">rf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span>
 
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="WeighRandomly"><a class="viewcode-back" href="../../bt.html#bt.algos.WeighRandomly">[docs]</a><span class="k">class</span> <span class="nc">WeighRandomly</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1045,12 +1131,12 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">weight_sum</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">WeighRandomly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighRandomly</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span> <span class="o">=</span> <span class="n">weight_sum</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span>
 
         <span class="n">w</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1061,10 +1147,10 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">pass</span>
 
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="LimitDeltas"><a class="viewcode-back" href="../../bt.html#bt.algos.LimitDeltas">[docs]</a><span class="k">class</span> <span class="nc">LimitDeltas</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1094,15 +1180,15 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">LimitDeltas</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LimitDeltas</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">=</span> <span class="n">limit</span>
-        <span class="c"># determine if global or specific</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c1"># determine if global or specific</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">limit</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">tw</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
         <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">tw</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
 
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
@@ -1110,20 +1196,20 @@
             <span class="n">cur</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.</span>
             <span class="n">delta</span> <span class="o">=</span> <span class="n">tgt</span> <span class="o">-</span> <span class="n">cur</span>
 
-            <span class="c"># check if we need to limit</span>
+            <span class="c1"># check if we need to limit</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_limit</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">:</span>
                     <span class="n">tw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">delta</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># make sure we have a limit defined in case of limit dict</span>
+                <span class="c1"># make sure we have a limit defined in case of limit dict</span>
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">:</span>
                     <span class="n">lmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
                     <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">lmt</span><span class="p">:</span>
                         <span class="n">tw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur</span> <span class="o">+</span> <span class="p">(</span><span class="n">lmt</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">delta</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="LimitWeights"><a class="viewcode-back" href="../../bt.html#bt.algos.LimitWeights">[docs]</a><span class="k">class</span> <span class="nc">LimitWeights</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1150,23 +1236,23 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">LimitWeights</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LimitWeights</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">=</span> <span class="n">limit</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="n">tw</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+        <span class="n">tw</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tw</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
         <span class="n">tw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">limit_weights</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="CapitalFlow"><a class="viewcode-back" href="../../bt.html#bt.algos.CapitalFlow">[docs]</a><span class="k">class</span> <span class="nc">CapitalFlow</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1192,14 +1278,14 @@
 <span class="sd">        Args:</span>
 <span class="sd">            * amount (float): Amount to adjust by</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CapitalFlow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CapitalFlow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">amount</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="n">target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amount</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="CloseDead"><a class="viewcode-back" href="../../bt.html#bt.algos.CloseDead">[docs]</a><span class="k">class</span> <span class="nc">CloseDead</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1221,22 +1307,22 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CloseDead</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CloseDead</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
                     <span class="k">del</span> <span class="n">targets</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="Rebalance"><a class="viewcode-back" href="../../bt.html#bt.algos.Rebalance">[docs]</a><span class="k">class</span> <span class="nc">Rebalance</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1258,43 +1344,43 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Rebalance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Rebalance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
 
-        <span class="c"># de-allocate children that are not in targets and have non-zero value</span>
-        <span class="c"># (open positions)</span>
+        <span class="c1"># de-allocate children that are not in targets and have non-zero value</span>
+        <span class="c1"># (open positions)</span>
         <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
-            <span class="c"># if this child is in our targets, we don&#39;t want to close it out</span>
+            <span class="c1"># if this child is in our targets, we don&#39;t want to close it out</span>
             <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="c"># get child and value</span>
+            <span class="c1"># get child and value</span>
             <span class="n">c</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span>
             <span class="n">v</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
-            <span class="c"># if non-zero and non-null, we need to close it out</span>
+            <span class="c1"># if non-zero and non-null, we need to close it out</span>
             <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="mf">0.</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
 
-        <span class="c"># save value because it will change after each call to allocate</span>
-        <span class="c"># use it as base in rebalance calls</span>
+        <span class="c1"># save value because it will change after each call to allocate</span>
+        <span class="c1"># use it as base in rebalance calls</span>
         <span class="n">base</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span>
 
-        <span class="c"># If cash is set (it should be a value between 0-1 representing the</span>
-        <span class="c"># proportion of cash to keep), calculate the new &#39;base&#39;</span>
-        <span class="k">if</span> <span class="s">&#39;cash&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="n">base</span> <span class="o">=</span> <span class="n">base</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;cash&#39;</span><span class="p">])</span>
+        <span class="c1"># If cash is set (it should be a value between 0-1 representing the</span>
+        <span class="c1"># proportion of cash to keep), calculate the new &#39;base&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;cash&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">base</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;cash&#39;</span><span class="p">])</span>
 
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iteritems</span><span class="p">(</span><span class="n">targets</span><span class="p">):</span>
             <span class="n">target</span><span class="o">.</span><span class="n">rebalance</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">child</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="RebalanceOverTime"><a class="viewcode-back" href="../../bt.html#bt.algos.RebalanceOverTime">[docs]</a><span class="k">class</span> <span class="nc">RebalanceOverTime</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1329,43 +1415,43 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RebalanceOverTime</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RebalanceOverTime</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rb</span> <span class="o">=</span> <span class="n">Rebalance</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># new weights specified - update rebalance data</span>
-        <span class="k">if</span> <span class="s">&#39;weights&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span>
+        <span class="c1"># new weights specified - update rebalance data</span>
+        <span class="k">if</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
 
-        <span class="c"># if _weights are not None, we have some work to do</span>
+        <span class="c1"># if _weights are not None, we have some work to do</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">:</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="c"># scale delta relative to # of periods left and set that as the new</span>
-            <span class="c"># target</span>
+            <span class="c1"># scale delta relative to # of periods left and set that as the new</span>
+            <span class="c1"># target</span>
             <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">:</span>
                 <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> \
                     <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.</span>
                 <span class="n">dlt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">curr</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>
                 <span class="n">tgt</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr</span> <span class="o">+</span> <span class="n">dlt</span>
 
-            <span class="c"># mock weights and call real Rebalance</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tgt</span>
+            <span class="c1"># mock weights and call real Rebalance</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tgt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_rb</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
 
-            <span class="c"># dec _days_left. If 0, set to None &amp; set _weights to None</span>
+            <span class="c1"># dec _days_left. If 0, set to None &amp; set _weights to None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">-=</span> <span class="mi">1</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="bp">None</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-</div>
+
 <div class="viewcode-block" id="Require"><a class="viewcode-back" href="../../bt.html#bt.algos.Require">[docs]</a><span class="k">class</span> <span class="nc">Require</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1391,8 +1477,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">if_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Require</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">if_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Require</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">item</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pred</span> <span class="o">=</span> <span class="n">pred</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">if_none</span> <span class="o">=</span> <span class="n">if_none</span>
@@ -1403,7 +1489,7 @@
 
         <span class="n">item</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">if_none</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pred</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></div>
@@ -1436,14 +1522,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </aside>

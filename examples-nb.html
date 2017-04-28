@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>SMA Strategy &mdash; bt 0.2.3 documentation</title>
+    <title>SMA Strategy &#8212; bt 0.2.5 documentation</title>
     
     <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,17 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.3',
+        VERSION:     '0.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="bt 0.2.3 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -52,20 +54,20 @@
 <p>This should be pretty simple to build. The only thing missing above is the calculation of the simple moving average. When should this take place?</p>
 <p>Given the flexibility of <strong>bt</strong>, there is no strict rule. The average calculation could be performed in an Algo, but that would be pretty inefficient. A better way would be to calculate the moving average at the beginning - before starting the backtest. After all, all the data is known in advance.</p>
 <p>Now that we know what we have to do, let&#8217;s get started. First we will download some data and calculate the simple moving average.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">bt</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
 </pre></div>
 </div>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># download data</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;aapl,msft,c,gs,ge&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">)</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># download data</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;aapl,msft,c,gs,ge&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">)</span>
 
-<span class="c"># calculate moving average DataFrame using pandas&#39; rolling_mean</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
-<span class="c"># a rolling mean is a moving average, right?</span>
+<span class="c1"># calculate moving average DataFrame using pandas&#39; rolling_mean</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="c1"># a rolling mean is a moving average, right?</span>
 <span class="n">sma</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>It&#8217;s always a good idea to plot your data to make sure it looks ok. So let&#8217;s see how the data + sma plot looks like.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># let&#39;s see what the data looks like - this is by no means a pretty chart, but it does the job</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># let&#39;s see what the data looks like - this is by no means a pretty chart, but it does the job</span>
 <span class="n">plot</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sma</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -75,7 +77,7 @@
 <p>Before we do that, let&#8217;s think about how we will code it. We could pass the SMA data and then extract the row (from the sma DataFrame) on the current date, compare the values to the current prices, and then keep a list of those securities where the price is above the SMA. This is the most straightforward approach. However, this is not very re-usable because the logic within the Algo will be quite specific to the task at hand and if we wish to change the logic, we will have to write a new algo.</p>
 <p>For example, what if we wanted to select securities that were below their sma? Or what if we only wanted securities that were 5% above their sma?</p>
 <p>What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let&#8217;s see how the implementation looks like.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">SelectWhere</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SelectWhere</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Selects securities based on an indicator DataFrame.</span>
@@ -93,18 +95,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get signal on target.now</span>
+        <span class="c1"># get signal on target.now</span>
         <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
 
-            <span class="c"># get indices where true as list</span>
+            <span class="c1"># get indices where true as list</span>
             <span class="n">selected</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">sig</span><span class="p">])</span>
 
-            <span class="c"># save in temp - this will be used by the weighing algo</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selected</span>
+            <span class="c1"># save in temp - this will be used by the weighing algo</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selected</span>
 
-        <span class="c"># return True because we want to keep on moving down the stack</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="c1"># return True because we want to keep on moving down the stack</span>
+        <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 </div>
 <p>So there we have it. Our selection Algo.</p>
@@ -114,119 +116,119 @@
 <a class="reference internal" href="bt.html#bt.algos.SelectWhere" title="bt.algos.SelectWhere"><code class="xref py py-class docutils literal"><span class="pre">Here</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">code</span></code></a>.</p>
 </div>
 <p>All we have to do now is pass in a signal matrix. In our case, it&#8217;s quite easy:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">signal</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">signal</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span>
 </pre></div>
 </div>
 <p>Simple, concise and more importantly, fast! Let&#8217;s move on and test the strategy.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># first we create the Strategy</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;above50sma&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">),</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># first we create the Strategy</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;above50sma&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">),</span>
                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
 
-<span class="c"># now we create the Backtest</span>
+<span class="c1"># now we create the Backtest</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
-<span class="c"># and let&#39;s run it!</span>
+<span class="c1"># and let&#39;s run it!</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><div class="highlight"><pre>above50sma
-0%                          100%
-[############################# ] | ETA: 00:00:00
+<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">above50sma</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
 <p>So just to recap, we created the strategy, created the backtest by joining Strategy+Data, and ran the backtest. Let&#8217;s see the results.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># what does the equity curve look like?</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># what does the equity curve look like?</span>
 <span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_10_0.png" class="pynb" src="_images/examples-nb_10_0.png" />
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># and some performance stats</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># and some performance stats</span>
 <span class="n">res</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><div class="highlight"><pre>Stat                 above50sma
--------------------  ------------
-Start                2010-01-03
-End                  2017-02-22
-Risk-free rate       0.00%
+<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">above50sma</span>
+<span class="o">-------------------</span>  <span class="o">------------</span>
+<span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
+<span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
+<span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>
 
-Total Return         82.61%
-Daily Sharpe         0.56
-Daily Sortino        0.68
-CAGR                 8.80%
-Max Drawdown         -31.96%
-Calmar Ratio         0.28
+<span class="n">Total</span> <span class="n">Return</span>         <span class="mf">82.61</span><span class="o">%</span>
+<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.56</span>
+<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">0.68</span>
+<span class="n">CAGR</span>                 <span class="mf">8.80</span><span class="o">%</span>
+<span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">31.96</span><span class="o">%</span>
+<span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">0.28</span>
 
-MTD                  7.10%
-3m                   13.58%
-6m                   28.80%
-YTD                  6.85%
-1Y                   35.60%
-3Y (ann.)            16.24%
-5Y (ann.)            13.20%
-10Y (ann.)           8.80%
-Since Incep. (ann.)  8.80%
+<span class="n">MTD</span>                  <span class="mf">7.10</span><span class="o">%</span>
+<span class="mi">3</span><span class="n">m</span>                   <span class="mf">13.58</span><span class="o">%</span>
+<span class="mi">6</span><span class="n">m</span>                   <span class="mf">28.80</span><span class="o">%</span>
+<span class="n">YTD</span>                  <span class="mf">6.85</span><span class="o">%</span>
+<span class="mi">1</span><span class="n">Y</span>                   <span class="mf">35.60</span><span class="o">%</span>
+<span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">16.24</span><span class="o">%</span>
+<span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">13.20</span><span class="o">%</span>
+<span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">8.80</span><span class="o">%</span>
+<span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">8.80</span><span class="o">%</span>
 
-Daily Sharpe         0.56
-Daily Sortino        0.68
-Daily Mean (ann.)    10.09%
-Daily Vol (ann.)     18.12%
-Daily Skew           -0.54
-Daily Kurt           4.49
-Best Day             5.78%
-Worst Day            -7.99%
+<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.56</span>
+<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">0.68</span>
+<span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">10.09</span><span class="o">%</span>
+<span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">18.12</span><span class="o">%</span>
+<span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.54</span>
+<span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">4.49</span>
+<span class="n">Best</span> <span class="n">Day</span>             <span class="mf">5.78</span><span class="o">%</span>
+<span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">7.99</span><span class="o">%</span>
 
-Monthly Sharpe       0.51
-Monthly Sortino      0.72
-Monthly Mean (ann.)  10.74%
-Monthly Vol (ann.)   20.97%
-Monthly Skew         -0.50
-Monthly Kurt         0.46
-Best Month           13.64%
-Worst Month          -16.03%
+<span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">0.51</span>
+<span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">0.72</span>
+<span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">10.74</span><span class="o">%</span>
+<span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">20.97</span><span class="o">%</span>
+<span class="n">Monthly</span> <span class="n">Skew</span>         <span class="o">-</span><span class="mf">0.50</span>
+<span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">0.46</span>
+<span class="n">Best</span> <span class="n">Month</span>           <span class="mf">13.64</span><span class="o">%</span>
+<span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">16.03</span><span class="o">%</span>
 
-Yearly Sharpe        0.65
-Yearly Sortino       2.03
-Yearly Mean          10.91%
-Yearly Vol           16.75%
-Yearly Skew          -0.13
-Yearly Kurt          -0.68
-Best Year            34.85%
-Worst Year           -13.42%
+<span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">0.65</span>
+<span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="mf">2.03</span>
+<span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">10.91</span><span class="o">%</span>
+<span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">16.75</span><span class="o">%</span>
+<span class="n">Yearly</span> <span class="n">Skew</span>          <span class="o">-</span><span class="mf">0.13</span>
+<span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="o">-</span><span class="mf">0.68</span>
+<span class="n">Best</span> <span class="n">Year</span>            <span class="mf">34.85</span><span class="o">%</span>
+<span class="n">Worst</span> <span class="n">Year</span>           <span class="o">-</span><span class="mf">13.42</span><span class="o">%</span>
 
-Avg. Drawdown        -3.51%
-Avg. Drawdown Days   54.34
-Avg. Up Month        4.92%
-Avg. Down Month      -4.59%
-Win Year %           71.43%
-Win 12m %            68.00%
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">3.51</span><span class="o">%</span>
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">54.34</span>
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">4.92</span><span class="o">%</span>
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">4.59</span><span class="o">%</span>
+<span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">71.43</span><span class="o">%</span>
+<span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">68.00</span><span class="o">%</span>
 </pre></div>
 </div>
 <p>Nothing stellar but at least you learnt something along the way (I hope).</p>
 <p>Oh, and one more thing. If you were to write your own &#8220;library&#8221; of backtests, you might want to write yourself a helper function that would allow you to test different parameters and securities. That function might look something like this:</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;above_sma&#39;</span><span class="p">):</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;above_sma&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Long securities that are above their n period</span>
 <span class="sd">    Simple Moving Averages with equal weights.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c"># download data</span>
+    <span class="c1"># download data</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
-    <span class="c"># calc sma</span>
+    <span class="c1"># calc sma</span>
     <span class="n">sma</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">sma_per</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-    <span class="c"># create strategy</span>
+    <span class="c1"># create strategy</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">),</span>
                            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
                            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
 
-    <span class="c"># now we create the backtest</span>
+    <span class="c1"># now we create the backtest</span>
     <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This function allows us to easily generate backtests. We could easily compare a few different SMA periods. Also, let&#8217;s see if we can beat a long-only allocation to the SPY.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># simple backtest to test long-only allocation</span>
-<span class="k">def</span> <span class="nf">long_only_ew</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;long_only_ew&#39;</span><span class="p">):</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># simple backtest to test long-only allocation</span>
+<span class="k">def</span> <span class="nf">long_only_ew</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;long_only_ew&#39;</span><span class="p">):</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunOnce</span><span class="p">(),</span>
                            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
@@ -234,91 +236,91 @@ Win 12m %            68.00%
     <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
-<span class="c"># create the backtests</span>
-<span class="n">tickers</span> <span class="o">=</span> <span class="s">&#39;aapl,msft,c,gs,ge&#39;</span>
-<span class="n">sma10</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;sma10&#39;</span><span class="p">)</span>
-<span class="n">sma20</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;sma20&#39;</span><span class="p">)</span>
-<span class="n">sma40</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;sma40&#39;</span><span class="p">)</span>
-<span class="n">benchmark</span> <span class="o">=</span> <span class="n">long_only_ew</span><span class="p">(</span><span class="s">&#39;spy&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;spy&#39;</span><span class="p">)</span>
+<span class="c1"># create the backtests</span>
+<span class="n">tickers</span> <span class="o">=</span> <span class="s1">&#39;aapl,msft,c,gs,ge&#39;</span>
+<span class="n">sma10</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sma10&#39;</span><span class="p">)</span>
+<span class="n">sma20</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sma20&#39;</span><span class="p">)</span>
+<span class="n">sma40</span> <span class="o">=</span> <span class="n">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sma40&#39;</span><span class="p">)</span>
+<span class="n">benchmark</span> <span class="o">=</span> <span class="n">long_only_ew</span><span class="p">(</span><span class="s1">&#39;spy&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;spy&#39;</span><span class="p">)</span>
 
-<span class="c"># run all the backtests!</span>
+<span class="c1"># run all the backtests!</span>
 <span class="n">res2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">sma10</span><span class="p">,</span> <span class="n">sma20</span><span class="p">,</span> <span class="n">sma40</span><span class="p">,</span> <span class="n">benchmark</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><div class="highlight"><pre>sma10
-0%                          100%
-[############################# ] | ETA: 00:00:00sma20
-0%                          100%
-[############################# ] | ETA: 00:00:00sma40
-0%                          100%
-[############################# ] | ETA: 00:00:00spy
-0%                          100%
-[############################# ] | ETA: 00:00:00
+<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">sma10</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00sma20</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00sma40</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00spy</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_16_0.png" class="pynb" src="_images/examples-nb_16_0.png" />
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><div class="highlight"><pre>Stat                 sma10       sma20       sma40       spy
--------------------  ----------  ----------  ----------  ----------
-Start                2010-01-03  2010-01-03  2010-01-03  2010-01-03
-End                  2017-02-22  2017-02-22  2017-02-22  2017-02-22
-Risk-free rate       0.00%       0.00%       0.00%       0.00%
+<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">sma10</span>       <span class="n">sma20</span>       <span class="n">sma40</span>       <span class="n">spy</span>
+<span class="o">-------------------</span>  <span class="o">----------</span>  <span class="o">----------</span>  <span class="o">----------</span>  <span class="o">----------</span>
+<span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
+<span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
+<span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>       <span class="mf">0.00</span><span class="o">%</span>       <span class="mf">0.00</span><span class="o">%</span>       <span class="mf">0.00</span><span class="o">%</span>
 
-Total Return         77.09%      103.52%     106.10%     140.56%
-Daily Sharpe         0.52        0.65        0.67        0.88
-Daily Sortino        0.63        0.79        0.84        1.13
-CAGR                 8.34%       10.47%      10.66%      13.09%
-Max Drawdown         -26.87%     -26.94%     -32.56%     -18.60%
-Calmar Ratio         0.31        0.39        0.33        0.70
+<span class="n">Total</span> <span class="n">Return</span>         <span class="mf">77.09</span><span class="o">%</span>      <span class="mf">103.52</span><span class="o">%</span>     <span class="mf">106.10</span><span class="o">%</span>     <span class="mf">140.56</span><span class="o">%</span>
+<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.52</span>        <span class="mf">0.65</span>        <span class="mf">0.67</span>        <span class="mf">0.88</span>
+<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">0.63</span>        <span class="mf">0.79</span>        <span class="mf">0.84</span>        <span class="mf">1.13</span>
+<span class="n">CAGR</span>                 <span class="mf">8.34</span><span class="o">%</span>       <span class="mf">10.47</span><span class="o">%</span>      <span class="mf">10.66</span><span class="o">%</span>      <span class="mf">13.09</span><span class="o">%</span>
+<span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">26.87</span><span class="o">%</span>     <span class="o">-</span><span class="mf">26.94</span><span class="o">%</span>     <span class="o">-</span><span class="mf">32.56</span><span class="o">%</span>     <span class="o">-</span><span class="mf">18.60</span><span class="o">%</span>
+<span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">0.31</span>        <span class="mf">0.39</span>        <span class="mf">0.33</span>        <span class="mf">0.70</span>
 
-MTD                  6.62%       6.85%       6.86%       3.85%
-3m                   15.24%      12.92%      15.09%      7.75%
-6m                   30.05%      30.43%      31.39%      9.31%
-YTD                  8.03%       7.86%       8.05%       5.70%
-1Y                   48.12%      39.04%      33.57%      23.91%
-3Y (ann.)            8.20%       10.16%      15.75%      10.76%
-5Y (ann.)            10.07%      11.58%      14.10%      13.99%
-10Y (ann.)           8.34%       10.47%      10.66%      13.09%
-Since Incep. (ann.)  8.34%       10.47%      10.66%      13.09%
+<span class="n">MTD</span>                  <span class="mf">6.62</span><span class="o">%</span>       <span class="mf">6.85</span><span class="o">%</span>       <span class="mf">6.86</span><span class="o">%</span>       <span class="mf">3.85</span><span class="o">%</span>
+<span class="mi">3</span><span class="n">m</span>                   <span class="mf">15.24</span><span class="o">%</span>      <span class="mf">12.92</span><span class="o">%</span>      <span class="mf">15.09</span><span class="o">%</span>      <span class="mf">7.75</span><span class="o">%</span>
+<span class="mi">6</span><span class="n">m</span>                   <span class="mf">30.05</span><span class="o">%</span>      <span class="mf">30.43</span><span class="o">%</span>      <span class="mf">31.39</span><span class="o">%</span>      <span class="mf">9.31</span><span class="o">%</span>
+<span class="n">YTD</span>                  <span class="mf">8.03</span><span class="o">%</span>       <span class="mf">7.86</span><span class="o">%</span>       <span class="mf">8.05</span><span class="o">%</span>       <span class="mf">5.70</span><span class="o">%</span>
+<span class="mi">1</span><span class="n">Y</span>                   <span class="mf">48.12</span><span class="o">%</span>      <span class="mf">39.04</span><span class="o">%</span>      <span class="mf">33.57</span><span class="o">%</span>      <span class="mf">23.91</span><span class="o">%</span>
+<span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">8.20</span><span class="o">%</span>       <span class="mf">10.16</span><span class="o">%</span>      <span class="mf">15.75</span><span class="o">%</span>      <span class="mf">10.76</span><span class="o">%</span>
+<span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">10.07</span><span class="o">%</span>      <span class="mf">11.58</span><span class="o">%</span>      <span class="mf">14.10</span><span class="o">%</span>      <span class="mf">13.99</span><span class="o">%</span>
+<span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">8.34</span><span class="o">%</span>       <span class="mf">10.47</span><span class="o">%</span>      <span class="mf">10.66</span><span class="o">%</span>      <span class="mf">13.09</span><span class="o">%</span>
+<span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">8.34</span><span class="o">%</span>       <span class="mf">10.47</span><span class="o">%</span>      <span class="mf">10.66</span><span class="o">%</span>      <span class="mf">13.09</span><span class="o">%</span>
 
-Daily Sharpe         0.52        0.65        0.67        0.88
-Daily Sortino        0.63        0.79        0.84        1.13
-Daily Mean (ann.)    9.76%       11.58%      11.68%      13.48%
-Daily Vol (ann.)     18.65%      17.96%      17.53%      15.30%
-Daily Skew           -0.40       -0.49       -0.35       -0.38
-Daily Kurt           6.58        4.47        3.44        4.05
-Best Day             9.58%       5.78%       5.78%       4.65%
-Worst Day            -7.99%      -7.99%      -5.64%      -6.51%
+<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.52</span>        <span class="mf">0.65</span>        <span class="mf">0.67</span>        <span class="mf">0.88</span>
+<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">0.63</span>        <span class="mf">0.79</span>        <span class="mf">0.84</span>        <span class="mf">1.13</span>
+<span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">9.76</span><span class="o">%</span>       <span class="mf">11.58</span><span class="o">%</span>      <span class="mf">11.68</span><span class="o">%</span>      <span class="mf">13.48</span><span class="o">%</span>
+<span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">18.65</span><span class="o">%</span>      <span class="mf">17.96</span><span class="o">%</span>      <span class="mf">17.53</span><span class="o">%</span>      <span class="mf">15.30</span><span class="o">%</span>
+<span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.40</span>       <span class="o">-</span><span class="mf">0.49</span>       <span class="o">-</span><span class="mf">0.35</span>       <span class="o">-</span><span class="mf">0.38</span>
+<span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">6.58</span>        <span class="mf">4.47</span>        <span class="mf">3.44</span>        <span class="mf">4.05</span>
+<span class="n">Best</span> <span class="n">Day</span>             <span class="mf">9.58</span><span class="o">%</span>       <span class="mf">5.78</span><span class="o">%</span>       <span class="mf">5.78</span><span class="o">%</span>       <span class="mf">4.65</span><span class="o">%</span>
+<span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">7.99</span><span class="o">%</span>      <span class="o">-</span><span class="mf">7.99</span><span class="o">%</span>      <span class="o">-</span><span class="mf">5.64</span><span class="o">%</span>      <span class="o">-</span><span class="mf">6.51</span><span class="o">%</span>
 
-Monthly Sharpe       0.54        0.60        0.60        1.12
-Monthly Sortino      0.79        1.08        1.02        1.83
-Monthly Mean (ann.)  11.21%      12.03%      12.37%      13.99%
-Monthly Vol (ann.)   20.60%      19.97%      20.70%      12.51%
-Monthly Skew         -0.30       -0.02       -0.17       -0.15
-Monthly Kurt         0.87        -0.15       -0.24       0.32
-Best Month           18.65%      14.34%      13.07%      10.91%
-Worst Month          -16.94%     -14.23%     -15.05%     -7.94%
+<span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">0.54</span>        <span class="mf">0.60</span>        <span class="mf">0.60</span>        <span class="mf">1.12</span>
+<span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">0.79</span>        <span class="mf">1.08</span>        <span class="mf">1.02</span>        <span class="mf">1.83</span>
+<span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">11.21</span><span class="o">%</span>      <span class="mf">12.03</span><span class="o">%</span>      <span class="mf">12.37</span><span class="o">%</span>      <span class="mf">13.99</span><span class="o">%</span>
+<span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">20.60</span><span class="o">%</span>      <span class="mf">19.97</span><span class="o">%</span>      <span class="mf">20.70</span><span class="o">%</span>      <span class="mf">12.51</span><span class="o">%</span>
+<span class="n">Monthly</span> <span class="n">Skew</span>         <span class="o">-</span><span class="mf">0.30</span>       <span class="o">-</span><span class="mf">0.02</span>       <span class="o">-</span><span class="mf">0.17</span>       <span class="o">-</span><span class="mf">0.15</span>
+<span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">0.87</span>        <span class="o">-</span><span class="mf">0.15</span>       <span class="o">-</span><span class="mf">0.24</span>       <span class="mf">0.32</span>
+<span class="n">Best</span> <span class="n">Month</span>           <span class="mf">18.65</span><span class="o">%</span>      <span class="mf">14.34</span><span class="o">%</span>      <span class="mf">13.07</span><span class="o">%</span>      <span class="mf">10.91</span><span class="o">%</span>
+<span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">16.94</span><span class="o">%</span>     <span class="o">-</span><span class="mf">14.23</span><span class="o">%</span>     <span class="o">-</span><span class="mf">15.05</span><span class="o">%</span>     <span class="o">-</span><span class="mf">7.94</span><span class="o">%</span>
 
-Yearly Sharpe        0.47        0.48        0.66        1.10
-Yearly Sortino       1.54        11.38       -           -
-Yearly Mean          8.25%       10.34%      10.45%      11.80%
-Yearly Vol           17.65%      21.47%      15.82%      10.71%
-Yearly Skew          0.09        0.63        -0.97       1.20
-Yearly Kurt          -1.72       0.33        1.75        1.73
-Best Year            32.80%      47.67%      30.59%      32.31%
-Worst Year           -13.38%     -14.11%     -19.19%     1.23%
+<span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">0.47</span>        <span class="mf">0.48</span>        <span class="mf">0.66</span>        <span class="mf">1.10</span>
+<span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="mf">1.54</span>        <span class="mf">11.38</span>       <span class="o">-</span>           <span class="o">-</span>
+<span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">8.25</span><span class="o">%</span>       <span class="mf">10.34</span><span class="o">%</span>      <span class="mf">10.45</span><span class="o">%</span>      <span class="mf">11.80</span><span class="o">%</span>
+<span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">17.65</span><span class="o">%</span>      <span class="mf">21.47</span><span class="o">%</span>      <span class="mf">15.82</span><span class="o">%</span>      <span class="mf">10.71</span><span class="o">%</span>
+<span class="n">Yearly</span> <span class="n">Skew</span>          <span class="mf">0.09</span>        <span class="mf">0.63</span>        <span class="o">-</span><span class="mf">0.97</span>       <span class="mf">1.20</span>
+<span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="o">-</span><span class="mf">1.72</span>       <span class="mf">0.33</span>        <span class="mf">1.75</span>        <span class="mf">1.73</span>
+<span class="n">Best</span> <span class="n">Year</span>            <span class="mf">32.80</span><span class="o">%</span>      <span class="mf">47.67</span><span class="o">%</span>      <span class="mf">30.59</span><span class="o">%</span>      <span class="mf">32.31</span><span class="o">%</span>
+<span class="n">Worst</span> <span class="n">Year</span>           <span class="o">-</span><span class="mf">13.38</span><span class="o">%</span>     <span class="o">-</span><span class="mf">14.11</span><span class="o">%</span>     <span class="o">-</span><span class="mf">19.19</span><span class="o">%</span>     <span class="mf">1.23</span><span class="o">%</span>
 
-Avg. Drawdown        -4.69%      -3.45%      -3.09%      -1.65%
-Avg. Drawdown Days   61.50       46.67       51.78       17.55
-Avg. Up Month        4.58%       4.71%       4.91%       3.06%
-Avg. Down Month      -4.81%      -4.55%      -4.80%      -2.90%
-Win Year %           57.14%      71.43%      85.71%      100.00%
-Win 12m %            62.67%      62.67%      72.00%      92.00%
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">4.69</span><span class="o">%</span>      <span class="o">-</span><span class="mf">3.45</span><span class="o">%</span>      <span class="o">-</span><span class="mf">3.09</span><span class="o">%</span>      <span class="o">-</span><span class="mf">1.65</span><span class="o">%</span>
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">61.50</span>       <span class="mf">46.67</span>       <span class="mf">51.78</span>       <span class="mf">17.55</span>
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">4.58</span><span class="o">%</span>       <span class="mf">4.71</span><span class="o">%</span>       <span class="mf">4.91</span><span class="o">%</span>       <span class="mf">3.06</span><span class="o">%</span>
+<span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">4.81</span><span class="o">%</span>      <span class="o">-</span><span class="mf">4.55</span><span class="o">%</span>      <span class="o">-</span><span class="mf">4.80</span><span class="o">%</span>      <span class="o">-</span><span class="mf">2.90</span><span class="o">%</span>
+<span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">57.14</span><span class="o">%</span>      <span class="mf">71.43</span><span class="o">%</span>      <span class="mf">85.71</span><span class="o">%</span>      <span class="mf">100.00</span><span class="o">%</span>
+<span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">62.67</span><span class="o">%</span>      <span class="mf">62.67</span><span class="o">%</span>      <span class="mf">72.00</span><span class="o">%</span>      <span class="mf">92.00</span><span class="o">%</span>
 </pre></div>
 </div>
 <p>And there you have it. Beating the market ain&#8217;t that easy!</p>
@@ -328,7 +330,7 @@ Win 12m %            62.67%      62.67%      72.00%      92.00%
 <p>Let&#8217;s build on the last section to test a moving average crossover strategy. The easiest way to achieve this is to build an Algo similar to SelectWhere, but for the purpose of setting target weights. Let&#8217;s call this algo WeighTarget. This algo will take a DataFrame of target weights that we will pre-calculate.</p>
 <p>Basically, when the 50 day moving average will be above the 200-day moving average, we will be long (+1 target weight). Conversely, when the 50 is below the 200, we will be short (-1 target weight).</p>
 <p>Here&#8217;s the WeighTarget implementation (this Algo also already exists in the algos module):</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WeighTarget</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">WeighTarget</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets target weights based on a target weight DataFrame.</span>
 
@@ -344,58 +346,58 @@ Win 12m %            62.67%      62.67%      72.00%      92.00%
         <span class="bp">self</span><span class="o">.</span><span class="n">tw</span> <span class="o">=</span> <span class="n">target_weights</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># get target weights on date target.now</span>
+        <span class="c1"># get target weights on date target.now</span>
         <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
 
-            <span class="c"># save in temp - this will be used by the weighing algo</span>
-            <span class="c"># also dropping any na&#39;s just in case they pop up</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="c1"># save in temp - this will be used by the weighing algo</span>
+            <span class="c1"># also dropping any na&#39;s just in case they pop up</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
 
-        <span class="c"># return True because we want to keep on moving down the stack</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="c1"># return True because we want to keep on moving down the stack</span>
+        <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 </div>
 <p>So let&#8217;s start with a simple 50-200 day sma crossover for a single security.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c">## download some data &amp; calc SMAs</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;spy&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">)</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1">## download some data &amp; calc SMAs</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spy&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">)</span>
 <span class="n">sma50</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 <span class="n">sma200</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-<span class="c">## now we need to calculate our target weight DataFrame</span>
-<span class="c"># first we will copy the sma200 DataFrame since our weights will have the same strucutre</span>
+<span class="c1">## now we need to calculate our target weight DataFrame</span>
+<span class="c1"># first we will copy the sma200 DataFrame since our weights will have the same strucutre</span>
 <span class="n">tw</span> <span class="o">=</span> <span class="n">sma200</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="c"># set appropriate target weights</span>
+<span class="c1"># set appropriate target weights</span>
 <span class="n">tw</span><span class="p">[</span><span class="n">sma50</span> <span class="o">&gt;</span> <span class="n">sma200</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
 <span class="n">tw</span><span class="p">[</span><span class="n">sma50</span> <span class="o">&lt;=</span> <span class="n">sma200</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
-<span class="c"># here we will set the weight to 0 - this is because the sma200 needs 200 data points before</span>
-<span class="c"># calculating its first point. Therefore, it will start with a bunch of nulls (NaNs).</span>
+<span class="c1"># here we will set the weight to 0 - this is because the sma200 needs 200 data points before</span>
+<span class="c1"># calculating its first point. Therefore, it will start with a bunch of nulls (NaNs).</span>
 <span class="n">tw</span><span class="p">[</span><span class="n">sma200</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span> <span class="o">=</span> <span class="mf">0.0</span>
 </pre></div>
 </div>
 <p>Ok so we downloaded our data, calculated the simple moving averages, and then we setup our target weight (tw) DataFrame. Let&#8217;s take a look at our target weights to see if they make any sense.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># plot the target weights + chart of price &amp; SMAs</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># plot the target weights + chart of price &amp; SMAs</span>
 <span class="n">tmp</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sma50</span><span class="p">,</span> <span class="n">sma200</span><span class="p">)</span>
-<span class="n">tmp</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;tw&#39;</span><span class="p">,</span> <span class="s">&#39;price&#39;</span><span class="p">,</span> <span class="s">&#39;sma50&#39;</span><span class="p">,</span> <span class="s">&#39;sma200&#39;</span><span class="p">]</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="n">secondary_y</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;tw&#39;</span><span class="p">])</span>
+<span class="n">tmp</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tw&#39;</span><span class="p">,</span> <span class="s1">&#39;price&#39;</span><span class="p">,</span> <span class="s1">&#39;sma50&#39;</span><span class="p">,</span> <span class="s1">&#39;sma200&#39;</span><span class="p">]</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="n">secondary_y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;tw&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_24_0.png" class="pynb" src="_images/examples-nb_24_0.png" />
 <p>As mentioned earlier, it&#8217;s always a good idea to plot your strategy data. It is usually easier to spot logic/programming errors this way, especially when dealing with lots of data.</p>
 <p>Now let&#8217;s move on with the Strategy &amp; Backtest.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">ma_cross</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;ma_cross&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">WeighTarget</span><span class="p">(</span><span class="n">tw</span><span class="p">),</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">ma_cross</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;ma_cross&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">WeighTarget</span><span class="p">(</span><span class="n">tw</span><span class="p">),</span>
                                     <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">ma_cross</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><div class="highlight"><pre>ma_cross
-0%                          100%
-[############################# ] | ETA: 00:00:00
+<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">ma_cross</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_27_0.png" class="pynb" src="_images/examples-nb_27_0.png" />
@@ -406,64 +408,64 @@ Win 12m %            62.67%      62.67%      72.00%      92.00%
 <p>So far, we have explored strategies that allocate capital to securities. But what if we wanted to test a strategy that allocated capital to sub-strategies?</p>
 <p>The most straightforward way would be to test the different sub-strategies, extract their equity curves and create &#8220;synthetic securities&#8221; that would basically just represent the returns achieved from allocating capital to the different sub-strategies.</p>
 <p>Let&#8217;s see how this looks:</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># first let&#39;s create a helper function to create a ma cross backtest</span>
-<span class="k">def</span> <span class="nf">ma_cross</span><span class="p">(</span><span class="n">ticker</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s">&#39;2010-01-01&#39;</span><span class="p">,</span>
-             <span class="n">short_ma</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">long_ma</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;ma_cross&#39;</span><span class="p">):</span>
-    <span class="c"># these are all the same steps as above</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s create a helper function to create a ma cross backtest</span>
+<span class="k">def</span> <span class="nf">ma_cross</span><span class="p">(</span><span class="n">ticker</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">,</span>
+             <span class="n">short_ma</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">long_ma</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ma_cross&#39;</span><span class="p">):</span>
+    <span class="c1"># these are all the same steps as above</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ticker</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
     <span class="n">short_sma</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">short_ma</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
     <span class="n">long_sma</span>  <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">long_ma</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-    <span class="c"># target weights</span>
+    <span class="c1"># target weights</span>
     <span class="n">tw</span> <span class="o">=</span> <span class="n">long_sma</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">tw</span><span class="p">[</span><span class="n">short_sma</span> <span class="o">&gt;</span> <span class="n">long_sma</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">tw</span><span class="p">[</span><span class="n">short_sma</span> <span class="o">&lt;=</span> <span class="n">long_sma</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
     <span class="n">tw</span><span class="p">[</span><span class="n">long_sma</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c"># here we specify the children (3rd) arguemnt to make sure the strategy</span>
-    <span class="c"># has the proper universe. This is necessary in strategies of strategies</span>
+    <span class="c1"># here we specify the children (3rd) arguemnt to make sure the strategy</span>
+    <span class="c1"># has the proper universe. This is necessary in strategies of strategies</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">WeighTarget</span><span class="p">(</span><span class="n">tw</span><span class="p">),</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span> <span class="p">[</span><span class="n">ticker</span><span class="p">])</span>
 
     <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
-<span class="c"># ok now let&#39;s create a few backtests and gather the results.</span>
-<span class="c"># these will later become our &quot;synthetic securities&quot;</span>
-<span class="n">t1</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;aapl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;aapl_ma_cross&#39;</span><span class="p">)</span>
-<span class="n">t2</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;msft&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;msft_ma_cross&#39;</span><span class="p">)</span>
+<span class="c1"># ok now let&#39;s create a few backtests and gather the results.</span>
+<span class="c1"># these will later become our &quot;synthetic securities&quot;</span>
+<span class="n">t1</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s1">&#39;aapl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;aapl_ma_cross&#39;</span><span class="p">)</span>
+<span class="n">t2</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s1">&#39;msft&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;msft_ma_cross&#39;</span><span class="p">)</span>
 
-<span class="c"># let&#39;s run these strategies now</span>
+<span class="c1"># let&#39;s run these strategies now</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
 
-<span class="c"># now that we have run the strategies, let&#39;s extract</span>
-<span class="c"># the data to create &quot;synthetic securities&quot;</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s">&#39;aapl_ma_cross&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="s">&#39;msft_ma_cross&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">prices</span><span class="p">)</span>
+<span class="c1"># now that we have run the strategies, let&#39;s extract</span>
+<span class="c1"># the data to create &quot;synthetic securities&quot;</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s1">&#39;aapl_ma_cross&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;msft_ma_cross&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">prices</span><span class="p">)</span>
 
-<span class="c"># now we have our new data. This data is basically the equity</span>
-<span class="c"># curves of both backtested strategies. Now we can just use this</span>
-<span class="c"># to test any old strategy, just like before.</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+<span class="c1"># now we have our new data. This data is basically the equity</span>
+<span class="c1"># curves of both backtested strategies. Now we can just use this</span>
+<span class="c1"># to test any old strategy, just like before.</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                       <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
                       <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
 
-<span class="c"># create and run</span>
+<span class="c1"># create and run</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><div class="highlight"><pre>aapl_ma_cross
-0%                          100%
-[############################# ] | ETA: 00:00:00msft_ma_cross
-0%                          100%
-[############################# ] | ETA: 00:00:00s
-0%                          100%
-[############################# ] | ETA: 00:00:00
+<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">aapl_ma_cross</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00msft_ma_cross</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00s</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_30_0.png" class="pynb" src="_images/examples-nb_30_0.png" />
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_31_0.png" class="pynb" src="_images/examples-nb_31_0.png" />
@@ -471,37 +473,37 @@ Win 12m %            62.67%      62.67%      72.00%      92.00%
 <p>Luckily, bt has built-in functionality for dealing with strategies of strategies. It uses the same general principal as demonstrated above but does it seamlessly. Basically, when a strategy is a child of another strategy, it will create a &#8220;paper trade&#8221; version of itself internally. As we run our strategy, it will run its internal &#8220;paper version&#8221; and use the returns from that strategy to populate the <strong>price</strong> property.</p>
 <p>This means that the parent strategy can use the price information (which reflects the returns of the strategy had it been employed) to determine the appropriate allocation. Again, this is basically the same process as above, just packed into 1 step.</p>
 <p>Perhaps some code will help:</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="c"># once again, we will create a few backtests</span>
-<span class="c"># these will be the child strategies</span>
-<span class="n">t1</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;aapl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;aapl_ma_cross&#39;</span><span class="p">)</span>
-<span class="n">t2</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s">&#39;msft&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;msft_ma_cross&#39;</span><span class="p">)</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># once again, we will create a few backtests</span>
+<span class="c1"># these will be the child strategies</span>
+<span class="n">t1</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s1">&#39;aapl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;aapl_ma_cross&#39;</span><span class="p">)</span>
+<span class="n">t2</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s1">&#39;msft&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;msft_ma_cross&#39;</span><span class="p">)</span>
 
-<span class="c"># let&#39;s extract the data object</span>
+<span class="c1"># let&#39;s extract the data object</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">t1</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">t2</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-<span class="c"># now we create the parent strategy</span>
-<span class="c"># we specify the children to be the two</span>
-<span class="c"># strategies created above</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s">&#39;s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+<span class="c1"># now we create the parent strategy</span>
+<span class="c1"># we specify the children to be the two</span>
+<span class="c1"># strategies created above</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                       <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
                       <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
                 <span class="p">[</span><span class="n">t1</span><span class="o">.</span><span class="n">strategy</span><span class="p">,</span> <span class="n">t2</span><span class="o">.</span><span class="n">strategy</span><span class="p">])</span>
 
-<span class="c"># create and run</span>
+<span class="c1"># create and run</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-python"><div class="highlight"><pre>s
-0%                          100%
-[############################# ] | ETA: 00:00:00
+<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">s</span>
+<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
+<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_34_0.png" class="pynb" src="_images/examples-nb_34_0.png" />
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
+<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_35_0.png" class="pynb" src="_images/examples-nb_35_0.png" />
@@ -536,14 +538,11 @@ Win 12m %            62.67%      62.67%      72.00%      92.00%
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </aside>

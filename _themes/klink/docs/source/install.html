@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation Guide &mdash; bt 0.2.3 documentation</title>
+    <title>Installation Guide &#8212; bt 0.2.5 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,17 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '0.2.3',
+        VERSION:     '0.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-    <link rel="top" title="bt 0.2.3 documentation" href="../../../../index.html" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -46,7 +48,7 @@
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>Assuming you have pip installed:</p>
-<div class="code sh highlight-python"><div class="highlight"><pre>$ pip install klink
+<div class="code sh highlight-default"><div class="highlight"><pre><span></span>$ pip install klink
 </pre></div>
 </div>
 <p>That&#8217;s it.</p>
@@ -54,14 +56,14 @@
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
 <p>In your docs&#8217; <strong>conf.py</strong> file, add the following:</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">klink</span>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">klink</span>
 
-<span class="n">html_theme</span> <span class="o">=</span> <span class="s">&#39;klink&#39;</span>
+<span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;klink&#39;</span>
 <span class="n">html_theme_path</span> <span class="p">[</span><span class="n">klink</span><span class="o">.</span><span class="n">get_html_theme_path</span><span class="p">()]</span>
 <span class="n">html_theme_options</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;github&#39;</span><span class="p">:</span> <span class="s">&#39;yourname/yourrepo&#39;</span><span class="p">,</span>
-    <span class="s">&#39;analytics_id&#39;</span><span class="p">:</span> <span class="s">&#39;UA-your-number-here&#39;</span><span class="p">,</span>
-    <span class="s">&#39;logo&#39;</span><span class="p">:</span> <span class="s">&#39;logo.png&#39;</span>
+    <span class="s1">&#39;github&#39;</span><span class="p">:</span> <span class="s1">&#39;yourname/yourrepo&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;analytics_id&#39;</span><span class="p">:</span> <span class="s1">&#39;UA-your-number-here&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;logo&#39;</span><span class="p">:</span> <span class="s1">&#39;logo.png&#39;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -70,7 +72,7 @@ IPython Notebook into a .rst file. It basically converts the Notebook to .rst
 and copies the static data (images, etc) to your _static dir.</p>
 <p>If you have IPython Notebooks that you would like to integrate, use the
 following code to your <strong>conf.py</strong>:</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">klink</span><span class="o">.</span><span class="n">convert_notebooks</span><span class="p">()</span>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">klink</span><span class="o">.</span><span class="n">convert_notebooks</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Once the conversion is done, you will have a .rst file with the same name as
@@ -95,12 +97,12 @@ See the css command in the Makefile for an example.</p>
 <a class="reference external" href="http://makingsoftware.wordpress.com/2013/02/16/using-git-subtrees-for-repository-separation/">intro tutorial</a>.</p>
 <p>You will also need to change your conf.py file. The following settings should
 work:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">html_theme</span> <span class="o">=</span> <span class="s">&#39;klink&#39;</span>
-<span class="n">html_theme_path</span> <span class="p">[</span><span class="s">&#39;_themes&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;klink&#39;</span>
+<span class="n">html_theme_path</span> <span class="p">[</span><span class="s1">&#39;_themes&#39;</span><span class="p">]</span>
 <span class="n">html_theme_options</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;github&#39;</span><span class="p">:</span> <span class="s">&#39;yourname/yourrepo&#39;</span><span class="p">,</span>
-    <span class="s">&#39;analytics_id&#39;</span><span class="p">:</span> <span class="s">&#39;UA-your-number-here&#39;</span><span class="p">,</span>
-    <span class="s">&#39;logo&#39;</span><span class="p">:</span> <span class="s">&#39;logo.png&#39;</span>
+    <span class="s1">&#39;github&#39;</span><span class="p">:</span> <span class="s1">&#39;yourname/yourrepo&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;analytics_id&#39;</span><span class="p">:</span> <span class="s1">&#39;UA-your-number-here&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;logo&#39;</span><span class="p">:</span> <span class="s1">&#39;logo.png&#39;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -135,14 +137,11 @@ work:</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </aside>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Getting Started &mdash; bt 0.2.3 documentation</title>
+    <title>Getting Started &#8212; bt 0.2.5 documentation</title>
     
     <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,19 +14,21 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.3',
+        VERSION:     '0.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="bt 0.2.3 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Algorithms" href="algos.html" />
-    <link rel="prev" title="bt Package" href="bt.html" />
+    <link rel="prev" title="bt - Flexible Backtesting for Python" href="index.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -49,7 +51,7 @@
 <h2>Installing bt<a class="headerlink" href="#installing-bt" title="Permalink to this headline">¶</a></h2>
 <p>The easiest way to install <code class="docutils literal"><span class="pre">bt</span></code> is from the <a class="reference external" href="https://pypi.python.org/pypi/bt/">Python Package Index</a>
 using <code class="docutils literal"><span class="pre">pip</span></code> or <code class="docutils literal"><span class="pre">easy_insatll</span></code>:</p>
-<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>pip install bt
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ pip install bt
 </pre></div>
 </div>
 <p>Since bt has many dependencies, we strongly recommend installing the <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda Scientific Python
@@ -91,7 +93,7 @@ yet convinced, head over to their website.</p>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html#roadmap">Roadmap</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href=""> Installation Guide</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"> Installation Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installing-bt">Installing bt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#recommended-setup">Recommended Setup</a></li>
 </ul>
@@ -111,14 +113,11 @@ yet convinced, head over to their website.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </aside>

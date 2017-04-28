@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Algorithms &mdash; bt 0.2.3 documentation</title>
+    <title>Algorithms &#8212; bt 0.2.5 documentation</title>
     
     <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,17 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.3',
+        VERSION:     '0.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="bt 0.2.3 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="The Tree Structure" href="tree.html" />
     <link rel="prev" title="Getting Started" href="install.html" />
          
@@ -116,27 +118,27 @@ the &#8220;sets&#8221; and the &#8220;requires&#8221;. See the doctrings of
 <p>In most cases, Algos must preserve some kind of state. In this case, it is
 easier to implement them as classes and define the __call__ method, like
 below:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyAlgo</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyAlgo</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg1</span> <span class="o">=</span> <span class="n">arg1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg2</span> <span class="o">=</span> <span class="n">arg2</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="c"># my logic goes here</span>
+        <span class="c1"># my logic goes here</span>
 
-        <span class="c"># accessing/storing variables through target.temp[&#39;key&#39;]</span>
+        <span class="c1"># accessing/storing variables through target.temp[&#39;key&#39;]</span>
 
-        <span class="c"># remember to return a bool - True in most cases</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="c1"># remember to return a bool - True in most cases</span>
+        <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 </div>
 <p>However, for Algos that do not need to preserve any state, you may simply
 implement them as a basic function that takes one argument - the Strategy:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">MyAlgo2</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
-    <span class="c"># all the logic</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">MyAlgo2</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+    <span class="c1"># all the logic</span>
 
-    <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 </div>
 </div>
@@ -161,7 +163,7 @@ implement them as a basic function that takes one argument - the Strategy:</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href=""> All About Algos</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"> All About Algos</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#data-passing">Data Passing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a></li>
@@ -181,14 +183,11 @@ implement them as a basic function that takes one argument - the Strategy:</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </aside>
