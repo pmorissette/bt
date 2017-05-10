@@ -678,7 +678,7 @@ class StrategyBase(Node):
         Rebalance a child to a given weight.
 
         This is a helper method to simplify code logic. This method is used
-        when we want to se the weight of a particular child to a set amount.
+        when we want to set the weight of a particular child to a set amount.
         It is similar to allocate, but it calculates the appropriate allocation
         based on the current weight.
 
@@ -983,7 +983,7 @@ class SecurityBase(Node):
             self._outlay = 0
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double,
-               i=cy.int)
+               full_outlay=cy.double, i=cy.int)
     def allocate(self, amount, update=True):
         """
         This allocates capital to the Security. This is the method used to
@@ -997,7 +997,6 @@ class SecurityBase(Node):
         Args:
             * amount (float): Amount of adjustment.
             * update (bool): Force update?
-
         """
 
         # will need to update if this has been idle for a while...
@@ -1059,30 +1058,35 @@ class SecurityBase(Node):
         # sell additional units to fund this requirement. As such, q must once
         # again decrease.
         #
-        if not q == -self._position:
-            full_outlay, _, _ = self.outlay(q)
+        if q != -self._position:
+            full_outlay, outlay, _ = self.outlay(q)
 
-            # if full outlay > amount, we must decrease the magnitude of `q`
-            # this can potentially lead to an infinite loop if the commission
-            # per share > price per share. Howerver, we cannot really detect
-            # that in advance since the function can be non-linear (say a fn
-            # like max(1, abs(q) * 0.01). Nevertheless, we want to avoid these
-            # situtaions.
-            # cap the maximum number of iterations to 1e4 and raise exception
-            # if we get there
-            i = 0
-            while full_outlay > amount and q != 0:
-                q = q - 1
-                full_outlay, _, _ = self.outlay(q)
-                i = i + 1
-                if i > 1e4:
-                    raise Exception(
-                        'Potentially infinite loop detected. This occured '
-                        'while trying to reduce the amount of shares purchased'
-                        ' to respect the outlay <= amount rule. This is most '
-                        'likely due to a commission function that outputs a '
-                        'commission that is greater than the amount of cash '
-                        'a short sale can raise.')
+            if self.integer_positions:
+
+                # if full outlay > amount, we must decrease the magnitude of `q`
+                # this can potentially lead to an infinite loop if the commission
+                # per share > price per share. Howerver, we cannot really detect
+                # that in advance since the function can be non-linear (say a fn
+                # like max(1, abs(q) * 0.01). Nevertheless, we want to avoid these
+                # situtaions.
+                # cap the maximum number of iterations to 1e4 and raise exception
+                # if we get there
+                i = 0
+                while full_outlay > amount and q != 0:
+                    q -= 1
+                    full_outlay, _, _ = self.outlay(q)
+                    i += 1
+
+                    if i > 1e4:
+                        raise Exception(
+                            'Potentially infinite loop detected. This occured '
+                            'while trying to reduce the amount of shares purchased'
+                            ' to respect the outlay <= amount rule. This is most '
+                            'likely due to a commission function that outputs a '
+                            'commission that is greater than the amount of cash '
+                            'a short sale can raise.')
+            else:
+                q /= (full_outlay / outlay)
 
         # if last step led to q == 0, then we can return just like above
         if q == 0:
