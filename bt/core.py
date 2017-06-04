@@ -1072,7 +1072,11 @@ class SecurityBase(Node):
             # if we get there
             i = 0
             while full_outlay > amount and q != 0:
-                q = q - 1
+                if self.integer_positions:
+                    q_delta = 1
+                else:
+                    q_delta = min(1., (full_outlay - amount) / self._price)
+                q = q - q_delta
                 full_outlay, _, _ = self.outlay(q)
                 i = i + 1
                 if i > 1e4:
