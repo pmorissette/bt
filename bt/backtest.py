@@ -413,7 +413,7 @@ class Result(ffn.GroupStats):
 
         """
         if strategy_name is None:
-            self.backtest_list[0].name
+            strategy_name = self.backtest_list[0].name
 
         # extract strategy given strategy_name
         s = self.backtests[strategy_name].strategy
