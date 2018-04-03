@@ -763,3 +763,40 @@ def test_run_every_n_periods_offset():
 
     target.now = pd.to_datetime('2010-01-05')
     assert algo(target)
+
+
+def test_or():
+    target = mock.MagicMock()
+    target.temp = {}
+
+    #run on the 1/2/18
+    runOnDateAlgo = algos.RunOnDate(pd.to_datetime('2018-01-02'))
+
+    #run on the first of the month
+    runMonthlyAlgo = algos.RunMonthly()
+    #initialize the first value
+    target.now = pd.to_datetime('2017-12-31')
+    runMonthlyAlgo(target)
+    orAlgo = algos.Or([runMonthlyAlgo, runOnDateAlgo])
+
+    #verify it returns true when runMonthly is true
+    target.now = pd.to_datetime('2018-01-01')
+    assert orAlgo(target)
+
+    # verify it returns true when runOnDate istrue
+    target.now = pd.to_datetime('2018-01-02')
+    assert orAlgo(target)
+
+    # verify it returns false when neither algo returns true
+    target.now = pd.to_datetime('2018-01-03')
+    assert not orAlgo(target)
+
+    # verify it returns true when both algos return true
+    target.now = pd.to_datetime('2018-02-01')
+    runOnDateAlgo = algos.RunOnDate(pd.to_datetime('2018-02-01'))
+    orAlgo = algos.Or([runMonthlyAlgo, runOnDateAlgo])
+    assert orAlgo(target)
+
+
+
+
