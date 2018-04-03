@@ -1447,3 +1447,36 @@ class Require(Algo):
             return self.if_none
 
         return self.pred(item)
+
+
+class Or(Algo):
+    """
+    Flow control Algo
+
+    It useful for combining multiple signals into one signal.
+    For example, we might want two different rebalance signals to work together:
+
+        runOnDateAlgo = bt.algos.RunOnDate(pdf.index[0]) # where pdf.index[0] is the first date in our time series
+        runMonthlyAlgo = bt.algos.RunMonthly()
+        orAlgo = Or([runMonthlyAlgo,runOnDateAlgo])
+        
+    orAlgo will return True if it is the first date or if it is 1st of the month
+
+    Args:
+        * list_of_algos: Iterable list of algos.
+            Runs each algo and
+            returns true if any algo returns true.
+    """
+
+    def __init__(self, list_of_algos):
+        super(Or, self).__init__()
+        self._list_of_algos = list_of_algos
+        return
+
+    def __call__(self, target):
+        res = False
+        for algo in self._list_of_algos:
+            tempRes = algo(target)
+            res = res | tempRes
+
+        return res
