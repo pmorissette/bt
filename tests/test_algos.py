@@ -1,7 +1,13 @@
 from __future__ import division
 from datetime import datetime
 
-import mock
+import sys
+if sys.version_info < (3, 3):
+    import mock
+else:
+    from unittest import mock
+
+
 import pandas as pd
 import numpy as np
 from nose.tools import assert_almost_equal as aae

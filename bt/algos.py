@@ -1459,7 +1459,7 @@ class Or(Algo):
         runOnDateAlgo = bt.algos.RunOnDate(pdf.index[0]) # where pdf.index[0] is the first date in our time series
         runMonthlyAlgo = bt.algos.RunMonthly()
         orAlgo = Or([runMonthlyAlgo,runOnDateAlgo])
-        
+
     orAlgo will return True if it is the first date or if it is 1st of the month
 
     Args:
