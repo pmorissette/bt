@@ -70,7 +70,7 @@ class PrintInfo(Algo):
         self.fmt_string = fmt_string
 
     def __call__(self, target):
-        print(self.fmt_string.format(target.__dict__))
+        print(self.fmt_string.format(**target.__dict__))
         return True
 
 
