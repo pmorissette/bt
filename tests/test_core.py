@@ -6,7 +6,11 @@ from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 import pandas as pd
 import numpy as np
 from nose.tools import assert_almost_equal as aae
-import mock
+import sys
+if sys.version_info < (3, 3):
+    import mock
+else:
+    from unittest import mock
 
 
 def test_node_tree():
@@ -1890,7 +1894,7 @@ def test_outlays():
     # out update
     s.update(dts[i])
 
-    print c1.data['outlay']
+    print(c1.data['outlay'])
     assert c1.data['outlay'][dts[1]] == (-4 * 100)
     assert c2.data['outlay'][dts[1]] == 100
 
@@ -2013,7 +2017,7 @@ def test_degenerate_shorting():
     try:
         c1.allocate(-10)
         assert False
-    except Exception, e:
+    except Exception as e:
         assert 'infinite' in e.message
 
 def test_securitybase_allocate():
