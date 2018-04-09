@@ -1071,7 +1071,7 @@ class SecurityBase(Node):
             # cap the maximum number of iterations to 1e4 and raise exception
             # if we get there
             i = 0
-            while full_outlay > amount and q != 0:
+            while not np.isclose(full_outlay,amount,rtol=0.) and full_outlay > amount and q != 0:
                 q = q - 1
                 full_outlay, _, _ = self.outlay(q)
                 i = i + 1
