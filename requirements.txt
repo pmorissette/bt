@@ -1,3 +1,4 @@
 pandas
 ipython
 coverage
+cython
