@@ -1,4 +1,9 @@
+cython
+future
+numpy
 pandas
+matplotlib
+ffn
+pyprind
 ipython
 coverage
-cython
