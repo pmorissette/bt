@@ -249,7 +249,7 @@ def test_update_fails_if_price_is_nan_and_position_open():
         c1.update(dts[i], data.ix[dts[i]])
         assert False
     except Exception as e:
-        assert e.message.startswith('Position is open')
+        assert str(e).startswith('Position is open')
 
     # on the other hand, if position was 0, this should be fine, and update
     # value to 0
@@ -2018,7 +2018,7 @@ def test_degenerate_shorting():
         c1.allocate(-10)
         assert False
     except Exception as e:
-        assert 'infinite' in e.message
+        assert 'infinite' in str(e)
 
 def test_securitybase_allocate():
     c1 = SecurityBase('c1')
