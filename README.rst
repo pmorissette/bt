@@ -1,6 +1,9 @@
 .. image:: http://pmorissette.github.io/bt/_static/logo.png
 
-bt - Flexible Backtesting for Python
+.. image:: https://travis-ci.org/pmorissette/bt.svg?branch=master
+    :target: https://travis-ci.org/pmorissette/bt
+
+bt - Flexible Backtesting for Python 
 ====================================
 
 bt is currently in alpha stage - if you find a bug, please submit an issue.
