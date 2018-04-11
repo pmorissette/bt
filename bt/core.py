@@ -118,7 +118,7 @@ class Node(object):
         # set default value for now
         self.now = 0
         # make sure root has stale flag
-        # used to avoid unncessary update
+        # used to avoid unnecessary update
         # sometimes we change values in the tree and we know that we will need
         # to update if another node tries to access a given value (say weight).
         # This avoid calling the update until it is actually needed.
@@ -900,7 +900,7 @@ class SecurityBase(Node):
 
         """
         # if we already have all the prices, we will store them to speed up
-        # future udpates
+        # future updates
         try:
             prices = universe[self.name]
         except KeyError:
@@ -990,7 +990,7 @@ class SecurityBase(Node):
         buy/sell the security.
 
         A given amount of shares will be determined on the current price, a
-        commisison will be calculated based on the parent's commission fn, and
+        commission will be calculated based on the parent's commission fn, and
         any remaining capital will be passed back up  to parent as an
         adjustment.
 
@@ -1067,17 +1067,18 @@ class SecurityBase(Node):
             # per share > price per share. Howerver, we cannot really detect
             # that in advance since the function can be non-linear (say a fn
             # like max(1, abs(q) * 0.01). Nevertheless, we want to avoid these
-            # situtaions.
+            # situations.
             # cap the maximum number of iterations to 1e4 and raise exception
             # if we get there
             i = 0
             while not np.isclose(full_outlay,amount,rtol=0.) and full_outlay > amount and q != 0:
                 q = q - 1
+                
                 full_outlay, _, _ = self.outlay(q)
                 i = i + 1
                 if i > 1e4:
                     raise Exception(
-                        'Potentially infinite loop detected. This occured '
+                        'Potentially infinite loop detected. This occurred '
                         'while trying to reduce the amount of shares purchased'
                         ' to respect the outlay <= amount rule. This is most '
                         'likely due to a commission function that outputs a '
@@ -1151,12 +1152,12 @@ class Algo(object):
     Algo should follow the unix philosophy - do one thing well.
 
     In practice, algos are simply a function that receives one argument, the
-    Strategy (refered to as target) and are expected to return a bool.
+    Strategy (referred to as target) and are expected to return a bool.
 
     When some state preservation is necessary between calls, the Algo
     object can be used (this object). The __call___ method should be
     implemented and logic defined therein to mimic a function call. A
-    simple function may also be used if no state preservation is neceesary.
+    simple function may also be used if no state preservation is necessary.
 
     Args:
         * name (str): Algo name
@@ -1200,7 +1201,7 @@ class AlgoStack(Algo):
                                     for x in self.algos)
 
     def __call__(self, target):
-        # normal runing mode
+        # normal running mode
         if not self.check_run_always:
             for algo in self.algos:
                 if not algo(target):
@@ -1247,8 +1248,10 @@ class Strategy(StrategyBase):
 
     """
 
-    def __init__(self, name, algos=[], children=None):
+    def __init__(self, name, algos=None, children=None):
         super(Strategy, self).__init__(name, children=children)
+        if algos is None:
+            algos = []
         self.stack = AlgoStack(*algos)
         self.temp = {}
         self.perm = {}

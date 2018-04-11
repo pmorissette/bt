@@ -1,4 +1,5 @@
 from __future__ import division
+
 import copy
 
 import bt
@@ -1432,6 +1433,32 @@ def test_strategybase_tree_rebalance():
     assert s.value == 999
     assert c1.weight == 400.0 / 999
     assert c2.weight == 0
+
+
+def test_strategybase_tree_decimal_position_rebalance():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+    s.use_integer_positions(False)
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    s.adjust(1000.2)
+    s.rebalance(0.42, 'c1')
+    s.rebalance(0.58, 'c2')
+
+    aae(c1.value, 420.084)
+    aae(c2.value, 580.116)
+    aae(c1.value + c2.value, 1000.2)
 
 
 def test_rebalance_child_not_in_tree():
