@@ -2080,3 +2080,43 @@ def test_securitybase_allocate():
     #we can get the full_outlay that was calculated by
     # original capital - current capital
     assert np.isclose(full_outlay, original_capital - s._capital, rtol=0.)
+
+
+def test_securitybase_allocate_commisions():
+
+    date_span = pd.DatetimeIndex(start='10/1/2017', end='10/11/2017', freq='B')
+    numper = len(date_span.values)
+    comms = 0.01
+
+    data = [[10, 15, 20, 25, 30, 35, 40, 45],
+            [10, 10, 10, 10, 20, 20, 20, 20],
+            [20, 20, 20, 30, 30, 30, 40, 40],
+            [20, 10, 20, 10, 20, 10, 20, 10]]
+    data = [[row[i] for row in data] for i in range(len(data[0]))]  # Transpose
+    price = pd.DataFrame(data=data, index=date_span)
+    price.columns = ['a', 'b', 'c', 'd']
+    # price = price[['a', 'b']]
+
+    sig1 = pd.DataFrame(price['a'] >= price['b'] + 10, columns=['a'])
+    sig2 = pd.DataFrame(price['a'] < price['b'] + 10, columns=['b'])
+    signal = sig1.join(sig2)
+
+    signal1 = price.diff(1) > 0
+    signal2 = price.diff(1) < 0
+
+    tw = price.copy()
+    tw.set_value(tw.index, tw.columns, 0)  # Initialize Set everything to 0
+
+    tw[signal1] = -1.0
+    tw[signal2] = 1.0
+
+    s1 = bt.Strategy('long_short', [bt.algos.WeighTarget(tw),
+                                    bt.algos.RunDaily(),
+                                    bt.algos.Rebalance()])
+
+    ####now we create the Backtest , commissions=(lambda q, p: abs(p * q) * comms)
+    t = bt.Backtest(s1, price, initial_capital=1000000, commissions=(lambda q, p: abs(p * q) * comms))
+
+    ####and let's run it!
+    res = bt.run(t)
+    ########################
