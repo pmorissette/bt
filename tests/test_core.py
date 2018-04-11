@@ -7,7 +7,11 @@ from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 import pandas as pd
 import numpy as np
 from nose.tools import assert_almost_equal as aae
-import mock
+import sys
+if sys.version_info < (3, 3):
+    import mock
+else:
+    from unittest import mock
 
 
 def test_node_tree():
@@ -2042,3 +2046,37 @@ def test_degenerate_shorting():
         assert False
     except Exception as e:
         assert 'infinite' in str(e)
+
+def test_securitybase_allocate():
+    c1 = SecurityBase('c1')
+    s = StrategyBase('p', [c1])
+
+    c1 = s['c1']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1'], data=100.)
+    # set the price
+    data['c1'][dts[0]] = 91.40246706608193
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.ix[dts[i]])
+
+    # allocate 100000 to strategy
+    original_capital = 100000.
+    s.adjust(original_capital)
+    #not integer positions
+    c1.integer_positions = False
+    #set the full_outlay and amount
+    full_outlay = 1999.693706988672
+    amount = 1999.6937069886717
+
+    c1.allocate(amount)
+
+    #the results that we want to be true
+    assert np.isclose(full_outlay ,amount,rtol=0.)
+
+    #check that the quantity wasn't decreased and the full_outlay == amount
+    #we can get the full_outlay that was calculated by
+    # original capital - current capital
+    assert np.isclose(full_outlay, original_capital - s._capital, rtol=0.)

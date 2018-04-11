@@ -1071,12 +1071,9 @@ class SecurityBase(Node):
             # cap the maximum number of iterations to 1e4 and raise exception
             # if we get there
             i = 0
-            while full_outlay > amount and q != 0:
-                if self.integer_positions:
-                    q_delta = 1
-                else:
-                    q_delta = min(1., (full_outlay - amount) / self._price)
-                q = q - q_delta
+            while not np.isclose(full_outlay,amount,rtol=0.) and full_outlay > amount and q != 0:
+                q = q - 1
+                
                 full_outlay, _, _ = self.outlay(q)
                 i = i + 1
                 if i > 1e4:

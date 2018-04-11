@@ -2,7 +2,11 @@ from __future__ import division
 import bt
 import pandas as pd
 import numpy as np
-import mock
+import sys
+if sys.version_info < (3, 3):
+    import mock
+else:
+    from unittest import mock
 
 
 def test_backtest_copies_strategy():
