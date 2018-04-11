@@ -180,12 +180,10 @@ class RunWeekly(Algo):
         # create pandas.Timestamp for useful .week property
         now = pd.Timestamp(now)
 
-        if self.last_date is None:
-            self.last_date = now
-            return False
-
         result = False
-        if now.week != self.last_date.week:
+        if self.last_date is None:
+            result = True
+        elif now.week != self.last_date.week:
             result = True
 
         self.last_date = now
@@ -219,12 +217,10 @@ class RunMonthly(Algo):
         if now is None:
             return False
 
-        if self.last_date is None:
-            self.last_date = now
-            return False
-
         result = False
-        if now.month != self.last_date.month:
+        if self.last_date is None:
+            result = True
+        elif now.month != self.last_date.month:
             result = True
 
         self.last_date = now
@@ -259,12 +255,10 @@ class RunQuarterly(Algo):
         if now is None:
             return False
 
-        if self.last_date is None:
-            self.last_date = now
-            return False
-
         result = False
-        if now.quarter != self.last_date.quarter:
+        if self.last_date is None:
+            result = True
+        elif now.month != self.last_date.month and now.month % 3 == 1:
             result = True
 
         self.last_date = now
@@ -298,12 +292,10 @@ class RunYearly(Algo):
         if now is None:
             return False
 
-        if self.last_date is None:
-            self.last_date = now
-            return False
-
         result = False
-        if now.year != self.last_date.year:
+        if self.last_date is None:
+            result = True
+        elif now.year != self.last_date.year:
             result = True
 
         self.last_date = now
