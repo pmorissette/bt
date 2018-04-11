@@ -94,6 +94,10 @@ def test_run_weekly():
     target.now = datetime(2010, 1, 1)
     assert not algo(target)
 
+    # check next year
+    target.now = datetime(2012, 1, 1)
+    assert algo(target)
+
 
 def test_run_monthly():
     algo = algos.RunMonthly()
@@ -127,6 +131,10 @@ def test_run_monthly():
     target.now = datetime(2010, 1, 1)
     assert not algo(target)
 
+    # check next year
+    target.now = datetime(2012, 1, 1)
+    assert algo(target)
+
 
 def test_run_quarterly():
     algo = algos.RunQuarterly()
@@ -155,13 +163,17 @@ def test_run_quarterly():
     assert algo(target)
 
     target.now = datetime(2011, 1, 25)
-    assert not algo(target)
+    assert algo(target)
 
     # check run first time
     algo = algos.RunQuarterly(run_on_first_call=False)
 
     target.now = datetime(2010, 1, 1)
     assert not algo(target)
+
+    # check next year
+    target.now = datetime(2012, 1, 1)
+    assert algo(target)
 
 
 def test_run_yearly():
@@ -173,18 +185,20 @@ def test_run_yearly():
     assert algo(target)
 
     target.now = datetime(2010, 5, 1)
-    actual = algo(target)
-    assert not actual
+    assert not algo(target)
 
     target.now = datetime(2011, 1, 1)
-    actual = algo(target)
-    assert actual
+    assert algo(target)
 
     # check run first time
     algo = algos.RunYearly(run_on_first_call=False)
 
     target.now = datetime(2010, 1, 1)
     assert not algo(target)
+
+    # check next year
+    target.now = datetime(2012, 1, 1)
+    assert algo(target)
 
 
 def test_run_on_date():

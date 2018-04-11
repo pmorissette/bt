@@ -193,6 +193,8 @@ class RunWeekly(Algo):
         result = False
         if self.last_date is None:
             result = self._run_on_first_call
+        elif now.year != self.last_date.year:
+            result = True
         elif now.week != self.last_date.week:
             result = True
 
@@ -234,6 +236,8 @@ class RunMonthly(Algo):
         result = False
         if self.last_date is None:
             result = self._run_on_first_call
+        elif now.year != self.last_date.year:
+            result = True
         elif now.month != self.last_date.month:
             result = True
 
@@ -273,10 +277,15 @@ class RunQuarterly(Algo):
         if now is None:
             return False
 
+        # create pandas.Timestamp for useful .quarter property
+        now = pd.Timestamp(now)
+
         result = False
         if self.last_date is None:
             result = self._run_on_first_call
-        elif now.month != self.last_date.month and now.month % 3 == 1:
+        elif now.year != self.last_date.year:
+            result = True
+        elif now.month != self.last_date.month and now.quarter != self.last_date.quarter:
             result = True
 
         self.last_date = now
