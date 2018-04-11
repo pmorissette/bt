@@ -93,8 +93,12 @@ class RunOnce(Algo):
     """
     Returns True on first run then returns False.
 
+    Args:
+        * run_on_first_call: bool which determines if it runs the first time the algo is called
+
     As the name says, the algo only runs once. Useful in situations
     where we want to run the logic once (buy and hold for example).
+
     """
 
     def __init__(self):
@@ -117,15 +121,19 @@ class RunDaily(Algo):
     """
     Returns True on day change.
 
+    Args:
+        * run_on_first_call: bool which determines if it runs the first time the algo is called
+
     Returns True if the target.now's day has changed
     since the last run, if not returns False. Useful for
     daily rebalancing strategies.
 
     """
 
-    def __init__(self):
+    def __init__(self, run_on_first_call=True):
         super(RunDaily, self).__init__()
         self.last_date = None
+        self._run_on_first_call = run_on_first_call
 
     def __call__(self, target):
         # get last date
@@ -140,8 +148,7 @@ class RunDaily(Algo):
 
         result = False
         if self.last_date is None:
-            self.last_date = now
-            result = True
+            result = self._run_on_first_call
         elif now.date() != self.last_date.date():
             result = True
 
@@ -154,6 +161,9 @@ class RunWeekly(Algo):
     """
     Returns True on week change.
 
+    Args:
+        * run_on_first_call: bool which determines if it runs the first time the algo is called
+
     Returns True if the target.now's week has changed
     since the last run, if not returns False. Useful for
     weekly rebalancing strategies.
@@ -164,9 +174,10 @@ class RunWeekly(Algo):
 
     """
 
-    def __init__(self):
+    def __init__(self, run_on_first_call=True):
         super(RunWeekly, self).__init__()
         self.last_date = None
+        self._run_on_first_call = run_on_first_call
 
     def __call__(self, target):
         # get last date
@@ -181,7 +192,7 @@ class RunWeekly(Algo):
 
         result = False
         if self.last_date is None:
-            result = True
+            result = self._run_on_first_call
         elif now.week != self.last_date.week:
             result = True
 
@@ -194,6 +205,9 @@ class RunMonthly(Algo):
     """
     Returns True on month change.
 
+    Args:
+        * run_on_first_call: bool which determines if it runs the first time the algo is called
+
     Returns True if the target.now's month has changed
     since the last run, if not returns False. Useful for
     monthly rebalancing strategies.
@@ -204,9 +218,10 @@ class RunMonthly(Algo):
 
     """
 
-    def __init__(self):
+    def __init__(self, run_on_first_call=True):
         super(RunMonthly, self).__init__()
         self.last_date = None
+        self._run_on_first_call = run_on_first_call
 
     def __call__(self, target):
         # get last date
@@ -218,7 +233,7 @@ class RunMonthly(Algo):
 
         result = False
         if self.last_date is None:
-            result = True
+            result = self._run_on_first_call
         elif now.month != self.last_date.month:
             result = True
 
@@ -231,6 +246,9 @@ class RunQuarterly(Algo):
     """
     Returns True on quarter change.
 
+    Args:
+        * run_on_first_call: bool which determines if it runs the first time the algo is called
+
     Returns True if the target.now's month has changed
     since the last run and the month is the first month
     of the quarter, if not returns False. Useful for
@@ -242,9 +260,10 @@ class RunQuarterly(Algo):
 
     """
 
-    def __init__(self):
+    def __init__(self, run_on_first_call=True):
         super(RunQuarterly, self).__init__()
         self.last_date = None
+        self._run_on_first_call = run_on_first_call
 
     def __call__(self, target):
         # get last date
@@ -256,7 +275,7 @@ class RunQuarterly(Algo):
 
         result = False
         if self.last_date is None:
-            result = True
+            result = self._run_on_first_call
         elif now.month != self.last_date.month and now.month % 3 == 1:
             result = True
 
@@ -269,6 +288,9 @@ class RunYearly(Algo):
     """
     Returns True on year change.
 
+    Args:
+        * run_on_first_call: bool which determines if it runs the first time the algo is called
+
     Returns True if the target.now's year has changed
     since the last run, if not returns False. Useful for
     yearly rebalancing strategies.
@@ -279,9 +301,10 @@ class RunYearly(Algo):
 
     """
 
-    def __init__(self):
+    def __init__(self, run_on_first_call=True):
         super(RunYearly, self).__init__()
         self.last_date = None
+        self._run_on_first_call = run_on_first_call
 
     def __call__(self, target):
         # get last date
@@ -293,7 +316,7 @@ class RunYearly(Algo):
 
         result = False
         if self.last_date is None:
-            result = True
+            result = self._run_on_first_call
         elif now.year != self.last_date.year:
             result = True
 

@@ -68,7 +68,7 @@ def test_run_weekly():
     assert not algo(target)
 
     target.now = datetime(2010, 1, 1)
-    assert not algo(target)
+    assert algo(target)
 
     target.now = datetime(2010, 1, 15)
     assert algo(target)
@@ -88,6 +88,12 @@ def test_run_weekly():
     target.now = datetime(2014, 1, 6)
     assert algo(target)
 
+    # check run first time
+    algo = algos.RunWeekly(run_on_first_call=False)
+
+    target.now = datetime(2010, 1, 1)
+    assert not algo(target)
+
 
 def test_run_monthly():
     algo = algos.RunMonthly()
@@ -98,7 +104,7 @@ def test_run_monthly():
     assert not algo(target)
 
     target.now = datetime(2010, 1, 1)
-    assert not algo(target)
+    assert algo(target)
 
     target.now = datetime(2010, 1, 15)
     assert not algo(target)
@@ -115,6 +121,48 @@ def test_run_monthly():
     target.now = datetime(2011, 1, 25)
     assert algo(target)
 
+    # check run first time
+    algo = algos.RunMonthly(run_on_first_call=False)
+
+    target.now = datetime(2010, 1, 1)
+    assert not algo(target)
+
+
+def test_run_quarterly():
+    algo = algos.RunQuarterly()
+
+    target = mock.MagicMock()
+
+    target.now = None
+    assert not algo(target)
+
+    target.now = datetime(2010, 1, 1)
+    assert algo(target)
+
+    target.now = datetime(2010, 1, 15)
+    assert not algo(target)
+
+    target.now = datetime(2010, 3, 31)
+    assert not algo(target)
+
+    target.now = datetime(2010, 4, 1)
+    assert algo(target)
+
+    target.now = datetime(2010, 7, 2)
+    assert algo(target)
+
+    target.now = datetime(2010, 12, 25)
+    assert algo(target)
+
+    target.now = datetime(2011, 1, 25)
+    assert not algo(target)
+
+    # check run first time
+    algo = algos.RunQuarterly(run_on_first_call=False)
+
+    target.now = datetime(2010, 1, 1)
+    assert not algo(target)
+
 
 def test_run_yearly():
     algo = algos.RunYearly()
@@ -122,8 +170,7 @@ def test_run_yearly():
     target = mock.MagicMock()
 
     target.now = datetime(2010, 1, 1)
-    actual = algo(target)
-    assert not actual
+    assert algo(target)
 
     target.now = datetime(2010, 5, 1)
     actual = algo(target)
@@ -132,6 +179,12 @@ def test_run_yearly():
     target.now = datetime(2011, 1, 1)
     actual = algo(target)
     assert actual
+
+    # check run first time
+    algo = algos.RunYearly(run_on_first_call=False)
+
+    target.now = datetime(2010, 1, 1)
+    assert not algo(target)
 
 
 def test_run_on_date():
