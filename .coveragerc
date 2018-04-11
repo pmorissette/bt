@@ -1,0 +1,15 @@
+[run]
+branch = True
+
+[report]
+exclude_lines =
+    if __name__ == .__main__.:
+    if self.debug:
+    if self.progress_bar:
+    pragma: no cover
+    raise NotImplementedError
+
+ignore_errors = True
+omit =
+    bt/tests/*
+    bt/docs/*
