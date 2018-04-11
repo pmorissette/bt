@@ -1921,7 +1921,7 @@ def test_outlays():
     # out update
     s.update(dts[i])
 
-    print(c1.data['outlay'])
+    #print(c1.data['outlay'])
     assert c1.data['outlay'][dts[1]] == (-4 * 100)
     assert c2.data['outlay'][dts[1]] == 100
 
