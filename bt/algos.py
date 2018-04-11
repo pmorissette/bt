@@ -138,12 +138,11 @@ class RunDaily(Algo):
         # create pandas.Timestamp for useful .week property
         now = pd.Timestamp(now)
 
+        result = False
         if self.last_date is None:
             self.last_date = now
-            return False
-
-        result = False
-        if now.date() != self.last_date.date():
+            result = True
+        elif now.date() != self.last_date.date():
             result = True
 
         self.last_date = now
