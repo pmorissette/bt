@@ -328,6 +328,8 @@ class RunYearly(Algo):
             result = self._run_on_first_call
         elif now.year != self.last_date.year:
             result = True
+        elif now.year != self.last_date.year:
+            result = True
 
         self.last_date = now
         return result
