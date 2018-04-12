@@ -2011,7 +2011,7 @@ def test_fixed_commissions():
 
     # now we are going to go short c2
     # we want to 'raise' 100 dollars. Since we need at a minimum 100, but we
-    # also have commisisons, we will actually short 2 units in order to raise
+    # also have commissions, we will actually short 2 units in order to raise
     # at least 100
     c2.allocate(-100)
     s.update(dts[i])
@@ -2045,7 +2045,8 @@ def test_degenerate_shorting():
         c1.allocate(-10)
         assert False
     except Exception as e:
-        assert 'infinite' in str(e)
+        assert 'full_outlay should always be approaching amount' in str(e)
+
 
 def test_securitybase_allocate():
     c1 = SecurityBase('c1')
@@ -2065,19 +2066,19 @@ def test_securitybase_allocate():
     # allocate 100000 to strategy
     original_capital = 100000.
     s.adjust(original_capital)
-    #not integer positions
+    # not integer positions
     c1.integer_positions = False
-    #set the full_outlay and amount
+    # set the full_outlay and amount
     full_outlay = 1999.693706988672
     amount = 1999.6937069886717
 
     c1.allocate(amount)
 
-    #the results that we want to be true
+    # the results that we want to be true
     assert np.isclose(full_outlay ,amount,rtol=0.)
 
-    #check that the quantity wasn't decreased and the full_outlay == amount
-    #we can get the full_outlay that was calculated by
+    # check that the quantity wasn't decreased and the full_outlay == amount
+    # we can get the full_outlay that was calculated by
     # original capital - current capital
     assert np.isclose(full_outlay, original_capital - s._capital, rtol=0.)
 
@@ -2105,7 +2106,7 @@ def test_securitybase_allocate_commisions():
     signal2 = price.diff(1) < 0
 
     tw = price.copy()
-    tw.set_value(tw.index, tw.columns, 0)  # Initialize Set everything to 0
+    tw.loc[:,:] = 0  # Initialize Set everything to 0
 
     tw[signal1] = -1.0
     tw[signal2] = 1.0
