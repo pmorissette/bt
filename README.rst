@@ -3,6 +3,9 @@
 .. image:: https://travis-ci.org/pmorissette/bt.svg?branch=master
     :target: https://travis-ci.org/pmorissette/bt
 
+.. image:: https://codecov.io/gh/pmorissette/bt/branch/master/graph/badge.svg
+    :target: https://codecov.io/pmorissette/bt
+
 bt - Flexible Backtesting for Python 
 ====================================
 
