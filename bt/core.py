@@ -1050,7 +1050,7 @@ class SecurityBase(Node):
         # we want to ensure that
         #
         # - In the event of a positive amount, this indicates the maximum
-        # amount a given security can use up for a purchse. Therefore, if
+        # amount a given security can use up for a purchase. Therefore, if
         # commissions push us above this amount, we cannot buy `q`, and must
         # decrease its value
         #
@@ -1064,17 +1064,44 @@ class SecurityBase(Node):
 
             # if full outlay > amount, we must decrease the magnitude of `q`
             # this can potentially lead to an infinite loop if the commission
-            # per share > price per share. Howerver, we cannot really detect
+            # per share > price per share. However, we cannot really detect
             # that in advance since the function can be non-linear (say a fn
             # like max(1, abs(q) * 0.01). Nevertheless, we want to avoid these
             # situations.
             # cap the maximum number of iterations to 1e4 and raise exception
             # if we get there
+            # if integer positions then we know we are stuck if q doesn't change
+
+            # if integer positions is false then we want full_outlay == amount
+            # if integer positions is true then we want to be at the q where
+            #   if we bought 1 more then we wouldn't have enough cash
             i = 0
-            while not np.isclose(full_outlay,amount,rtol=0.) and full_outlay > amount and q != 0:
-                q = q - 1
-                
+            last_q = q
+            last_amount_short = full_outlay - amount
+            while not np.isclose(full_outlay, amount, rtol=0.) and q != 0:
+
+                dq_wout_considering_tx_costs = (full_outlay - amount)/(self._price * self.multiplier)
+                q = q - dq_wout_considering_tx_costs
+
+                if self.integer_positions:
+                    q = math.floor(q)
+
                 full_outlay, _, _ = self.outlay(q)
+
+                # if our q is too low and we have integer positions
+                # then we know that the correct quantity is the one  where
+                # the outlay of q + 1 < amount. i.e. if we bought one more
+                # position then we wouldn't have enough cash
+                if self.integer_positions:
+
+                    full_outlay_of_1_more, _, _ = self.outlay(q + 1)
+
+                    if full_outlay < amount and full_outlay_of_1_more > amount:
+                        break
+
+                # if not integer positions then we should keep going until
+                # full_outlay == amount or is close enough
+
                 i = i + 1
                 if i > 1e4:
                     raise Exception(
@@ -1084,6 +1111,25 @@ class SecurityBase(Node):
                         'likely due to a commission function that outputs a '
                         'commission that is greater than the amount of cash '
                         'a short sale can raise.')
+
+                if self.integer_positions and last_q == q:
+                    raise Exception(
+                        'Newton Method like root search for quantity is stuck!'
+                        ' q did not change in iterations so it is probably a bug'
+                        ' but we are not entirely sure it is wrong! Consider '
+                        ' changing to warning.'
+                    )
+                last_q = q
+
+                if np.abs(full_outlay - amount) > np.abs(last_amount_short):
+                    raise Exception(
+                        'The difference between what we have raised with q and'
+                        ' the amount we are trying to raise has gotten bigger since'
+                        ' last iteration! full_outlay should always be approaching'
+                        ' amount! There may be a case where the commission fn is'
+                        ' not smooth'
+                    )
+                last_amount_short = full_outlay - amount
 
         # if last step led to q == 0, then we can return just like above
         if q == 0:
