@@ -2115,19 +2115,9 @@ def test_securitybase_allocate_commisions():
                                     bt.algos.RunDaily(),
                                     bt.algos.Rebalance()])
 
-    #### now we create the Backtest , commissions=(lambda q, p: abs(p * q) * comms)
-    t = bt.Backtest(
-        s1,
-        price,
-        initial_capital=1000000,
-        commissions=(lambda q, p: abs(p * q) * comms),
-        progress_bar=False
-    )
+    ####now we create the Backtest , commissions=(lambda q, p: abs(p * q) * comms)
+    t = bt.Backtest(s1, price, initial_capital=1000000, commissions=(lambda q, p: abs(p * q) * comms), progress_bar=False)
 
-    #### and let's run it!
-    try:
-        res = bt.run(t)
-        assert True
-    except Exception as e:
-        assert False
+    ####and let's run it!
+    res = bt.run(t)
     ########################
