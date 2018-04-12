@@ -122,18 +122,22 @@ class RunDaily(Algo):
     Returns True on day change.
 
     Args:
-        * run_on_first_call: bool which determines if it runs the first time the algo is called
+        * run_on_first_call (bool): determines if it runs the first time the algo is called
+        * run_on_end_of_period (bool): determines if it should run at the end of the period
+          or the beginning
+        * run_on_last_call (bool): determines if it runs on the last time the algo is called
 
     Returns True if the target.now's day has changed
-    since the last run, if not returns False. Useful for
-    daily rebalancing strategies.
+    compared to the last(or next if run_on_end_of_period) date, if not returns False.
+    Useful for daily rebalancing strategies.
 
     """
 
-    def __init__(self, run_on_first_call=True):
+    def __init__(self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False):
         super(RunDaily, self).__init__()
-        self.last_date = None
-        self._run_on_first_call = run_on_first_call
+        self._run_on_first_date = run_on_first_date
+        self._run_on_end_of_period = run_on_end_of_period
+        self._run_on_last_date = run_on_last_date
 
     def __call__(self, target):
         # get last date
@@ -143,16 +147,38 @@ class RunDaily(Algo):
         if now is None:
             return False
 
-        # create pandas.Timestamp for useful .week property
-        now = pd.Timestamp(now)
+        # not a known date in our universe
+        if now not in target.data.index:
+            return False
+
+        # get index of the current date
+        index = target.data.index.get_loc(target.now)
 
         result = False
-        if self.last_date is None:
-            result = self._run_on_first_call
-        elif now.date() != self.last_date.date():
-            result = True
 
-        self.last_date = now
+        # first date
+        if index == 0:
+            if self._run_on_first_date:
+                result = True
+        # last date
+        elif index == (len(target.data.index) - 1):
+            if self._run_on_last_date:
+                result = True
+        else:
+
+            # create pandas.Timestamp for useful .week,.quarter properties
+            now = pd.Timestamp(now)
+
+            index_offset = -1
+            if self._run_on_end_of_period:
+                index_offset = 1
+
+            date_to_compare = target.data.index[index + index_offset]
+            date_to_compare = pd.Timestamp(date_to_compare)
+
+            if now.date() != date_to_compare.date():
+                result = True
+
         return result
 
 
@@ -162,22 +188,22 @@ class RunWeekly(Algo):
     Returns True on week change.
 
     Args:
-        * run_on_first_call: bool which determines if it runs the first time the algo is called
+        * run_on_first_call (bool): determines if it runs the first time the algo is called
+        * run_on_end_of_period (bool): determines if it should run at the end of the period
+          or the beginning
+        * run_on_last_call (bool): determines if it runs on the last time the algo is called
 
     Returns True if the target.now's week has changed
-    since the last run, if not returns False. Useful for
+    since relative to the last(or next) date, if not returns False. Useful for
     weekly rebalancing strategies.
-
-    Note:
-        This algo will typically run on the first day of the
-        week (assuming we have daily data)
 
     """
 
-    def __init__(self, run_on_first_call=True):
+    def __init__(self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False):
         super(RunWeekly, self).__init__()
-        self.last_date = None
-        self._run_on_first_call = run_on_first_call
+        self._run_on_first_date = run_on_first_date
+        self._run_on_end_of_period = run_on_end_of_period
+        self._run_on_last_date = run_on_last_date
 
     def __call__(self, target):
         # get last date
@@ -187,18 +213,37 @@ class RunWeekly(Algo):
         if now is None:
             return False
 
-        # create pandas.Timestamp for useful .week property
-        now = pd.Timestamp(now)
+        # not a known date in our universe
+        if now not in target.data.index:
+            return False
+
+        # get index of the current date
+        index = target.data.index.get_loc(target.now)
 
         result = False
-        if self.last_date is None:
-            result = self._run_on_first_call
-        elif now.year != self.last_date.year:
-            result = True
-        elif now.week != self.last_date.week:
-            result = True
 
-        self.last_date = now
+        # first date
+        if index == 0:
+            if self._run_on_first_date:
+                result = True
+        # last date
+        elif index == (len(target.data.index) - 1):
+            if self._run_on_last_date:
+                result = True
+        else:
+            # create pandas.Timestamp for useful .week,.quarter properties
+            now = pd.Timestamp(now)
+
+            index_offset = -1
+            if self._run_on_end_of_period:
+                index_offset = 1
+
+            date_to_compare = target.data.index[index + index_offset]
+            date_to_compare = pd.Timestamp(date_to_compare)
+
+            if now.year != date_to_compare.year or now.week != date_to_compare.week:
+                result = True
+
         return result
 
 
