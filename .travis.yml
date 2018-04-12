@@ -8,3 +8,6 @@ install:
 # command to run tests
 script:
   - nosetests --with-coverage --cover-package bt
+# command to run codecov coverage
+after_success:
+  - codecov
