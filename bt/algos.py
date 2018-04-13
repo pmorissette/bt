@@ -3,6 +3,7 @@ A collection of Algos used to create Strategy logic.
 """
 from __future__ import division
 from future.utils import iteritems
+import abc
 import bt
 from bt.core import Algo, AlgoStack
 import pandas as pd
@@ -116,223 +117,170 @@ class RunOnce(Algo):
         return False
 
 
-class RunDaily(Algo):
+class RunPeriod(Algo):
+
+    def __init__(self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False):
+        super(RunPeriod, self).__init__()
+        self._run_on_first_date = run_on_first_date
+        self._run_on_end_of_period = run_on_end_of_period
+        self._run_on_last_date = run_on_last_date
+
+    def __call__(self, target):
+        # get last date
+        now = target.now
+
+        # if none nothing to do - return false
+        if now is None:
+            return False
+
+        # not a known date in our universe
+        if now not in target.data.index:
+            return False
+
+        # get index of the current date
+        index = target.data.index.get_loc(target.now)
+
+        result = False
+
+        # first date
+        if index == 0:
+            if self._run_on_first_date:
+                result = True
+        # last date
+        elif index == (len(target.data.index) - 1):
+            if self._run_on_last_date:
+                result = True
+        else:
+
+            # create pandas.Timestamp for useful .week,.quarter properties
+            now = pd.Timestamp(now)
+
+            index_offset = -1
+            if self._run_on_end_of_period:
+                index_offset = 1
+
+            date_to_compare = target.data.index[index + index_offset]
+            date_to_compare = pd.Timestamp(date_to_compare)
+
+            result = self.compare_dates(now, date_to_compare)
+
+        return result
+
+    @abc.abstractmethod
+    def compare_dates(self, now, date_to_compare):
+        raise(NotImplementedError('RunPeriod Algo is an abstract class!'))
+
+
+class RunDaily(RunPeriod):
 
     """
     Returns True on day change.
 
     Args:
-        * run_on_first_call: bool which determines if it runs the first time the algo is called
+        * run_on_first_date (bool): determines if it runs the first time the algo is called
+        * run_on_end_of_period (bool): determines if it should run at the end of the period
+          or the beginning
+        * run_on_last_date (bool): determines if it runs on the last time the algo is called
 
     Returns True if the target.now's day has changed
-    since the last run, if not returns False. Useful for
-    daily rebalancing strategies.
+    compared to the last(or next if run_on_end_of_period) date, if not returns False.
+    Useful for daily rebalancing strategies.
 
     """
-
-    def __init__(self, run_on_first_call=True):
-        super(RunDaily, self).__init__()
-        self.last_date = None
-        self._run_on_first_call = run_on_first_call
-
-    def __call__(self, target):
-        # get last date
-        now = target.now
-
-        # if none nothing to do - return false
-        if now is None:
-            return False
-
-        # create pandas.Timestamp for useful .week property
-        now = pd.Timestamp(now)
-
-        result = False
-        if self.last_date is None:
-            result = self._run_on_first_call
-        elif now.date() != self.last_date.date():
-            result = True
-
-        self.last_date = now
-        return result
+    def compare_dates(self, now, date_to_compare):
+        if now.date() != date_to_compare.date():
+            return True
+        return False
 
 
-class RunWeekly(Algo):
+class RunWeekly(RunPeriod):
 
     """
     Returns True on week change.
 
     Args:
-        * run_on_first_call: bool which determines if it runs the first time the algo is called
+        * run_on_first_date (bool): determines if it runs the first time the algo is called
+        * run_on_end_of_period (bool): determines if it should run at the end of the period
+          or the beginning
+        * run_on_last_date (bool): determines if it runs on the last time the algo is called
 
     Returns True if the target.now's week has changed
-    since the last run, if not returns False. Useful for
+    since relative to the last(or next) date, if not returns False. Useful for
     weekly rebalancing strategies.
-
-    Note:
-        This algo will typically run on the first day of the
-        week (assuming we have daily data)
 
     """
 
-    def __init__(self, run_on_first_call=True):
-        super(RunWeekly, self).__init__()
-        self.last_date = None
-        self._run_on_first_call = run_on_first_call
+    def compare_dates(self, now, date_to_compare):
+        if now.year != date_to_compare.year or now.week != date_to_compare.week:
+            return True
+        return False
 
-    def __call__(self, target):
-        # get last date
-        now = target.now
-
-        # if none nothing to do - return false
-        if now is None:
-            return False
-
-        # create pandas.Timestamp for useful .week property
-        now = pd.Timestamp(now)
-
-        result = False
-        if self.last_date is None:
-            result = self._run_on_first_call
-        elif now.year != self.last_date.year:
-            result = True
-        elif now.week != self.last_date.week:
-            result = True
-
-        self.last_date = now
-        return result
-
-
-class RunMonthly(Algo):
+class RunMonthly(RunPeriod):
 
     """
     Returns True on month change.
 
     Args:
-        * run_on_first_call: bool which determines if it runs the first time the algo is called
+        * run_on_first_date (bool): determines if it runs the first time the algo is called
+        * run_on_end_of_period (bool): determines if it should run at the end of the period
+          or the beginning
+        * run_on_last_date (bool): determines if it runs on the last time the algo is called
 
     Returns True if the target.now's month has changed
-    since the last run, if not returns False. Useful for
+    since relative to the last(or next) date, if not returns False. Useful for
     monthly rebalancing strategies.
-
-    Note:
-        This algo will typically run on the first day of the
-        month (assuming we have daily data)
 
     """
 
-    def __init__(self, run_on_first_call=True):
-        super(RunMonthly, self).__init__()
-        self.last_date = None
-        self._run_on_first_call = run_on_first_call
-
-    def __call__(self, target):
-        # get last date
-        now = target.now
-
-        # if none nothing to do - return false
-        if now is None:
-            return False
-
-        result = False
-        if self.last_date is None:
-            result = self._run_on_first_call
-        elif now.year != self.last_date.year:
-            result = True
-        elif now.month != self.last_date.month:
-            result = True
-
-        self.last_date = now
-        return result
+    def compare_dates(self, now, date_to_compare):
+        if now.year != date_to_compare.year or now.month != date_to_compare.month:
+            return True
+        return False
 
 
-class RunQuarterly(Algo):
+class RunQuarterly(RunPeriod):
 
     """
     Returns True on quarter change.
 
     Args:
-        * run_on_first_call: bool which determines if it runs the first time the algo is called
+        * run_on_first_date (bool): determines if it runs the first time the algo is called
+        * run_on_end_of_period (bool): determines if it should run at the end of the period
+          or the beginning
+        * run_on_last_date (bool): determines if it runs on the last time the algo is called
 
-    Returns True if the target.now's month has changed
-    since the last run and the month is the first month
-    of the quarter, if not returns False. Useful for
+    Returns True if the target.now's quarter has changed
+    since relative to the last(or next) date, if not returns False. Useful for
     quarterly rebalancing strategies.
-
-    Note:
-        This algo will typically run on the first day of the
-        quarter (assuming we have daily data)
 
     """
 
-    def __init__(self, run_on_first_call=True):
-        super(RunQuarterly, self).__init__()
-        self.last_date = None
-        self._run_on_first_call = run_on_first_call
+    def compare_dates(self, now, date_to_compare):
+        if now.year != date_to_compare.year or now.quarter != date_to_compare.quarter:
+            return True
+        return False
 
-    def __call__(self, target):
-        # get last date
-        now = target.now
-
-        # if none nothing to do - return false
-        if now is None:
-            return False
-
-        # create pandas.Timestamp for useful .quarter property
-        now = pd.Timestamp(now)
-
-        result = False
-        if self.last_date is None:
-            result = self._run_on_first_call
-        elif now.year != self.last_date.year:
-            result = True
-        elif now.month != self.last_date.month and now.quarter != self.last_date.quarter:
-            result = True
-
-        self.last_date = now
-        return result
-
-
-class RunYearly(Algo):
+class RunYearly(RunPeriod):
 
     """
     Returns True on year change.
 
     Args:
-        * run_on_first_call: bool which determines if it runs the first time the algo is called
+        * run_on_first_date (bool): determines if it runs the first time the algo is called
+        * run_on_end_of_period (bool): determines if it should run at the end of the period
+          or the beginning
+        * run_on_last_date (bool): determines if it runs on the last time the algo is called
 
     Returns True if the target.now's year has changed
-    since the last run, if not returns False. Useful for
+    since relative to the last(or next) date, if not returns False. Useful for
     yearly rebalancing strategies.
-
-    Note:
-        This algo will typically run on the first day of the
-        year (assuming we have daily data)
 
     """
 
-    def __init__(self, run_on_first_call=True):
-        super(RunYearly, self).__init__()
-        self.last_date = None
-        self._run_on_first_call = run_on_first_call
-
-    def __call__(self, target):
-        # get last date
-        now = target.now
-
-        # if none nothing to do - return false
-        if now is None:
-            return False
-
-        result = False
-        if self.last_date is None:
-            result = self._run_on_first_call
-        elif now.year != self.last_date.year:
-            result = True
-        elif now.year != self.last_date.year:
-            result = True
-
-        self.last_date = now
-        return result
+    def compare_dates(self, now, date_to_compare):
+        if now.year != date_to_compare.year:
+            return True
+        return False
 
 
 class RunOnDate(Algo):
