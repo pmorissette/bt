@@ -59,145 +59,302 @@ def test_run_once():
     assert not algo(None)
 
 
-def test_run_weekly():
-    algo = algos.RunWeekly()
-
+def test_run_daily():
     target = mock.MagicMock()
+
+    dts = pd.date_range('2010-01-01', periods=35)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    target.data = data
+
+    algo = algos.RunDaily()
 
     target.now = None
     assert not algo(target)
 
-    target.now = datetime(2010, 1, 1)
+    # run on first date
+    target.now = dts[0]
     assert algo(target)
 
-    target.now = datetime(2010, 1, 15)
+    target.now = dts[1]
     assert algo(target)
 
-    target.now = datetime(2010, 2, 15)
-    assert algo(target)
-
-    # sat
-    target.now = datetime(2014, 1, 4)
-    assert algo(target)
-
-    # sun
-    target.now = datetime(2014, 1, 5)
+    # run on last date
+    target.now = dts[len(dts) - 1]
     assert not algo(target)
 
-    # mon - week change
-    target.now = datetime(2014, 1, 6)
+    algo = algos.RunDaily(
+        run_on_first_date=False,
+        run_on_end_of_period=True,
+        run_on_last_date=True
+    )
+
+    # run on first date
+    target.now = dts[0]
+    assert not algo(target)
+
+    target.now = dts[1]
     assert algo(target)
 
-    # check run first time
-    algo = algos.RunWeekly(run_on_first_call=False)
+    # run on last date
+    target.now = dts[len(dts) - 1]
+    assert algo(target)
 
-    target.now = datetime(2010, 1, 1)
+    # date not in index
+    target.now = datetime(2009, 2, 15)
     assert not algo(target)
+
+
+
+def test_run_weekly():
+    dts = pd.date_range('2010-01-01', periods=367)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    target = mock.MagicMock()
+    target.data = data
+
+    algo = algos.RunWeekly()
+
+    target.now = None
+    assert not algo(target)
+
+    # run on first date
+    target.now = dts[0]
+    assert algo(target)
+
+    target.now = dts[1]
+    assert not algo(target)
+
+    # end of week
+    target.now = dts[2]
+    assert not algo(target)
+
+    # new week
+    target.now = dts[3]
+    assert algo(target)
+
+    # last date
+    target.now = dts[len(dts) - 1]
+    assert not algo(target)
+
+    algo = algos.RunWeekly(
+        run_on_first_date=False,
+        run_on_end_of_period=True,
+        run_on_last_date=True
+    )
+
+    # run on first date
+    target.now = dts[0]
+    assert not algo(target)
+
+    target.now = dts[1]
+    assert not algo(target)
+
+    # end of week
+    target.now = dts[2]
+    assert algo(target)
+
+    # new week
+    target.now = dts[3]
+    assert not algo(target)
+
+    # last date
+    target.now = dts[len(dts) - 1]
+    assert algo(target)
+
+    dts = pd.DatetimeIndex([datetime(2016, 1, 3), datetime(2017, 1, 8),datetime(2018, 1, 7)])
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    target.data = data
 
     # check next year
-    target.now = datetime(2012, 1, 1)
+    target.now = dts[1]
     assert algo(target)
 
 
 def test_run_monthly():
-    algo = algos.RunMonthly()
+    dts = pd.date_range('2010-01-01', periods=367)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
 
     target = mock.MagicMock()
+    target.data = data
+
+    algo = algos.RunMonthly()
 
     target.now = None
     assert not algo(target)
 
-    target.now = datetime(2010, 1, 1)
+    # run on first date
+    target.now = dts[0]
     assert algo(target)
 
-    target.now = datetime(2010, 1, 15)
+    target.now = dts[1]
     assert not algo(target)
 
-    target.now = datetime(2010, 2, 15)
-    assert algo(target)
-
-    target.now = datetime(2010, 2, 25)
+    # end of month
+    target.now = dts[30]
     assert not algo(target)
 
-    target.now = datetime(2010, 12, 25)
+    # new month
+    target.now = dts[31]
     assert algo(target)
 
-    target.now = datetime(2011, 1, 25)
-    assert algo(target)
-
-    # check run first time
-    algo = algos.RunMonthly(run_on_first_call=False)
-
-    target.now = datetime(2010, 1, 1)
+    # last date
+    target.now = dts[len(dts) - 1]
     assert not algo(target)
+
+    algo = algos.RunMonthly(
+        run_on_first_date=False,
+        run_on_end_of_period=True,
+        run_on_last_date=True
+    )
+
+    # run on first date
+    target.now = dts[0]
+    assert not algo(target)
+
+    target.now = dts[1]
+    assert not algo(target)
+
+    # end of month
+    target.now = dts[30]
+    assert algo(target)
+
+    # new month
+    target.now = dts[31]
+    assert not algo(target)
+
+    # last date
+    target.now = dts[len(dts) - 1]
+    assert algo(target)
+
+    dts = pd.DatetimeIndex([datetime(2016, 1, 3), datetime(2017, 1, 8), datetime(2018, 1, 7)])
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    target.data = data
 
     # check next year
-    target.now = datetime(2012, 1, 1)
+    target.now = dts[1]
     assert algo(target)
 
 
 def test_run_quarterly():
-    algo = algos.RunQuarterly()
+    dts = pd.date_range('2010-01-01', periods=367)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
 
     target = mock.MagicMock()
+    target.data = data
+
+    algo = algos.RunQuarterly()
 
     target.now = None
     assert not algo(target)
 
-    target.now = datetime(2010, 1, 1)
+    # run on first date
+    target.now = dts[0]
     assert algo(target)
 
-    target.now = datetime(2010, 1, 15)
+    target.now = dts[1]
     assert not algo(target)
 
-    target.now = datetime(2010, 3, 31)
+    # end of quarter
+    target.now = dts[89]
     assert not algo(target)
 
-    target.now = datetime(2010, 4, 1)
+    # new quarter
+    target.now = dts[90]
     assert algo(target)
 
-    target.now = datetime(2010, 7, 2)
-    assert algo(target)
-
-    target.now = datetime(2010, 12, 25)
-    assert algo(target)
-
-    target.now = datetime(2011, 1, 25)
-    assert algo(target)
-
-    # check run first time
-    algo = algos.RunQuarterly(run_on_first_call=False)
-
-    target.now = datetime(2010, 1, 1)
+    # last date
+    target.now = dts[len(dts) - 1]
     assert not algo(target)
+
+    algo = algos.RunQuarterly(
+        run_on_first_date=False,
+        run_on_end_of_period=True,
+        run_on_last_date=True
+    )
+
+    # run on first date
+    target.now = dts[0]
+    assert not algo(target)
+
+    target.now = dts[1]
+    assert not algo(target)
+
+    # end of quarter
+    target.now = dts[89]
+    assert algo(target)
+
+    # new quarter
+    target.now = dts[90]
+    assert not algo(target)
+
+    # last date
+    target.now = dts[len(dts) - 1]
+    assert algo(target)
+
+    dts = pd.DatetimeIndex([datetime(2016, 1, 3), datetime(2017, 1, 8), datetime(2018, 1, 7)])
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    target.data = data
 
     # check next year
-    target.now = datetime(2012, 1, 1)
+    target.now = dts[1]
     assert algo(target)
 
 
 def test_run_yearly():
-    algo = algos.RunYearly()
+    dts = pd.date_range('2010-01-01', periods=367)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
 
     target = mock.MagicMock()
+    target.data = data
 
-    target.now = datetime(2010, 1, 1)
-    assert algo(target)
+    algo = algos.RunYearly()
 
-    target.now = datetime(2010, 5, 1)
+    target.now = None
     assert not algo(target)
 
-    target.now = datetime(2011, 1, 1)
+    # run on first date
+    target.now = dts[0]
     assert algo(target)
 
-    # check run first time
-    algo = algos.RunYearly(run_on_first_call=False)
-
-    target.now = datetime(2010, 1, 1)
+    target.now = dts[1]
     assert not algo(target)
 
-    # check next year
-    target.now = datetime(2012, 1, 1)
+    # end of year
+    target.now = dts[364]
+    assert not algo(target)
+
+    # new year
+    target.now = dts[365]
+    assert algo(target)
+
+    # last date
+    target.now = dts[len(dts) - 1]
+    assert not algo(target)
+
+    algo = algos.RunYearly(
+        run_on_first_date=False,
+        run_on_end_of_period=True,
+        run_on_last_date=True
+    )
+
+    # run on first date
+    target.now = dts[0]
+    assert not algo(target)
+
+    target.now = dts[1]
+    assert not algo(target)
+
+    # end of year
+    target.now = dts[364]
+    assert algo(target)
+
+    # new year
+    target.now = dts[365]
+    assert not algo(target)
+
+    # last date
+    target.now = dts[len(dts) - 1]
     assert algo(target)
 
 
@@ -838,30 +995,26 @@ def test_or():
 
     #run on the 1/2/18
     runOnDateAlgo = algos.RunOnDate(pd.to_datetime('2018-01-02'))
+    runOnDateAlgo2 = algos.RunOnDate(pd.to_datetime('2018-01-03'))
+    runOnDateAlgo3 = algos.RunOnDate(pd.to_datetime('2018-01-04'))
+    runOnDateAlgo4 = algos.RunOnDate(pd.to_datetime('2018-01-04'))
 
-    #run on the first of the month
-    runMonthlyAlgo = algos.RunMonthly()
-    #initialize the first value
-    target.now = pd.to_datetime('2017-12-31')
-    runMonthlyAlgo(target)
-    orAlgo = algos.Or([runMonthlyAlgo, runOnDateAlgo])
+    orAlgo = algos.Or([runOnDateAlgo, runOnDateAlgo2, runOnDateAlgo3, runOnDateAlgo4])
 
-    #verify it returns true when runMonthly is true
+    #verify it returns false when neither is true
     target.now = pd.to_datetime('2018-01-01')
-    assert orAlgo(target)
+    assert not orAlgo(target)
 
-    # verify it returns true when runOnDate istrue
+    # verify it returns true when the first is true
     target.now = pd.to_datetime('2018-01-02')
     assert orAlgo(target)
 
-    # verify it returns false when neither algo returns true
+    # verify it returns true when the second is true
     target.now = pd.to_datetime('2018-01-03')
-    assert not orAlgo(target)
+    assert orAlgo(target)
 
     # verify it returns true when both algos return true
-    target.now = pd.to_datetime('2018-02-01')
-    runOnDateAlgo = algos.RunOnDate(pd.to_datetime('2018-02-01'))
-    orAlgo = algos.Or([runMonthlyAlgo, runOnDateAlgo])
+    target.now = pd.to_datetime('2018-01-04')
     assert orAlgo(target)
 
 
