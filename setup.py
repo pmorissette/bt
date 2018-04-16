@@ -52,5 +52,5 @@ setup(
         'Programming Language :: Python'
     ],
     ext_modules=ext_modules,
-    python_requires='=2.7, >=3'
+    python_requires='=2.7, =3.4, =3.5, =3.6'
 )
