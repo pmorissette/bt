@@ -142,8 +142,10 @@ class RunPeriod(Algo):
 
         result = False
 
-        # first date
         # index 0 is a date added by the Backtest Constructor
+        if index == 0:
+            return False
+        # first date
         if index == 1:
             if self._run_on_first_date:
                 result = True
