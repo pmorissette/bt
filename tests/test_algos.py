@@ -59,23 +59,30 @@ def test_run_once():
     assert not algo(None)
 
 
-def test_run_daily():
+def test_run_period():
     target = mock.MagicMock()
 
     dts = pd.date_range('2010-01-01', periods=35)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
 
-    target.data = data
+    algo = algos.RunPeriod()
 
-    algo = algos.RunDaily()
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
+    dts = target.data.index
 
     target.now = None
     assert not algo(target)
 
     # run on first date
     target.now = dts[0]
-    assert algo(target)
+    assert not algo(target)
 
+    # run on first supplied date
     target.now = dts[1]
     assert algo(target)
 
@@ -83,18 +90,27 @@ def test_run_daily():
     target.now = dts[len(dts) - 1]
     assert not algo(target)
 
-    algo = algos.RunDaily(
+    algo = algos.RunPeriod(
         run_on_first_date=False,
         run_on_end_of_period=True,
         run_on_last_date=True
     )
 
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
+    dts = target.data.index
+
     # run on first date
     target.now = dts[0]
     assert not algo(target)
 
+    # first supplied date
     target.now = dts[1]
-    assert algo(target)
+    assert not algo(target)
 
     # run on last date
     target.now = dts[len(dts) - 1]
@@ -103,6 +119,25 @@ def test_run_daily():
     # date not in index
     target.now = datetime(2009, 2, 15)
     assert not algo(target)
+
+
+def test_run_daily():
+    target = mock.MagicMock()
+
+    dts = pd.date_range('2010-01-01', periods=35)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    algo = algos.RunDaily()
+
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('',[algo]),
+        data
+    )
+    target.data = backtest.data
+
+    target.now = dts[1]
+    assert algo(target)
 
 
 
@@ -114,16 +149,12 @@ def test_run_weekly():
     target.data = data
 
     algo = algos.RunWeekly()
-
-    target.now = None
-    assert not algo(target)
-
-    # run on first date
-    target.now = dts[0]
-    assert algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of week
     target.now = dts[2]
@@ -132,23 +163,18 @@ def test_run_weekly():
     # new week
     target.now = dts[3]
     assert algo(target)
-
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert not algo(target)
 
     algo = algos.RunWeekly(
         run_on_first_date=False,
         run_on_end_of_period=True,
         run_on_last_date=True
     )
-
-    # run on first date
-    target.now = dts[0]
-    assert not algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of week
     target.now = dts[2]
@@ -158,13 +184,14 @@ def test_run_weekly():
     target.now = dts[3]
     assert not algo(target)
 
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert algo(target)
-
     dts = pd.DatetimeIndex([datetime(2016, 1, 3), datetime(2017, 1, 8),datetime(2018, 1, 7)])
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    target.data = data
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # check next year
     target.now = dts[1]
@@ -179,16 +206,12 @@ def test_run_monthly():
     target.data = data
 
     algo = algos.RunMonthly()
-
-    target.now = None
-    assert not algo(target)
-
-    # run on first date
-    target.now = dts[0]
-    assert algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of month
     target.now = dts[30]
@@ -197,23 +220,18 @@ def test_run_monthly():
     # new month
     target.now = dts[31]
     assert algo(target)
-
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert not algo(target)
 
     algo = algos.RunMonthly(
         run_on_first_date=False,
         run_on_end_of_period=True,
         run_on_last_date=True
     )
-
-    # run on first date
-    target.now = dts[0]
-    assert not algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of month
     target.now = dts[30]
@@ -223,13 +241,14 @@ def test_run_monthly():
     target.now = dts[31]
     assert not algo(target)
 
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert algo(target)
-
     dts = pd.DatetimeIndex([datetime(2016, 1, 3), datetime(2017, 1, 8), datetime(2018, 1, 7)])
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    target.data = data
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # check next year
     target.now = dts[1]
@@ -244,16 +263,12 @@ def test_run_quarterly():
     target.data = data
 
     algo = algos.RunQuarterly()
-
-    target.now = None
-    assert not algo(target)
-
-    # run on first date
-    target.now = dts[0]
-    assert algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of quarter
     target.now = dts[89]
@@ -262,23 +277,18 @@ def test_run_quarterly():
     # new quarter
     target.now = dts[90]
     assert algo(target)
-
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert not algo(target)
 
     algo = algos.RunQuarterly(
         run_on_first_date=False,
         run_on_end_of_period=True,
         run_on_last_date=True
     )
-
-    # run on first date
-    target.now = dts[0]
-    assert not algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of quarter
     target.now = dts[89]
@@ -288,13 +298,14 @@ def test_run_quarterly():
     target.now = dts[90]
     assert not algo(target)
 
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert algo(target)
-
     dts = pd.DatetimeIndex([datetime(2016, 1, 3), datetime(2017, 1, 8), datetime(2018, 1, 7)])
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    target.data = data
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # check next year
     target.now = dts[1]
@@ -309,16 +320,12 @@ def test_run_yearly():
     target.data = data
 
     algo = algos.RunYearly()
-
-    target.now = None
-    assert not algo(target)
-
-    # run on first date
-    target.now = dts[0]
-    assert algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of year
     target.now = dts[364]
@@ -327,23 +334,18 @@ def test_run_yearly():
     # new year
     target.now = dts[365]
     assert algo(target)
-
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert not algo(target)
 
     algo = algos.RunYearly(
         run_on_first_date=False,
         run_on_end_of_period=True,
         run_on_last_date=True
     )
-
-    # run on first date
-    target.now = dts[0]
-    assert not algo(target)
-
-    target.now = dts[1]
-    assert not algo(target)
+    # adds the initial day
+    backtest = bt.Backtest(
+        bt.Strategy('', [algo]),
+        data
+    )
+    target.data = backtest.data
 
     # end of year
     target.now = dts[364]
@@ -352,10 +354,6 @@ def test_run_yearly():
     # new year
     target.now = dts[365]
     assert not algo(target)
-
-    # last date
-    target.now = dts[len(dts) - 1]
-    assert algo(target)
 
 
 def test_run_on_date():
