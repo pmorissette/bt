@@ -101,3 +101,61 @@ def test_turnover():
     assert np.allclose(t.turnover[dts[2]], 24970. / 997490)
     assert np.allclose(t.turnover[dts[3]], 25160. / 992455)
     assert np.allclose(t.turnover[dts[4]], 76100. / 1015285)
+
+def test_Results_helper_functions():
+
+    names = ['foo', 'bar']
+    dates = pd.date_range(start='2017-01-01', end='2017-12-31', freq=pd.tseries.offsets.BDay())
+    n = len(dates)
+    rdf = pd.DataFrame(
+        np.zeros((n, len(names))),
+        index=dates,
+        columns=names
+    )
+
+    np.random.seed(1)
+    rdf[names[0]] = np.random.normal(loc=0.1 / n, scale=0.2 / np.sqrt(n), size=n)
+    rdf[names[1]] = np.random.normal(loc=0.04 / n, scale=0.05 / np.sqrt(n), size=n)
+
+    pdf = 100 * np.cumprod(1 + rdf)
+
+    # algo to fire on the beginning of every month and to run on the first date
+    runDailyAlgo = bt.algos.RunDaily(
+        run_on_first_date=True
+    )
+
+    # algo to set the weights
+    #  it will only run when runMonthlyAlgo returns true
+    #  which only happens on the first of every month
+    weights = pd.Series([0.6, 0.4], index=rdf.columns)
+    weighSpecifiedAlgo = bt.algos.WeighSpecified(**weights)
+
+    # algo to rebalance the current weights to weights set by weighSpecified
+    #  will only run when weighSpecifiedAlgo returns true
+    #  which happens every time it runs
+    rebalAlgo = bt.algos.Rebalance()
+
+    # a strategy that rebalances monthly to specified weights
+    strat = bt.Strategy('static',
+        [
+            runDailyAlgo,
+            weighSpecifiedAlgo,
+            rebalAlgo
+        ]
+    )
+
+    backtest = bt.Backtest(
+        strat,
+        pdf,
+        integer_positions=False
+    )
+
+    res = bt.run(backtest)
+
+    assert(type(res.get_security_weights()) is pd.DataFrame)
+
+    assert (type(res.get_transactions()) is pd.DataFrame)
+
+    assert (type(res.get_weights()) is pd.DataFrame)
+
+

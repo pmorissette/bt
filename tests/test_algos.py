@@ -1014,7 +1014,3 @@ def test_or():
     # verify it returns true when both algos return true
     target.now = pd.to_datetime('2018-01-04')
     assert orAlgo(target)
-
-
-
-
