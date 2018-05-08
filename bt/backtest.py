@@ -330,13 +330,33 @@ class Result(ffn.GroupStats):
         key = self._get_backtest(backtest)
         self[key].display_monthly_returns()
 
+    def get_weights(self, backtest=0, filter=None):
+        """
+
+        :param backtest: (str, int) Backtest can be either a index (int) or the
+                name (str)
+        :param filter: (list, str) filter columns for specific columns. Filter
+                is simply passed as is to DataFrame[filter], so use something
+                that makes sense with a DataFrame.
+        :return: (pd.DataFrame) DataFrame of weights
+        """
+
+        key = self._get_backtest(backtest)
+
+        if filter is not None:
+            data = self.backtests[key].weights[filter]
+        else:
+            data = self.backtests[key].weights
+
+        return data
+
     def plot_weights(self, backtest=0, filter=None,
                      figsize=(15, 5), **kwds):
         """
         Plots the weights of a given backtest over time.
 
         Args:
-            * backtest (str, int): Backtest. Can be either a index (int) or the
+            * backtest (str, int): Backtest can be either a index (int) or the
                 name (str)
             * filter (list, str): filter columns for specific columns. Filter
                 is simply passed as is to DataFrame[filter], so use something
@@ -345,14 +365,29 @@ class Result(ffn.GroupStats):
             * kwds (dict): Keywords passed to plot
 
         """
+        data = self.get_weights(backtest, filter)
+
+        data.plot(figsize=figsize, **kwds)
+
+    def get_security_weights(self, backtest=0, filter=None):
+        """
+
+        :param backtest: (str, int) Backtest can be either a index (int) or the
+                name (str)
+        :param filter: (list, str) filter columns for specific columns. Filter
+                is simply passed as is to DataFrame[filter], so use something
+                that makes sense with a DataFrame.
+        :return: (pd.DataFrame) DataFrame of security weights
+        """
+
         key = self._get_backtest(backtest)
 
         if filter is not None:
-            data = self.backtests[key].weights[filter]
+            data = self.backtests[key].security_weights[filter]
         else:
-            data = self.backtests[key].weights
+            data = self.backtests[key].security_weights
 
-        data.plot(figsize=figsize, **kwds)
+        return data
 
     def plot_security_weights(self, backtest=0, filter=None,
                               figsize=(15, 5), **kwds):
@@ -369,12 +404,7 @@ class Result(ffn.GroupStats):
             * kwds (dict): Keywords passed to plot
 
         """
-        key = self._get_backtest(backtest)
-
-        if filter is not None:
-            data = self.backtests[key].security_weights[filter]
-        else:
-            data = self.backtests[key].security_weights
+        data = self.get_security_weights(backtest, filter)
 
         data.plot(figsize=figsize, **kwds)
 
