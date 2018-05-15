@@ -147,7 +147,8 @@ def test_Results_helper_functions():
     backtest = bt.Backtest(
         strat,
         pdf,
-        integer_positions=False
+        integer_positions=False,
+        progress_bar=False
     )
 
     res = bt.run(backtest)
