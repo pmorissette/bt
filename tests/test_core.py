@@ -164,13 +164,13 @@ def test_strategybase_tree_setup():
     assert len(c1.data) == 3
     assert len(c2.data) == 3
 
-    assert len(s.prices) == 0
-    assert len(c1.prices) == 0
-    assert len(c2.prices) == 0
+    assert len(s._prices) == 3
+    assert len(c1._prices) == 3
+    assert len(c2._prices) == 3
 
-    assert len(s.values) == 0
-    assert len(c1.values) == 0
-    assert len(c2.values) == 0
+    assert len(s._values) == 3
+    assert len(c1._values) == 3
+    assert len(c2._values) == 3
 
 
 def test_strategybase_tree_adjust():
@@ -1832,13 +1832,13 @@ def test_strategy_tree_proper_universes():
     assert len(master.children) == 2
     assert 'c1' in master.children
     assert 'a' in master.children
-    assert len(master.universe.columns) == 2
-    assert 'c1' in master.universe.columns
-    assert 'a' in master.universe.columns
+    assert len(master._universe.columns) == 2
+    assert 'c1' in master._universe.columns
+    assert 'a' in master._universe.columns
 
-    assert len(child1.universe.columns) == 2
-    assert 'b' in child1.universe.columns
-    assert 'c' in child1.universe.columns
+    assert len(child1._universe.columns) == 2
+    assert 'b' in child1._universe.columns
+    assert 'c' in child1._universe.columns
 
 
 def test_strategy_tree_paper():
