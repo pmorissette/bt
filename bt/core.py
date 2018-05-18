@@ -335,7 +335,7 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._prices.ix[:self.now]
+        return self._prices.loc[:self.now]
 
     @property
     def values(self):
@@ -344,7 +344,7 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._values.ix[:self.now]
+        return self._values.loc[:self.now]
 
     @property
     def capital(self):
@@ -384,7 +384,7 @@ class StrategyBase(Node):
             return self._funiverse
         else:
             self._last_chk = self.now
-            self._funiverse = self._universe.ix[:self.now]
+            self._funiverse = self._universe.loc[:self.now]
             return self._funiverse
 
     @property
@@ -845,7 +845,7 @@ class SecurityBase(Node):
         # if accessing and stale - update first
         if self._needupdate or self.now != self.parent.now:
             self.update(self.root.now)
-        return self._prices.ix[:self.now]
+        return self._prices.loc[:self.now]
 
     @property
     def values(self):
@@ -857,7 +857,7 @@ class SecurityBase(Node):
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return self._values.ix[:self.now]
+        return self._values.loc[:self.now]
 
     @property
     def position(self):
@@ -877,7 +877,7 @@ class SecurityBase(Node):
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return self._positions.ix[:self.now]
+        return self._positions.loc[:self.now]
 
     @property
     def outlays(self):
@@ -888,7 +888,7 @@ class SecurityBase(Node):
         to parent).
         """
         # if accessing and stale - update first
-        return self._outlays.ix[:self.now]
+        return self._outlays.loc[:self.now]
 
     def setup(self, universe):
         """
