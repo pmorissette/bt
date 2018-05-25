@@ -17,6 +17,7 @@ deploy:
     tags: true
     distributions: sdist
     repo: pmorissette/bt
+    branch: master
 # command to run tests
 script:
   - nosetests --with-coverage --cover-package bt
