@@ -7,6 +7,16 @@ python:
 # command to install dependencies
 install:
   - pip install -r requirements.txt
+# deploys to pypi
+deploy:
+  provider: pypi
+  user: pmorissette
+  password:
+    secure: SVuCjFBfnVSp7iq3vDG8pK4XSJ0oE4/SqOnhPc7brcSa5XV67LIJC5TpKjXliulcOcRcA904b5EP5foDXbWOptiyia4wKg4kVsAHcgV0p2LdcsakoDI3tAd4h5FBb71e8ZpI+UcW9SnoJEyLSrO05LlGIW1VmAMvLeeUUDY4UuHvJdphXKkcNR/ItREp3s01oJWtpsjDarm7gSWiP3DcUffe7whIQb7TR0gflhmQk5kfNvYowmETsoL9dO4XkVglGBJiBzoJR8xchI4pFMfxLwTu9blYwekPDd0zgepKQ+/fbjXCAGP4FmBjdeXD6VWJs8PmUINgyNIsZlPtu492EUa3of+B6mS7gy7Fynu89xh2Og66IIL5RJwvz4KhU+EQ/hSVBOT+dp28QACXg6PCe0J3OPl8oXF0Uu2LSBkLGz3ph17XpKy3z+pE/oeX0odROd98WvFlc7Jkkq3GebE1471Eb2HeU5GzHzO2Zhq8grxEdNN87EjXM7ZaNZti3Eg21XmHwdGZaE9OlMPi/X79daGJN9ua3W5GTfiMjXYnIrVaG3qjbnRg1z6ASSHiQExa06WcgggOyOC7gpXXpPGnPB4mcH0OUc5GqNWLV/USWHgwC4ndisiNZQncgXaXcxxuiSUBbCvyzoHb0ynijjbGn14jcqIUTAziMnCuSnJyI/Y=
+  on:
+    tags: true
+    distributions: sdist
+    repo: pmorissette/bt
 # command to run tests
 script:
   - nosetests --with-coverage --cover-package bt
