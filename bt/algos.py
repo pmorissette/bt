@@ -1178,7 +1178,11 @@ class LimitWeights(Algo):
         if len(tw) == 0:
             return True
 
-        tw = bt.ffn.limit_weights(tw, self.limit)
+        # if the limit < equal weight then set weights to 0
+        if self.limit < 1.0 / len(tw):
+            tw = {}
+        else:
+            tw = bt.ffn.limit_weights(tw, self.limit)
         target.temp['weights'] = tw
 
         return True
