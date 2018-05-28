@@ -183,7 +183,7 @@ def test_30_min_data():
     tw[sma200.isnull()] = 0.0
 
     ma_cross = bt.Strategy('ma_cross', [bt.algos.WeighTarget(tw), bt.algos.Rebalance()])
-    t = bt.Backtest(ma_cross, pdf)
+    t = bt.Backtest(ma_cross, pdf,progress_bar=False)
     res = bt.run(t)
 
     wait=1
