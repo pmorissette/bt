@@ -644,7 +644,8 @@ class SelectWhere(Algo):
         if target.now in self.signal.index:
             sig = self.signal.loc[target.now]
             # get tickers where True
-            selected = sig.index[sig]
+            #selected = sig.index[sig]
+            selected = sig[sig == True].index
             # save as list
             if not self.include_no_data:
                 universe = target.universe[
