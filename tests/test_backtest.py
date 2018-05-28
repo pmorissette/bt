@@ -159,4 +159,33 @@ def test_Results_helper_functions():
 
     assert (type(res.get_weights()) is pd.DataFrame)
 
+def test_30_min_data():
+    names = ['foo']
+    dates = pd.date_range(start='2017-01-01', end='2017-12-31', freq='30min')
+    n = len(dates)
+    rdf = pd.DataFrame(
+        np.zeros((n, len(names))),
+        index=dates,
+        columns=names
+    )
+
+    np.random.seed(1)
+    rdf[names[0]] = np.random.normal(loc=0.1 / n, scale=0.2 / np.sqrt(n), size=n)
+
+    pdf = 100 * np.cumprod(1 + rdf)
+
+    sma50 = pdf.rolling(50).mean()
+    sma200 = pdf.rolling(200).mean()
+
+    tw = sma200.copy()
+    tw[sma50 > sma200] = 1.0
+    tw[sma50 <= sma200] = -1.0
+    tw[sma200.isnull()] = 0.0
+
+    ma_cross = bt.Strategy('ma_cross', [bt.algos.WeighTarget(tw), bt.algos.Rebalance()])
+    t = bt.Backtest(ma_cross, pdf)
+    res = bt.run(t)
+
+    wait=1
+
 
