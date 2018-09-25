@@ -1232,6 +1232,11 @@ class TargetVol(Algo):
         current_weights = target.temp['weights']
         selected = current_weights.keys()
 
+        # if there were no weights already set then skip
+        if len(selected) == 0:
+            return True
+
+
         t0 = target.now - self.lag
         prc = target.universe.loc[t0 - self.lookback:t0, selected]
         returns = bt.ffn.to_returns(prc)
@@ -1260,8 +1265,8 @@ class TargetVol(Algo):
         else:
             mult = 1
 
-        for w in target.temp['weights']:
-            target.temp['weights'][w] = target.temp['weights'][w]*mult
+        for k in target.temp['weights'].keys():
+            target.temp['weights'][k] = target.temp['weights'][k]*mult
 
 
         return True
