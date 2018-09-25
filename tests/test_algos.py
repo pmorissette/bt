@@ -1077,3 +1077,4 @@ def test_TargetVol():
     assert np.isclose(weights['c2'], weights['c1'])
 
     assert np.isclose(unannualized_c2_weight, weights['c2'])
+
