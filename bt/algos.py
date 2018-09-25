@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 import random
 
+import sklearn.covariance
+
 
 def run_always(f):
     """
@@ -1184,6 +1186,82 @@ class LimitWeights(Algo):
         else:
             tw = bt.ffn.limit_weights(tw, self.limit)
         target.temp['weights'] = tw
+
+        return True
+
+
+class TargetVol(Algo):
+    """
+    Updates temp['weights'] based on the target annualized volatility desired.
+
+    Args:
+        * target_volatility: annualized volatility to target
+        * lookback (DateOffset): lookback period for estimating volatility
+        * lag (DateOffset): amount of time to wait to calculate the covariance
+        * covar_method: method of calculating volatility
+        * annualization_factor: number of periods to annualize by.
+            It is assumed that target volatility is already annualized by this factor.
+
+    Updates:
+        * weights
+
+    Requires:
+        * temp['weights']
+
+
+    """
+
+    def __init__(
+            self,
+            target_volatility,
+            lookback=pd.DateOffset(months=3),
+            lag=pd.DateOffset(days=0),
+            covar_method='standard',
+            annualization_factor=252
+    ):
+
+        super(TargetVol, self).__init__()
+        self.target_volatility = target_volatility
+        self.lookback = lookback
+        self.lag = lag
+        self.covar_method = covar_method
+        self.annualization_factor = annualization_factor
+
+    def __call__(self, target):
+
+        current_weights = target.temp['weights']
+
+        t0 = target.now - self.lag
+        prc = target.universe.loc[t0 - self.lookback:t0]
+        returns = bt.ffn.to_returns(prc)
+
+        # calc covariance matrix
+        if self.covar_method == 'ledoit-wolf':
+            covar = sklearn.covariance.ledoit_wolf(returns)
+        elif self.covar_method == 'standard':
+            covar = returns.cov()
+        else:
+            raise NotImplementedError('covar_method not implemented')
+
+        weights = pd.Series(
+            [current_weights[x] for x in covar.columns],
+            index=covar.columns
+        )
+
+        vol = np.sqrt(weights.values.T@covar@weights.values*self.annualization_factor)
+
+        #vol is too high
+        if vol > self.target_volatility:
+            mult = self.target_volatility/vol
+        #vol is too low
+        elif vol < self.target_volatility:
+            mult = self.target_volatility/vol
+        else:
+            mult = 1
+
+        for w in target.temp['weights']:
+            target.temp['weights'][w] = target.temp['weights'][w]*mult
+
 
         return True
 
