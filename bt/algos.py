@@ -1230,9 +1230,10 @@ class TargetVol(Algo):
     def __call__(self, target):
 
         current_weights = target.temp['weights']
+        selected = current_weights.keys()
 
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback:t0]
+        prc = target.universe.loc[t0 - self.lookback:t0, selected]
         returns = bt.ffn.to_returns(prc)
 
         # calc covariance matrix
