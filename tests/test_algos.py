@@ -577,7 +577,7 @@ def test_select_has_data():
 
     s = bt.Strategy('s')
 
-    dts = pd.date_range('2010-01-01', periods=3)
+    dts = pd.date_range('2010-01-01', periods=10)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
     data['c1'].ix[dts[0]] = np.nan
     data['c1'].ix[dts[1]] = np.nan
@@ -1014,3 +1014,66 @@ def test_or():
     # verify it returns true when both algos return true
     target.now = pd.to_datetime('2018-01-04')
     assert orAlgo(target)
+
+def test_TargetVol():
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=7)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+
+    # high vol c1
+    data.loc[dts[0],'c1'] = 95
+    data.loc[dts[1],'c1'] = 105
+    data.loc[dts[2],'c1'] = 95
+    data.loc[dts[3],'c1'] = 105
+    data.loc[dts[4],'c1'] = 95
+    data.loc[dts[5],'c1'] = 105
+    data.loc[dts[6],'c1'] = 95
+
+    # low vol c2
+    data.loc[dts[0], 'c2'] = 99
+    data.loc[dts[1], 'c2'] = 101
+    data.loc[dts[2], 'c2'] = 99
+    data.loc[dts[3], 'c2'] = 101
+    data.loc[dts[4], 'c2'] = 99
+    data.loc[dts[5], 'c2'] = 101
+    data.loc[dts[6], 'c2'] = 99
+
+    targetVolAlgo = algos.TargetVol(
+        0.1,
+        lookback=pd.DateOffset(days=5),
+        lag=pd.DateOffset(days=1),
+        covar_method='standard',
+        annualization_factor=1
+    )
+
+    s.setup(data)
+    s.update(dts[6])
+    s.temp['weights'] = {'c1':0.5, 'c2':0.5}
+
+    assert targetVolAlgo(s)
+    weights = s.temp['weights']
+    assert len(weights) == 2
+    assert np.isclose(weights['c2'],weights['c1'])
+
+    unannualized_c2_weight = weights['c1']
+
+    targetVolAlgo = algos.TargetVol(
+        0.1*np.sqrt(252),
+        lookback=pd.DateOffset(days=5),
+        lag=pd.DateOffset(days=1),
+        covar_method='standard',
+        annualization_factor=252
+    )
+
+    s.setup(data)
+    s.update(dts[6])
+    s.temp['weights'] = {'c1': 0.5, 'c2': 0.5}
+
+    assert targetVolAlgo(s)
+    weights = s.temp['weights']
+    assert len(weights) == 2
+    assert np.isclose(weights['c2'], weights['c1'])
+
+    assert np.isclose(unannualized_c2_weight, weights['c2'])
