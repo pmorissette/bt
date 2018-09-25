@@ -1254,7 +1254,7 @@ class TargetVol(Algo):
             index=covar.columns
         )
 
-        vol = np.sqrt(weights.values.T@covar@weights.values*self.annualization_factor)
+        vol = np.sqrt(np.matmul(weights.values.T,np.matmul(covar,weights.values))*self.annualization_factor)
 
         #vol is too high
         if vol > self.target_volatility:
