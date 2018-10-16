@@ -1078,3 +1078,57 @@ def test_TargetVol():
 
     assert np.isclose(unannualized_c2_weight, weights['c2'])
 
+
+def test_PTE_Rebalance():
+
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=30*4)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+
+    # high vol c1
+    # low vol c2
+    for i,dt in enumerate(dts[:-2]):
+        if i % 2 == 0:
+            data.loc[dt,'c1'] = 95
+            data.loc[dt,'c2'] = 101
+        else:
+            data.loc[dt, 'c1'] = 105
+            data.loc[dt, 'c2'] = 99
+
+    dt = dts[-2]
+    data.loc[dt,'c1'] = 115
+    data.loc[dt,'c2'] = 97
+
+    s.setup(data)
+    s.update(dts[-2])
+    s.adjust(1000000)
+    s.rebalance(0.4,'c1')
+    s.rebalance(0.6,'c2')
+
+    wdf = pd.DataFrame(
+        np.zeros(data.shape),
+        columns=data.columns,
+        index=data.index
+    )
+
+    wdf['c1'] = 0.5
+    wdf['c2'] = 0.5
+
+
+    PTE_rebalance_Algo = bt.algos.PTE_Rebalance(
+        0.01,
+        wdf,
+        lookback=pd.DateOffset(months=3),
+        lag=pd.DateOffset(days=1),
+        covar_method='standard',
+        annualization_factor=252
+    )
+
+    assert PTE_rebalance_Algo(s)
+
+    s.rebalance(0.5, 'c1')
+    s.rebalance(0.5, 'c2')
+
+    assert not PTE_rebalance_Algo(s)
+

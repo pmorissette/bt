@@ -1271,6 +1271,98 @@ class TargetVol(Algo):
 
         return True
 
+class PTE_Rebalance(Algo):
+    """
+    Triggers a rebalance when PTE from static weights is past a level.
+
+    Args:
+        * PTE_volatility_cap: annualized volatility to target
+        * target_weights: dataframe of weights that needs to have the same index as the price dataframe
+        * lookback (DateOffset): lookback period for estimating volatility
+        * lag (DateOffset): amount of time to wait to calculate the covariance
+        * covar_method: method of calculating volatility
+        * annualization_factor: number of periods to annualize by.
+            It is assumed that target volatility is already annualized by this factor.
+
+    """
+
+    def __init__(
+            self,
+            PTE_volatility_cap,
+            target_weights,
+            lookback=pd.DateOffset(months=3),
+            lag=pd.DateOffset(days=0),
+            covar_method='standard',
+            annualization_factor=252
+    ):
+
+        super(PTE_Rebalance, self).__init__()
+        self.PTE_volatility_cap = PTE_volatility_cap
+        self.target_weights = target_weights
+        self.lookback = lookback
+        self.lag = lag
+        self.covar_method = covar_method
+        self.annualization_factor = annualization_factor
+
+    def __call__(self, target):
+
+        if target.now is None:
+            return False
+
+        if target.positions.shape == (0, 0):
+            return True
+
+        positions = target.positions.loc[target.now]
+        if positions is None:
+            return True
+        prices = target.universe.loc[target.now, positions.index]
+        if prices is None:
+            return True
+
+        current_weights = positions*prices/target.value
+
+        target_weights = self.target_weights.loc[target.now,:]
+
+        cols = list(current_weights.index.copy())
+        for c in target_weights.keys():
+            if not c in cols:
+                cols.append(c)
+
+        weights = pd.Series(
+            np.zeros(len(cols)),
+            index=cols
+        )
+        for c in cols:
+            if c in current_weights:
+                weights[c] = current_weights[c]
+            if c in target_weights:
+                weights[c] -= target_weights[c]
+
+
+        t0 = target.now - self.lag
+        prc = target.universe.loc[t0 - self.lookback:t0, cols]
+        returns = bt.ffn.to_returns(prc)
+
+        # calc covariance matrix
+        if self.covar_method == 'ledoit-wolf':
+            covar = sklearn.covariance.ledoit_wolf(returns)
+        elif self.covar_method == 'standard':
+            covar = returns.cov()
+        else:
+            raise NotImplementedError('covar_method not implemented')
+
+        PTE_vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar, weights.values)) * self.annualization_factor)
+
+        if pd.isnull(PTE_vol):
+            return False
+        # vol is too high
+        if PTE_vol > self.PTE_volatility_cap:
+            return True
+        else:
+            return False
+
+        return True
+
 
 class CapitalFlow(Algo):
 
@@ -1545,3 +1637,4 @@ class Or(Algo):
             res = res | tempRes
 
         return res
+
