@@ -63,3 +63,6 @@ docs/source/.ipynb_checkpoints/
 # ignore PyCharm and IntelliJ project metadata
 /.idea/
 *.iml
+
+# macOS
+.DS_Store
