@@ -1,4 +1,4 @@
-.. image:: http://pmorissette.github.io/bt/_static/logo.png
+.. image:: https://pmorissette.github.io/bt/_static/logo.png
 
 .. image:: https://travis-ci.org/pmorissette/bt.svg?branch=master
     :target: https://travis-ci.org/pmorissette/bt
@@ -11,7 +11,7 @@ bt - Flexible Backtesting for Python
 
 bt is currently in alpha stage - if you find a bug, please submit an issue.
 
-Read the docs here: http://pmorissette.github.io/bt.
+Read the docs here: https://pmorissette.github.io/bt.
 
 What is bt?
 -----------
@@ -19,7 +19,7 @@ What is bt?
 **bt** is a flexible backtesting framework for Python used to test quantitative
 trading strategies. **Backtesting** is the process of testing a strategy over a given 
 data set. This framework allows you to easily create strategies that mix and match 
-different `Algos <http://pmorissette.github.io/bt/bt.html#bt.core.Algo>`_. It aims to foster the creation of easily testable, re-usable and 
+different `Algos <https://pmorissette.github.io/bt/bt.html#bt.core.Algo>`_. It aims to foster the creation of easily testable, re-usable and 
 flexible blocks of strategy logic to facilitate the rapid development of complex 
 trading strategies. 
 
@@ -37,14 +37,14 @@ Features
 ---------
 
 * **Tree Structure**
-    `The tree structure <http://pmorissette.github.io/bt/tree.html>`_ facilitates the construction and composition of complex algorithmic trading 
+    `The tree structure <https://pmorissette.github.io/bt/tree.html>`_ facilitates the construction and composition of complex algorithmic trading 
     strategies that are modular and re-usable. Furthermore, each tree `Node
-    <http://pmorissette.github.io/bt/bt.html#bt.core.Node>`_
+    <https://pmorissette.github.io/bt/bt.html#bt.core.Node>`_
     has its own price index that can be
     used by Algos to determine a Node's allocation. 
 
 * **Algorithm Stacks**
-    `Algos <http://pmorissette.github.io/bt/bt.html#bt.core.Algo>`_ and `AlgoStacks <http://pmorissette.github.io/bt/bt.html#bt.core.AlgoStack>`_ are
+    `Algos <https://pmorissette.github.io/bt/bt.html#bt.core.Algo>`_ and `AlgoStacks <https://pmorissette.github.io/bt/bt.html#bt.core.AlgoStack>`_ are
     another core feature that facilitate the creation of modular and re-usable strategy
     logic. Due to their modularity, these logic blocks are also easier to test -
     an important step in building robust financial solutions.
@@ -57,7 +57,7 @@ Features
 * **Detailed Statistics**
     Furthermore, bt calculates a bunch of stats relating to a backtest and offers a quick way to compare
     these various statistics across many different backtests via `Results'
-    <http://pmorissette.github.io/bt/bt.html#bt.backtest.Result>`_ display methods.
+    <https://pmorissette.github.io/bt/bt.html#bt.backtest.Result>`_ display methods.
 
 
 Roadmap
@@ -101,7 +101,7 @@ Recommended Setup
 -----------------
 
 We believe the best environment to develop with bt is the `IPython Notebook
-<http://ipython.org/notebook.html>`__. From their homepage, the IPython Notebook
+<https://ipython.org/notebook.html>`__. From their homepage, the IPython Notebook
 is:
 
     "[...] a web-based interactive computational environment
