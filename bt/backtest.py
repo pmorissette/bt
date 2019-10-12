@@ -528,7 +528,7 @@ class RandomBenchmarkResult(Result):
 
         ser = self.r_stats.ix[statistic]
 
-        ax = ser.hist(bins=bins, figsize=figsize, normed=True, **kwargs)
+        ax = ser.hist(bins=bins, figsize=figsize, density=True, **kwargs)
         ax.set_title(title)
         plt.axvline(self.b_stats[statistic], linewidth=4)
         ser.plot(kind='kde')
