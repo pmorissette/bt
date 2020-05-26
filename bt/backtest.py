@@ -526,9 +526,9 @@ class RandomBenchmarkResult(Result):
 
         plt.figure(figsize=figsize)
 
-        ser = self.r_stats.ix[statistic]
+        ser = self.r_stats.loc[statistic]
 
         ax = ser.hist(bins=bins, figsize=figsize, density=True, **kwargs)
         ax.set_title(title)
-        plt.axvline(self.b_stats[statistic], linewidth=4)
+        plt.axvline(self.b_stats[statistic], linewidth=4, color = 'r')
         ser.plot(kind='kde')
