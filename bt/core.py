@@ -246,6 +246,23 @@ class Node(object):
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.full_name)
 
+    def to_dot(self, root=True):
+        """
+        Represent the node structure in DOT format.
+        """
+        name = lambda x: x.name or repr(self)
+        edges = '\n'.join(
+            '\t"%s" -> "%s"' % (name(self), name(c))
+            for c in self.children.values()
+        )
+        below = '\n'.join(
+            c.to_dot(False) for c in self.children.values()
+        )
+        body = '\n'.join([edges, below]).rstrip()
+        if root:
+            return '\n'.join(['digraph {', body, '}'])
+        return body
+
 
 class StrategyBase(Node):
 
