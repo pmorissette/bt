@@ -579,8 +579,8 @@ def test_select_has_data():
 
     dts = pd.date_range('2010-01-01', periods=10)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
-    data['c1'].ix[dts[0]] = np.nan
-    data['c1'].ix[dts[1]] = np.nan
+    data['c1'].loc[dts[0]] = np.nan
+    data['c1'].loc[dts[1]] = np.nan
 
     s.setup(data)
     s.update(dts[2])
@@ -598,8 +598,8 @@ def test_select_has_data_preselected():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
-    data['c1'].ix[dts[0]] = np.nan
-    data['c1'].ix[dts[1]] = np.nan
+    data['c1'].loc[dts[0]] = np.nan
+    data['c1'].loc[dts[1]] = np.nan
 
     s.setup(data)
     s.update(dts[2])
@@ -647,16 +647,16 @@ def test_weigh_inv_vol():
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
 
     # high vol c1
-    data['c1'].ix[dts[1]] = 105
-    data['c1'].ix[dts[2]] = 95
-    data['c1'].ix[dts[3]] = 105
-    data['c1'].ix[dts[4]] = 95
+    data['c1'].loc[dts[1]] = 105
+    data['c1'].loc[dts[2]] = 95
+    data['c1'].loc[dts[3]] = 105
+    data['c1'].loc[dts[4]] = 95
 
     # low vol c2
-    data['c2'].ix[dts[1]] = 100.1
-    data['c2'].ix[dts[2]] = 99.9
-    data['c2'].ix[dts[3]] = 100.1
-    data['c2'].ix[dts[4]] = 99.9
+    data['c2'].loc[dts[1]] = 100.1
+    data['c2'].loc[dts[2]] = 99.9
+    data['c2'].loc[dts[3]] = 100.1
+    data['c2'].loc[dts[4]] = 99.9
 
     s.setup(data)
     s.update(dts[4])
@@ -705,8 +705,8 @@ def test_stat_total_return():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
-    data['c1'].ix[dts[2]] = 105
-    data['c2'].ix[dts[2]] = 95
+    data['c1'].loc[dts[2]] = 105
+    data['c2'].loc[dts[2]] = 95
 
     s.setup(data)
     s.update(dts[2])
@@ -726,8 +726,8 @@ def test_select_n():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
-    data['c1'].ix[dts[2]] = 105
-    data['c2'].ix[dts[2]] = 95
+    data['c1'].loc[dts[2]] = 105
+    data['c2'].loc[dts[2]] = 95
 
     s.setup(data)
     s.update(dts[2])
@@ -766,8 +766,8 @@ def test_select_n_perc():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
-    data['c1'].ix[dts[2]] = 105
-    data['c2'].ix[dts[2]] = 95
+    data['c1'].loc[dts[2]] = 105
+    data['c2'].loc[dts[2]] = 95
 
     s.setup(data)
     s.update(dts[2])
@@ -786,8 +786,8 @@ def test_select_momentum():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
-    data['c1'].ix[dts[2]] = 105
-    data['c2'].ix[dts[2]] = 95
+    data['c1'].loc[dts[2]] = 105
+    data['c2'].loc[dts[2]] = 95
 
     s.setup(data)
     s.update(dts[2])
