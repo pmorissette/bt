@@ -1,7 +1,7 @@
 cython
 future
 numpy
-pandas == 0.22.0
+pandas
 matplotlib
 ffn
 pyprind
