@@ -76,7 +76,7 @@ What we could do instead is pre-calculate the selection logic DataFrame (a fast,
         def __call__(self, target):
             # get signal on target.now
             if target.now in self.signal.index:
-                sig = self.signal.ix[target.now]
+                sig = self.signal.loc[target.now]
     
                 # get indices where true as list
                 selected = list(sig.index[sig])
@@ -375,7 +375,7 @@ Here's the WeighTarget implementation (this Algo also already exists in the algo
         def __call__(self, target):
             # get target weights on date target.now
             if target.now in self.tw.index:
-                w = self.tw.ix[target.now]                
+                w = self.tw.loc[target.now]                
     
                 # save in temp - this will be used by the weighing algo
                 # also dropping any na's just in case they pop up
