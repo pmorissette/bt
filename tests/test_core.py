@@ -109,7 +109,7 @@ def test_security_setup_prices():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     assert c1.price == 105
     assert len(c1.prices) == 1
@@ -134,7 +134,7 @@ def test_security_setup_prices():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     assert c1.price == 105
     assert len(c1.prices) == 1
@@ -208,19 +208,19 @@ def test_strategybase_tree_update():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     c1.price == 100
     c2.price == 100
 
     i = 1
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     c1.price == 105
     c2.price == 95
 
     i = 2
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     c1.price == 100
     c2.price == 100
@@ -238,7 +238,7 @@ def test_update_fails_if_price_is_nan_and_position_open():
     i = 0
     # mock in position
     c1._position = 100
-    c1.update(dts[i], data.ix[dts[i]])
+    c1.update(dts[i], data.loc[dts[i]])
 
     # test normal case - position & non-nan price
     assert c1._value == 100 * 100
@@ -247,7 +247,7 @@ def test_update_fails_if_price_is_nan_and_position_open():
     # this should fail, because we have non-zero position, and price is nan, so
     # bt has no way of updating the _value
     try:
-        c1.update(dts[i], data.ix[dts[i]])
+        c1.update(dts[i], data.loc[dts[i]])
         assert False
     except Exception as e:
         assert str(e).startswith('Position is open')
@@ -255,7 +255,7 @@ def test_update_fails_if_price_is_nan_and_position_open():
     # on the other hand, if position was 0, this should be fine, and update
     # value to 0
     c1._position = 0
-    c1.update(dts[i], data.ix[dts[i]])
+    c1.update(dts[i], data.loc[dts[i]])
     assert c1._value == 0
 
 
@@ -275,7 +275,7 @@ def test_strategybase_tree_allocate():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000)
     # since children have w == 0 this should stay in s
@@ -312,7 +312,7 @@ def test_strategybase_tree_allocate_child_from_strategy():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000)
     # since children have w == 0 this should stay in s
@@ -359,7 +359,7 @@ def test_strategybase_tree_allocate_level2():
     m.setup(data)
 
     i = 0
-    m.update(dts[i], data.ix[dts[i]])
+    m.update(dts[i], data.loc[dts[i]])
 
     m.adjust(1000)
     # since children have w == 0 this should stay in s
@@ -414,7 +414,7 @@ def test_strategybase_tree_allocate_long_short():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000)
     c1.allocate(500)
@@ -467,7 +467,7 @@ def test_strategybase_tree_allocate_update():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
     assert s.price == 100
 
     s.adjust(1000)
@@ -486,7 +486,7 @@ def test_strategybase_tree_allocate_update():
     assert s.price == 100
 
     i = 1
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     assert c1.position == 5
     assert c1.value == 525
@@ -618,7 +618,7 @@ def test_strategybase_multiple_calls():
         target.flatten()
 
         # get stock w/ lowest price
-        c = target.universe.ix[target.now].idxmin()
+        c = target.universe.loc[target.now].idxmin()
 
         # allocate all capital to that stock
         target.allocate(target.value, c)
@@ -876,7 +876,7 @@ def test_strategybase_multiple_calls_preset_secs():
         target.flatten()
 
         # get stock w/ lowest price
-        c = target.universe.ix[target.now].idxmin()
+        c = target.universe.loc[target.now].idxmin()
 
         # allocate all capital to that stock
         target.allocate(target.value, c)
@@ -1124,7 +1124,7 @@ def test_strategybase_multiple_calls_no_post_update():
         target.flatten()
 
         # get stock w/ lowest price
-        c = target.universe.ix[target.now].idxmin()
+        c = target.universe.loc[target.now].idxmin()
 
         # allocate all capital to that stock
         target.allocate(target.value, c)
@@ -1415,7 +1415,7 @@ def test_strategybase_tree_rebalance():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000)
 
@@ -1450,7 +1450,7 @@ def test_strategybase_tree_decimal_position_rebalance():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000.2)
     s.rebalance(0.42, 'c1')
@@ -1499,7 +1499,7 @@ def test_strategybase_tree_rebalance_to_0():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000)
 
@@ -1555,7 +1555,7 @@ def test_strategybase_tree_rebalance_level2():
     m.setup(data)
 
     i = 0
-    m.update(dts[i], data.ix[dts[i]])
+    m.update(dts[i], data.loc[dts[i]])
 
     m.adjust(1000)
 
@@ -1631,7 +1631,7 @@ def test_strategybase_tree_rebalance_base():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000)
 
@@ -1762,7 +1762,7 @@ def test_strategy_tree_proper_return_calcs():
     m.setup(data)
 
     i = 0
-    m.update(dts[i], data.ix[dts[i]])
+    m.update(dts[i], data.loc[dts[i]])
 
     m.adjust(1000)
     # since children have w == 0 this should stay in s
@@ -1844,8 +1844,8 @@ def test_strategy_tree_proper_universes():
 def test_strategy_tree_paper():
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['a'], data=100.)
-    data['a'].ix[dts[1]] = 101
-    data['a'].ix[dts[2]] = 102
+    data['a'].loc[dts[1]] = 101
+    data['a'].loc[dts[2]] = 102
 
     s = Strategy('s',
                  [bt.algos.SelectWhere(data > 100),
@@ -1897,7 +1897,7 @@ def test_outlays():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     # allocate 1000 to strategy
     s.adjust(1000)
@@ -1913,7 +1913,7 @@ def test_outlays():
     assert c2.data['outlay'][dts[0]] == (5 * 95)
 
     i = 1
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     c1.allocate(-400)
     c2.allocate(100)
@@ -1961,7 +1961,7 @@ def test_fixed_commissions():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     # allocate 1000 to strategy
     s.adjust(1000)
@@ -2037,7 +2037,7 @@ def test_degenerate_shorting():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     s.adjust(1000)
 
@@ -2061,7 +2061,7 @@ def test_securitybase_allocate():
     s.setup(data)
 
     i = 0
-    s.update(dts[i], data.ix[dts[i]])
+    s.update(dts[i], data.loc[dts[i]])
 
     # allocate 100000 to strategy
     original_capital = 100000.
