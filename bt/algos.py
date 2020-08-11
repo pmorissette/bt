@@ -374,14 +374,17 @@ class RunIfOutOfBounds(Algo):
     This algo returns true if any of the target weights deviate by an amount greater
     than tolerance. For example, it will be run if the tolerance is set to 0.5 and
     a security grows from a target weight of 0.2 to greater than 0.3.
-
-    Args:
-        * tolerance (float): Allowed deviation of each security weight.
     
     A strategy where rebalancing is performed quarterly or whenever any
     security's weight deviates by more than 20% could be implemented by:
 
         Or([runQuarterlyAlgo,runIfOutOfBoundsAlgo(0.2)])
+
+    Args:
+        * tolerance (float): Allowed deviation of each security weight.
+
+    Requires:
+        * Weights
 
     """
 
