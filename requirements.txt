@@ -1,7 +1,0 @@
-cython>=0.25
-future
-numpy>=1
-pandas>=0.19
-matplotlib>=2
-ffn>=0.3.4
-pyprind>=2.11
