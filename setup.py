@@ -41,9 +41,22 @@ setup(
     keywords='python finance quant backtesting strategies',
     url='https://github.com/pmorissette/bt',
     install_requires=[
-        'ffn',
+        'ffn>=0.3.4',
         'pyprind>=2.10'
     ],
+    extras_require={
+        'dev': [
+            'codecov',
+            'coverage',
+            'cython>=0.25',
+            'future',
+            'numpy>=1',
+            'pandas>=0.19',
+            'matplotlib>=2,<3',
+            'ffn>=0.3.4',
+            'pyprind>=2.11',
+        ],
+    },
     packages=['bt'],
     long_description=local_file('README.rst').read(),
     classifiers=[
@@ -52,5 +65,5 @@ setup(
         'Programming Language :: Python'
     ],
     ext_modules=ext_modules,
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*'
 )

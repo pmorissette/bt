@@ -1360,6 +1360,7 @@ class PTE_Rebalance(Algo):
 
         if pd.isnull(PTE_vol):
             return False
+
         # vol is too high
         if PTE_vol > self.PTE_volatility_cap:
             return True
