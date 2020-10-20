@@ -1,12 +1,14 @@
 language: python
 python:
   - "2.7"
-  - "3.4"
-  - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
+
 # command to install dependencies
 install:
-  - pip install -r requirements.txt
+  - pip install -e .[dev]
+
 # deploys to pypi
 deploy:
   provider: pypi
@@ -18,9 +20,11 @@ deploy:
     distributions: sdist
     repo: pmorissette/bt
     branch: master
+
 # command to run tests
 script:
   - nosetests --with-coverage --cover-package bt
+
 # command to run codecov coverage
 after_success:
   - codecov

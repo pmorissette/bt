@@ -1254,7 +1254,7 @@ class TargetVol(Algo):
             index=covar.columns
         )
 
-        vol = np.sqrt(np.matmul(weights.values.T,np.matmul(covar,weights.values))*self.annualization_factor)
+        vol = np.sqrt(np.matmul(weights.values.T,np.matmul(covar.values, weights.values))*self.annualization_factor)
 
         #vol is too high
         if vol > self.target_volatility:
@@ -1350,11 +1350,12 @@ class PTE_Rebalance(Algo):
             covar = returns.cov()
         else:
             raise NotImplementedError('covar_method not implemented')
-
-        PTE_vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar, weights.values)) * self.annualization_factor)
+        
+        PTE_vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
 
         if pd.isnull(PTE_vol):
             return False
+
         # vol is too high
         if PTE_vol > self.PTE_volatility_cap:
             return True
