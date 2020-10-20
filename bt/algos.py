@@ -415,26 +415,31 @@ class SelectAll(Algo):
 
     Selects all the securities and saves them in temp['selected'].
     By default, SelectAll does not include securities that have no
-    data (nan) on current date or those whose price is zero.
+    data (nan) on current date or those whose price is zero or negative.
 
     Args:
         * include_no_data (bool): Include securities that do not have data?
-
+        * include_negative (bool): Include securities that have negative
+            or zero prices?
     Sets:
         * selected
 
     """
 
-    def __init__(self, include_no_data=False):
+    def __init__(self, include_no_data=False, include_negative=False):
         super(SelectAll, self).__init__()
         self.include_no_data = include_no_data
+        self.include_negative = include_negative
 
     def __call__(self, target):
         if self.include_no_data:
             target.temp['selected'] = target.universe.columns
         else:
             universe = target.universe.loc[target.now].dropna()
-            target.temp['selected'] = list(universe[universe > 0].index)
+            if self.include_negative:
+                target.temp['selected'] = list( universe.index)
+            else:
+                target.temp['selected'] = list(universe[universe > 0].index)
         return True
 
 
@@ -1434,6 +1439,27 @@ class CloseDead(Algo):
         return True
 
 
+class SetNotional(Algo):
+
+    """ 
+    Sets the notional_value to use as the base for rebalancing for
+    FixedIncomestrategy targets
+
+    Args:
+        * notional_value (float): The target notional value of the strategy
+
+    Sets:
+        * notional_value
+    """
+    def __init__(self, notional_value):
+        self.notional_value = notional_value
+        super(SetNotional, self).__init__()
+
+    def __call__(self, target):
+        target.temp['notional_value'] = self.notional_value
+        return True
+
+
 class Rebalance(Algo):
 
     """
@@ -1451,7 +1477,8 @@ class Rebalance(Algo):
             value to the provided weights, and the remaining 30% will be kept
             in cash. If this value is not provided (default), the full value
             of the strategy is allocated to securities.
-
+        * notional_value (optional): Required only for fixed_income targets. This is the base
+            balue of total notional that will apply to the weights.
     """
 
     def __init__(self):
@@ -1463,6 +1490,17 @@ class Rebalance(Algo):
 
         targets = target.temp['weights']
 
+        # save value because it will change after each call to allocate
+        # use it as base in rebalance calls
+        # call it before de-allocation so that notional_value is correct
+        if target.fixed_income:
+            if 'notional_value' in target.temp:
+                base = target.temp['notional_value']
+            else:
+                base = target.notional_value
+        else:
+            base = target.value
+
         # de-allocate children that are not in targets and have non-zero value
         # (open positions)
         for cname in target.children:
@@ -1472,22 +1510,25 @@ class Rebalance(Algo):
 
             # get child and value
             c = target.children[cname]
-            v = c.value
+            if target.fixed_income:
+                v = c.notional_value
+            else:
+                v = c.value
             # if non-zero and non-null, we need to close it out
             if v != 0. and not np.isnan(v):
-                target.close(cname)
-
-        # save value because it will change after each call to allocate
-        # use it as base in rebalance calls
-        base = target.value
+                target.close(cname, update=False)
 
         # If cash is set (it should be a value between 0-1 representing the
         # proportion of cash to keep), calculate the new 'base'
         if 'cash' in target.temp:
             base = base * (1 - target.temp['cash'])
 
+        # Turn off updating while we rebalance each child
         for item in iteritems(targets):
-            target.rebalance(item[1], child=item[0], base=base)
+            target.rebalance(item[1], child=item[0], base=base, update=False)
+
+        # Now update
+        target.root.update( target.now )
 
         return True
 
@@ -1638,3 +1679,30 @@ class Or(Algo):
 
         return res
 
+
+class SelectTypes(Algo):
+    """
+    Sets temp['selected'] based on node type.
+    If temp['selected'] is already set, it will filter the existing
+    selection.
+
+    Args:
+        * incude_types (list): Types of nodes to include
+        * exclude_types (list): Types of nodes to exclude
+
+    Sets:
+        * selected
+    """
+
+    def __init__(self, incude_types=(bt.core.Node,), exclude_types=()):
+        self.incude_types = incude_types
+        self.exclude_types = exclude_types or (type(None),)
+
+    def __call__(self, target):
+        selected = [ sec_name for sec_name, sec in target.children.items()
+                    if isinstance( sec, self.incude_types )
+                    and not isinstance( sec, self.exclude_types ) ]
+        if 'selected' in target.temp:
+            selected = [ s for s in selected if s in target.temp['selected'] ]
+        target.temp['selected'] = selected
+        return True

@@ -102,6 +102,7 @@ class Backtest(object):
         * commissions (fn(quantity, price)): The commission function
         to be used. Ex: commissions=lambda q, p: max(1, abs(q) * 0.01)
         * progress_bar (Bool): Display progress bar while running backtest
+        * additional_data (dict): Additional kwargs passed to StrategyBase.setup, after preprocessing
 
     Attributes:
         * strategy (Strategy): The Backtest's Strategy. This will be a deepcopy
@@ -115,6 +116,7 @@ class Backtest(object):
         * weights (DataFrame): Weights of each component over time
         * security_weights (DataFrame): Weights of each security as a
             percentage of the whole portfolio over time
+        * additional_data (dict): Additional data passed to strategy setup
 
     """
 
@@ -123,7 +125,8 @@ class Backtest(object):
                  initial_capital=1000000.0,
                  commissions=None,
                  integer_positions=True,
-                 progress_bar=True):
+                 progress_bar=False,
+                 additional_data=None):
 
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
@@ -136,20 +139,8 @@ class Backtest(object):
         self.strategy = deepcopy(strategy)
         self.strategy.use_integer_positions(integer_positions)
 
-        # add virtual row at t0-1day with NaNs
-        # this is so that any trading action at t0 can be evaluated relative to
-        # a clean starting point. This is related to #83. Basically, if you
-        # have a big trade / commision on day 0, then the Strategy.prices will
-        # be adjusted at 0, and hide the 'total' return. The series should
-        # start at 100, but may start at 90, for example. Here, we add a
-        # starting point at t0-1day, and this is the reference starting point
-        data = pd.concat([
-            pd.DataFrame(np.nan, columns=data.columns,
-                         index=[data.index[0] - pd.DateOffset(days=1)]),
-            data])
+        self._process_data( data, additional_data)
 
-        self.data = data
-        self.dates = data.index
         self.initial_capital = initial_capital
         self.name = name if name is not None else strategy.name
         self.progress_bar = progress_bar
@@ -163,6 +154,36 @@ class Backtest(object):
         self._sweights = None
         self.has_run = False
 
+    def _process_data( self, data, additional_data ):
+        # add virtual row at t0-1day with NaNs
+        # this is so that any trading action at t0 can be evaluated relative to
+        # a clean starting point. This is related to #83. Basically, if you
+        # have a big trade / commision on day 0, then the Strategy.prices will
+        # be adjusted at 0, and hide the 'total' return. The series should
+        # start at 100, but may start at 90, for example. Here, we add a
+        # starting point at t0-1day, and this is the reference starting point
+        data_new = pd.concat([
+            pd.DataFrame(np.nan, columns=data.columns,
+                         index=[data.index[0] - pd.DateOffset(days=1)]),
+            data])
+
+        self.data = data_new
+        self.dates = data_new.index
+
+        self.additional_data = (additional_data or {}).copy()
+
+        # Look for data frames with the same index as (original) data,
+        # and add in the first row as well (i.e. "bidoffer")
+        for k in self.additional_data:
+            old = self.additional_data[k]
+            if isinstance(old, pd.DataFrame) and old.index.equals( data.index ):
+                new = pd.concat([
+                            pd.DataFrame(np.nan, columns=old.columns,
+                         index=[old.index[0] - pd.DateOffset(days=1)]),
+                        old])
+                self.additional_data[k] = new
+
+
     def run(self):
         """
         Runs the Backtest.
@@ -174,7 +195,7 @@ class Backtest(object):
         self.has_run = True
 
         # setup strategy
-        self.strategy.setup(self.data)
+        self.strategy.setup(self.data, **self.additional_data)
 
         # adjust strategy with initial capital
         self.strategy.adjust(self.initial_capital)
@@ -216,9 +237,14 @@ class Backtest(object):
         if self._weights is not None:
             return self._weights
         else:
-            vals = pd.DataFrame({x.full_name: x.values for x in
-                                 self.strategy.members})
-            vals = vals.div(self.strategy.values, axis=0)
+            if self.strategy.fixed_income:
+                vals = pd.DataFrame({x.full_name: x.notional_values for x in
+                                     self.strategy.members})
+                vals = vals.div(self.strategy.notional_values, axis=0)
+            else:
+                vals = pd.DataFrame({x.full_name: x.values for x in
+                                     self.strategy.members})
+                vals = vals.div(self.strategy.values, axis=0)
             self._weights = vals
             return vals
 
@@ -243,14 +269,21 @@ class Backtest(object):
             vals = {}
             for m in self.strategy.members:
                 if isinstance(m, bt.core.SecurityBase):
-                    if m.name in vals:
-                        vals[m.name] += m.values
+                    if self.strategy.fixed_income:
+                        m_values = m.notional_values
                     else:
-                        vals[m.name] = m.values
+                        m_values = m.values
+                    if m.name in vals:
+                        vals[m.name] += m_values
+                    else:
+                        vals[m.name] = m_values
             vals = pd.DataFrame(vals)
 
             # divide by root strategy values
-            vals = vals.div(self.strategy.values, axis=0)
+            if self.strategy.fixed_income:
+                vals = vals.div(self.strategy.notional_values, axis=0)
+            else:
+                vals = vals.div(self.strategy.values, axis=0)
 
             # save for future use
             self._sweights = vals

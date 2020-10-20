@@ -4,6 +4,9 @@ import copy
 
 import bt
 from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
+from bt.core import FixedIncomeStrategy, HedgeSecurity, FixedIncomeSecurity
+from bt.core import CouponPayingSecurity, CouponPayingHedgeSecurity
+from bt.core import is_zero
 import pandas as pd
 import numpy as np
 from nose.tools import assert_almost_equal as aae
@@ -199,6 +202,8 @@ def test_strategybase_tree_update():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
     s = StrategyBase('p', [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -210,20 +215,20 @@ def test_strategybase_tree_update():
     i = 0
     s.update(dts[i], data.loc[dts[i]])
 
-    c1.price == 100
-    c2.price == 100
+    assert c1.price == 100
+    assert c2.price == 100
 
     i = 1
     s.update(dts[i], data.loc[dts[i]])
 
-    c1.price == 105
-    c2.price == 95
+    assert c1.price == 105
+    assert c2.price == 95
 
     i = 2
     s.update(dts[i], data.loc[dts[i]])
 
-    c1.price == 100
-    c2.price == 100
+    assert c1.price == 100
+    assert c2.price == 100
 
 
 def test_update_fails_if_price_is_nan_and_position_open():
@@ -653,7 +658,7 @@ def test_strategybase_multiple_calls():
     # update out t0
     s.update(dts[i])
 
-    c2 == s['c2']
+    c2 = s['c2']
     assert len(s.children) == 1
     assert s.value == 1000
     assert s.capital == 50
@@ -671,7 +676,7 @@ def test_strategybase_multiple_calls():
     assert len(s.children) == 1
 
     assert 'c2' in s.children
-    c2 == s['c2']
+    c2 = s['c2']
     assert c2.value == 1000
     assert c2.weight == 1000.0 / 1050.0
     assert c2.price == 100
@@ -1165,7 +1170,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert len(s.children) == 1
 
     assert 'c2' in s.children
-    c2 == s['c2']
+    c2 = s['c2']
     assert c2.value == 1000
     assert c2.weight == 1000.0 / 1049.0
     assert c2.price == 100
@@ -1425,7 +1430,8 @@ def test_strategybase_tree_rebalance():
     assert c2.value == 0
 
     # now rebalance c1
-    s.rebalance(0.5, 'c1')
+    s.rebalance(0.5, 'c1', update=True)
+    assert s.root.stale == True
 
     assert c1.position == 4
     assert c1.value == 400
@@ -1434,6 +1440,10 @@ def test_strategybase_tree_rebalance():
     assert c1.weight == 400.0 / 999
     assert c2.weight == 0
 
+    # Check that rebalance with update=False
+    # does not mark the node as stale
+    s.rebalance(0.6, 'c1', update=False)
+    assert s.root.stale == False
 
 def test_strategybase_tree_decimal_position_rebalance():
     c1 = SecurityBase('c1')
@@ -1906,8 +1916,9 @@ def test_outlays():
     c1.allocate(500)
     c2.allocate(500)
 
-    # out update
-    s.update(dts[i])
+    #calling outlays should automatically update the strategy, since stale
+    assert c1.outlays[dts[0]] == (4 * 105)
+    assert c2.outlays[dts[0]] == (5 * 95)
 
     assert c1.data['outlay'][dts[0]] == (4 * 105)
     assert c2.data['outlay'][dts[0]] == (5 * 95)
@@ -1919,9 +1930,9 @@ def test_outlays():
     c2.allocate(100)
 
     # out update
-    s.update(dts[i])
+    assert c1.outlays[dts[1]] == (-4 * 100)
+    assert c2.outlays[dts[1]] == 100
 
-    #print(c1.data['outlay'])
     assert c1.data['outlay'][dts[1]] == (-4 * 100)
     assert c2.data['outlay'][dts[1]] == 100
 
@@ -2085,7 +2096,7 @@ def test_securitybase_allocate():
 
 def test_securitybase_allocate_commisions():
 
-    date_span = pd.DatetimeIndex(start='10/1/2017', end='10/11/2017', freq='B')
+    date_span = pd.date_range(start='10/1/2017', end='10/11/2017', freq='B')
     numper = len(date_span.values)
     comms = 0.01
 
@@ -2121,3 +2132,1077 @@ def test_securitybase_allocate_commisions():
     ####and let's run it!
     res = bt.run(t)
     ########################
+
+def test_strategybase_tree_transact():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+
+    s.adjust(1000)
+    # since children have w == 0 this should stay in s
+    s.transact(1)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now allocate directly to child
+    c1.transact(5)
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert c1.weight == 500.0 / 1000
+    assert c2.weight == 0
+
+    # now transact the parent since weights are nonzero
+    s.transact(2)
+
+    assert c1.position == 6
+    assert c1.value == 600
+    assert s.capital == 1000 - 600
+    assert s.value == 1000
+    assert c1.weight == 600.0 / 1000
+    assert c2.weight == 0
+
+
+def test_strategybase_tree_transact_child_from_strategy():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+
+    s.adjust(1000)
+    # since children have w == 0 this should stay in s
+    s.transact(1)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now transact in c1
+    s.transact(5, 'c1')
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert c1.weight == 500.0 / 1000
+    assert c2.weight == 0
+
+
+def test_strategybase_tree_transact_level2():
+    c1 = SecurityBase('c1')
+    c12 = copy.deepcopy(c1)
+    c2 = SecurityBase('c2')
+    c22 = copy.deepcopy(c2)
+    s1 = StrategyBase('s1', [c1, c2])
+    s2 = StrategyBase('s2', [c12, c22])
+    m = StrategyBase('m', [s1, s2])
+
+    s1 = m['s1']
+    s2 = m['s2']
+
+    c1 = s1['c1']
+    c2 = s1['c2']
+    c12 = s2['c1']
+    c22 = s2['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    m.setup(data)
+
+    i = 0
+    m.update(dts[i], data.loc[dts[i]])
+
+    m.adjust(1000)
+    # since children have w == 0 this should stay in s
+    m.transact(1)
+
+    assert m.value == 1000
+    assert m.capital == 1000
+    assert s1.value == 0
+    assert s2.value == 0
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now transact directly in child. No weights, so nothing happens
+    s1.transact(1)
+
+    assert m.value == 1000
+    assert m.capital == 1000
+    assert s1.value == 0
+    assert s2.value == 0
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now transact directly in child of child
+    s1.allocate(500)
+    c1.transact(2)
+
+    assert s1.value == 500
+    assert s1.capital == 500 - 200
+    assert c1.value == 200
+    assert c1.weight == 200.0 / 500
+    assert c1.position == 2
+
+    assert m.capital == 1000 - 500
+    assert m.value == 1000
+    assert s1.weight == 500.0 / 1000
+    assert s2.weight == 0
+
+    assert c12.value == 0
+
+    # now transact directly in child again
+    s1.transact(5)
+
+    assert s1.value == 500
+    assert s1.capital == 500 - 400
+    assert c1.value == 400
+    assert c1.weight == 400.0 / 500
+    assert c1.position == 4
+
+    assert m.capital == 1000 - 500
+    assert m.value == 1000
+    assert s1.weight == 500.0 / 1000
+    assert s2.weight == 0
+
+    assert c12.value == 0
+
+def test_strategybase_precision():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    c3 = SecurityBase('c3')
+    s = StrategyBase('p', [c1, c2, c3])
+    s.use_integer_positions(False)
+
+    c1 = s['c1']
+    c2 = s['c2']
+    c3 = s['c3']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=1.)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    s.adjust(1.0)
+    s.rebalance(0.1, 'c1')
+    s.rebalance(0.1, 'c2')
+    s.rebalance(0.1, 'c3')
+    s.adjust(-0.7)
+
+    aae( s.capital, 0. )
+    aae( s.value, 0.3 )
+    aae( s.price, 100. )
+
+    assert s.capital != 0 # Due to numerical precision
+    assert s.value != 0.3 # Created non-zero value out of numerical precision errors
+    assert s.price != 100.
+
+
+    # Make sure we can still update and calculate return
+    i=1
+    s.update(dts[i])
+
+    aae( s.price, 100. )
+    aae( s.value, 0.3 )
+
+    assert s.price != 100.
+    assert s.value != 0.3
+
+def test_securitybase_transact():
+    c1 = SecurityBase('c1')
+    s = StrategyBase('p', [c1])
+
+    c1 = s['c1']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1'], data=100.)
+    # set the price
+    price = 91.40246706608193
+    data['c1'][dts[0]] = 91.40246706608193
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    # allocate 100000 to strategy
+    original_capital = 100000.
+    s.adjust(original_capital)
+    # not integer positions
+    c1.integer_positions = False
+    # set the full_outlay and amount
+    q = 1000.
+    amount = q * price
+
+    c1.transact(q)
+
+    assert np.isclose( c1.value, amount, rtol=0.)
+    assert np.isclose( c1.weight, amount/original_capital, rtol=0.)
+    assert c1.position == q
+    assert np.isclose( c1.outlays[0], amount, rtol=0.)
+
+    assert np.isclose( s.capital, (original_capital - amount) )
+    assert s.weight == 1
+    assert s.value == original_capital
+    assert np.isclose( s.outlays[c1.name][0], amount, rtol=0.)
+
+    # Call again on the same step (and again) to make sure all updates are working
+    c1.transact(q)
+    c1.transact(q)
+    assert c1.position == 3*q
+    assert np.isclose( c1.outlays[0], 3*amount, rtol=0.)
+    assert np.isclose( c1.value, 3*amount, rtol=0.)
+
+    assert np.isclose( s.capital, (original_capital - 3*amount) )
+    assert s.weight == 1
+    assert s.value == original_capital
+    assert np.isclose( s.outlays[c1.name][0], 3*amount, rtol=0.)
+
+
+def test_security_setup_positions():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    assert c1.position == 0
+    assert len(c1.positions) == 1
+    assert c1.positions[0] == 0
+
+    assert c2.position == 0
+    assert len(c2.positions) == 1
+    assert c2.positions[0] == 0
+
+
+def test_couponpayingsecurity_setup():
+    c1 = CouponPayingSecurity('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    coupons = pd.DataFrame(index=dts, columns=['c1'], data=0.1)
+
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+
+    assert 'coupon' in c1.data
+    assert c1.coupon == 0.0
+    assert len(c1.coupons) == 1
+    assert c1.coupons[0] == 0.0
+
+    assert c1.price == 105
+    assert len(c1.prices) == 1
+    assert c1.prices[0] == 105
+
+    assert c2.price == 95
+    assert len(c2.prices) == 1
+    assert c2.prices[0] == 95
+
+
+def test_couponpayingsecurity_transact():
+    c1 = CouponPayingSecurity('c1')
+    s = StrategyBase('p', [c1])
+
+    c1 = s['c1']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1'], data=100.)
+    # set the price
+    price = 91.40246706608193
+    data['c1'][dts[0]] = 91.40246706608193
+    data['c1'][dts[1]] = 91.40246706608193
+
+    coupon = 0.1
+    coupons = pd.DataFrame(index=dts, columns=['c1'], data=0.)
+    coupons['c1'][dts[0]] = coupon
+
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+
+    # allocate 100000 to strategy
+    original_capital = 100000.
+    s.adjust(original_capital)
+    # not integer positions
+    c1.integer_positions = False
+    # set the full_outlay and amount
+    q = 1000.
+    amount = q * price
+    c1.transact(q)
+
+    # The coupon is nonzero, but will only be counted in "value" the next day
+    assert c1.coupon == coupon * q
+    assert len(c1.coupons) == 1
+    assert c1.coupons[0] == coupon * q
+
+    assert np.isclose( c1.value, amount, rtol=0.)
+    assert np.isclose( c1.weight, amount/original_capital, rtol=0.)
+    assert c1.position == q
+
+    assert s.capital == (original_capital - amount)
+    assert s.cash[0] == (original_capital - amount)
+    assert s.weight == 1
+    assert s.value == original_capital
+
+    assert c1._capital == coupon * q
+
+    # On this step, the coupon will be paid
+    i = 1
+    s.update(dts[i])
+    new_capital = original_capital + coupon * q
+    assert c1.coupon == 0
+    assert len(c1.coupons) == 2
+    assert c1.coupons[0] == coupon * q
+    assert c1.coupons[1] == 0
+
+    assert np.isclose( c1.value, amount, rtol=0.)
+    assert np.isclose( c1.weight, amount/new_capital, rtol=0.)
+    assert c1.position == q
+
+    assert s.capital == (new_capital - amount)
+    assert s.weight == 1
+    assert s.value == new_capital
+    assert s.cash[0] == (original_capital - amount)
+    assert s.cash[1] == (new_capital - amount)
+
+    assert c1._capital == 0
+
+    # Close the position
+    c1.transact(-q)
+
+    assert c1.coupon == 0
+    assert len(c1.coupons) == 2
+    assert c1.coupons[0] == coupon * q
+    assert c1.coupons[1] == 0
+
+    assert np.isclose( c1.value, 0., rtol=0.)
+    assert np.isclose( c1.weight, 0./new_capital, rtol=0.)
+    assert c1.position == 0
+
+    assert s.capital == new_capital
+    assert s.weight == 1
+    assert s.value == new_capital
+    assert s.cash[0] == (original_capital - amount)
+    assert s.cash[1] == new_capital
+
+    assert c1._capital == 0
+
+
+def test_bidoffer():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    bidoffer = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=1.)
+    bidoffer['c1'][dts[0]] = 2
+    bidoffer['c2'][dts[0]] = 1.5
+
+    s.setup(data, bidoffer=bidoffer)
+    s.adjust(100000)
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+
+    assert c1.bidoffer == 2
+    assert len(c1.bidoffers) == 1
+    assert c1.bidoffers[0] == 2
+
+    assert c2.bidoffer == 1.5
+    assert len(c2.bidoffers) == 1
+    assert c2.bidoffers[0] == 1.5
+
+    # Check the outlays are adjusted for bid/offer
+    s.set_commissions( lambda q,p : 0.1 )
+
+    total, outlay, fee, bidoffer = c1.outlay( 100 )
+    assert bidoffer == 100 * 1
+    assert fee == 0.1
+    assert outlay == 100 * (105 + 1)
+    assert total == outlay + fee
+
+    total, outlay, fee, bidoffer = c1.outlay( -100 )
+    assert bidoffer == 100 * 1
+    assert fee == 0.1
+    assert outlay == -100 * (105 - 1)
+    assert total ==  outlay + fee
+
+    total, outlay, fee, bidoffer = c2.outlay( 100 )
+    assert bidoffer == 100 * 0.75
+    assert fee == 0.1
+    assert outlay == 100 * (95 + 0.75)
+    assert total == outlay + fee
+
+    total, outlay, fee, bidoffer = c2.outlay( -100 )
+    assert bidoffer == 100 * 0.75
+    assert fee == 0.1
+    assert outlay == -100 * (95 - 0.75)
+    assert total ==  outlay + fee
+
+    # Do some transactions, and check that bidoffer_paid is updated
+    c1.transact(100)
+    assert c1.bidoffer_paid[0] == 100 * 1
+    c1.transact(100)
+    assert c1.bidoffer_paid[0] == 200 * 1
+
+    c2.transact(-100)
+    assert c2.bidoffer_paid[0] == 100 * 0.75
+
+
+def test_outlay_custom():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+
+    s.setup(data)
+    s.adjust(100000)
+    i = 0
+    s.update(dts[i])
+
+    # Check the outlays are adjusted for custom prices
+    s.set_commissions( lambda q,p : 0.1*p )
+
+    total, outlay, fee, bidoffer = c1.outlay( 100, 106 )
+    assert bidoffer == 100 * 1
+    assert fee == 0.1 * 106
+    assert outlay == 100 * (106)
+    assert total == outlay + fee
+
+    total, outlay, fee, bidoffer = c1.outlay( -100, 106 )
+    assert bidoffer == -100 * 1
+    assert fee == 0.1 * 106
+    assert outlay == -100 * 106
+    assert total ==  outlay + fee
+
+
+def test_bidoffer_custom():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+
+    # Note: In order to access bidoffer_paid,
+    # need to pass bidoffer kwarg during setup
+    s.setup(data, bidoffer = {})
+    s.adjust(100000)
+    i = 0
+    s.update(dts[i])
+
+    c1.transact(100, price=106)
+    assert c1.bidoffer_paid[0] == 100 * 1
+    assert s.capital == 100000 - 100*106
+    c1.transact(100, price=106)
+    assert c1.bidoffer_paid[0] == 200 * 1
+    assert s.capital == 100000 - 100*106 - 100*106
+    c1.transact(-100, price=107)
+    assert c1.bidoffer_paid[0] == 0
+    assert s.capital == 100000 - 100*106 - 100*106 + 100*107
+
+
+def test_security_notional_value():
+    c1 = SecurityBase('c1')        
+    c2 = CouponPayingSecurity('c2')
+    c3 = HedgeSecurity('c3')
+    c4 = CouponPayingHedgeSecurity('c4')
+    c5 = FixedIncomeSecurity('c5')
+
+    s = StrategyBase('p', children = [c1, c2, c3, c4, c5])
+
+    c1 = s['c1']; c2 = s['c2']; c3 = s['c3']; c4 = s['c4']; c5 = s['c5']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3', 'c4', 'c5'], data=100.)
+    coupons = pd.DataFrame(index=dts, columns=['c2', 'c4'], data=0.)
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+
+    c1.transact(1000)
+    c2.transact(1000)
+    c3.transact(1000)
+    c4.transact(1000)
+    c5.transact(1000)
+    for c in [ c1, c2, c3, c4, c5 ]:
+        assert c.position == 1000
+        assert c.price == 100
+    assert c1.notional_value == 1000*100.
+    assert c2.notional_value == 1000
+    assert c3.notional_value == 0
+    assert c4.notional_value == 0
+    assert c5.notional_value == 1000
+    for c in [ c1, c2, c3, c4, c5 ]:
+        assert len( c.notional_values ) == 1
+        assert c.notional_values[ dts[i] ] == c.notional_value
+
+    i = 1
+    s.update(dts[i])
+
+    c1.transact(-3000)
+    c2.transact(-3000)
+    c3.transact(-3000)
+    c4.transact(-3000)
+    c5.transact(-3000)
+    for c in [ c1, c2, c3, c4, c5 ]:
+        assert c.position == -2000
+        assert c.price == 100
+    assert c1.notional_value == 2000*100.
+    assert c2.notional_value == 2000
+    assert c3.notional_value == 0
+    assert c4.notional_value == 0
+    assert c5.notional_value == 2000
+    for c in [ c1, c2, c3, c4, c5 ]:
+        assert len( c.notional_values ) == 2
+        assert c.notional_values[ dts[i] ] == c.notional_value
+
+
+# FixedIncomeStrategy Tests
+
+def test_fi_strategy_flag():
+    s1 = SecurityBase('s1')
+    s2 = SecurityBase('s2')
+    s = StrategyBase('p', children = [s1, s2])
+    assert s.fixed_income == False
+
+    s = FixedIncomeStrategy('p', [s1, s2])
+    assert s.fixed_income == True
+
+def test_fi_strategy_no_bankruptcy():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = FixedIncomeStrategy('p', children = [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+    s.transact( 10, 'c2')
+    assert s.value == 0.
+    assert s.capital == -10*100
+
+    i = 1
+    s.update(dts[i], data.loc[dts[i]])
+    assert s.value == -5*10
+    assert s.capital == -10*100
+    assert s.bankrupt == False
+
+
+def test_fi_strategy_tree_adjust():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = FixedIncomeStrategy('p', children = [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    # Basic setup works with no adjustment
+    assert s.value == 0
+    assert c1.value == 0
+    assert c2.value == 0
+    assert c1.weight == 0
+    assert c2.weight == 0
+    assert c1.notional_value == 0
+    assert c2.notional_value == 0
+
+    # Positive or negative capital adjustments are fine
+    s.adjust(1000)
+    assert s.capital == 1000
+    assert s.value == 1000
+
+    s.adjust(-2000)
+    assert s.capital == -1000
+    assert s.value == -1000
+
+def test_fi_strategy_tree_update():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = FixedIncomeStrategy('p', children = [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = -5 # Test negative prices
+    data['c2'][dts[2]] = 0 # Test zero price
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+
+    assert c1.price == 100
+    assert c2.price == 100
+
+    i = 1
+    s.update(dts[i], data.loc[dts[i]])
+
+    assert c1.price == 105
+    assert c2.price == -5
+
+    i = 2
+    s.update(dts[i], data.loc[dts[i]])
+
+    assert c1.price == 100
+    assert c2.price == 0
+
+
+def test_fi_strategy_tree_allocate():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = FixedIncomeStrategy('p', children = [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+
+    s.adjust(1000)
+    # since children have w == 0 this should stay in s
+    s.allocate(1000)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now allocate directly to child
+    c1.allocate(500)
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert c1.notional_value == 500
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert s.notional_value == 500 # Capital does not count towards notl
+    assert c1.weight == 1.
+    assert c2.weight == 0
+
+
+def test_fi_strategy_tree_allocate_child_from_strategy():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = FixedIncomeStrategy('p', children = [c1, c2])
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[1]] = 105
+    data['c2'][dts[1]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+
+    s.adjust(1000)
+    # since children have w == 0 this should stay in s
+    s.allocate(1000)
+
+    assert s.value == 1000
+    assert s.capital == 1000
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now allocate to c1
+    s.allocate(500, 'c1')
+
+    assert c1.position == 5
+    assert c1.value == 500
+    assert s.capital == 1000 - 500
+    assert s.value == 1000
+    assert c1.weight == 1.0
+    assert c2.weight == 0
+
+
+def test_fi_strategy_close():
+    c1 = SecurityBase('c1')
+    c2 = CouponPayingSecurity('c2')
+    c3 = HedgeSecurity('c3')
+    c4 = CouponPayingHedgeSecurity('c4')
+
+    s = FixedIncomeStrategy('p', children = [c1, c2, c3, c4])
+
+    c1 = s['c1']; c2 = s['c2']; c3 = s['c3']; c4 = s['c4']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    # Price
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3', 'c4'], data=100.)
+    coupons = pd.DataFrame(index=dts, columns=['c2', 'c4'], data=0.)
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+
+    for c in [ c1, c2, c3, c4 ]:
+        s.transact(10, c.name)
+
+        assert c.position == 10
+        assert c.value == 1000
+        assert s.capital == -1000
+        assert s.value == 0
+
+        s.close( c.name )
+
+        assert c.position == 0
+        assert c.value == 0
+        assert s.capital == 0
+        assert s.value == 0
+
+        s.transact(-10, c.name)
+        assert c.position == -10
+        assert c.value == -1000
+        assert s.capital == 1000
+        assert s.value == 0
+
+        s.close( c.name )
+
+        assert c.position == 0
+        assert c.value == 0
+        assert s.capital == 0
+        assert s.value == 0
+
+
+def test_fi_strategy_close_zero_price():
+    c1 = SecurityBase('c1')
+    c2 = CouponPayingSecurity('c2')
+    c3 = HedgeSecurity('c3')
+    c4 = CouponPayingHedgeSecurity('c4')
+
+    s = FixedIncomeStrategy('p', children = [c1, c2, c3, c4])
+
+    c1 = s['c1']; c2 = s['c2']; c3 = s['c3']; c4 = s['c4']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    # Zero prices are OK in fixed income space (i.e. swaps)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3', 'c4'], data=0.)
+    coupons = pd.DataFrame(index=dts, columns=['c2', 'c4'], data=0.)
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+
+    for c in [ c1, c2, c3, c4 ]:
+        s.transact(10, c.name)
+        assert c.position == 10
+        assert c.value == 0
+        s.close( c.name )
+        assert c.position == 0
+        assert c.value == 0
+
+        s.transact(-10, c.name)
+        assert c.position == -10
+        assert c.value == 0
+        s.close( c.name )
+        assert c.position == 0
+        assert c.value == 0
+
+
+def test_fi_strategy_flatten():
+    c1 = SecurityBase('c1')
+    c2 = CouponPayingSecurity('c2')
+    c3 = HedgeSecurity('c3')
+    c4 = CouponPayingHedgeSecurity('c4')
+
+    s = FixedIncomeStrategy('p', children = [c1, c2, c3, c4])
+
+    c1 = s['c1']; c2 = s['c2']; c3 = s['c3']; c4 = s['c4']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3', 'c4'], data=100.)
+    coupons = pd.DataFrame(index=dts, columns=['c2', 'c4'], data=0.)
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+
+    for c in [ c1, c2, c3, c4 ]:
+        s.transact(10, c.name)
+
+    for c in [ c1, c2, c3, c4 ]:
+        assert c.position == 10
+        assert c.value == 1000
+
+    s.flatten()
+
+    for c in [ c1, c2, c3, c4 ]:
+        assert c.position == 0
+        assert c.value == 0
+
+
+def test_fi_strategy_prices():
+    c1 = CouponPayingSecurity('c1')
+    s = FixedIncomeStrategy('s', children = [c1] )
+    c1 = s['c1']
+
+    dts = pd.date_range('2010-01-01', periods=4)
+    rawd = [2, -3, 0, 1]
+    data = pd.DataFrame(index=dts, data=rawd, columns=['c1'])
+
+    coupons = pd.DataFrame(index=dts, columns=['c1'], data=[1,2,3,4])
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+
+    s.transact( 10, 'c1')
+    assert c1.coupon == 10*1
+    assert s.capital == -10*2
+    assert s.value == 0
+    assert len(s.children) == 1
+    assert s.price == 100
+    assert s.notional_value == 10
+    last_coupon = c1.coupon
+    last_value = s.value
+    last_notional_value = s.notional_value
+    last_price = 100.
+
+    i=1
+    s.update(dts[i])
+    cpn = last_coupon
+    assert c1.coupon == 10*2
+    assert s.capital == -10*2 + cpn
+    assert s.value == -5*10 + cpn # MTM + coupon
+    assert s.notional_value == 10
+    assert s.price == last_price + 100 * (s.value-last_value)/last_notional_value
+    last_value = s.value
+    last_notional_value = s.notional_value
+    last_price = s.price
+    last_coupon = c1.coupon
+
+    i=2
+    s.update(dts[i])
+    cpn += last_coupon
+    assert c1.coupon == 10*3
+    assert s.capital == -10*2 + cpn
+    assert s.value == -2*10 + cpn # MTM + coupon
+    assert s.notional_value == 10
+    assert s.price == last_price +  100 * (s.value - last_value)/last_notional_value
+    last_value = s.value
+    last_notional_value = s.notional_value
+    last_price = s.price
+    last_coupon = c1.coupon
+
+    i=3
+    s.update(dts[i])
+    s.transact( 10, 'c1')
+    # Coupon still from previous period - not affected by new transaction
+    cpn += last_coupon
+    assert c1.coupon == 20*4
+    assert s.capital == -10*2 -10*1 + cpn
+    assert s.value == -1*10 + 0 + cpn # MTM + coupon
+    assert s.notional_value == 20
+    assert s.price == last_price +  100 * (s.value - last_value)/last_notional_value
+
+
+def test_fi_fail_if_0_base_in_return_calc():
+    c1 = HedgeSecurity('c1')
+    s = FixedIncomeStrategy('s', children = [c1] )
+    c1 = s['c1']
+
+    dts = pd.date_range('2010-01-01', periods=4)
+    rawd = [2, -3, 0, 1]
+    data = pd.DataFrame(index=dts, data=rawd, columns=['c1'])
+
+    s.setup(data)
+
+    i=0
+    s.update(dts[i])
+
+    assert s.notional_value == 0
+    # Hedge security has no notional value, so strategy doesn't either
+    # and thus shouldn't be making PNL.
+
+    i = 1
+    try:
+        s.update(dts[i])
+    except ZeroDivisionError as e:
+        if 'Could not update' not in str(e):
+            assert False
+
+
+def test_fi_strategy_tree_rebalance():
+    c1 = SecurityBase('c1')
+    c2 = CouponPayingSecurity('c2')
+    c3 = HedgeSecurity('c3')
+    c4 = CouponPayingHedgeSecurity('c4')
+
+    s = FixedIncomeStrategy('p', children = [c1, c2, c3, c4])
+
+    c1 = s['c1']; c2 = s['c2']; c3 = s['c3']; c4 = s['c4']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3', 'c4'], data=50.)
+    coupons = pd.DataFrame(index=dts, columns=['c2', 'c4'], data=0.)
+    s.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i], data.loc[dts[i]])
+
+    assert s.value == 0
+    assert s.capital == 0
+    assert c1.value == 0
+    assert c2.value == 0
+
+    # now rebalance c1
+    s.rebalance(0.5, 'c1', base = 1000)
+
+    assert c1.position == 10
+    assert c1.value == 500
+    assert c1.notional_value == 500
+    assert s.capital == -500
+    assert s.value == 0
+    assert s.notional_value == 500
+    assert c1.weight == 1.0
+    assert c2.weight == 0
+
+    assert c2.notional_value == 0
+
+    # Now rebalance to s2, with no base weight.
+    # It takes base weight from strategy weight (500)
+    s.rebalance(0.5, 'c2')
+    assert c1.position == 10
+    assert c1.notional_value == 500
+    assert c2.position == 250
+    assert c2.notional_value == 250
+
+    assert s.notional_value == c1.notional_value + c2.notional_value
+
+    assert c1.weight == 2./3.
+    assert c2.weight == 1./3.
+
+    assert s.value == 0
+
+
+def test_fi_strategy_precision():
+    N = 100
+    children = [ SecurityBase('c%i' %i ) for i in range(N) ]
+    s = FixedIncomeStrategy('p', children = children)
+    children = [ s[ c.name ] for c in children ]
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=[c.name for c in children], data=1.)
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    for c in children:
+        c.transact(0.1)
+
+    # Even within tolerance, value is nonzero
+    aae( s.value, 0, 14)
+    assert not is_zero( s.value )
+    # Notional value not quite equal to N * 0.1
+    assert s.notional_value == sum( 0.1 for _ in range(N) )
+    assert s.notional_value != N*0.1
+    assert s.price == 100.
+
+    old_value = s.value
+    old_notional_value = s.notional_value
+
+    # Still make sure we can update - PNL nonzero, and last notional value is zero
+    i = 1
+    s.update(dts[i])
+    assert s.price == 100.
+    # Even within tolerance, value is nonzero
+    assert s.value == old_value
+    assert s.notional_value == old_notional_value
+
+
+    # The weights also have numerical precision issues
+    aae( children[0].weight, 1/float(N), 16)
+    assert children[0].weight != 1/float(N)
+
+    # Now rebalance "out" of an asset with the almost zero weight
+    new_weight = children[0].weight - 1/float(N)
+    s.rebalance( new_weight, children[0].name )
+
+    # Check that the position is still closed completely
+    assert children[0].position == 0
