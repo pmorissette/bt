@@ -36,6 +36,15 @@ class DummyAlgo(algos.Algo):
         return self.return_value
 
 
+def test_algo_name():
+    class TestAlgo(algos.Algo):
+        pass
+
+    actual = TestAlgo()
+
+    assert actual.name == 'TestAlgo'
+
+
 def test_algo_stack():
     algo1 = DummyAlgo(return_value=True)
     algo2 = DummyAlgo(return_value=False)
@@ -138,7 +147,6 @@ def test_run_daily():
 
     target.now = dts[1]
     assert algo(target)
-
 
 
 def test_run_weekly():
@@ -370,6 +378,19 @@ def test_run_on_date():
     assert not algo(target)
 
 
+def test_set_notional():        
+    algo = algos.SetNotional( 1000. )
+
+    s = bt.FixedIncomeStrategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    s.setup(data)
+    algo(s)
+    assert s.temp['notional_value'] == 1000
+
+
 def test_rebalance():
     algo = algos.Rebalance()
 
@@ -377,15 +398,12 @@ def test_rebalance():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    data['c1'][dts[1]] = 105
-    data['c2'][dts[1]] = 95
 
     s.setup(data)
     s.adjust(1000)
     s.update(dts[0])
 
     s.temp['weights'] = {'c1': 1}
-
     assert algo(s)
     assert s.value == 1000
     assert s.capital == 0
@@ -416,8 +434,6 @@ def test_rebalance_with_commissions():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    data['c1'][dts[1]] = 105
-    data['c2'][dts[1]] = 95
 
     s.setup(data)
     s.adjust(1000)
@@ -455,8 +471,6 @@ def test_rebalance_with_cash():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    data['c1'][dts[1]] = 105
-    data['c2'][dts[1]] = 95
 
     s.setup(data)
     s.adjust(1000)
@@ -490,6 +504,97 @@ def test_rebalance_with_cash():
     assert c2.weight == 700.0 / 997
 
 
+def test_rebalance_updatecount():
+
+    algo = algos.Rebalance()
+
+    s = bt.Strategy('s')
+    s.use_integer_positions(False)
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3', 'c4','c5'], data=100)
+
+    s.setup(data)
+    s.adjust(1000)
+    s.update(dts[0])
+
+    s.temp['weights'] = {'c1': 0.25, 'c2':0.25, 'c3':0.25, 'c4':0.25}
+    update = bt.core.SecurityBase.update
+    with mock.patch.object(bt.core.SecurityBase, 'update', autospec=True) as mock_update:
+        mock_update.side_effect = update
+        assert algo(s)
+
+    assert s.value == 1000
+    assert s.capital == 0
+
+    # Update is called once when each weighted security is created (4)
+    # and once for each security after all allocations are made (4)
+    assert mock_update.call_count == 8
+
+    s.update(dts[1])
+    s.temp['weights'] = {'c1': 0.5, 'c2':0.5}
+    update = bt.core.SecurityBase.update
+
+    with mock.patch.object(bt.core.SecurityBase, 'update', autospec=True) as mock_update:
+        mock_update.side_effect = update
+        assert algo(s)
+
+    # Update is called once for each weighted security before allocation (4)
+    # and once for each security after all allocations are made (4)
+    assert mock_update.call_count == 8
+
+    s.update(dts[2])
+    s.temp['weights'] = {'c1': 0.25, 'c2':0.25, 'c3':0.25, 'c4':0.25}
+    update = bt.core.SecurityBase.update
+    with mock.patch.object(bt.core.SecurityBase, 'update', autospec=True) as mock_update:
+        mock_update.side_effect = update
+        assert algo(s)
+
+    # Update is called once for each weighted security before allocation (2)
+    # and once for each security after all allocations are made (4)
+    assert mock_update.call_count == 6
+
+
+def test_rebalance_fixedincome():
+    algo = algos.Rebalance()
+    c1 = bt.Security('c1')
+    c2 = bt.CouponPayingSecurity('c2')
+    s = bt.FixedIncomeStrategy('s', children = [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    coupons = pd.DataFrame(index=dts, columns=['c2'], data=0)
+    s.setup(data, coupons=coupons)
+    s.update(dts[0])
+    s.temp['notional_value'] = 1000
+    s.temp['weights'] = {'c1': 1}
+    assert algo(s)
+    assert s.value == 0.        
+    assert s.notional_value == 1000
+    assert s.capital == -1000
+    c1 = s['c1']
+    assert c1.value == 1000
+    assert c1.notional_value == 1000
+    assert c1.position == 10
+    assert c1.weight == 1.
+
+    s.temp['weights'] = {'c2': 1}
+
+    assert algo(s)
+    assert s.value == 0.
+    assert s.notional_value == 1000
+    assert s.capital == -1000*100
+    c2 = s['c2']
+    assert c1.value == 0
+    assert c1.notional_value == 0
+    assert c1.position == 0
+    assert c1.weight == 0
+    assert c2.value == 1000*100
+    assert c2.notional_value == 1000
+    assert c2.position == 1000
+    assert c2.weight == 1.
+
+
 def test_select_all():
     algo = algos.SelectAll()
 
@@ -499,6 +604,7 @@ def test_select_all():
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
     data['c1'][dts[1]] = np.nan
     data['c2'][dts[1]] = 95
+    data['c1'][dts[2]] = -5
 
     s.setup(data)
     s.update(dts[0])
@@ -518,9 +624,25 @@ def test_select_all():
     assert 'c2' in selected
 
     # if specify include_no_data then 2
-    algo = algos.SelectAll(include_no_data=True)
+    algo2 = algos.SelectAll(include_no_data=True)
+
+    assert algo2(s)
+    selected = s.temp['selected']
+    assert len(selected) == 2
+    assert 'c1' in selected
+    assert 'c2' in selected
+
+    # behavior on negative prices
+    s.update(dts[2])
 
     assert algo(s)
+    selected = s.temp['selected']
+    assert len(selected) == 1
+    assert 'c2' in selected
+
+    algo3 = algos.SelectAll(include_negative=True)
+
+    assert algo3(s)
     selected = s.temp['selected']
     assert len(selected) == 2
     assert 'c1' in selected
@@ -534,8 +656,6 @@ def test_weight_equally():
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-    data['c1'][dts[1]] = 105
-    data['c2'][dts[1]] = 95
 
     s.setup(data)
     s.update(dts[0])
@@ -610,7 +730,7 @@ def test_select_has_data_preselected():
     assert len(selected) == 0
 
 
-@mock.patch('bt.ffn.calc_erc_weights')
+@mock.patch('ffn.calc_erc_weights')
 def test_weigh_erc(mock_erc):
     algo = algos.WeighERC(lookback=pd.DateOffset(days=5))
 
@@ -670,7 +790,7 @@ def test_weigh_inv_vol():
     aae(weights['c2'], 0.980, 3)
 
 
-@mock.patch('bt.ffn.calc_mean_var_weights')
+@mock.patch('ffn.calc_mean_var_weights')
 def test_weigh_mean_var(mock_mv):
     algo = algos.WeighMeanVar(lookback=pd.DateOffset(days=5))
 
@@ -1131,4 +1251,3 @@ def test_PTE_Rebalance():
     s.rebalance(0.5, 'c2')
 
     assert not PTE_rebalance_Algo(s)
-
