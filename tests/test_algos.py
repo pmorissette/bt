@@ -519,9 +519,14 @@ def test_rebalance_updatecount():
     s.update(dts[0])
 
     s.temp['weights'] = {'c1': 0.25, 'c2':0.25, 'c3':0.25, 'c4':0.25}
+
     update = bt.core.SecurityBase.update
-    with mock.patch.object(bt.core.SecurityBase, 'update', autospec=True) as mock_update:
-        mock_update.side_effect = update
+    bt.core.SecurityBase._update_call_count = 0
+    def side_effect(self, *args, **kwargs):
+        bt.core.SecurityBase._update_call_count += 1
+        return update(self, *args, **kwargs)
+
+    with mock.patch.object(bt.core.SecurityBase, 'update', side_effect) as mock_update:
         assert algo(s)
 
     assert s.value == 1000
@@ -529,30 +534,39 @@ def test_rebalance_updatecount():
 
     # Update is called once when each weighted security is created (4)
     # and once for each security after all allocations are made (4)
-    assert mock_update.call_count == 8
+    assert bt.core.SecurityBase._update_call_count == 8
 
     s.update(dts[1])
     s.temp['weights'] = {'c1': 0.5, 'c2':0.5}
-    update = bt.core.SecurityBase.update
 
-    with mock.patch.object(bt.core.SecurityBase, 'update', autospec=True) as mock_update:
-        mock_update.side_effect = update
+    update = bt.core.SecurityBase.update
+    bt.core.SecurityBase._update_call_count = 0
+    def side_effect(self, *args, **kwargs):
+        bt.core.SecurityBase._update_call_count += 1
+        return update(self, *args, **kwargs)
+
+    with mock.patch.object(bt.core.SecurityBase, 'update', side_effect) as mock_update:
         assert algo(s)
 
     # Update is called once for each weighted security before allocation (4)
     # and once for each security after all allocations are made (4)
-    assert mock_update.call_count == 8
+    assert bt.core.SecurityBase._update_call_count == 8
 
     s.update(dts[2])
     s.temp['weights'] = {'c1': 0.25, 'c2':0.25, 'c3':0.25, 'c4':0.25}
+
     update = bt.core.SecurityBase.update
-    with mock.patch.object(bt.core.SecurityBase, 'update', autospec=True) as mock_update:
-        mock_update.side_effect = update
+    bt.core.SecurityBase._update_call_count = 0
+    def side_effect(self, *args, **kwargs):
+        bt.core.SecurityBase._update_call_count += 1
+        return update(self, *args, **kwargs)
+
+    with mock.patch.object(bt.core.SecurityBase, 'update', side_effect) as mock_update:
         assert algo(s)
 
     # Update is called once for each weighted security before allocation (2)
     # and once for each security after all allocations are made (4)
-    assert mock_update.call_count == 6
+    assert bt.core.SecurityBase._update_call_count == 6
 
 
 def test_rebalance_fixedincome():
