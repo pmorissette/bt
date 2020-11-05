@@ -2556,7 +2556,7 @@ def test_bidoffer():
     s.setup(data, bidoffer=bidoffer)
     s.adjust(100000)
     i = 0
-    s.update(dts[i], data.loc[dts[i]])
+    s.update(dts[i])
 
     assert c1.bidoffer == 2
     assert len(c1.bidoffers) == 1
@@ -2601,6 +2601,13 @@ def test_bidoffer():
 
     c2.transact(-100)
     assert c2.bidoffer_paid[0] == 100 * 0.75
+    assert s.bidoffer_paid[0] == 100 * 0.75 + 200 * 1
+
+    i = 1
+    s.update(dts[i])
+    assert c1.bidoffer_paid[i] == 0.
+    assert c2.bidoffer_paid[i] == 0.
+    assert s.bidoffer_paid[i] == 0.
 
 
 def test_outlay_custom():
@@ -2657,17 +2664,20 @@ def test_bidoffer_custom():
 
     c1.transact(100, price=106)
     assert c1.bidoffer_paid[0] == 100 * 1
+    assert s.bidoffer_paid[0] == c1.bidoffer_paid[0]
     assert s.capital == 100000 - 100*106
     c1.transact(100, price=106)
     assert c1.bidoffer_paid[0] == 200 * 1
+    assert s.bidoffer_paid[0] == c1.bidoffer_paid[0]
     assert s.capital == 100000 - 100*106 - 100*106
     c1.transact(-100, price=107)
     assert c1.bidoffer_paid[0] == 0
+    assert s.bidoffer_paid[0] == c1.bidoffer_paid[0]
     assert s.capital == 100000 - 100*106 - 100*106 + 100*107
 
 
 def test_security_notional_value():
-    c1 = SecurityBase('c1')        
+    c1 = SecurityBase('c1')
     c2 = CouponPayingSecurity('c2')
     c3 = HedgeSecurity('c3')
     c4 = CouponPayingHedgeSecurity('c4')
@@ -2701,6 +2711,7 @@ def test_security_notional_value():
     for c in [ c1, c2, c3, c4, c5 ]:
         assert len( c.notional_values ) == 1
         assert c.notional_values[ dts[i] ] == c.notional_value
+    assert s.notional_value == 2000 + 1000*100  # Strategy notional value always positive
 
     i = 1
     s.update(dts[i])
@@ -2713,14 +2724,15 @@ def test_security_notional_value():
     for c in [ c1, c2, c3, c4, c5 ]:
         assert c.position == -2000
         assert c.price == 100
-    assert c1.notional_value == 2000*100.
-    assert c2.notional_value == 2000
+    assert c1.notional_value == -2000*100.
+    assert c2.notional_value == -2000
     assert c3.notional_value == 0
     assert c4.notional_value == 0
-    assert c5.notional_value == 2000
+    assert c5.notional_value == -2000
     for c in [ c1, c2, c3, c4, c5 ]:
         assert len( c.notional_values ) == 2
         assert c.notional_values[ dts[i] ] == c.notional_value
+    assert s.notional_value == 2000*100 + 4000  # Strategy notional value always positive
 
 
 # FixedIncomeStrategy Tests
@@ -3158,6 +3170,75 @@ def test_fi_strategy_tree_rebalance():
 
     assert s.value == 0
 
+    i = 1
+    s.update(dts[i], data.loc[dts[i]])
+    # Now rebalance to a new, higher base with given target weights (including negative)
+    s.rebalance(0.5, 'c1', 1000, update=False)
+    s.rebalance(-0.5, 'c2', 1000)
+
+    assert c1.weight == 0.5
+    assert c2.weight == -0.5
+    assert c1.position == 10
+    assert c1.notional_value == 500
+    assert c2.position == -500
+    assert c2.notional_value == -500
+
+
+def test_fi_strategy_tree_rebalance_nested():
+    c1 = CouponPayingSecurity('c1')
+    c2 = CouponPayingSecurity('c2')
+
+    s1 = FixedIncomeStrategy('s1', children = [c1, c2])
+    s2 = FixedIncomeStrategy('s2', children = [c1, c2])
+    s = FixedIncomeStrategy('s', children = [s1, s2])
+    p = FixedIncomeStrategy('p', children = [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=50.)
+    coupons = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=0.)
+    s.setup(data, coupons = coupons)
+    p.setup(data, coupons = coupons)
+
+    i = 0
+    s.update(dts[i])
+    p.update(dts[i])
+
+    s['s1'].transact( 100, 'c1')
+    s['s2'].transact( 100, 'c2')
+    p.transact( 100, 'c1')
+    p.transact( 100, 'c2')
+
+    assert s['s1']['c1'].position == 100
+    assert s['s2']['c2'].position == 100
+    assert p['c1'].position == 100
+    assert p['c2'].position == 100
+    s.update(dts[i]) # Force update to be safe
+    
+    base = s.notional_value
+    s.rebalance(0.5, 's1', base*10, update=False)
+    s.rebalance(-0.5, 's2', base*10)
+    p.rebalance(5, 'c1', update=False )
+    p.rebalance(-5, 'c2' )
+
+    s.update(dts[i]) # Force update to be safe
+    assert s['s1']['c1'].position == 1000
+    assert s['s2']['c2'].position == -1000
+    assert s['s1']['c1'].weight == 1.        
+    assert s['s2']['c2'].weight == -1
+    assert p['c1'].position == 1000
+    assert p['c2'].position == -1000
+    
+    # Note that even though the security weights are signed,
+    # the strategy weights are all positive (and hence not equal)
+    # to the weight passed in to the rebalance call
+    assert s['s1'].weight == 0.5
+    assert s['s2'].weight == 0.5
+
+    assert s.value == 0.
+    assert p.value == 0.
+    assert s.capital == 0
+    assert p.capital == 0
+
 
 def test_fi_strategy_precision():
     N = 100
@@ -3206,3 +3287,55 @@ def test_fi_strategy_precision():
 
     # Check that the position is still closed completely
     assert children[0].position == 0
+
+
+def test_fi_strategy_bidoffer():
+    c1 = SecurityBase('c1')
+    c2 = SecurityBase('c2')
+    s = FixedIncomeStrategy('p', children=[c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    bidoffer = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=1.)
+    bidoffer['c1'][dts[0]] = 2
+    bidoffer['c2'][dts[0]] = 1.5
+
+    s.setup(data, bidoffer=bidoffer)
+    i = 0
+    s.update(dts[i])
+    assert s.value == 0.
+    assert s.price == 100.
+    
+    # Do some transactions, and check that bidoffer_paid is updated
+    c1.transact(100)
+    assert c1.bidoffer_paid[i] == 100 * 1
+    c1.transact(100)
+    assert c1.bidoffer_paid[i] == 200 * 1
+
+    c2.transact(-100)
+    assert c2.bidoffer_paid[i] == 100 * 0.75
+
+    s.update(dts[i])
+    assert s.bidoffer_paid[i] == 275.
+    assert s.value == -275. 
+    assert s.notional_value == 105*200 + 95*100
+    assert s.price == 100 * (1. - 275. / (105*200 + 95*100))        
+    
+    old_notional = s.notional_value
+    old_value = s.value
+    old_price = s.price
+
+    i=1
+    s.update(dts[i])
+    assert s.bidoffer_paid[i] == 0.
+    assert s.value == -275. - 200*5 - 100*5 # Bid-offer paid
+    assert s.notional_value == 100*200 + 100*100
+    new_value = s.value
+    assert s.price == old_price + 100 * ( new_value-old_value) / old_notional
+        

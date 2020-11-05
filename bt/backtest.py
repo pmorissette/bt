@@ -466,7 +466,7 @@ class Result(ffn.GroupStats):
         """
         Helper function that returns the transactions in the following format:
 
-            dt, security | quantity, price
+            Date, Security | quantity, price
 
         The result is a MultiIndex DataFrame.
 
@@ -493,6 +493,12 @@ class Result(ffn.GroupStats):
         trades.iloc[0] = positions.iloc[0]
         # now convert to unstacked series, dropping nans along the way
         trades = trades[trades != 0].unstack().dropna()
+
+        # Adjust prices for bid/offer paid if needed
+        if s._bidoffer_set:
+            bidoffer = pd.DataFrame({x.name: x.bidoffer_paid
+                                     for x in s.securities }).unstack()
+            prc += bidoffer / trades
 
         res = pd.DataFrame({'price': prc, 'quantity': trades}).dropna(
             subset=['quantity'])

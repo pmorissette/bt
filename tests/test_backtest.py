@@ -2,6 +2,7 @@ from __future__ import division
 import bt
 import pandas as pd
 import numpy as np
+import random
 import sys
 if sys.version_info < (3, 3):
     import mock
@@ -183,11 +184,16 @@ def test_Results_helper_functions_fi():
         run_on_first_date=True
     )
 
+    # algo to select all securities
+    selectAll = bt.algos.SelectAll()
+
     # algo to set the weights
     #  it will only run when runMonthlyAlgo returns true
-    #  which only happens on the first of every month
-    weights = pd.Series([0.6, 0.4], index=rdf.columns)
-    weighSpecifiedAlgo = bt.algos.WeighSpecified(**weights)
+    #  which only happens on the first of every month        
+    weighRandomly = bt.algos.WeighRandomly()
+
+    # algo to set the notional of the fixed income strategy
+    setNotional = bt.algos.SetNotional( 1e6 )
 
     # algo to rebalance the current weights to weights set by weighSpecified
     #  will only run when weighSpecifiedAlgo returns true
@@ -195,10 +201,12 @@ def test_Results_helper_functions_fi():
     rebalAlgo = bt.algos.Rebalance()
 
     # a strategy that rebalances monthly to specified weights
-    strat = bt.FixedIncomeStrategy('static',
+    strat = bt.FixedIncomeStrategy('random',
         [
             runDailyAlgo,
-            weighSpecifiedAlgo,
+            selectAll,
+            weighRandomly,
+            setNotional,
             rebalAlgo
         ]
     )
@@ -211,17 +219,35 @@ def test_Results_helper_functions_fi():
         progress_bar=False,
         additional_data = {'mydata':pdf}
     )
-
+    bidoffer = 1.
+    backtest2 = bt.Backtest(
+        strat,
+        pdf,
+        initial_capital = 0,
+        integer_positions=False,
+        progress_bar=False,
+        additional_data = {'mydata':pdf, 
+                           'bidoffer': pd.DataFrame( bidoffer, pdf.index, pdf.columns )}
+    )
+    random.seed(1234)
     res = bt.run(backtest)
+    random.seed(1234)
+    res2 = bt.run(backtest2)
 
     assert(type(res.get_security_weights()) is pd.DataFrame)
 
     assert (type(res.get_transactions()) is pd.DataFrame)
+    assert len(res.get_transactions()) > 0
 
     assert (type(res.get_weights()) is pd.DataFrame)
 
     # Make sure the insertion of the first row applies to additional data as well
     assert backtest.data.index.equals( backtest.additional_data['mydata'].index )
+
+    # Check that bid/offer is accounted for
+    transactions = res.get_transactions()        
+    transactions['price'] = transactions['price'] + 0.5 * bidoffer
+    assert (res2.get_transactions().price - res2.get_transactions().price).abs().sum() == 0
         
         
 def test_30_min_data():
