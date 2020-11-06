@@ -497,8 +497,11 @@ class StrategyBase(Node):
         if self.root.stale:
             self.root.update(self.root.now, None)
 
-        vals = pd.DataFrame({x.name: x.positions for x in self.members
-                             if isinstance(x, SecurityBase)})
+        vals = pd.DataFrame()
+        for x in self.members:
+            if isinstance(x, SecurityBase):
+                vals[x.name] = x.positions + (vals[x.name] if x.name in vals.columns else 0)
+
         self._positions = vals
         return vals
 
