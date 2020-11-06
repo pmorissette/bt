@@ -162,6 +162,7 @@ def test_run_daily():
     assert algo(target)
 
 
+
 def test_run_weekly():
     dts = pd.date_range('2010-01-01', periods=367)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
@@ -460,7 +461,6 @@ def test_set_notional():
     algo(s)
     assert s.temp['notional_value'] == 1000
 
-
 def test_rebalance():
     algo = algos.Rebalance()
 
@@ -573,7 +573,6 @@ def test_rebalance_with_cash():
     assert c2.position == 7
     assert c2.weight == 700.0 / 997
 
-
 def test_rebalance_updatecount():
 
     algo = algos.Rebalance()
@@ -638,7 +637,6 @@ def test_rebalance_updatecount():
     # and once for each security after all allocations are made (4)
     assert bt.core.SecurityBase._update_call_count == 6
 
-
 def test_rebalance_fixedincome():
     algo = algos.Rebalance()
     c1 = bt.Security('c1')
@@ -677,7 +675,6 @@ def test_rebalance_fixedincome():
     assert c2.notional_value == 1000
     assert c2.position == 1000
     assert c2.weight == 1.
-
 
 def test_select_all():
     algo = algos.SelectAll()
@@ -732,7 +729,6 @@ def test_select_all():
     assert 'c1' in selected
     assert 'c2' in selected
 
-
 def test_select_randomly_n_none():
     algo = algos.SelectRandomly(n=None) # Behaves like SelectAll
 
@@ -785,7 +781,6 @@ def test_select_randomly_n_none():
     assert len(selected) == 2
     assert 'c1' in selected
     assert 'c2' in selected
-
 
 def test_select_randomly():
 
@@ -882,6 +877,7 @@ def test_select_these():
     assert 'c1' in selected
     assert 'c2' in selected
 
+
 def test_select_where_all():
     s = bt.Strategy('s')
 
@@ -937,6 +933,7 @@ def test_select_where_all():
     assert 'c1' in selected
     assert 'c2' in selected
 
+
 def test_select_where():
     s = bt.Strategy('s')
 
@@ -965,6 +962,78 @@ def test_select_where():
     s.update(dts[2])
     assert algo(s)
     assert s.temp['selected'] == ['c2']
+
+
+def test_select_regex():
+    s = bt.Strategy('s')
+    algo = algos.SelectRegex( 'c1' )
+
+    s.temp['selected'] = ['a1', 'c1', 'c2', 'c11', 'cc1']
+    assert algo( s )
+    assert s.temp['selected'] == ['c1', 'c11', 'cc1']
+
+    algo = algos.SelectRegex( '^c1$' )
+    assert algo( s )
+    assert s.temp['selected'] == ['c1']
+
+
+def test_resolve_on_the_run():
+    s = bt.Strategy('s')
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'b1'], data=100.)
+    data['c1'][dts[1]] = np.nan
+    data['c2'][dts[1]] = 95
+    data['c2'][dts[2]] = -5
+
+    on_the_run = pd.DataFrame(index=dts, columns=['c'], data='c1')
+    on_the_run.loc[dts[2], 'c'] = 'c2'
+
+    s.setup(data)
+    s.update(dts[0])
+    
+    s.temp['selected'] = ['c', 'b1']
+    algo = algos.ResolveOnTheRun( on_the_run )
+    assert algo(s)
+    selected = s.temp['selected']
+    assert len(selected) == 2
+    assert 'c1' in selected
+    assert 'b1' in selected
+
+    # make sure don't keep nan
+    s.update(dts[1])
+
+    s.temp['selected'] = ['c', 'b1']       
+    assert algo(s)
+    selected = s.temp['selected']
+    assert len(selected) == 1        
+    assert 'b1' in selected
+    
+    # if specify include_no_data then 2
+    algo2 = algos.ResolveOnTheRun(on_the_run, include_no_data=True)
+    s.temp['selected'] = ['c', 'b1']
+    assert algo2(s)
+    selected = s.temp['selected']
+    assert len(selected) == 2
+    assert 'c1' in selected
+    assert 'b1' in selected
+
+    # behavior on negative prices
+    s.update(dts[2])
+
+    s.temp['selected'] = ['c', 'b1']
+    assert algo(s)
+    selected = s.temp['selected']
+    assert len(selected) == 1
+    assert 'b1' in selected
+
+    algo3 = algos.ResolveOnTheRun(on_the_run, include_negative=True)
+    s.temp['selected'] = ['c', 'b1']
+    assert algo3(s)
+    selected = s.temp['selected']
+    assert len(selected) == 2
+    assert 'c2' in selected
+    assert 'b1' in selected       
+
 
 def test_select_types():
     c1 = bt.Security('c1')
@@ -1038,6 +1107,15 @@ def test_weight_specified():
     assert weights['c1'] == 0.6
     assert 'c2' in weights
     assert weights['c2'] == 0.4
+
+
+def test_scale_weights():
+    s = bt.Strategy('s')
+    algo = algos.ScaleWeights( -0.5 )
+
+    s.temp['weights'] = {'c1': 0.5, 'c2': -0.4, 'c3':0 }
+    assert algo( s )
+    assert s.temp['weights'] == {'c1':-0.25, 'c2':0.2, 'c3':0}
 
 
 def test_select_has_data():
@@ -1185,6 +1263,33 @@ def test_weigh_randomly():
         assert weights[c] <= 0.5
         assert weights[c] >= 0.3
 
+def test_set_stat():
+    s = bt.Strategy('s')
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    data['c1'].loc[dts[1]] = 105
+    data['c2'].loc[dts[1]] = 95
+
+    stat = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=4.)
+    stat['c1'].loc[dts[1]] = 5.
+    stat['c2'].loc[dts[1]] = 6.
+
+    algo = algos.SetStat( stat )
+
+    s.setup(data)
+    s.update(dts[0])
+    assert algo(s)
+    stat = s.temp['stat']
+    assert stat['c1'] == 4.
+    assert stat['c2'] == 4.
+
+    s.update(dts[1])        
+    assert algo(s)
+    stat = s.temp['stat']
+    assert stat['c1'] == 5.
+    assert stat['c2'] == 6.
+
 
 def test_stat_total_return():
     algo = algos.StatTotalReturn(lookback=pd.DateOffset(days=3))
@@ -1288,6 +1393,7 @@ def test_select_momentum():
 
 
 def test_limit_weights():
+
     s = bt.Strategy('s')
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
@@ -1314,7 +1420,7 @@ def test_limit_weights():
     assert w['c1'] == 0.4
     assert w['c2'] == 0.3
     assert w['c3'] == 0.3
-
+           
 
 def test_limit_deltas():
     s = bt.Strategy('s')
@@ -1646,3 +1752,367 @@ def test_PTE_Rebalance():
     s.rebalance(0.5, 'c2')
 
     assert not PTE_rebalance_Algo(s)
+
+
+def test_close_positions_after_date():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    c3 = bt.Security('c3')
+    s = bt.Strategy('s', children = [c1, c2, c3])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+    c3 = s['c3']
+
+    cutoffs= pd.DataFrame( { 'date' : [ dts[1], dts[2] ] }, index = ['c1','c2']  )
+
+    algo = algos.ClosePositionsAfterDates( cutoffs )
+
+    s.setup(data)
+
+    s.update(dts[0])
+    s.transact( 100, 'c1')
+    s.transact( 100, 'c2')
+    s.transact( 100, 'c3')
+    algo(s)
+    assert c1.position == 100
+    assert c2.position == 100
+    assert c3.position == 100
+
+    # Don't run anything on dts[1], even though that's when c1 closes
+    s.update( dts[2])
+    algo(s)
+    assert c1.position == 0
+    assert c2.position == 0
+    assert c3.position == 100
+    assert s.perm['closed'] == set(['c1', 'c2'])
+
+
+def test_roll_positions_after_date():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    c3 = bt.Security('c3')
+    s = bt.Strategy('s', children = [c1, c2, c3])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+    c3 = s['c3']
+
+    roll = pd.DataFrame( { 'date' : [ dts[1], dts[2] ], 'target' : [ 'c3', 'c1' ], 'factor' : [ 0.5, 2.0 ] }, index = ['c1','c2']  )
+
+    algo = algos.RollPositionsAfterDates( roll )
+
+    s.setup(data)
+
+    s.update(dts[0])
+    s.transact( 100, 'c1')
+    s.transact( 100, 'c2')
+    s.transact( 100, 'c3')
+    algo(s)
+    assert c1.position == 100
+    assert c2.position == 100
+    assert c3.position == 100
+
+    # Don't run anything on dts[1], even though that's when c1 closes
+    s.update( dts[2])
+    algo(s)
+    assert c1.position == 200 # From c2
+    assert c2.position == 0
+    assert c3.position == 100 + 50
+    assert s.perm['rolled'] == set(['c1', 'c2'])
+
+
+def test_replay_transactions():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    s = bt.Strategy('s', children = [c1, c2])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+
+    transactions = pd.DataFrame( [ ( pd.Timestamp( '2009-12-01 00'), 'c1', 100, 99.5),
+                                   ( pd.Timestamp( '2010-01-01 10'), 'c1', -100, 101),
+                                   ( pd.Timestamp( '2010-01-02 00'), 'c2', 50, 103)
+                                   ],
+                                columns = ['Date', 'Security', 'quantity', 'price'])
+    transactions = transactions.set_index( ['Date','Security'])
+
+    algo = algos.ReplayTransactions( transactions )
+    s.setup(data, bidoffer={}) # Pass bidoffer so it will track bidoffer paid
+    s.adjust(1000)
+    s.update(dts[0])
+    algo(s)
+    assert c1.position == 100
+    assert c2.position == 0
+    assert c1.bidoffer_paid[0] == -50
+
+    s.update(dts[1])
+    algo(s)
+    assert c1.position == 0
+    assert c2.position == 50
+    assert c1.bidoffer_paid[1] == -100
+    assert c2.bidoffer_paid[1] == 150
+
+
+def test_replay_transactions_consistency():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    s = bt.Strategy('s', children = [c1, c2])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+
+    transactions = pd.DataFrame( [ ( pd.Timestamp( '2010-01-01 00'), 'c1', -100., 101.),
+                                   ( pd.Timestamp( '2010-01-02 00'), 'c2', 50., 103.)
+                                   ],
+                                columns = ['Date', 'Security', 'quantity', 'price'])
+    transactions = transactions.set_index( ['Date','Security'])
+
+    algo = algos.ReplayTransactions( transactions )
+    strategy = bt.Strategy('strategy', algos = [ algo ], children = [c1, c2])
+    backtest = bt.backtest.Backtest(strategy, data, name='Test', additional_data={'bidoffer':{}})
+    out = bt.run(backtest)
+    t1 = transactions.sort_index(axis=1)
+    t2 = out.get_transactions().sort_index(axis=1)
+    assert t1.equals( t2 )
+
+
+def test_simulate_rfq_transactions():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    s = bt.Strategy('s', children = [c1, c2])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+
+    rfqs = pd.DataFrame( [ ( 'A', pd.Timestamp( '2009-12-01 00'), 'c1', 100),
+                            ( 'B', pd.Timestamp( '2010-01-01 10'), 'c1', -100),
+                            ( 'C', pd.Timestamp( '2010-01-01 12'), 'c1', 75),
+                            ( 'D', pd.Timestamp( '2010-01-02 00'), 'c2', 50)
+                            ],
+                        columns = ['id', 'Date', 'Security', 'quantity'])
+    rfqs = rfqs.set_index(['Date','Security'])
+    def model( rfqs, target ):
+        # Dummy model - in practice this model would rely on positions and values in target
+        transactions = rfqs[ ['quantity']]
+        prices = {'A' : 99.5, 'B' : 101, 'D':103}
+        transactions[ 'price' ] = rfqs.id.apply( lambda x : prices.get(x) )
+        return transactions.dropna()
+
+    algo = algos.SimulateRFQTransactions( rfqs, model )
+
+    s.setup(data, bidoffer={}) # Pass bidoffer so it will track bidoffer paid
+    s.adjust(1000)
+    s.update(dts[0])
+    algo(s)
+    assert c1.position == 100
+    assert c2.position == 0
+    assert c1.bidoffer_paid[0] == -50
+
+    s.update(dts[1])
+    algo(s)
+    assert c1.position == 0
+    assert c2.position == 50
+    assert c1.bidoffer_paid[1] == -100
+    assert c2.bidoffer_paid[1] == 150
+
+
+def test_update_risk():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    s = bt.Strategy('s', children = [c1, c2])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'].loc[dts[1]] = 105
+    data['c2'].loc[dts[1]] = 95
+    c1 = s['c1']
+    c2 = s['c2']
+
+    algo = algos.UpdateRisk('Test', data, history=False)
+
+    s.setup(data)
+    s.adjust(1000)
+
+    s.update(dts[0])
+    algo( s )
+    assert s.risk['Test'] == 0
+    assert c1.risk['Test'] == 0
+    assert c2.risk['Test'] == 0
+
+    s.transact( 1, 'c1')
+    s.transact( 5, 'c2')
+    algo( s )
+    assert s.risk['Test'] == 600
+    assert c1.risk['Test'] == 100
+    assert c2.risk['Test'] == 500
+
+    s.update(dts[1])
+    algo( s )
+    assert s.risk['Test'] == 105 + 5*95
+    assert c1.risk['Test'] == 105
+    assert c2.risk['Test'] == 5*95
+
+
+def test_update_risk_history():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    s = bt.Strategy('s', children = [c1, c2])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'].loc[dts[1]] = 105
+    data['c2'].loc[dts[1]] = 95
+    c1 = s['c1']
+    c2 = s['c2']
+
+    algo = algos.UpdateRisk('Test', data, history=True)
+
+    s.setup(data)
+    s.adjust(1000)
+
+    s.update(dts[0])
+    algo( s )
+    assert s.risks['Test'][0] == 0
+    assert c1.risks['Test'][0] == 0
+    assert c2.risks['Test'][0] == 0
+
+    s.transact( 1, 'c1')
+    s.transact( 5, 'c2')
+    algo( s )
+    assert s.risks['Test'][0] == 600
+    assert c1.risks['Test'][0] == 100
+    assert c2.risks['Test'][0] == 500
+
+    s.update(dts[1])
+    algo( s )
+    assert s.risks['Test'][0] == 600
+    assert c1.risks['Test'][0] == 100
+    assert c2.risks['Test'][0] == 500
+    assert s.risks['Test'][1] == 105 + 5*95
+    assert c1.risks['Test'][1] == 105
+    assert c2.risks['Test'][1] == 5*95
+
+
+def test_hedge_risk():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    c3 = bt.Security('c3')
+    s = bt.Strategy('s', children = [c1, c2, c3])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+    c3 = s['c3']
+
+    risk1 = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=0)
+    risk2 = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=0)
+    risk1['c1'] = 1
+    risk1['c2'] = 10
+    risk2['c1'] = 2
+    risk2['c3'] = 10
+
+    stack = bt.core.AlgoStack( algos.UpdateRisk('Risk1', risk1),
+                                algos.UpdateRisk('Risk2', risk2),
+                                algos.SelectThese(['c2','c3']),
+                                algos.HedgeRisks( ['Risk1', 'Risk2'] ),
+                                algos.UpdateRisk('Risk1', risk1),
+                                algos.UpdateRisk('Risk2', risk2),
+                                )
+
+    s.setup(data)
+    s.adjust(1000)
+
+    s.update(dts[0])
+    s.transact( 100, 'c1')
+    stack( s )
+
+    # Check that risk is hedged!
+    assert s.risk['Risk1'] == 0
+    assert s.risk['Risk2'] == 0
+    # Check that positions are nonzero (trivial solution)
+    assert c1.position == 100
+    assert c2.position == -10
+    assert c3.position == -20
+
+
+def test_hedge_risk_pseudo_under():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    c3 = bt.Security('c3')
+    s = bt.Strategy('s', children = [c1, c2, c3])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+    c3 = s['c3']
+
+    risk1 = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=0)
+    risk2 = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=0)
+    risk1['c1'] = 1
+    risk1['c2'] = 10
+    risk2['c1'] = 2
+    risk2['c3'] = 10
+
+    stack = bt.core.AlgoStack( algos.UpdateRisk('Risk1', risk1),
+                                algos.UpdateRisk('Risk2', risk2),
+                                algos.SelectThese(['c2']),
+                                algos.HedgeRisks( ['Risk1', 'Risk2'], pseudo=True ),
+                                algos.UpdateRisk('Risk1', risk1),
+                                algos.UpdateRisk('Risk2', risk2),
+                                )
+
+    s.setup(data)
+    s.adjust(1000)
+
+    s.update(dts[0])
+    s.transact( 100, 'c1')
+    stack( s )
+
+    # Check that risk is hedged!
+    assert s.risk['Risk1'] == 0
+    assert s.risk['Risk2'] != 0
+    # Check that positions are nonzero (trivial solution)
+    assert c1.position == 100
+    assert c2.position == -10
+    assert c3.position == 0
+
+
+def test_hedge_risk_pseudo_over():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    c3 = bt.Security('c3')
+    s = bt.Strategy('s', children = [c1, c2, c3])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+    c2 = s['c2']
+    c3 = s['c3']
+
+    risk1 = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=0)
+    risk1['c1'] = 1
+    risk1['c2'] = 10
+    risk1['c3'] = 10 # Same risk as c2
+
+    stack = bt.core.AlgoStack( algos.UpdateRisk('Risk1', risk1),
+                                algos.SelectThese(['c2','c3']),
+                                algos.HedgeRisks( ['Risk1'], pseudo=True ),
+                                algos.UpdateRisk('Risk1', risk1),
+
+                                )
+
+    s.setup(data)
+    s.adjust(1000)
+
+    s.update(dts[0])
+    s.transact( 100, 'c1')
+    stack( s )
+
+    # Check that risk is hedged!
+    assert s.risk['Risk1'] == 0
+    # Check that positions are nonzero and risk is evenly split between hedge instruments
+    assert c1.position == 100
+    assert c2.position == -5
+    assert c3.position == -5
