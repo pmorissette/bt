@@ -42,10 +42,21 @@ class PrintTempData(Algo):
     This Algo prints the temp data.
 
     Useful for debugging.
+
+    Args:
+        * fmt_string (str): A string that will later be formatted with the
+            target's temp dict. Therefore, you should provide
+            what you want to examine within curly braces ( { } )
     """
+    def __init__(self, fmt_string=None):
+        super(PrintTempData, self).__init__()
+        self.fmt_string = fmt_string
 
     def __call__(self, target):
-        print(target.temp)
+        if self.fmt_string:
+            print(self.fmt_string.format(**target.temp))
+        else:
+            print(target.temp)
         return True
 
 
@@ -69,7 +80,8 @@ class PrintInfo(Algo):
 
     """
 
-    def __init__(self, fmt_string='{full_name} {now}'):
+    def __init__(self, fmt_string='{name} {now}'):
+        super(PrintInfo, self).__init__()
         self.fmt_string = fmt_string
 
     def __call__(self, target):
@@ -433,6 +445,7 @@ class RunEveryNPeriods(Algo):
     """
 
     def __init__(self, n, offset=0):
+        super(RunEveryNPeriods, self).__init__()
         self.n = n
         self.offset = offset
         self.idx = n - offset - 1
@@ -460,26 +473,31 @@ class SelectAll(Algo):
 
     Selects all the securities and saves them in temp['selected'].
     By default, SelectAll does not include securities that have no
-    data (nan) on current date or those whose price is zero.
+    data (nan) on current date or those whose price is zero or negative.
 
     Args:
         * include_no_data (bool): Include securities that do not have data?
-
+        * include_negative (bool): Include securities that have negative
+            or zero prices?
     Sets:
         * selected
 
     """
 
-    def __init__(self, include_no_data=False):
+    def __init__(self, include_no_data=False, include_negative=False):
         super(SelectAll, self).__init__()
         self.include_no_data = include_no_data
+        self.include_negative = include_negative
 
     def __call__(self, target):
         if self.include_no_data:
             target.temp['selected'] = target.universe.columns
         else:
             universe = target.universe.loc[target.now].dropna()
-            target.temp['selected'] = list(universe[universe > 0].index)
+            if self.include_negative:
+                target.temp['selected'] = list(universe.index)
+            else:
+                target.temp['selected'] = list(universe[universe > 0].index)
         return True
 
 
@@ -488,27 +506,32 @@ class SelectThese(Algo):
     """
     Sets temp['selected'] with a set list of tickers.
 
-    Sets the temp['selected'] to a set list of tickers.
-
     Args:
         * ticker (list): List of tickers to select.
+        * include_no_data (bool): Include securities that do not have data?
+        * include_negative (bool): Include securities that have negative
+            or zero prices?
 
     Sets:
         * selected
 
     """
 
-    def __init__(self, tickers, include_no_data=False):
+    def __init__(self, tickers, include_no_data=False, include_negative=False):
         super(SelectThese, self).__init__()
         self.tickers = tickers
         self.include_no_data = include_no_data
+        self.include_negative = include_negative
 
     def __call__(self, target):
         if self.include_no_data:
             target.temp['selected'] = self.tickers
         else:
-            universe = target.universe[self.tickers].loc[target.now].dropna()
-            target.temp['selected'] = list(universe[universe > 0].index)
+            universe = target.universe.loc[target.now,self.tickers].dropna()
+            if self.include_negative:
+                 target.temp['selected'] = list(universe.index)
+            else:
+                target.temp['selected'] = list(universe[universe > 0].index)
         return True
 
 
@@ -541,20 +564,23 @@ class SelectHasData(Algo):
         * min_count (int): Minimum number of days required for a series to be
             considered valid. If not provided, ffn's get_num_days_required is
             used to estimate the number of points required.
-
+        * include_no_data (bool): Include securities that do not have data?
+        * include_negative (bool): Include securities that have negative
+            or zero prices?
     Sets:
         * selected
 
     """
 
     def __init__(self, lookback=pd.DateOffset(months=3),
-                 min_count=None, include_no_data=False):
+                 min_count=None, include_no_data=False, include_negative=False):
         super(SelectHasData, self).__init__()
         self.lookback = lookback
         if min_count is None:
             min_count = bt.ffn.get_num_days_required(lookback)
         self.min_count = min_count
         self.include_no_data = include_no_data
+        self.include_negative = include_negative
 
     def __call__(self, target):
         if 'selected' in target.temp:
@@ -562,11 +588,13 @@ class SelectHasData(Algo):
         else:
             selected = target.universe.columns
 
-        filt = target.universe[selected].loc[target.now - self.lookback:]
+        filt = target.universe.loc[target.now - self.lookback:,selected]
         cnt = filt.count()
         cnt = cnt[cnt >= self.min_count]
         if not self.include_no_data:
-            cnt = cnt[target.universe[selected].loc[target.now] > 0]
+            cnt = cnt[ ~target.universe.loc[target.now, selected].isnull() ]
+            if not self.include_negative:
+                cnt = cnt[target.universe.loc[target.now, selected] > 0]
         target.temp['selected'] = list(cnt.index)
         return True
 
@@ -587,6 +615,8 @@ class SelectN(Algo):
             before selecting the first n items?
         * all_or_none (bool): If true, only populates temp['selected'] if we
             have n items. If we have less than n, then temp['selected'] = [].
+        * filter_selected (bool): If True, will only select from the existing
+            'selected' list.
 
     Sets:
         * selected
@@ -597,16 +627,20 @@ class SelectN(Algo):
     """
 
     def __init__(self, n, sort_descending=True,
-                 all_or_none=False):
+                 all_or_none=False,
+                 filter_selected=False):
         super(SelectN, self).__init__()
         if n < 0:
             raise ValueError('n cannot be negative')
         self.n = n
         self.ascending = not sort_descending
         self.all_or_none = all_or_none
+        self.filter_selected = filter_selected
 
     def __call__(self, target):
         stat = target.temp['stat'].dropna()
+        if self.filter_selected and 'selected' in target.temp:
+            stat = stat.loc[ stat.index.intersection( target.temp['selected'] )]
         stat.sort_values(ascending=self.ascending,
                          inplace=True)
 
@@ -676,15 +710,20 @@ class SelectWhere(Algo):
 
     Args:
         * signal (DataFrame): Boolean DataFrame containing selection logic.
+        * include_no_data (bool): Include securities that do not have data?
+        * include_negative (bool): Include securities that have negative
+            or zero prices?
 
     Sets:
         * selected
 
     """
 
-    def __init__(self, signal, include_no_data=False):
+    def __init__(self, signal, include_no_data=False, include_negative=False):
+        super(SelectWhere, self).__init__()
         self.signal = signal
         self.include_no_data = include_no_data
+        self.include_negative = include_negative
 
     def __call__(self, target):
         # get signal Series at target.now
@@ -695,9 +734,12 @@ class SelectWhere(Algo):
             selected = sig[sig == True].index
             # save as list
             if not self.include_no_data:
-                universe = target.universe[
-                    list(selected)].loc[target.now].dropna()
-                selected = list(universe[universe > 0].index)
+                universe = target.universe.loc[
+                    target.now, list(selected)].dropna()
+                if self.include_negative:
+                    selected = list(universe.index)
+                else:
+                    selected = list(universe[universe > 0].index)
             target.temp['selected'] = list(selected)
 
         return True
@@ -724,6 +766,9 @@ class SelectRandomly(AlgoStack):
 
     Args:
         * n (int): Select N elements randomly.
+        * include_no_data (bool): Include securities that do not have data?
+        * include_negative (bool): Include securities that have negative
+            or zero prices?
 
     Sets:
         * selected
@@ -733,20 +778,24 @@ class SelectRandomly(AlgoStack):
 
     """
 
-    def __init__(self, n=None, include_no_data=False):
+    def __init__(self, n=None, include_no_data=False, include_negative=False):
         super(SelectRandomly, self).__init__()
         self.n = n
         self.include_no_data = include_no_data
+        self.include_negative = include_negative
 
     def __call__(self, target):
         if 'selected' in target.temp:
             sel = target.temp['selected']
         else:
-            sel = target.universe.columns
+            sel = list(target.universe.columns)
 
         if not self.include_no_data:
-            universe = target.universe[list(sel)].loc[target.now].dropna()
-            sel = list(universe[universe > 0].index)
+            universe = target.universe.loc[target.now, sel].dropna()
+            if self.include_negative:
+                sel = list(universe.index)
+            else:
+                sel = list(universe[universe > 0].index)
 
         if self.n is not None:
             n = self.n if self.n < len(sel) else len(sel)
@@ -787,7 +836,7 @@ class StatTotalReturn(Algo):
     def __call__(self, target):
         selected = target.temp['selected']
         t0 = target.now - self.lag
-        prc = target.universe[selected].loc[t0 - self.lookback:t0]
+        prc = target.universe.loc[t0 - self.lookback:t0,selected]
         target.temp['stat'] = prc.calc_total_return()
         return True
 
@@ -875,6 +924,7 @@ class WeighTarget(Algo):
     """
 
     def __init__(self, weights):
+        super(WeighTarget, self).__init__()
         self.weights = weights
 
     def __call__(self, target):
@@ -929,7 +979,7 @@ class WeighInvVol(Algo):
             return True
 
         t0 = target.now - self.lag
-        prc = target.universe[selected].loc[t0 - self.lookback:t0]
+        prc = target.universe.loc[t0 - self.lookback:t0,selected]
         tw = bt.ffn.calc_inv_vol_weights(
             prc.to_returns().dropna())
         target.temp['weights'] = tw.dropna()
@@ -1007,7 +1057,7 @@ class WeighERC(Algo):
             return True
 
         t0 = target.now - self.lag
-        prc = target.universe[selected].loc[t0 - self.lookback:t0]
+        prc = target.universe.loc[t0 - self.lookback:t0,selected]
         tw = bt.ffn.calc_erc_weights(
             prc.to_returns().dropna(),
             initial_weights=self.initial_weights,
@@ -1070,7 +1120,7 @@ class WeighMeanVar(Algo):
             return True
 
         t0 = target.now - self.lag
-        prc = target.universe[selected].loc[t0 - self.lookback:t0]
+        prc = target.universe.loc[t0 - self.lookback:t0,selected]
         tw = bt.ffn.calc_mean_var_weights(
             prc.to_returns().dropna(), weight_bounds=self.bounds,
             covar_method=self.covar_method, rf=self.rf)
@@ -1121,7 +1171,7 @@ class WeighRandomly(Algo):
         try:
             rw = bt.ffn.random_weights(
                 n, self.bounds, self.weight_sum)
-            w = dict(list(zip(sel, rw)))
+            w = dict(zip(sel, rw))
         except ValueError:
             pass
 
@@ -1395,12 +1445,11 @@ class PTE_Rebalance(Algo):
             covar = returns.cov()
         else:
             raise NotImplementedError('covar_method not implemented')
-        
+
         PTE_vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
 
         if pd.isnull(PTE_vol):
             return False
-
         # vol is too high
         if PTE_vol > self.PTE_volatility_cap:
             return True
@@ -1480,6 +1529,27 @@ class CloseDead(Algo):
         return True
 
 
+class SetNotional(Algo):
+
+    """
+    Sets the notional_value to use as the base for rebalancing for
+    FixedIncomestrategy targets
+
+    Args:
+        * notional_value (float): The target notional value of the strategy
+
+    Sets:
+        * notional_value
+    """
+    def __init__(self, notional_value):
+        self.notional_value = notional_value
+        super(SetNotional, self).__init__()
+
+    def __call__(self, target):
+        target.temp['notional_value'] = self.notional_value
+        return True
+
+
 class Rebalance(Algo):
 
     """
@@ -1497,7 +1567,8 @@ class Rebalance(Algo):
             value to the provided weights, and the remaining 30% will be kept
             in cash. If this value is not provided (default), the full value
             of the strategy is allocated to securities.
-
+        * notional_value (optional): Required only for fixed_income targets. This is the base
+            balue of total notional that will apply to the weights.
     """
 
     def __init__(self):
@@ -1509,6 +1580,17 @@ class Rebalance(Algo):
 
         targets = target.temp['weights']
 
+        # save value because it will change after each call to allocate
+        # use it as base in rebalance calls
+        # call it before de-allocation so that notional_value is correct
+        if target.fixed_income:
+            if 'notional_value' in target.temp:
+                base = target.temp['notional_value']
+            else:
+                base = target.notional_value
+        else:
+            base = target.value
+
         # de-allocate children that are not in targets and have non-zero value
         # (open positions)
         for cname in target.children:
@@ -1518,22 +1600,25 @@ class Rebalance(Algo):
 
             # get child and value
             c = target.children[cname]
-            v = c.value
+            if target.fixed_income:
+                v = c.notional_value
+            else:
+                v = c.value
             # if non-zero and non-null, we need to close it out
             if v != 0. and not np.isnan(v):
-                target.close(cname)
-
-        # save value because it will change after each call to allocate
-        # use it as base in rebalance calls
-        base = target.value
+                target.close(cname, update=False)
 
         # If cash is set (it should be a value between 0-1 representing the
         # proportion of cash to keep), calculate the new 'base'
-        if 'cash' in target.temp:
+        if 'cash' in target.temp and not target.fixed_income:
             base = base * (1 - target.temp['cash'])
 
+        # Turn off updating while we rebalance each child
         for item in iteritems(targets):
-            target.rebalance(item[1], child=item[0], base=base)
+            target.rebalance(item[1], child=item[0], base=base, update=False)
+
+        # Now update
+        target.root.update( target.now )
 
         return True
 
@@ -1684,3 +1769,31 @@ class Or(Algo):
 
         return res
 
+
+class SelectTypes(Algo):
+    """
+    Sets temp['selected'] based on node type.
+    If temp['selected'] is already set, it will filter the existing
+    selection.
+
+    Args:
+        * include_types (list): Types of nodes to include
+        * exclude_types (list): Types of nodes to exclude
+
+    Sets:
+        * selected
+    """
+
+    def __init__(self, include_types=(bt.core.Node,), exclude_types=()):
+        super(SelectTypes, self).__init__()
+        self.include_types = include_types
+        self.exclude_types = exclude_types or (type(None),)
+
+    def __call__(self, target):
+        selected = [ sec_name for sec_name, sec in target.children.items()
+                    if isinstance( sec, self.include_types )
+                    and not isinstance( sec, self.exclude_types ) ]
+        if 'selected' in target.temp:
+            selected = [ s for s in selected if s in target.temp['selected'] ]
+        target.temp['selected'] = selected
+        return True

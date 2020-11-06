@@ -2,6 +2,7 @@ from __future__ import division
 import bt
 import pandas as pd
 import numpy as np
+import random
 import sys
 if sys.version_info < (3, 3):
     import mock
@@ -102,6 +103,7 @@ def test_turnover():
     assert np.allclose(t.turnover[dts[3]], 25160. / 992455)
     assert np.allclose(t.turnover[dts[4]], 76100. / 1015285)
 
+
 def test_Results_helper_functions():
 
     names = ['foo', 'bar']
@@ -159,6 +161,95 @@ def test_Results_helper_functions():
 
     assert (type(res.get_weights()) is pd.DataFrame)
 
+
+def test_Results_helper_functions_fi():
+
+    names = ['foo', 'bar']
+    dates = pd.date_range(start='2017-01-01', end='2017-12-31', freq=pd.tseries.offsets.BDay())
+    n = len(dates)
+    rdf = pd.DataFrame(
+        np.zeros((n, len(names))),
+        index=dates,
+        columns=names
+    )
+
+    np.random.seed(1)
+    rdf[names[0]] = np.random.normal(loc=0.1 / n, scale=0.2 / np.sqrt(n), size=n)
+    rdf[names[1]] = np.random.normal(loc=0.04 / n, scale=0.05 / np.sqrt(n), size=n)
+
+    pdf = 100 * np.cumprod(1 + rdf)
+
+    # algo to fire on the beginning of every month and to run on the first date
+    runDailyAlgo = bt.algos.RunDaily(
+        run_on_first_date=True
+    )
+
+    # algo to select all securities
+    selectAll = bt.algos.SelectAll()
+
+    # algo to set the weights
+    #  it will only run when runMonthlyAlgo returns true
+    #  which only happens on the first of every month        
+    weighRandomly = bt.algos.WeighRandomly()
+
+    # algo to set the notional of the fixed income strategy
+    setNotional = bt.algos.SetNotional( 1e6 )
+
+    # algo to rebalance the current weights to weights set by weighSpecified
+    #  will only run when weighSpecifiedAlgo returns true
+    #  which happens every time it runs
+    rebalAlgo = bt.algos.Rebalance()
+
+    # a strategy that rebalances monthly to specified weights
+    strat = bt.FixedIncomeStrategy('random',
+        [
+            runDailyAlgo,
+            selectAll,
+            weighRandomly,
+            setNotional,
+            rebalAlgo
+        ]
+    )
+
+    backtest = bt.Backtest(
+        strat,
+        pdf,
+        initial_capital = 0,
+        integer_positions=False,
+        progress_bar=False,
+        additional_data = {'mydata':pdf}
+    )
+    bidoffer = 1.
+    backtest2 = bt.Backtest(
+        strat,
+        pdf,
+        initial_capital = 0,
+        integer_positions=False,
+        progress_bar=False,
+        additional_data = {'mydata':pdf, 
+                           'bidoffer': pd.DataFrame( bidoffer, pdf.index, pdf.columns )}
+    )
+    random.seed(1234)
+    res = bt.run(backtest)
+    random.seed(1234)
+    res2 = bt.run(backtest2)
+
+    assert(type(res.get_security_weights()) is pd.DataFrame)
+
+    assert (type(res.get_transactions()) is pd.DataFrame)
+    assert len(res.get_transactions()) > 0
+
+    assert (type(res.get_weights()) is pd.DataFrame)
+
+    # Make sure the insertion of the first row applies to additional data as well
+    assert backtest.data.index.equals( backtest.additional_data['mydata'].index )
+
+    # Check that bid/offer is accounted for
+    transactions = res.get_transactions()        
+    transactions['price'] = transactions['price'] + 0.5 * bidoffer
+    assert (res2.get_transactions().price - res2.get_transactions().price).abs().sum() == 0
+        
+        
 def test_30_min_data():
     names = ['foo']
     dates = pd.date_range(start='2017-01-01', end='2017-12-31', freq='30min')
