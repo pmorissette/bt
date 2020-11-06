@@ -382,6 +382,51 @@ class RunAfterDays(Algo):
             return False
         return True
 
+class RunIfOutOfBounds(Algo):
+
+    """
+    This algo returns true if any of the target weights deviate by an amount greater
+    than tolerance. For example, it will be run if the tolerance is set to 0.5 and
+    a security grows from a target weight of 0.2 to greater than 0.3.
+    
+    A strategy where rebalancing is performed quarterly or whenever any
+    security's weight deviates by more than 20% could be implemented by:
+
+        Or([runQuarterlyAlgo,runIfOutOfBoundsAlgo(0.2)])
+
+    Args:
+        * tolerance (float): Allowed deviation of each security weight.
+
+    Requires:
+        * Weights
+
+    """
+
+    def __init__(self, tolerance):
+        self.tolerance = float(tolerance)
+        super(RunIfOutOfBounds, self).__init__()
+
+    def __call__(self, target):
+        if 'weights' not in target.temp:
+            return True
+
+        targets = target.temp['weights']
+
+        for cname in target.children:
+            if cname in targets:
+                c = target.children[cname]
+                deviation = abs((c.weight - targets[cname]) / targets[cname])
+                if deviation > self.tolerance:
+                    return True        
+        
+        if 'cash' in target.temp:
+            cash_deviation = abs((target.capital - targets.value) / targets.value - target.temp['cash'])
+            if cash_deviation > self.tolerance:
+                return True
+
+        return False
+
+
 
 class RunEveryNPeriods(Algo):
 

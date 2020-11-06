@@ -391,6 +391,38 @@ def test_run_on_date():
     target.now = pd.to_datetime('2010-01-03')
     assert not algo(target)
 
+def test_run_if_out_of_bounds():
+    algo = algos.RunIfOutOfBounds(0.5)
+    dts = pd.date_range('2010-01-01', periods=3)
+
+    s = bt.Strategy('s')
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    s.setup(data)
+
+    s.temp['selected'] = ['c1', 'c2']
+    s.temp['weights'] = {'c1': .5, 'c2':.5}
+    s.update(dts[0])
+    s.children['c1'] = bt.core.SecurityBase('c1')
+    s.children['c2'] = bt.core.SecurityBase('c2')
+
+    s.children['c1']._weight = 0.5
+    s.children['c2']._weight = 0.5
+    assert not algo(s)
+    
+    s.children['c1']._weight = 0.25
+    s.children['c2']._weight = 0.75
+    assert not algo(s)
+    
+    s.children['c1']._weight = 0.24
+    s.children['c2']._weight = 0.76
+    assert algo(s)
+
+    s.children['c1']._weight = 0.75
+    s.children['c2']._weight = 0.25
+    assert not algo(s)
+    s.children['c1']._weight = 0.76
+    s.children['c2']._weight = 0.24
+    assert algo(s)
 
 def test_run_after_date():
     target = mock.MagicMock()
