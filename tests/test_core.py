@@ -2085,7 +2085,7 @@ def test_securitybase_allocate():
 
 def test_securitybase_allocate_commisions():
 
-    date_span = pd.DatetimeIndex(start='10/1/2017', end='10/11/2017', freq='B')
+    date_span = pd.date_range(start='10/1/2017', end='10/11/2017', freq='B')
     numper = len(date_span.values)
     comms = 0.01
 
