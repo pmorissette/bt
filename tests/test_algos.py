@@ -1847,14 +1847,14 @@ def test_replay_transactions():
     algo(s)
     assert c1.position == 100
     assert c2.position == 0
-    assert c1.bidoffer_paid[0] == -50
+    assert c1.bidoffer_paid == -50
 
     s.update(dts[1])
     algo(s)
     assert c1.position == 0
     assert c2.position == 50
-    assert c1.bidoffer_paid[1] == -100
-    assert c2.bidoffer_paid[1] == 150
+    assert c1.bidoffer_paid == -100
+    assert c2.bidoffer_paid == 150
 
 
 def test_replay_transactions_consistency():
@@ -1910,14 +1910,14 @@ def test_simulate_rfq_transactions():
     algo(s)
     assert c1.position == 100
     assert c2.position == 0
-    assert c1.bidoffer_paid[0] == -50
+    assert c1.bidoffer_paid == -50
 
     s.update(dts[1])
     algo(s)
     assert c1.position == 0
     assert c2.position == 50
-    assert c1.bidoffer_paid[1] == -100
-    assert c2.bidoffer_paid[1] == 150
+    assert c1.bidoffer_paid == -100
+    assert c2.bidoffer_paid == 150
 
 
 def test_update_risk():
@@ -1937,26 +1937,30 @@ def test_update_risk():
     s.adjust(1000)
 
     s.update(dts[0])
-    algo( s )
+    assert algo( s )
     assert s.risk['Test'] == 0
     assert c1.risk['Test'] == 0
     assert c2.risk['Test'] == 0
 
     s.transact( 1, 'c1')
     s.transact( 5, 'c2')
-    algo( s )
+    assert algo( s )
     assert s.risk['Test'] == 600
     assert c1.risk['Test'] == 100
     assert c2.risk['Test'] == 500
 
     s.update(dts[1])
-    algo( s )
+    assert algo( s )
     assert s.risk['Test'] == 105 + 5*95
     assert c1.risk['Test'] == 105
     assert c2.risk['Test'] == 5*95
 
+    assert not hasattr( s, 'risks' )
+    assert not hasattr( c1, 'risks' )
+    assert not hasattr( c2, 'risks' )
 
-def test_update_risk_history():
+
+def test_update_risk_history_1():
     c1 = bt.Security('c1')
     c2 = bt.Security('c2')
     s = bt.Strategy('s', children = [c1, c2])
@@ -1967,26 +1971,60 @@ def test_update_risk_history():
     c1 = s['c1']
     c2 = s['c2']
 
-    algo = algos.UpdateRisk('Test', data, history=True)
+    algo = algos.UpdateRisk('Test', data, history=1)
 
     s.setup(data)
     s.adjust(1000)
 
     s.update(dts[0])
-    algo( s )
+    assert algo( s )
+    assert s.risks['Test'][0] == 0
+
+    s.transact( 1, 'c1')
+    s.transact( 5, 'c2')
+    assert algo( s )
+    assert s.risks['Test'][0] == 600
+
+    s.update(dts[1])
+    assert algo( s )
+    assert s.risks['Test'][0] == 600        
+    assert s.risks['Test'][1] == 105 + 5*95
+
+    assert not hasattr( c1, 'risks' )
+    assert not hasattr( c2, 'risks' )
+
+
+def test_update_risk_history_2():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    s = bt.Strategy('s', children = [c1, c2])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'].loc[dts[1]] = 105
+    data['c2'].loc[dts[1]] = 95
+    c1 = s['c1']
+    c2 = s['c2']
+
+    algo = algos.UpdateRisk('Test', data, history=2)
+
+    s.setup(data)
+    s.adjust(1000)
+
+    s.update(dts[0])
+    assert algo( s )
     assert s.risks['Test'][0] == 0
     assert c1.risks['Test'][0] == 0
     assert c2.risks['Test'][0] == 0
 
     s.transact( 1, 'c1')
     s.transact( 5, 'c2')
-    algo( s )
+    assert algo( s )
     assert s.risks['Test'][0] == 600
     assert c1.risks['Test'][0] == 100
     assert c2.risks['Test'][0] == 500
 
     s.update(dts[1])
-    algo( s )
+    assert algo( s )
     assert s.risks['Test'][0] == 600
     assert c1.risks['Test'][0] == 100
     assert c2.risks['Test'][0] == 500

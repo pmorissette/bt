@@ -59,6 +59,7 @@ class Node(object):
             value weighing. See also FixedIncomeStrategy for more details.
     """
 
+    _capital = cy.declare(cy.double)
     _price = cy.declare(cy.double)
     _value = cy.declare(cy.double)
     _notl_value = cy.declare(cy.double)
@@ -66,6 +67,8 @@ class Node(object):
     _issec = cy.declare(cy.bint)
     _has_strat_children = cy.declare(cy.bint)
     _fixed_income = cy.declare(cy.bint)
+    _bidoffer_set = cy.declare(cy.bint)
+    _bidoffer_paid = cy.declare(cy.double)
 
     def __init__(self, name, parent=None, children=None):
 
@@ -155,6 +158,9 @@ class Node(object):
 
         # fixed income flag - used to turn on notional weighing
         self._fixed_income = False
+        # flag for whether to do bid/offer accounting
+        self._bidoffer_set = False
+        self._bidoffer_paid = 0
 
     def __getitem__(self, key):
         return self.children[key]
@@ -351,20 +357,17 @@ class StrategyBase(Node):
             this data to determine strategy logic.
 
     """
-
-    _capital = cy.declare(cy.double)
+    
     _net_flows = cy.declare(cy.double)
     _last_value = cy.declare(cy.double)
     _last_notl_value = cy.declare(cy.double)
     _last_price = cy.declare(cy.double)
     _last_fee = cy.declare(cy.double)
-    _paper_trade = cy.declare(cy.bint)
-    _bidoffer_set = cy.declare(cy.bint)
-    bankrupt = cy.declare(cy.bint)    
+    _paper_trade = cy.declare(cy.bint)    
+    bankrupt = cy.declare(cy.bint)
 
     def __init__(self, name, children=None, parent=None):
-        Node.__init__(self, name, children=children, parent=parent)
-        self._capital = 0
+        Node.__init__(self, name, children=children, parent=parent)        
         self._weight = 1
         self._value = 0
         self._notl_value = 0
@@ -375,8 +378,7 @@ class StrategyBase(Node):
         self._last_value = 0
         self._last_notl_value = 0
         self._last_price = PAR
-        self._last_fee = 0
-        self._bidoffer_set = False
+        self._last_fee = 0        
 
         # default commission function
         self.commission_fn = self._dflt_comm_fn
@@ -436,7 +438,7 @@ class StrategyBase(Node):
         """
         # no stale check needed
         return self._cash
-    
+
     @property
     def fees(self):
         """
@@ -448,12 +450,28 @@ class StrategyBase(Node):
     @property
     def bidoffer_paid( self ):
         """
-        TimeSeries of bid/offer spread paid on transactions in the current step
+        Bid/offer spread paid on transactions in the current step
         """
-        if self._bidoffer_set:            
-            return self._bidoffer_paid.loc[:self.now]
+        if self._bidoffer_set:
+            if self.root.stale:
+                self.root.update(self.now, None)
+            return self._bidoffer_paid
         else:
-            raise Exception( 'no bid/offer spreads provided during setup' )
+            raise Exception( 'Bid/offer accounting not turned on: '
+                            '"bidoffer" argument not provided during setup' )
+
+    @property
+    def bidoffers_paid( self ):
+        """
+        TimeSeries of bid/offer spread paid on transactions in each step
+        """
+        if self._bidoffer_set:
+            if self.root.stale:
+                self.root.update(self.now, None)
+            return self._bidoffers_paid.loc[:self.now]
+        else:
+            raise Exception( 'Bid/offer accounting not turned on: '
+                            '"bidoffer" argument not provided during setup' )
 
     @property
     def universe(self):
@@ -497,11 +515,8 @@ class StrategyBase(Node):
         if self.root.stale:
             self.root.update(self.root.now, None)
 
-        vals = pd.DataFrame()
-        for x in self.members:
-            if isinstance(x, SecurityBase):
-                vals[x.name] = x.positions + (vals[x.name] if x.name in vals.columns else 0)
-
+        vals = pd.DataFrame({x.name: x.positions for x in self.members
+                             if isinstance(x, SecurityBase)})
         self._positions = vals
         return vals
 
@@ -576,9 +591,9 @@ class StrategyBase(Node):
         self._fees = self.data['fees']
 
         if 'bidoffer' in kwargs:
-            self._bidoffer_set = True
+            self._bidoffer_set = True            
             self.data['bidoffer_paid'] = 0.
-            self._bidoffer_paid = self.data['bidoffer_paid']
+            self._bidoffers_paid = self.data['bidoffer_paid']
 
         # setup children as well - use original universe here - don't want to
         # pollute with potential strategy children in funiverse
@@ -637,7 +652,7 @@ class StrategyBase(Node):
                 notl_val += abs( c.notional_value )
 
                 if self._bidoffer_set:
-                    bidoffer_paid += c.bidoffer_paid.values[inow]
+                    bidoffer_paid += c.bidoffer_paid
 
         self._capital += coupons
         val += coupons
@@ -659,7 +674,8 @@ class StrategyBase(Node):
             self._notl_values.values[inow] = notl_val
 
             if self._bidoffer_set:
-                self._bidoffer_paid.values[inow] = bidoffer_paid
+                self._bidoffer_paid = bidoffer_paid
+                self._bidoffers_paid.values[inow] = bidoffer_paid
 
             if self.fixed_income:
                 # For notional weights, we compute additive return
@@ -1037,8 +1053,6 @@ class SecurityBase(Node):
     _needupdate = cy.declare(cy.bint)
     _outlay = cy.declare(cy.double)
     _bidoffer = cy.declare(cy.double)
-    _last_bidoffer = cy.declare(cy.double)
-    _bidoffer_set = cy.declare(cy.bint)
 
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1):
@@ -1055,8 +1069,6 @@ class SecurityBase(Node):
         self._needupdate = True
         self._outlay = 0
         self._bidoffer = 0
-        self._last_bidoffer = 0
-        self._bidoffer_set = False
 
     @property
     def price(self):
@@ -1158,10 +1170,21 @@ class SecurityBase(Node):
                 self.update(self.root.now)
             return self._bidoffers.loc[:self.now]
         else:
-            raise Exception( 'no bid/offer spreads provided during setup' )
+            raise Exception( 'Bid/offer accounting not turned on: '
+                            '"bidoffer" argument not provided during setup' )
 
     @property
     def bidoffer_paid(self):
+        """
+        TimeSeries of bid/offer spread paid on transactions in the current step
+        """
+        # if accessing and stale - update first
+        if self._needupdate or self.now != self.parent.now:
+            self.update(self.root.now)            
+        return self._bidoffer_paid        
+
+    @property
+    def bidoffers_paid(self):
         """
         TimeSeries of bid/offer spread paid on transactions in the current step
         """
@@ -1171,9 +1194,10 @@ class SecurityBase(Node):
                 self.update(self.root.now)
             if self.root.stale:
                 self.root.update(self.root.now, None)
-            return self._bidoffer_paid.loc[:self.now]
+            return self._bidoffers_paid.loc[:self.now]
         else:
-            raise Exception( 'no bid/offer spreads provided during setup' )
+            raise Exception( 'Bid/offer accounting not turned on: '
+                            '"bidoffer" argument not provided during setup' )
 
     def setup(self, universe, **kwargs):
         """
@@ -1213,7 +1237,7 @@ class SecurityBase(Node):
         self.data['outlay'] = 0.
         self._outlays = self.data['outlay']
 
-        # save bidoffer, if provided        
+        # save bidoffer, if provided
         if 'bidoffer' in kwargs:
             self._bidoffer_set = True
             self._bidoffers = kwargs['bidoffer']
@@ -1232,7 +1256,7 @@ class SecurityBase(Node):
                 self._bidoffers = self.data['bidoffer']
 
             self.data['bidoffer_paid'] = 0.
-            self._bidoffer_paid = self.data['bidoffer_paid']
+            self._bidoffers_paid = self.data['bidoffer_paid']
 
     @cy.locals(prc=cy.double)
     def update(self, date, data=None, inow=None):
@@ -1269,6 +1293,7 @@ class SecurityBase(Node):
             #update bid/offer
             if self._bidoffer_set:
                 self._bidoffer = self._bidoffers.values[inow]
+                self._bidoffer_paid = 0.
 
         self._positions.values[inow] = self._position
         self._last_pos = self._position
@@ -1297,10 +1322,9 @@ class SecurityBase(Node):
             # reset outlay back to 0
             self._outlay = 0
 
-        if self._last_bidoffer != 0:
-            self._bidoffer_paid.values[inow] += self._last_bidoffer
-            # reset last_bidoffer back to 0
-            self._last_bidoffer = 0
+        if self._bidoffer_set:
+            self._bidoffers_paid.values[inow] = self._bidoffer_paid
+
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double,
                i=cy.int)
@@ -1501,7 +1525,7 @@ class SecurityBase(Node):
 
         # store outlay for future reference
         self._outlay += outlay
-        self._last_bidoffer += bidoffer
+        self._bidoffer_paid += bidoffer
 
         # call parent
         self.parent.adjust(-full_outlay, update=update, flow=False, fee=fee)
