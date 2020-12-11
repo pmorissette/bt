@@ -2595,19 +2595,26 @@ def test_bidoffer():
 
     # Do some transactions, and check that bidoffer_paid is updated
     c1.transact(100)
-    assert c1.bidoffer_paid[0] == 100 * 1
+    assert c1.bidoffer_paid == 100 * 1
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
     c1.transact(100)
-    assert c1.bidoffer_paid[0] == 200 * 1
+    assert c1.bidoffer_paid == 200 * 1
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
 
     c2.transact(-100)
-    assert c2.bidoffer_paid[0] == 100 * 0.75
-    assert s.bidoffer_paid[0] == 100 * 0.75 + 200 * 1
+    assert c2.bidoffer_paid == 100 * 0.75
+    assert c2.bidoffers_paid[i] == c2.bidoffer_paid
+    assert s.bidoffer_paid == 100 * 0.75 + 200 * 1
+    assert s.bidoffers_paid[i] == s.bidoffer_paid
 
     i = 1
     s.update(dts[i])
-    assert c1.bidoffer_paid[i] == 0.
-    assert c2.bidoffer_paid[i] == 0.
-    assert s.bidoffer_paid[i] == 0.
+    assert c1.bidoffer_paid == 0.
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert c2.bidoffer_paid == 0.
+    assert c2.bidoffers_paid[i] == c2.bidoffer_paid
+    assert s.bidoffer_paid == 0.
+    assert s.bidoffers_paid[i] == s.bidoffer_paid
 
 
 def test_outlay_custom():
@@ -2663,17 +2670,25 @@ def test_bidoffer_custom():
     s.update(dts[i])
 
     c1.transact(100, price=106)
-    assert c1.bidoffer_paid[0] == 100 * 1
-    assert s.bidoffer_paid[0] == c1.bidoffer_paid[0]
+    assert c1.bidoffer_paid == 100 * 1
+    assert s.bidoffer_paid == c1.bidoffer_paid
     assert s.capital == 100000 - 100*106
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert s.bidoffers_paid[i] == s.bidoffer_paid
+
     c1.transact(100, price=106)
-    assert c1.bidoffer_paid[0] == 200 * 1
-    assert s.bidoffer_paid[0] == c1.bidoffer_paid[0]
+    assert c1.bidoffer_paid == 200 * 1
+    assert s.bidoffer_paid == c1.bidoffer_paid
     assert s.capital == 100000 - 100*106 - 100*106
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert s.bidoffers_paid[i] == s.bidoffer_paid
+
     c1.transact(-100, price=107)
-    assert c1.bidoffer_paid[0] == 0
-    assert s.bidoffer_paid[0] == c1.bidoffer_paid[0]
+    assert c1.bidoffer_paid == 0
+    assert s.bidoffer_paid == c1.bidoffer_paid
     assert s.capital == 100000 - 100*106 - 100*106 + 100*107
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert s.bidoffers_paid[i] == s.bidoffer_paid
 
 
 def test_security_notional_value():
@@ -3311,29 +3326,34 @@ def test_fi_strategy_bidoffer():
     s.update(dts[i])
     assert s.value == 0.
     assert s.price == 100.
-    
+
     # Do some transactions, and check that bidoffer_paid is updated
     c1.transact(100)
-    assert c1.bidoffer_paid[i] == 100 * 1
+    assert c1.bidoffer_paid == 100 * 1
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
     c1.transact(100)
-    assert c1.bidoffer_paid[i] == 200 * 1
+    assert c1.bidoffer_paid == 200 * 1
+    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
 
     c2.transact(-100)
-    assert c2.bidoffer_paid[i] == 100 * 0.75
+    assert c2.bidoffer_paid == 100 * 0.75
+    assert c2.bidoffers_paid[i] == c2.bidoffer_paid
 
     s.update(dts[i])
-    assert s.bidoffer_paid[i] == 275.
-    assert s.value == -275. 
+    assert s.bidoffer_paid == 275.
+    assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert s.value == -275.
     assert s.notional_value == 105*200 + 95*100
-    assert s.price == 100 * (1. - 275. / (105*200 + 95*100))        
-    
+    assert s.price == 100 * (1. - 275. / (105*200 + 95*100))
+
     old_notional = s.notional_value
     old_value = s.value
     old_price = s.price
 
     i=1
     s.update(dts[i])
-    assert s.bidoffer_paid[i] == 0.
+    assert s.bidoffer_paid == 0.
+    assert s.bidoffers_paid[i] == s.bidoffer_paid
     assert s.value == -275. - 200*5 - 100*5 # Bid-offer paid
     assert s.notional_value == 100*200 + 100*100
     new_value = s.value
