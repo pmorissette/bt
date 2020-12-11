@@ -496,7 +496,7 @@ class Result(ffn.GroupStats):
 
         # Adjust prices for bid/offer paid if needed
         if s._bidoffer_set:
-            bidoffer = pd.DataFrame({x.name: x.bidoffer_paid
+            bidoffer = pd.DataFrame({x.name: x.bidoffers_paid
                                      for x in s.securities }).unstack()
             prc += bidoffer / trades
 

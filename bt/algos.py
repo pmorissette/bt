@@ -1949,21 +1949,26 @@ class ClosePositionsAfterDates(Algo):
         * target.perm['closed'] : to keep track of which securities have already closed
     """
 
-    def __init__(self, data):
+    def __init__(self, close_dates):
         super(ClosePositionsAfterDates, self).__init__()
-        self.data = data
+        self.close_dates = close_dates['date']
 
     def __call__(self, target):
         if 'closed' not in target.perm:
             target.perm['closed'] = set()
-        for sec_name, sec in iteritems(target.children):
-            if isinstance( sec, SecurityBase ) \
-                and sec_name in self.data.index \
-                and sec_name not in target.perm['closed']:
-                    close_map = self.data.loc[ sec_name ]
-                    if target.now >= close_map['date']:
-                        target.close( sec_name, update=False )
-                        target.perm['closed'].add( sec_name )
+        # Find securities that are candidate for closing
+        sec_names = [ sec_name for sec_name, sec in iteritems(target.children)
+                        if isinstance( sec, SecurityBase ) \
+                        and sec_name in self.close_dates.index \
+                        and sec_name not in target.perm['closed']]
+
+        # Check whether closed
+        is_closed = self.close_dates.loc[ sec_names ] <= target.now
+
+        # Close position
+        for sec_name in is_closed[ is_closed ].index:
+            target.close( sec_name, update=False )
+            target.perm['closed'].add( sec_name )
 
         # Now update
         target.root.update( target.now )
@@ -1983,7 +1988,7 @@ class RollPositionsAfterDates(Algo):
     rolled as necessary.
 
     Args:
-        * data (Dataframe): a dataframe indexed by security name, with columns
+        * roll_data (Dataframe): a dataframe indexed by security name, with columns
             "date": the first date at which the roll can occur
             "target": the security name we are rolling into
             "factor": the conversion factor. One unit of the original security
@@ -1993,27 +1998,35 @@ class RollPositionsAfterDates(Algo):
         * target.perm['rolled'] : to keep track of which securities have already rolled
     """
 
-    def __init__(self, data):
+    def __init__(self, roll_data):
         super(RollPositionsAfterDates, self).__init__()
-        self.data = data
+        self.roll_data = roll_data
 
     def __call__(self, target):
         if 'rolled' not in target.perm:
             target.perm['rolled'] = set()
         transactions = {}
-        for sec_name, sec in iteritems(target.children):
-            if isinstance( sec, bt.core.SecurityBase ) \
-                and sec_name in self.data.index \
-                and sec_name not in target.perm['rolled']:
-                    roll_map = self.data.loc[ sec_name ]
-                    if target.now >= roll_map['date']:
-                        transactions[ roll_map['target'] ] = roll_map['factor'] * sec.position
-                        target.close( sec_name, update=False)
-                        target.perm['rolled'].add( sec_name )
+        # Find securities that are candidate for roll
+        sec_names = [ sec_name for sec_name, sec in iteritems(target.children)
+                        if isinstance( sec, SecurityBase ) \
+                        and sec_name in self.roll_data.index \
+                        and sec_name not in target.perm['rolled']]
 
-        # Do all the new transactions at the end, in case A->B and B->A for some reason
-        for sec_name, quantity in iteritems(transactions):
-            target.transact( quantity, sec_name, update=False)
+        # Calculate new transaction and close old position
+        for sec_name, sec_fields in self.roll_data.loc[ sec_names ].iterrows():
+            if sec_fields['date'] <= target.now:
+                target.perm['rolled'].add( sec_name )
+                new_quantity = sec_fields['factor'] * target[sec_name].position
+                new_sec = sec_fields['target']
+                if new_sec in transactions:
+                    transactions[ new_sec ] += new_quantity
+                else:
+                    transactions[ new_sec ] = new_quantity      
+                target.close( sec_name, update=False )
+
+        # Do all the new transactions at the end, to do any necessary aggregations first
+        for new_sec, quantity in iteritems(transactions):
+            target.transact( quantity, new_sec, update=False)
 
         # Now update
         target.root.update( target.now )
@@ -2157,8 +2170,10 @@ class UpdateRisk(Algo):
 
     Args:
         * name (str): the name of the risk measure (IR01, PVBP, IsIndustials, etc).
-        * unit_risk (DataFrame): Float DataFrame with a column for all risky securities, containing risk per unit of position.
-        * history (bool): Whether to track the time series of the risk numbers (or only the latest value)
+        * unit_risk (DataFrame): Float DataFrame with a column for all risky securities, 
+            containing risk per unit of position.
+        * history (int): The level of depth in the tree at which to track the time series of risk numbers.
+            i.e. 0=no tracking, 1=first level only, etc. More levels is more expensive.
 
     Modifies:
         * The "risk" attribute on the target and all its children
@@ -2168,30 +2183,31 @@ class UpdateRisk(Algo):
         * 'unit_risk' on temp
     """
 
-    def __init__(self, measure, unit_risk, history=False):
+    def __init__(self, measure, unit_risk, history=0):
         super(UpdateRisk, self).__init__( name = 'UpdateRisk>%s' % measure)
         self.measure = measure
         self.unit_risk = unit_risk
         self.history = history
 
-    def _setup_risk( self, target ):
+    def _setup_risk( self, target, set_history ):
         """ Setup risk attributes on the node in question """
         target.risk = {}
-        target.risks = pd.DataFrame( index = target.data.index )
+        if set_history:
+            target.risks = pd.DataFrame( index = target.data.index )
 
-    def _setup_measure( self, target ):
+    def _setup_measure( self, target, set_history ):
         """ Setup a risk measure within the risk attributes on the node in question """
         target.risk[ self.measure ] = np.NaN
-        if self.history:
+        if set_history:
             target.risks[ self.measure ] = np.NaN
 
-    @cy.locals( unit_risk=cy.double, risk=cy.double)
-    def _set_risk_recursive( self, target ):
+    def _set_risk_recursive( self, target, depth ):
+        set_history = (depth < self.history)
         # General setup of risk on nodes
         if not hasattr( target, 'risk' ):
-            self._setup_risk( target )
+            self._setup_risk( target, set_history )
         if self.measure not in target.risk:
-            self._setup_measure( target )
+            self._setup_measure( target, set_history )
 
         if isinstance( target, bt.core.SecurityBase ):
             # Use target.root.now as non-traded securities may not have been updated yet
@@ -2205,17 +2221,17 @@ class UpdateRisk(Algo):
         else:
             risk = 0.
             for child in target.children.values():
-                self._set_risk_recursive( child )
+                self._set_risk_recursive( child, depth+1 )
                 risk += child.risk[ self.measure ]
 
         target.risk[ self.measure ] = risk
-        if self.history:
-            target.risks[ self.measure ].loc[ target.now ]  = risk
+        if depth < self.history:
+            target.risks.loc[ target.now, self.measure ] = risk
 
     def __call__(self, target):
         # Set the unit risk on temp, so it can be used for hedging later
         target.temp.setdefault('unit_risk', {})[ self.measure ] = self.unit_risk
-        self._set_risk_recursive( target )
+        self._set_risk_recursive( target, 0 )
         return True
 
 
