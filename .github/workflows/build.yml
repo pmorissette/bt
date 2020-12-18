@@ -25,16 +25,16 @@ jobs:
     - name: Coverage
       run: |
         codecov
-    - name: Package
-      if: startsWith(github.ref, 'refs/tags')
-      run: |
-        python -m pip install -U wheel
-        python setup.py sdist
-        python setup.py bdist_wheel
+    # - name: Package
+    #   if: startsWith(github.ref, 'refs/tags')
+    #   run: |
+    #     python -m pip install -U wheel
+    #     python setup.py sdist
+    #     python setup.py bdist_wheel
 
-    - name: Publish distribution 📦 to PyPI
-      if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        username: pmorissette
-        password: ${{ secrets.PYPI_API_TOKEN }}
+    # - name: Publish distribution 📦 to PyPI
+    #   if: startsWith(github.ref, 'refs/tags')
+    #   uses: pypa/gh-action-pypi-publish@master
+    #   with:
+    #     username: pmorissette
+    #     password: ${{ secrets.PYPI_API_TOKEN }}
