@@ -1,7 +1,7 @@
 .. image:: http://pmorissette.github.io/bt/_static/logo.png
 
-.. image:: https://travis-ci.org/pmorissette/bt.svg?branch=master
-    :target: https://travis-ci.org/pmorissette/bt
+.. image:: https://github.com/pmorissette/bt/workflows/Build%20Status/badge.svg
+    :target: https://github.com/pmorissette/bt/actions/
 
 .. image:: https://codecov.io/gh/pmorissette/bt/branch/master/graph/badge.svg
     :target: https://codecov.io/pmorissette/bt
