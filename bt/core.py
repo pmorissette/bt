@@ -600,6 +600,16 @@ class StrategyBase(Node):
         if self.children is not None:
             [c.setup(universe, **kwargs) for c in self._childrenv]
 
+    def get_data(self, key):
+        """
+        Returns additional data that was passed to the setup function via kwargs, 
+        for use in the algos. This allows algos to reference data sources "by name",
+        where the binding of the data to the name happens at Backtest creation
+        time rather than at Strategy definition time, allowing the same strategies
+        to be run against different data sets more easily. 
+        """
+        return self._setup_kwargs[ key ]
+        
     @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double, coupons=cy.double,
                notl_val=cy.double, bidoffer_paid=cy.double)
     def update(self, date, data=None, inow=None):
