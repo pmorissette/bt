@@ -50,6 +50,8 @@ setup(
             'coverage',
             'cython>=0.25',
             'future',
+            'mock',
+            'nose',
             'numpy>=1',
             'pandas>=0.19',
             'matplotlib>=2,<3',
