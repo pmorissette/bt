@@ -1696,7 +1696,8 @@ class SetNotional(Algo):
     FixedIncomestrategy targets
 
     Args:
-        * notional_value (float): The target notional value of the strategy
+        * notional_value (str): Name of a pd.Series object containing the 
+            target notional values of the strategy over time. 
 
     Sets:
         * notional_value
@@ -1706,8 +1707,14 @@ class SetNotional(Algo):
         super(SetNotional, self).__init__()
 
     def __call__(self, target):
-        target.temp['notional_value'] = self.notional_value
-        return True
+        notional_value = target.get_data( self.notional_value )
+            
+        if target.now in notional_value.index:            
+            target.temp['notional_value'] = notional_value.loc[target.now]
+
+            return True
+        else:
+            return False        
 
 
 class Rebalance(Algo):

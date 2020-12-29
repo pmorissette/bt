@@ -450,16 +450,27 @@ def test_run_after_days():
 
 
 def test_set_notional():
-    algo = algos.SetNotional( 1000. )
-
+    algo = algos.SetNotional('notional')
+    
     s = bt.FixedIncomeStrategy('s')
 
     dts = pd.date_range('2010-01-01', periods=3)
-    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
-
-    s.setup(data)
-    algo(s)
-    assert s.temp['notional_value'] == 1000
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100.)
+    notional = pd.Series(index=dts[:2], data=[1e6, 5e6])    
+    
+    s.setup( data, notional = notional )
+    
+    s.update(dts[0])
+    assert algo(s)
+    assert s.temp['notional_value'] == 1e6    
+    
+    s.update(dts[1])
+    assert algo(s)
+    assert s.temp['notional_value'] == 5e6
+    
+    s.update(dts[2])
+    assert not algo(s)
+    
 
 def test_rebalance():
     algo = algos.Rebalance()
