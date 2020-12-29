@@ -177,10 +177,14 @@ class Backtest(object):
         for k in self.additional_data:
             old = self.additional_data[k]
             if isinstance(old, pd.DataFrame) and old.index.equals( data.index ):
-                new = pd.concat([
-                            pd.DataFrame(np.nan, columns=old.columns,
-                         index=[old.index[0] - pd.DateOffset(days=1)]),
-                        old])
+                empty_row = pd.DataFrame(np.nan, columns=old.columns,
+                                index=[old.index[0] - pd.DateOffset(days=1)])
+                new = pd.concat([empty_row, old])
+                self.additional_data[k] = new
+            elif isinstance(old, pd.Series) and old.index.equals( data.index ):
+                empty_row = pd.Series(np.nan,
+                                index=[old.index[0] - pd.DateOffset(days=1)])
+                new = pd.concat([empty_row, old])
                 self.additional_data[k] = new
 
 

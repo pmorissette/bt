@@ -178,7 +178,8 @@ def test_Results_helper_functions_fi():
     rdf[names[1]] = np.random.normal(loc=0.04 / n, scale=0.05 / np.sqrt(n), size=n)
 
     pdf = 100 * np.cumprod(1 + rdf)
-
+    notional = pd.Series( 1e6, index = pdf.index )
+    
     # algo to fire on the beginning of every month and to run on the first date
     runDailyAlgo = bt.algos.RunDaily(
         run_on_first_date=True
@@ -193,7 +194,7 @@ def test_Results_helper_functions_fi():
     weighRandomly = bt.algos.WeighRandomly()
 
     # algo to set the notional of the fixed income strategy
-    setNotional = bt.algos.SetNotional( 1e6 )
+    setNotional = bt.algos.SetNotional( 'notional' )
 
     # algo to rebalance the current weights to weights set by weighSpecified
     #  will only run when weighSpecifiedAlgo returns true
@@ -217,7 +218,7 @@ def test_Results_helper_functions_fi():
         initial_capital = 0,
         integer_positions=False,
         progress_bar=False,
-        additional_data = {'mydata':pdf}
+        additional_data = {'mydata':pdf, 'notional':notional}
     )
     bidoffer = 1.
     backtest2 = bt.Backtest(
@@ -227,6 +228,7 @@ def test_Results_helper_functions_fi():
         integer_positions=False,
         progress_bar=False,
         additional_data = {'mydata':pdf, 
+                           'notional':notional,
                            'bidoffer': pd.DataFrame( bidoffer, pdf.index, pdf.columns )}
     )
     random.seed(1234)
