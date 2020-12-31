@@ -2436,6 +2436,11 @@ def test_couponpayingsecurity_setup():
     assert c1.coupon == 0.0
     assert len(c1.coupons) == 1
     assert c1.coupons[0] == 0.0
+    
+    assert 'holding_cost' in c1.data
+    assert c1.holding_cost == 0.0
+    assert len(c1.holding_costs) == 1
+    assert c1.holding_costs[0] == 0.0
 
     assert c1.price == 105
     assert len(c1.prices) == 1
@@ -2445,6 +2450,106 @@ def test_couponpayingsecurity_setup():
     assert len(c2.prices) == 1
     assert c2.prices[0] == 95
 
+
+def test_couponpayingsecurity_setup_costs():
+    c1 = CouponPayingSecurity('c1')
+    c2 = SecurityBase('c2')
+    s = StrategyBase('p', [c1, c2])
+
+    c1 = s['c1']
+    c2 = s['c2']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    coupons = pd.DataFrame(index=dts, columns=['c1'], data=0.)
+    cost_long = pd.DataFrame(index=dts, columns=['c1'], data=0.01)
+    cost_short = pd.DataFrame(index=dts, columns=['c1'], data=0.05)
+
+    s.setup(data, coupons=coupons, cost_long=cost_long, cost_short=cost_short)
+
+    i = 0
+    s.update(dts[i])
+
+    assert 'coupon' in c1.data
+    assert c1.coupon == 0.0
+    assert len(c1.coupons) == 1
+    assert c1.coupons[0] == 0.0
+    
+    assert 'holding_cost' in c1.data
+    assert c1.holding_cost == 0.0
+    assert len(c1.holding_costs) == 1
+    assert c1.holding_costs[0] == 0.0
+
+    assert c1.price == 105
+    assert len(c1.prices) == 1
+    assert c1.prices[0] == 105
+
+    assert c2.price == 95
+    assert len(c2.prices) == 1
+    assert c2.prices[0] == 95
+    
+def test_couponpayingsecurity_carry():
+    c1 = CouponPayingSecurity('c1')
+    s = StrategyBase('p', [c1])
+
+    c1 = s['c1']
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1'], data=1.)
+            
+    coupons = pd.DataFrame(index=dts, columns=['c1'], data=0.)
+    coupons['c1'][dts[0]] = 0.1
+    cost_long = pd.DataFrame(index=dts, columns=['c1'], data=0.)
+    cost_long['c1'][dts[0]] = 0.01
+    cost_short = pd.DataFrame(index=dts, columns=['c1'], data=0.05)
+    
+    s.setup(data, coupons=coupons, cost_long=cost_long, cost_short=cost_short)
+    
+    i = 0
+    s.update(dts[i])
+
+    # allocate 1000 to strategy
+    original_capital = 1000.
+    s.adjust(original_capital)    
+    # set the full_outlay and amount
+    q = 1000.
+    c1.transact(q)
+    
+    assert c1.coupon == 100.
+    assert len(c1.coupons) == 1
+    assert c1.coupons[0] == 100.
+    assert c1.holding_cost == 10.
+    assert len(c1.holding_costs) == 1
+    assert c1.holding_costs[0] == 10.
+    
+    assert s.capital == 0.
+    assert s.cash[0] == 0.
+    
+    # On this step, the coupon/costs will be accounted for from the last holding
+    i = 1
+    s.update(dts[i])
+    
+    assert c1.coupon == 0.
+    assert len(c1.coupons) == 2
+    assert c1.coupons[1] == 0.
+    assert c1.holding_cost == 0.
+    assert len(c1.holding_costs) == 2
+    assert c1.holding_costs[1] == 0.
+    
+    assert s.capital == 100. - 10.
+    assert s.cash[0] == 0.
+    assert s.cash[1] == 100. - 10.
+    
+    # Go short q
+    c1.transact( -2*q )
+    # Note cost is positive even though we are short. 
+    assert c1.holding_cost == 50.
+    assert len(c1.holding_costs) == 2
+    assert c1.holding_costs[1] == 50.
+    
 
 def test_couponpayingsecurity_transact():
     c1 = CouponPayingSecurity('c1')
@@ -2471,8 +2576,6 @@ def test_couponpayingsecurity_transact():
     # allocate 100000 to strategy
     original_capital = 100000.
     s.adjust(original_capital)
-    # not integer positions
-    c1.integer_positions = False
     # set the full_outlay and amount
     q = 1000.
     amount = q * price

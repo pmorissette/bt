@@ -1613,6 +1613,8 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
     """
     CouponPayingSecurity expands on SecurityBase to handle securities which
     pay (possibly irregular) coupons (or other forms of cash disbursement).
+    More generally, this can include instruments with any sort of carry, 
+    including (potentially asymmetric) holding costs.
 
     Args:
         * name (str): Security name
@@ -1622,16 +1624,21 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
     Attributes:
         * SecurityBase attributes
         * coupon (float): Current coupon payment (quantity).
+        * holding_cost (float): Current holding cost (quantity).
 
 
     Represents a coupon-paying security, where coupon payments adjust
-    the capital of the parent. Coupons must be passed in during setup.
+    the capital of the parent. Coupons and costs must be passed in during setup.
     """
 
+    _coupon = cy.declare(cy.double)
+    _holding_cost = cy.declare(cy.double)
+    
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1):
         super(CouponPayingSecurity, self).__init__( name, multiplier )
         self._coupon = 0
+        self._holding_cost = 0
         # Use notional weighting by default
         self._fixed_income = True
 
@@ -1647,6 +1654,7 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         """
         super(CouponPayingSecurity, self).setup( universe, **kwargs )
 
+        # Handle coupons
         if 'coupons' not in kwargs:
             raise Exception( '"coupons" must be passed to setup for a CouponPayingSecurity')
 
@@ -1658,10 +1666,22 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         if self._coupons is None or not self._coupons.index.equals( universe.index ):
             raise ValueError('Index of coupons must match universe data')
 
+        # Handle holding costs
+        try:
+            self._cost_long = kwargs['cost_long'][self.name]
+        except KeyError:
+            self._cost_long = None
+        try:
+            self._cost_short = kwargs['cost_short'][self.name]
+        except KeyError:
+            self._cost_short = None
+        
         self.data['coupon'] = 0.
+        self.data['holding_cost'] = 0.
         self._coupon_income = self.data['coupon']
+        self._holding_costs = self.data['holding_cost']
 
-    @cy.locals(coupon=cy.double)
+    @cy.locals(coupon=cy.double, cost=cy.double)
     def update(self, date, data=None, inow=None):
         """
         Update security with a given date and optionally, some data.
@@ -1687,7 +1707,7 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
 
         if np.isnan(coupon):
             if is_zero( self._position ):
-                self._coupon = 0
+                self._coupon = 0.
             else:
                 raise Exception(
                     'Position is open (non-zero) and latest coupon is NaN '
@@ -1695,8 +1715,18 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         else:
             self._coupon = self._position * coupon
 
-        self._capital = self._coupon
+        if self._position > 0 and self._cost_long is not None:
+            cost = self._cost_long.values[inow]
+            self._holding_cost = self._position * cost
+        elif self._position < 0 and self._cost_short is not None:
+            cost = self._cost_short.values[inow]
+            self._holding_cost = -self._position * cost
+        else:
+            self._holding_cost = 0.
+            
+        self._capital = self._coupon - self._holding_cost
         self._coupon_income.values[inow] = self._coupon
+        self._holding_costs.values[inow] = self._holding_cost
 
     @property
     def coupon(self):
@@ -1712,12 +1742,27 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         """
         TimeSeries of coupons paid (scaled by position)
         """
-        if self._coupons is None:
-            raise Exception('coupons have not been set for security %s' % self.name )
-
         if self.root.stale: # Stale check needed because coupon paid depends on position
             self.root.update(self.root.now, None)
         return self._coupon_income.loc[:self.now]
+        
+    @property
+    def holding_cost(self):
+        """
+        Current holding cost (scaled by position)
+        """
+        if self.root.stale: # Stale check needed because coupon paid depends on position
+            self.root.update(self.root.now, None)
+        return self._holding_cost
+
+    @property
+    def holding_costs(self):
+        """
+        TimeSeries of coupons paid (scaled by position)
+        """
+        if self.root.stale: # Stale check needed because coupon paid depends on position
+            self.root.update(self.root.now, None)
+        return self._holding_costs.loc[:self.now]
 
 
 class HedgeSecurity( SecurityBase ):
