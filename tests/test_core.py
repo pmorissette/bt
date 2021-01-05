@@ -30,6 +30,8 @@ def test_node_tree():
     assert 'c2' in p.children
     assert p == c1.parent
     assert p == c2.parent
+    assert p == c1.root
+    assert p == c2.root
 
     m = Node('m', children=[p])
     p = m['p']
@@ -38,12 +40,15 @@ def test_node_tree():
 
     assert len(m.children) == 1
     assert 'p' in m.children
-    assert p.parent == m
+    assert p.parent == m    
     assert len(p.children) == 2
     assert 'c1' in p.children
     assert 'c2' in p.children
     assert p == c1.parent
     assert p == c2.parent
+    assert m == p.root
+    assert m == c1.root
+    assert m == c2.root
 
 
 def test_strategybase_tree():

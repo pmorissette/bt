@@ -133,9 +133,12 @@ class Node(object):
         self.children = children
 
         self._childrenv = list(children.values())
-        for c in self._childrenv:
-            c.parent = self
-            c.root = self.root
+        def set_tree( node ):
+            for c in node._childrenv:
+                c.parent = node
+                c.root = node.root
+                set_tree( c )
+        set_tree( self )
 
         # set default value for now
         self.now = 0
@@ -164,6 +167,7 @@ class Node(object):
 
     def __getitem__(self, key):
         return self.children[key]
+
 
     def use_integer_positions(self, integer_positions):
         """
