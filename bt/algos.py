@@ -711,7 +711,9 @@ class SelectWhere(Algo):
     as data > 100.
 
     Args:
-        * signal (DataFrame): Boolean DataFrame containing selection logic.
+        * signal (str|DataFrame): Boolean DataFrame containing selection logic.
+            If a string is passed, frame is accessed using target.get_data
+            This is the preferred way of using the algo.
         * include_no_data (bool): Include securities that do not have data?
         * include_negative (bool): Include securities that have negative
             or zero prices?
@@ -723,14 +725,25 @@ class SelectWhere(Algo):
 
     def __init__(self, signal, include_no_data=False, include_negative=False):
         super(SelectWhere, self).__init__()
-        self.signal = signal
+        if isinstance( signal, pd.DataFrame ):
+            self.signal_name = None
+            self.signal = signal
+        else:
+            self.signal_name = signal 
+            self.signal = None
+            
         self.include_no_data = include_no_data
         self.include_negative = include_negative
 
     def __call__(self, target):
         # get signal Series at target.now
-        if target.now in self.signal.index:
-            sig = self.signal.loc[target.now]
+        if self.signal_name is None:
+            signal = self.signal
+        else:
+            signal = target.get_data( self.signal_name )        
+            
+        if target.now in signal.index:
+            sig = signal.loc[target.now]
             # get tickers where True
             #selected = sig.index[sig]
             selected = sig[sig == True].index
@@ -843,7 +856,7 @@ class ResolveOnTheRun(Algo):
     appropriate for the given date, and sets it back on temp['selected']
 
     Args:
-        * on_the_run (DataFrame): Data frame with
+        * on_the_run (str): Name of a Data frame with
             - columns set to "on the run" ticker names
             - index set to the timeline for the backtest
             - values are the actual security name to use for the given date
@@ -867,9 +880,10 @@ class ResolveOnTheRun(Algo):
 
     def __call__(self, target):
         # Resolve real tickers based on OTR
+        on_the_run = target.get_data(self.on_the_run)
         selected = target.temp['selected']
-        aliases = [ s for s in selected if s in self.on_the_run.columns ]
-        resolved = self.on_the_run.loc[target.now, aliases].tolist()
+        aliases = [ s for s in selected if s in on_the_run.columns ]
+        resolved = on_the_run.loc[target.now, aliases].tolist()
         if not self.include_no_data:
             universe = target.universe.loc[target.now, resolved].dropna()
             if self.include_negative:
@@ -877,7 +891,7 @@ class ResolveOnTheRun(Algo):
             else:
                 resolved = list(universe[universe > 0].index)
         target.temp['selected'] = resolved + [ s for s in selected
-                                              if s not in self.on_the_run.columns ]
+                                              if s not in on_the_run.columns ]
         return True
 
 
@@ -887,17 +901,27 @@ class SetStat(Algo):
     Sets temp['stat'] for use by downstream algos (such as SelectN).
 
     Args:
-        * stat (DataFrame): A dataframe of the same dimension as target.universe
-
+        * stat (str|DataFrame): A dataframe of the same dimension as target.universe
+            If a string is passed, frame is accessed using target.get_data
+            This is the preferred way of using the algo. 
     Sets:
         * stat
     """
 
-    def __init__(self, stat):
-        self.stat = stat
+    def __init__(self, stat):        
+        if isinstance( stat, pd.DataFrame ):
+            self.stat_name = None
+            self.stat = stat
+        else:
+            self.stat_name = stat 
+            self.stat = None
 
     def __call__(self, target):
-        target.temp['stat'] = self.stat.loc[ target.now ]
+        if self.stat_name is None:
+            stat = self.stat
+        else:
+            stat = target.get_data( self.stat_name )
+        target.temp['stat'] = stat.loc[target.now]
         return True
 
 
@@ -1040,7 +1064,9 @@ class WeighTarget(Algo):
     target weights are set.
 
     Args:
-        * weights (DataFrame): DataFrame containing the target weights
+        * weights (str|DataFrame): DataFrame containing the target weights
+            If a string is passed, frame is accessed using target.get_data
+            This is the preferred way of using the algo. 
 
     Sets:
         * weights
@@ -1049,12 +1075,22 @@ class WeighTarget(Algo):
 
     def __init__(self, weights):
         super(WeighTarget, self).__init__()
-        self.weights = weights
+        if isinstance( weights, pd.DataFrame ):
+            self.weights_name = None
+            self.weights = weights
+        else:
+            self.weights_name = weights 
+            self.weights = None
 
     def __call__(self, target):
         # get current target weights
-        if target.now in self.weights.index:
-            w = self.weights.loc[target.now]
+        if self.weights_name is None:
+            weights = self.weights
+        else:
+            weights = target.get_data( self.weights_name )
+            
+        if target.now in weights.index:
+            w = weights.loc[target.now]
 
             # dropna and save
             target.temp['weights'] = w.dropna()
@@ -1660,7 +1696,8 @@ class SetNotional(Algo):
     FixedIncomestrategy targets
 
     Args:
-        * notional_value (float): The target notional value of the strategy
+        * notional_value (str): Name of a pd.Series object containing the 
+            target notional values of the strategy over time. 
 
     Sets:
         * notional_value
@@ -1670,8 +1707,14 @@ class SetNotional(Algo):
         super(SetNotional, self).__init__()
 
     def __call__(self, target):
-        target.temp['notional_value'] = self.notional_value
-        return True
+        notional_value = target.get_data( self.notional_value )
+            
+        if target.now in notional_value.index:            
+            target.temp['notional_value'] = notional_value.loc[target.now]
+
+            return True
+        else:
+            return False        
 
 
 class Rebalance(Algo):
@@ -1942,7 +1985,7 @@ class ClosePositionsAfterDates(Algo):
     closed as necessary.
 
     Args:
-        * close_dates (Dataframe): a dataframe indexed by security name, with columns
+        * close_dates (str): the name of a dataframe indexed by security name, with columns
             "date": the date after which we want to close the position ASAP
 
     Sets:
@@ -1951,19 +1994,20 @@ class ClosePositionsAfterDates(Algo):
 
     def __init__(self, close_dates):
         super(ClosePositionsAfterDates, self).__init__()
-        self.close_dates = close_dates['date']
+        self.close_dates = close_dates
 
     def __call__(self, target):
         if 'closed' not in target.perm:
             target.perm['closed'] = set()
+        close_dates = target.get_data( self.close_dates )['date']
         # Find securities that are candidate for closing
         sec_names = [ sec_name for sec_name, sec in iteritems(target.children)
                         if isinstance( sec, SecurityBase ) \
-                        and sec_name in self.close_dates.index \
+                        and sec_name in close_dates.index \
                         and sec_name not in target.perm['closed']]
 
         # Check whether closed
-        is_closed = self.close_dates.loc[ sec_names ] <= target.now
+        is_closed = close_dates.loc[ sec_names ] <= target.now
 
         # Close position
         for sec_name in is_closed[ is_closed ].index:
@@ -1988,7 +2032,7 @@ class RollPositionsAfterDates(Algo):
     rolled as necessary.
 
     Args:
-        * roll_data (Dataframe): a dataframe indexed by security name, with columns
+        * roll_data (str): the name of a dataframe indexed by security name, with columns
             "date": the first date at which the roll can occur
             "target": the security name we are rolling into
             "factor": the conversion factor. One unit of the original security
@@ -2005,15 +2049,16 @@ class RollPositionsAfterDates(Algo):
     def __call__(self, target):
         if 'rolled' not in target.perm:
             target.perm['rolled'] = set()
+        roll_data = target.get_data( self.roll_data )
         transactions = {}
         # Find securities that are candidate for roll
         sec_names = [ sec_name for sec_name, sec in iteritems(target.children)
                         if isinstance( sec, SecurityBase ) \
-                        and sec_name in self.roll_data.index \
+                        and sec_name in roll_data.index \
                         and sec_name not in target.perm['rolled']]
 
         # Calculate new transaction and close old position
-        for sec_name, sec_fields in self.roll_data.loc[ sec_names ].iterrows():
+        for sec_name, sec_fields in roll_data.loc[ sec_names ].iterrows():
             if sec_fields['date'] <= target.now:
                 target.perm['rolled'].add( sec_name )
                 new_quantity = sec_fields['factor'] * target[sec_name].position
@@ -2076,7 +2121,7 @@ class ReplayTransactions(Algo):
     against the daily prices.
 
     Args:
-        * transactions (Dataframe): a MultiIndex dataframe with format
+        * transactions (str): name of a MultiIndex dataframe with format
             Date, Security | quantity, price
           Note this schema follows the output of backtest.Result.get_transactions
 
@@ -2095,8 +2140,9 @@ class ReplayTransactions(Algo):
         else:
             start = timeline[index-1]
         # Get the transactions since the last update
-        timestamps = self.transactions.index.get_level_values('Date')
-        transactions = self.transactions[ (timestamps > start) & (timestamps <= end) ]
+        all_transactions = target.get_data( self.transactions )
+        timestamps = all_transactions.index.get_level_values('Date')
+        transactions = all_transactions[ (timestamps > start) & (timestamps <= end) ]
         for (_,security), transaction in transactions.iterrows():
             c = target[ security ]
             c.transact( transaction['quantity'], price = transaction['price'], update=False)
@@ -2115,7 +2161,7 @@ class SimulateRFQTransactions(Algo):
     RFQ or the receiver.
 
     Args:
-        * rfqs (Dataframe): a dataframe with columns
+        * rfqs (str): name of a dataframe with columns
             Date, Security | quantity, *additional columns as required by model
         * model (object): a function/callable object with arguments
                 rfqs : data frame of rfqs to respond to
@@ -2137,8 +2183,9 @@ class SimulateRFQTransactions(Algo):
         else:
             start = timeline[index-1]
         # Get the RFQs since the last update
-        timestamps = self.rfqs.index.get_level_values('Date')
-        rfqs = self.rfqs[ (timestamps > start) & (timestamps <= end) ]
+        all_rfqs = target.get_data( self.rfqs )
+        timestamps = all_rfqs.index.get_level_values('Date')
+        rfqs = all_rfqs[ (timestamps > start) & (timestamps <= end) ]
 
         # Turn the RFQs into transactions
         transactions = self.model( rfqs, target )
@@ -2166,12 +2213,15 @@ def _get_unit_risk( security, data, index = None):
 class UpdateRisk(Algo):
 
     """
-    Tracks a risk measure on all nodes of the strategy.
+    Tracks a risk measure on all nodes of the strategy. To use this node, target.setup
+    must be called with a "unit_risk" additional argument, which is a dictionary, keyed
+    by risk measure, of DataFrames with a column per security that is sensitive to that measure.
+        
 
     Args:
         * name (str): the name of the risk measure (IR01, PVBP, IsIndustials, etc).
-        * unit_risk (DataFrame): Float DataFrame with a column for all risky securities, 
-            containing risk per unit of position.
+            The name must coincide with the keys of the dictionary passed to setup as the
+            "unit_risk" argument.
         * history (int): The level of depth in the tree at which to track the time series of risk numbers.
             i.e. 0=no tracking, 1=first level only, etc. More levels is more expensive.
 
@@ -2179,14 +2229,11 @@ class UpdateRisk(Algo):
         * The "risk" attribute on the target and all its children
         * If history==True, the "risks" attribute on the target and all its children
 
-    Sets:
-        * 'unit_risk' on temp
     """
 
-    def __init__(self, measure, unit_risk, history=0):
+    def __init__(self, measure, history=0):
         super(UpdateRisk, self).__init__( name = 'UpdateRisk>%s' % measure)
         self.measure = measure
-        self.unit_risk = unit_risk
         self.history = history
 
     def _setup_risk( self, target, set_history ):
@@ -2201,7 +2248,7 @@ class UpdateRisk(Algo):
         if set_history:
             target.risks[ self.measure ] = np.NaN
 
-    def _set_risk_recursive( self, target, depth ):
+    def _set_risk_recursive( self, target, depth, unit_risk_frame ):
         set_history = (depth < self.history)
         # General setup of risk on nodes
         if not hasattr( target, 'risk' ):
@@ -2211,9 +2258,9 @@ class UpdateRisk(Algo):
 
         if isinstance( target, bt.core.SecurityBase ):
             # Use target.root.now as non-traded securities may not have been updated yet
-            # and there is no need to update them here as we only use position
-            index = self.unit_risk.index.get_loc( target.root.now )
-            unit_risk = _get_unit_risk( target.name, self.unit_risk, index )
+            # and there is no need to update them here as we only use position            
+            index = unit_risk_frame.index.get_loc( target.root.now )
+            unit_risk = _get_unit_risk( target.name, unit_risk_frame, index )
             if is_zero( target.position ):
                 risk = 0.
             else:
@@ -2221,7 +2268,7 @@ class UpdateRisk(Algo):
         else:
             risk = 0.
             for child in target.children.values():
-                self._set_risk_recursive( child, depth+1 )
+                self._set_risk_recursive( child, depth+1, unit_risk_frame )
                 risk += child.risk[ self.measure ]
 
         target.risk[ self.measure ] = risk
@@ -2229,9 +2276,8 @@ class UpdateRisk(Algo):
             target.risks.loc[ target.now, self.measure ] = risk
 
     def __call__(self, target):
-        # Set the unit risk on temp, so it can be used for hedging later
-        target.temp.setdefault('unit_risk', {})[ self.measure ] = self.unit_risk
-        self._set_risk_recursive( target, 0 )
+        unit_risk_frame = target.get_data('unit_risk')[ self.measure ]
+        self._set_risk_recursive( target, 0, unit_risk_frame )
         return True
 
 
@@ -2316,7 +2362,7 @@ class HedgeRisks(Algo):
         # Get hedge risk as a Jacobian matrix
         data = []
         for m in self.measures:
-            d = target.temp.get('unit_risk', {}).get( m )
+            d = target.get_data('unit_risk').get( m )
             if d is None:
                 raise ValueError(
                     'unit_risk for %s not present in temp on %s'
