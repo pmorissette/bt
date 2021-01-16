@@ -1,6 +1,11 @@
 name: Build Status
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    # run on sunday nights
+    - cron:  '0 0 * * 0'
 
 jobs:
   build:
