@@ -1710,6 +1710,21 @@ def test_run_every_n_periods_offset():
     assert algo(target)
 
 
+def test_not():
+    target = mock.MagicMock()
+    target.temp = {}
+
+    #run except on the 1/2/18
+    runOnDateAlgo = algos.RunOnDate(pd.to_datetime('2018-01-02'))
+    notAlgo = algos.Not(runOnDateAlgo)
+    
+    target.now = pd.to_datetime('2018-01-01')
+    assert notAlgo(target)
+    
+    target.now = pd.to_datetime('2018-01-02')
+    assert not notAlgo(target)
+
+
 def test_or():
     target = mock.MagicMock()
     target.temp = {}
