@@ -1904,6 +1904,24 @@ class Require(Algo):
         return self.pred(item)
 
 
+class Not(Algo):
+    """
+    Flow control Algo
+    
+    It is usful for "inverting" other flow control algos,
+    For example Not( RunAfterDate(...) ), Not( RunAfterDays(...) ), etc
+    
+    Args:
+        * list_of_algos (Algo): The algo to run and invert the return value of
+    """
+    def __init__( self, algo ):
+        super(Not, self).__init__()
+        self._algo = algo
+        
+    def __call__(self, target):
+        return not self._algo(target)
+
+
 class Or(Algo):
     """
     Flow control Algo
