@@ -2152,6 +2152,7 @@ def test_hedge_risk():
     risk1['c1'] = 1
     risk1['c2'] = 10
     risk2['c1'] = 2
+    risk2['c2'] = 5
     risk2['c3'] = 10
 
     stack = bt.core.AlgoStack( algos.UpdateRisk('Risk1'),
@@ -2171,11 +2172,11 @@ def test_hedge_risk():
 
     # Check that risk is hedged!
     assert s.risk['Risk1'] == 0
-    assert s.risk['Risk2'] == 0
+    aae( s.risk['Risk2'], 0, 13)
     # Check that positions are nonzero (trivial solution)
     assert c1.position == 100
     assert c2.position == -10
-    assert c3.position == -20
+    aae( c3.position, -(100*2 - 10*5)/10., 13)
 
 
 def test_hedge_risk_pseudo_under():
