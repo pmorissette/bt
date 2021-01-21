@@ -2378,7 +2378,7 @@ class HedgeRisks(Algo):
         if self.pseudo:
             inv = np.linalg.pinv( hedge_risk ).T
         else:
-            inv = np.linalg.inv( hedge_risk )
+            inv = np.linalg.inv( hedge_risk ).T
         notionals = np.matmul( inv, -target_risk ).flatten()
 
         # Hedge
