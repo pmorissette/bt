@@ -2324,18 +2324,21 @@ class HedgeRisks(Algo):
             'target' in a depth-first traversal of the children of the root,
             otherwise hedging will occur before positions of risk_strategy are
             updated.
+        * throw_nan (bool): Whether to throw on nan hedge notionals, rather
+            than simply not hedging. 
 
     Requires:
         * selected
     """
 
-    def __init__(self, measures, pseudo=False, strategy=None ):
+    def __init__(self, measures, pseudo=False, strategy=None, throw_nan=True ):
         super(HedgeRisks, self).__init__()
         if len(measures) == 0:
             raise ValueError('Must pass in at least one measure to hedge')
         self.measures = measures
         self.pseudo = pseudo
         self.strategy = strategy
+        self.throw_nan = throw_nan
 
     def _get_target_risk( self, target, measure ):
         if not hasattr( target, 'risk' ):
@@ -2383,5 +2386,7 @@ class HedgeRisks(Algo):
 
         # Hedge
         for notional, security in zip( notionals, securities ):
+            if np.isnan( notional ) and self.throw_nan:
+                raise ValueError('%s has nan hedge notional' % security)
             target.transact( notional, security )
         return True
