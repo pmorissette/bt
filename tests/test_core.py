@@ -201,6 +201,9 @@ def test_strategybase_tree_adjust():
     assert c2.value == 0
     assert c1.weight == 0
     assert c2.weight == 0
+    
+    s.update(dts[0])
+    assert s.flows[ dts[0] ] == 1000
 
 
 def test_strategybase_tree_update():
@@ -2715,6 +2718,8 @@ def test_bidoffer():
     assert s.bidoffer_paid == 100 * 0.75 + 200 * 1
     assert s.bidoffers_paid[i] == s.bidoffer_paid
 
+    assert s.fees.iloc[i] == 3 * 0.1
+    
     i = 1
     s.update(dts[i])
     assert c1.bidoffer_paid == 0.
@@ -2723,6 +2728,7 @@ def test_bidoffer():
     assert c2.bidoffers_paid[i] == c2.bidoffer_paid
     assert s.bidoffer_paid == 0.
     assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert s.fees[i] == 0.
 
 
 def test_outlay_custom():

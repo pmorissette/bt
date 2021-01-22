@@ -2,6 +2,7 @@ from __future__ import division
 import bt
 import pandas as pd
 import numpy as np
+from nose.tools import assert_almost_equal as aae
 import random
 import sys
 if sys.version_info < (3, 3):
@@ -282,3 +283,60 @@ def test_30_min_data():
     wait=1
 
 
+def test_RenomalizedFixedIncomeResult():
+    dts = pd.date_range('2010-01-01', periods=5)
+    data = pd.DataFrame(index=dts, columns=['a'], data=1.)    
+    data['a'][dts[0]] = 0.99
+    data['a'][dts[1]] = 1.01
+    data['a'][dts[2]] = 0.99
+    data['a'][dts[3]] = 1.01
+    data['a'][dts[4]] = 0.99
+    
+    weights = pd.DataFrame(index=dts, columns=['a'], data=1.)
+    weights['a'][dts[0]] = 1.
+    weights['a'][dts[1]] = 2.
+    weights['a'][dts[2]] = 1.
+    weights['a'][dts[3]] = 2.
+    weights['a'][dts[4]] = 1.
+    
+    coupons = pd.DataFrame(index=dts, columns=['a'], data=0.)
+    
+    algos = [ bt.algos.SelectAll(),
+              bt.algos.WeighTarget( weights ),
+              bt.algos.SetNotional( 'notional' ),
+              bt.algos.Rebalance()]
+    children = [ bt.CouponPayingSecurity('a') ]
+    
+    s = bt.FixedIncomeStrategy('s', algos, children = children )
+
+    t = bt.Backtest(s, data, initial_capital=0, 
+                    additional_data = {'notional': pd.Series( 1e6, dts),
+                                       'coupons': coupons},
+                    progress_bar=False)
+    res = bt.run(t)
+
+    t = res.backtests['s']
+    
+    # Due to the relationship between the time varying notional and the prices,
+    # the strategy has lost money, but price == 100, so "total return" is zero
+    assert t.strategy.value < 0.
+    assert t.strategy.price == 100.
+    assert res.stats['s'].total_return == 0
+    
+    # Renormalizing results to a constant size "fixes" this
+    norm_res = bt.backtest.RenormalizedFixedIncomeResult( 1e6, *res.backtest_list )    
+    aae( norm_res.stats['s'].total_return, t.strategy.value / 1e6, 16 )
+    
+    # Check that using the lagged notional value series leads to the same results
+    # as the original calculation. This proves that we can re-derive the price
+    # series from the other data available on the strategy
+    notl_values = t.strategy.notional_values.shift(1)
+    notl_values[dts[0]] = 1e6 # The notional value *before* any trades are put on
+    norm_res = bt.backtest.RenormalizedFixedIncomeResult( 
+                                notl_values, 
+                                *res.backtest_list )
+
+    assert norm_res.stats['s'].total_return == res.stats['s'].total_return   
+    assert norm_res.prices.equals( res.prices )    
+    
+    
