@@ -1904,6 +1904,24 @@ class Require(Algo):
         return self.pred(item)
 
 
+class Not(Algo):
+    """
+    Flow control Algo
+    
+    It is usful for "inverting" other flow control algos,
+    For example Not( RunAfterDate(...) ), Not( RunAfterDays(...) ), etc
+    
+    Args:
+        * list_of_algos (Algo): The algo to run and invert the return value of
+    """
+    def __init__( self, algo ):
+        super(Not, self).__init__()
+        self._algo = algo
+        
+    def __call__(self, target):
+        return not self._algo(target)
+
+
 class Or(Algo):
     """
     Flow control Algo
@@ -2324,18 +2342,21 @@ class HedgeRisks(Algo):
             'target' in a depth-first traversal of the children of the root,
             otherwise hedging will occur before positions of risk_strategy are
             updated.
+        * throw_nan (bool): Whether to throw on nan hedge notionals, rather
+            than simply not hedging. 
 
     Requires:
         * selected
     """
 
-    def __init__(self, measures, pseudo=False, strategy=None ):
+    def __init__(self, measures, pseudo=False, strategy=None, throw_nan=True ):
         super(HedgeRisks, self).__init__()
         if len(measures) == 0:
             raise ValueError('Must pass in at least one measure to hedge')
         self.measures = measures
         self.pseudo = pseudo
         self.strategy = strategy
+        self.throw_nan = throw_nan
 
     def _get_target_risk( self, target, measure ):
         if not hasattr( target, 'risk' ):
@@ -2378,10 +2399,12 @@ class HedgeRisks(Algo):
         if self.pseudo:
             inv = np.linalg.pinv( hedge_risk ).T
         else:
-            inv = np.linalg.inv( hedge_risk )
+            inv = np.linalg.inv( hedge_risk ).T
         notionals = np.matmul( inv, -target_risk ).flatten()
 
         # Hedge
         for notional, security in zip( notionals, securities ):
+            if np.isnan( notional ) and self.throw_nan:
+                raise ValueError('%s has nan hedge notional' % security)
             target.transact( notional, security )
         return True
