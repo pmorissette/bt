@@ -448,8 +448,18 @@ class StrategyBase(Node):
         """
         TimeSeries of fees.
         """
-        # no stale check needed
+        if self.root.stale:
+            self.root.update(self.now, None)
         return self._fees.loc[:self.now]
+
+    @property
+    def flows(self):
+        """
+        TimeSeries of flows.
+        """
+        if self.root.stale:
+            self.root.update(self.now, None)
+        return self._all_flows.loc[:self.now]
 
     @property
     def bidoffer_paid( self ):
@@ -585,7 +595,7 @@ class StrategyBase(Node):
 
         # setup internal data
         self.data = pd.DataFrame(index=funiverse.index,
-                                 columns=['price', 'value', 'notional_value', 'cash', 'fees'],
+                                 columns=['price', 'value', 'notional_value', 'cash', 'fees', 'flows'],
                                  data=0.0)
 
         self._prices = self.data['price']
@@ -593,6 +603,7 @@ class StrategyBase(Node):
         self._notl_values = self.data['notional_value']
         self._cash = self.data['cash']
         self._fees = self.data['fees']
+        self._all_flows = self.data['flows']
 
         if 'bidoffer' in kwargs:
             self._bidoffer_set = True            
@@ -763,9 +774,10 @@ class StrategyBase(Node):
 
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".
-        # Same for fees
+        # Same for fees and flows
         self._cash.values[inow] = self._capital
         self._fees.values[inow] = self._last_fee
+        self._all_flows.values[inow] = self._net_flows
 
         # update paper trade if necessary
         if newpt and self._paper_trade:

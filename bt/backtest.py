@@ -575,3 +575,51 @@ class RandomBenchmarkResult(Result):
         ax.set_title(title)
         plt.axvline(self.b_stats[statistic], linewidth=4, color = 'r')
         ser.plot(kind='kde')
+
+
+class RenormalizedFixedIncomeResult(Result):
+    """
+    A new result type to help compare fixed income strategies. 
+    Recall that in a fixed income strategy, the normalized prices are computed 
+    using additive returns expressed as a percentage of current outstanding 
+    notional (i.e. fixed-notional equivalent).
+    In strategies where the notional is varying, this may lead to counter-
+    intuitive results because the different terms in the sum are being scaled by
+    different notionals in the denominator (i.e. price could be below par, but 
+    overall change in value is positive).
+    
+    This class provides a way to "renormalize" the results with a different 
+    denominator value or series, i.e. using max or average notional exposure, 
+    or the risk exposure of the strategy.
+    
+    Args:
+        * normalizing_value: pd.Series, float or dict thereof(by strategy name)
+        * backtests (list): List of backtests (i.e. from Result.backtest_list)
+    """
+
+    def __init__(self, normalizing_value, *backtests):        
+        for backtest in backtests:
+            if not backtest.strategy.fixed_income:
+                raise ValueError('Cannot apply RenormalizedFixedIncomeResult '
+                                 'because backtest %s is not on a fixed income '
+                                 'strategy' % backtest.name)
+        if not isinstance( normalizing_value, dict ):
+            normalizing_value = {x.name: normalizing_value for x in backtests }
+        tmp = [pd.DataFrame({x.name: self._price(x.strategy, 
+                                                 normalizing_value[ x.name ] )}) 
+                for x in backtests]
+        super(Result, self).__init__(*tmp)
+        self.backtest_list = backtests
+        self.backtests = {x.name: x for x in backtests}
+        
+    def _price( self, s, v ):
+        """
+        Compute the new price series from the strategy (s) and the
+        normalizing value (v)
+        """
+        # Compute additive returns net of flows
+        returns = s.values.diff() - s.flows        
+        prices = bt.core.PAR * ( 1. + (returns/v).cumsum() )
+        prices.iloc[0] = bt.core.PAR
+        return prices
+
