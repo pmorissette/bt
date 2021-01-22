@@ -1710,6 +1710,21 @@ def test_run_every_n_periods_offset():
     assert algo(target)
 
 
+def test_not():
+    target = mock.MagicMock()
+    target.temp = {}
+
+    #run except on the 1/2/18
+    runOnDateAlgo = algos.RunOnDate(pd.to_datetime('2018-01-02'))
+    notAlgo = algos.Not(runOnDateAlgo)
+    
+    target.now = pd.to_datetime('2018-01-01')
+    assert notAlgo(target)
+    
+    target.now = pd.to_datetime('2018-01-02')
+    assert not notAlgo(target)
+
+
 def test_or():
     target = mock.MagicMock()
     target.temp = {}
@@ -2152,6 +2167,7 @@ def test_hedge_risk():
     risk1['c1'] = 1
     risk1['c2'] = 10
     risk2['c1'] = 2
+    risk2['c2'] = 5
     risk2['c3'] = 10
 
     stack = bt.core.AlgoStack( algos.UpdateRisk('Risk1'),
@@ -2171,11 +2187,56 @@ def test_hedge_risk():
 
     # Check that risk is hedged!
     assert s.risk['Risk1'] == 0
-    assert s.risk['Risk2'] == 0
+    aae( s.risk['Risk2'], 0, 13)
     # Check that positions are nonzero (trivial solution)
     assert c1.position == 100
     assert c2.position == -10
-    assert c3.position == -20
+    aae( c3.position, -(100*2 - 10*5)/10., 13)
+    
+  
+def test_hedge_risk_nan():
+    c1 = bt.Security('c1')
+    c2 = bt.Security('c2')
+    c3 = bt.Security('c3')
+    s = bt.Strategy('s', children = [c1, c2, c3])
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100)
+    c1 = s['c1']
+    c2 = s['c2']
+    c3 = s['c3']
+
+    risk1 = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=0)
+    risk2 = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=0)
+    risk1['c1'] = 1
+    risk1['c2'] = 10
+    risk2['c1'] = float('nan')
+    risk2['c2'] = 5
+    risk2['c3'] = 10
+
+    stack = bt.core.AlgoStack( algos.UpdateRisk('Risk1'),
+                                algos.UpdateRisk('Risk2'),
+                                algos.SelectThese(['c2','c3']),
+                                algos.HedgeRisks( ['Risk1', 'Risk2'], throw_nan=False ),
+                                )
+    stack_throw = bt.core.AlgoStack( algos.UpdateRisk('Risk1'),
+                                algos.UpdateRisk('Risk2'),
+                                algos.SelectThese(['c2','c3']),
+                                algos.HedgeRisks( ['Risk1', 'Risk2'] ),
+                                )
+
+    s.setup(data, unit_risk={'Risk1':risk1, 'Risk2':risk2})
+    s.adjust(1000)
+
+    s.update(dts[0])
+    s.transact( 100, 'c1')
+    assert stack( s )
+    
+    did_throw = False
+    try:
+        stack_throw( s )
+    except ValueError:
+        did_throw = True
+    assert did_throw
 
 
 def test_hedge_risk_pseudo_under():
