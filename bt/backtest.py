@@ -483,37 +483,7 @@ class Result(ffn.GroupStats):
             strategy_name = self.backtest_list[0].name
 
         # extract strategy given strategy_name
-        s = self.backtests[strategy_name].strategy
-
-        # get prices for each security in the strategy & create unstacked
-        # series
-        prc = pd.DataFrame({x.name: x.prices for x in s.securities}).unstack()
-
-        # get security positions
-        positions = pd.DataFrame({x.name: x.positions for x in s.securities})
-        # trades are diff
-        trades = positions.diff()
-        # must adjust first row
-        trades.iloc[0] = positions.iloc[0]
-        # now convert to unstacked series, dropping nans along the way
-        trades = trades[trades != 0].unstack().dropna()
-
-        # Adjust prices for bid/offer paid if needed
-        if s._bidoffer_set:
-            bidoffer = pd.DataFrame({x.name: x.bidoffers_paid
-                                     for x in s.securities }).unstack()
-            prc += bidoffer / trades
-
-        res = pd.DataFrame({'price': prc, 'quantity': trades}).dropna(
-            subset=['quantity'])
-
-        # set names
-        res.index.names = ['Security', 'Date']
-
-        # swap levels so that we have (date, security) as index and sort
-        res = res.swaplevel().sort_index()
-
-        return res
+        return self.backtests[strategy_name].strategy.get_transactions()
 
 
 class RandomBenchmarkResult(Result):
