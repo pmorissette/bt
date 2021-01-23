@@ -1022,6 +1022,44 @@ class StrategyBase(Node):
         for c in self._childrenv:
             if isinstance(c, StrategyBase):
                 c.set_commissions(fn)
+                
+    def get_transactions(self):
+        """
+        Helper function that returns the transactions in the following format:
+
+            Date, Security | quantity, price
+
+        The result is a MultiIndex DataFrame.
+        """
+        # get prices for each security in the strategy & create unstacked
+        # series
+        prc = pd.DataFrame({x.name: x.prices for x in self.securities}).unstack()
+
+        # get security positions
+        positions = pd.DataFrame({x.name: x.positions for x in self.securities})
+        # trades are diff
+        trades = positions.diff()
+        # must adjust first row
+        trades.iloc[0] = positions.iloc[0]
+        # now convert to unstacked series, dropping nans along the way
+        trades = trades[trades != 0].unstack().dropna()
+
+        # Adjust prices for bid/offer paid if needed
+        if self._bidoffer_set:
+            bidoffer = pd.DataFrame({x.name: x.bidoffers_paid
+                                     for x in self.securities }).unstack()
+            prc += bidoffer / trades
+
+        res = pd.DataFrame({'price': prc, 'quantity': trades}).dropna(
+            subset=['quantity'])
+
+        # set names
+        res.index.names = ['Security', 'Date']
+
+        # swap levels so that we have (date, security) as index and sort
+        res = res.swaplevel().sort_index()
+
+        return res
 
     @cy.locals(q=cy.double, p=cy.double)
     def _dflt_comm_fn(self, q, p):
@@ -1646,6 +1684,8 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         * name (str): Security name
         * multiplier (float): security multiplier - typically used for
             derivatives.
+        * fixed_income (bool): Falg to control whether notional_value is based
+            only on quantity, or on market value (like an equity)
 
     Attributes:
         * SecurityBase attributes
@@ -1661,12 +1701,12 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
     _holding_cost = cy.declare(cy.double)
     
     @cy.locals(multiplier=cy.double)
-    def __init__(self, name, multiplier=1):
+    def __init__(self, name, multiplier=1, fixed_income=True):
         super(CouponPayingSecurity, self).__init__( name, multiplier )
         self._coupon = 0
         self._holding_cost = 0
         # Use notional weighting by default
-        self._fixed_income = True
+        self._fixed_income = fixed_income
 
     def setup(self, universe, **kwargs):
         """
