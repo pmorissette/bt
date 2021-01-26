@@ -616,13 +616,18 @@ class StrategyBase(Node):
         if self.children is not None:
             [c.setup(universe, **kwargs) for c in self._childrenv]
 
-    def setup_from_parent(self):
+    def setup_from_parent(self, **kwargs):
         """
         Setup a strategy from the parent. Used when dynamically creating
         child strategies.
+        
+        Args:
+            * kwargs: additional arguments that will be passed to setup 
+                (potentially overriding those from the parent)
         """
-        self.setup( self.parent._original_data, 
-                    **self.parent._setup_kwargs )
+        all_kwargs = self.parent._setup_kwargs.copy()
+        all_kwargs.update( kwargs )
+        self.setup( self.parent._original_data, **all_kwargs )
         if self.name not in self.parent._universe:
             self.parent._universe[ self.name ] = np.nan
     
