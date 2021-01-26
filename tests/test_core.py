@@ -17,29 +17,37 @@ else:
     from unittest import mock
 
 
-def test_node_tree():
+def test_node_tree1():
+    # Create a regular strategy
     c1 = Node('c1')
     c2 = Node('c2')
-    p = Node('p', children=[c1, c2])
+    p = Node('p', children=[c1, c2, 'c3', 'c4'])
 
+    assert 'c1' in p.children
+    assert 'c2' in p.children
+    assert p['c1'] != c1
+    assert p['c1'] != c2
     c1 = p['c1']
     c2 = p['c2']
 
-    assert len(p.children) == 2
-    assert 'c1' in p.children
-    assert 'c2' in p.children
+    assert len(p.children) == 2    
     assert p == c1.parent
     assert p == c2.parent
     assert p == c1.root
     assert p == c2.root
 
-    m = Node('m', children=[p])
+    # Create a new parent strategy with a child sub-strategy
+    m = Node('m', children=[p, c1])
     p = m['p']
+    mc1 = m['c1']
     c1 = p['c1']
     c2 = p['c2']
 
-    assert len(m.children) == 1
+    assert len(m.children) == 2
     assert 'p' in m.children
+    assert 'c1' in m.children
+    assert mc1 != c1
+    
     assert p.parent == m    
     assert len(p.children) == 2
     assert 'c1' in p.children
@@ -49,7 +57,116 @@ def test_node_tree():
     assert m == p.root
     assert m == c1.root
     assert m == c2.root
+    
+    # Add a new node into the strategy
+    c0 = Node('c0', parent=p)    
+    c0 = p['c0']    
+    assert 'c0' in p.children    
+    assert p == c0.parent
+    assert m == c0.root
+    assert len(p.children) == 3
+    
+    # Add a new sub-strategy into the parent strategy
+    p2 = Node( 'p2', children = [c0, c1], parent=m )
+    p2 = m['p2']
+    c0 = p2['c0']
+    c1 = p2['c1']
+    assert 'p2' in m.children
+    assert p2.parent == m
+    assert len(p2.children) == 2
+    assert 'c0' in p2.children
+    assert 'c1' in p2.children
+    assert c0 != p['c0']
+    assert c1 != p['c1']
+    assert p2 == c0.parent
+    assert p2 == c1.parent
+    assert m == p2.root
+    assert m == c0.root
+    assert m == c1.root   
 
+
+def test_node_tree2():
+    # Just like test_node_tree1, but using the dictionary constructor
+    c = Node('template')   
+    p = Node('p', children={'c1':c, 'c2':c, 'c3':'', 'c4':''})
+    assert 'c1' in p.children
+    assert 'c2' in p.children
+    assert p['c1'] != c
+    assert p['c1'] != c
+    c1 = p['c1']
+    c2 = p['c2']
+
+    assert len(p.children) == 2    
+    assert c1.name == 'c1'
+    assert c2.name == 'c2'
+    assert p == c1.parent
+    assert p == c2.parent
+    assert p == c1.root
+    assert p == c2.root
+    
+
+def test_node_tree3():
+    c1 = Node('c1')
+    c2 = Node('c1') # Same name!
+    raised = False
+    try:
+        p = Node('p', children=[c1, c2, 'c3', 'c4'])
+    except ValueError:
+        raised = True
+    assert raised
+    
+    raised = False
+    try:
+        p = Node('p', children=['c1', 'c1'])
+    except ValueError:
+        raised = True
+    assert raised
+    
+    c1 = Node('c1')
+    c2 = Node('c2')
+    p = Node('p', children=[c1, c2, 'c3', 'c4'])
+    raised = False
+    try:
+        Node('c1', parent = p )
+    except ValueError:
+        raised = True
+    assert raised
+    
+    # This does not raise, as it's just providing an implementation of 'c3',
+    # which had been declared earlier
+    c3 = Node('c3', parent = p )
+    assert 'c3' in p.children
+    
+    
+def test_integer_positions():
+    c1 = Node('c1')
+    c2 = Node('c2')
+    c1.integer_positions = False
+    p = Node('p', children=[c1, c2])
+    c1 = p['c1']
+    c2 = p['c2']
+    assert p.integer_positions
+    assert c1.integer_positions
+    assert c2.integer_positions
+    
+    p.use_integer_positions(False)
+    assert not p.integer_positions
+    assert not c1.integer_positions
+    assert not c2.integer_positions
+    
+    c3 = Node('c3', parent=p)
+    c3 = p['c3']
+    assert not c3.integer_positions
+    
+    p2 = Node( 'p2', children = [p] )
+    p = p2['p']
+    c1 = p['c1']
+    c2 = p['c2']
+    assert p2.integer_positions
+    assert p.integer_positions
+    assert c1.integer_positions
+    assert c2.integer_positions    
+    
 
 def test_strategybase_tree():
     s1 = SecurityBase('s1')
@@ -1847,9 +1964,8 @@ def test_strategy_tree_proper_universes():
 
     master.setup(data)
 
-    assert len(master.children) == 2
+    assert len(master.children) == 1
     assert 'c1' in master.children
-    assert 'a' in master.children
     assert len(master._universe.columns) == 2
     assert 'c1' in master._universe.columns
     assert 'a' in master._universe.columns
@@ -1857,6 +1973,18 @@ def test_strategy_tree_proper_universes():
     assert len(child1._universe.columns) == 2
     assert 'b' in child1._universe.columns
     assert 'c' in child1._universe.columns
+    
+    assert master._has_strat_children
+    assert len(master._strat_children) == 1
+    
+    # New child strategy with parent (and using dictionary notation}
+    child2 = Strategy('c2', [do_nothing], {'a' : SecurityBase(''), 'b' : ''}, parent=master)
+    child2.setup_from_parent()
+    assert 'a' in child2._universe.columns
+    assert 'b' in child2._universe.columns
+    assert 'c2' in master._universe.columns
+    
+    assert len(master._strat_children) == 2
 
 
 def test_strategy_tree_paper():
@@ -1899,6 +2027,168 @@ def test_strategy_tree_paper():
     assert np.allclose(s.price, 100. * (102 / 101.))
 
 
+def test_dynamic_strategy():
+    def do_nothing(x):
+        return True
+
+    # Start with an empty parent
+    parent = Strategy('p', [do_nothing], [])
+    dts = pd.date_range('2010-01-01', periods=4)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100.)
+    data['c1'][dts[2]] = 105.
+    data['c2'][dts[2]] = 95. 
+    
+    parent.setup( data )
+
+    # NOTE: Price of the sub-strategy won't be correct in this example because
+    # we are not using the algo stack to impact weights, and so the paper
+    # trading strategy does not see the same actions as we are doing.
+    i = 0
+    parent.adjust( 1e6 )
+    parent.update( dts[i] )
+    assert parent.price == 100.
+    assert parent.value == 1e6  
+
+    i = 1
+    parent.update( dts[i] )
+    # On this step, we decide to put a trade on c1 vs c2 and track it as a strategy
+    trade = Strategy('c1_vs_c2', [], children = ['c1', 'c2'], parent = parent )
+    trade.setup_from_parent()
+    trade.update( parent.now )
+    
+    assert trade.price == 100.
+    assert trade.value == 0
+    
+    # Allocate capital to the trade
+    parent.allocate( 1e5, trade.name )
+    assert trade.value == 1e5
+    assert trade.price == 100.
+    
+    # Go long 'c1' and short 'c2'
+    trade.rebalance( 1., 'c1')
+    trade.rebalance( -1., 'c2')
+       
+    assert parent.universe[ trade.name ][ dts[i] ] == 100.
+    assert parent.positions['c1'][ dts[i] ] == 1e3
+    assert parent.positions['c2'][ dts[i] ] == -1e3   
+    
+    i = 2
+    parent.update( dts[i] )    
+    assert trade.value == 1e5 + 10 * 1e3     
+    assert parent.value == 1e6 + 10 * 1e3
+    
+    # On this step, we close the trade, and allocate capital back to the parent
+    trade.flatten()
+    trade.update( trade.now ) # Need to update after flattening (for now)
+    parent.allocate( -trade.capital, trade.name )
+    assert trade.value == 0    
+    assert trade.capital == 0
+    assert parent.value == 1e6 + 10 * 1e3
+    assert parent.capital == parent.value
+    assert parent.positions['c1'][ dts[i] ] == 0.
+    assert parent.positions['c2'][ dts[i] ] == 0.
+    
+    i = 3
+    parent.update( dts[i] )
+    # Just make sure we can update one step beyond closing
+    
+    # Note that "trade" is still a child of parent, and it also has children,
+    # so it will keep getting updated (and paper trading will still happen).
+    assert trade.value == 0
+    assert trade.capital == 0
+    assert trade.values[ dts[i] ] == 0.
+    
+    
+def test_dynamic_strategy2():
+
+    # Start with an empty parent
+    parent = Strategy('p', [], [])
+    
+    dts = pd.date_range('2010-01-01', periods=4)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2', 'c3'], data=100.)
+    data['c1'][dts[2]] = 105.
+    data['c2'][dts[2]] = 95. 
+    data['c1'][dts[3]] = 101.
+    data['c2'][dts[3]] = 99. 
+    parent.setup( data )
+
+    i = 0
+    parent.adjust( 1e6 )
+    parent.update( dts[i] )
+    assert parent.price == 100.
+    assert parent.value == 1e6  
+
+    i = 1
+    parent.update( dts[i] )
+    # On this step, we decide to put a trade on c1 vs c2 and track it as a strategy
+    def trade_c1_vs_c2( strategy ):
+        if strategy.now == dts[1]:
+            strategy.rebalance( 1., 'c1')
+            strategy.rebalance( -1., 'c2')
+        
+    trade = Strategy('c1_vs_c2', [trade_c1_vs_c2], children = ['c1', 'c2'], parent = parent )
+    trade.setup_from_parent()
+    trade.update( parent.now )
+    
+    assert trade.price == 100.
+    assert trade.value == 0
+    
+    # Allocate capital to the trade
+    parent.allocate( 1e5, trade.name )
+    assert trade.value == 1e5
+    assert trade.price == 100.
+    
+    # Run the strategy for the timestep
+    parent.run()
+       
+    assert parent.universe[ trade.name ][ dts[i] ] == 100.
+    assert np.isnan( parent.universe[ trade.name ][ dts[0] ] )
+    assert parent.positions['c1'][ dts[i] ] == 1e3
+    assert parent.positions['c2'][ dts[i] ] == -1e3   
+    
+    i = 2
+    parent.update( dts[i] ) 
+    trade = parent[ trade.name ]    
+    assert trade.value == 1e5 + 10 * 1e3     
+    assert parent.value == 1e6 + 10 * 1e3
+    aae( trade.price, 110.)
+    
+    # Next we close the trade by flattening positions
+    trade.flatten()
+    trade.update( trade.now ) # Need to update after flattening (for now)
+    aae( trade.price, 110.) 
+    
+    # Finally we allocate capital back to the parent to be re-deployed
+    parent.allocate( -trade.capital, trade.name )
+    assert trade.value == 0    
+    assert trade.capital == 0
+
+    aae( trade.price, 110.) # Price stays the same even after capital de-allocated
+    assert parent.value == 1e6 + 10 * 1e3
+    assert parent.capital == parent.value
+    assert parent.positions['c1'][ dts[i] ] == 0.
+    assert parent.positions['c2'][ dts[i] ] == 0.
+    
+    i = 3
+    parent.update( dts[i] )
+    # Just make sure we can update one step beyond closing
+    
+    assert parent.value == 1e6 + 10 * 1e3
+    
+    # Note that "trade" is still a child of parent, and it also has children,
+    # so it will keep getting updated (and paper trading will still happen).
+    assert trade.value == 0
+    assert trade.capital == 0
+    assert trade.values[ dts[i] ] == 0.
+    
+    # Paper trading price, as asset prices have moved, paper trading price
+    # keeps updating. Note that if the flattening of the position was part
+    # of the definition of trade_c1_vs_c2, then the paper trading price 
+    # would be fixed after flattening, as it would apply to both real and paper. 
+    aae( trade.price, 102.) 
+    aae( parent.universe[ trade.name ][ dts[i] ], 102. )
+    
+    
 def test_outlays():
     c1 = SecurityBase('c1')
     c2 = SecurityBase('c2')
@@ -3472,4 +3762,4 @@ def test_fi_strategy_bidoffer():
     assert s.notional_value == 100*200 + 100*100
     new_value = s.value
     assert s.price == old_price + 100 * ( new_value-old_value) / old_notional
-        
+    

@@ -2,6 +2,7 @@
 Contains the core building blocks of the framework.
 """
 from __future__ import division
+from future.utils import iteritems
 import math
 from copy import deepcopy
 
@@ -33,6 +34,9 @@ class Node(object):
         * parent (Node): The parent Node
         * children (dict, list): A collection of children. If dict,
             the format is {name: child}, if list then list of children.
+            Children can be any type of Node or str.
+            String values correspond to children which will be lazily created
+            with that name when needed. 
 
     Attributes:
         * name (str): Node name
@@ -74,48 +78,15 @@ class Node(object):
 
         self.name = name
 
+        # children helpers
+        self.children = {}
+        self._universe_tickers = []        
+        self._childrenv = [] # Shortcut to self.children.values()
+        
         # strategy children helpers
         self._has_strat_children = False
-        self._strat_children = []
-
-        # if children is not None, we assume that we want to limit the
-        # available children space to the provided list.
-        if children is not None:
-            if isinstance(children, list):
-                # if all strings - just save as universe_filter
-                if all(isinstance(x, str) for x in children):
-                    self._universe_tickers = children
-                    # empty dict - don't want to uselessly create
-                    # tons of children when they might not be needed
-                    children = {}
-                else:
-                    # this will be case if we pass in children
-                    # (say a bunch of sub-strategies)
-                    tmp = {}
-                    ut = []
-                    for c in children:
-                        if type(c) == str:
-                            tmp[c] = Security(c)
-                            ut.append(c)
-                        else:
-                            # deepcopy object for possible later reuse
-                            tmp[c.name] = deepcopy(c)
-
-                            # if strategy, turn on flag and add name to list
-                            # strategy children have special treatment
-                            if isinstance(c, StrategyBase):
-                                self._has_strat_children = True
-                                self._strat_children.append(c.name)
-                            # if not strategy, then we will want to add this to
-                            # universe_tickers to filter on setup
-                            else:
-                                ut.append(c.name)
-
-                    children = tmp
-                    # we want to keep whole universe in this case
-                    # so set to None
-                    self._universe_tickers = ut
-
+        self._strat_children = []    
+        
         if parent is None:
             self.parent = self
             self.root = self
@@ -123,23 +94,10 @@ class Node(object):
             self.integer_positions = True
         else:
             self.parent = parent
-            self.root = parent.root
-            parent._add_child(self)
-
-        # default children
-        if children is None:
-            children = {}
-            self._universe_tickers = None
-        self.children = children
-
-        self._childrenv = list(children.values())
-        def set_tree( node ):
-            for c in node._childrenv:
-                c.parent = node
-                c.root = node.root
-                set_tree( c )
-        set_tree( self )
-
+            parent._add_children( [self], dc = False )
+            
+        self._add_children( children, dc = True )
+        
         # set default value for now
         self.now = 0
         # make sure root has stale flag
@@ -167,7 +125,63 @@ class Node(object):
 
     def __getitem__(self, key):
         return self.children[key]
-
+            
+    def _add_children(self, children, dc):
+        """
+        Add the collection of children to the current node, where
+        children is either an iterable of children objects/strings, or 
+        a dictionary
+        
+        Args:
+            dc (bool): Whether or not to deepcopy nodes before adding them.
+        """
+        if children is not None:
+            if isinstance(children, dict):   
+                # Preserve the names from the dictionary by renaming the nodes
+                tmp = []
+                for name, c in iteritems( children ):                
+                    if isinstance( c, str ):
+                        tmp.append( name )
+                    else:
+                        if dc:
+                            c = deepcopy(c)
+                        c.name = name
+                        tmp.append( c )               
+                children = tmp
+                
+            for c in children:
+                if type(c) == str:
+                    if c in self._universe_tickers:
+                        raise ValueError('Child %s already exists' % c)
+                    self._universe_tickers.append( c )                        
+                else:
+                    if c.name in self.children:
+                        raise ValueError('Child %s already exists' % c)
+                    
+                    if dc: # deepcopy object for possible later reuse
+                        c = deepcopy(c)
+                    
+                    c.parent = self
+                    c._set_root( self.root )                    
+                    c.use_integer_positions( self.integer_positions )
+                    
+                    self.children[c.name] = c
+                    self._childrenv.append( c )
+                    
+                    # if strategy, turn on flag and add name to list
+                    # strategy children have special treatment
+                    if isinstance(c, StrategyBase):
+                        self._has_strat_children = True
+                        self._strat_children.append(c.name)
+                    # if not strategy, then we will want to add this to
+                    # universe_tickers to filter on setup
+                    elif c.name not in self._universe_tickers:
+                        self._universe_tickers.append(c.name)                         
+                       
+    def _set_root( self, root ):
+        self.root = root
+        for c in self._childrenv:
+            c._set_root( root )
 
     def use_integer_positions(self, integer_positions):
         """
@@ -243,19 +257,7 @@ class Node(object):
         """
         Setup method used to initialize a Node with a universe, and potentially other information.
         """
-        raise NotImplementedError()
-
-    def _add_child(self, child):
-        child.parent = self
-        child.root = self.root
-        child.integer_positions = self.integer_positions
-
-        if self.children is None:
-            self.children = {child.name: child}
-        else:
-            self.children[child.name] = child
-
-        self._childrenv = list(self.children.values())
+        raise NotImplementedError()    
 
     def update(self, date, data=None, inow=None):
         """
@@ -325,12 +327,11 @@ class StrategyBase(Node):
         * name (str): Strategy name
         * children (dict, list): A collection of children. If dict,
             the format is {name: child}, if list then list of children.
-            Children can be any type of Node.
+            Children can be any type of Node or str.
+            String values correspond to children which will be lazily created
+            with that name when needed.
         * parent (Node): The parent Node
-        * options (dict): Options and flags for the strategy
-            - disable_bankruptcy (Bool) : disable bankruptcy checking
-            - use_notional_weights (Bool) : use notional weighting (for
-                fixed income strategies)
+
     Attributes:
         * name (str): Strategy name
         * parent (Strategy): Strategy parent
@@ -568,7 +569,7 @@ class StrategyBase(Node):
         # setup universe
         funiverse = universe
 
-        if self._universe_tickers is not None:
+        if self._universe_tickers:
             # if we have universe_tickers defined, limit universe to
             # those tickers
             valid_filter = list(set(universe.columns)
@@ -615,6 +616,16 @@ class StrategyBase(Node):
         if self.children is not None:
             [c.setup(universe, **kwargs) for c in self._childrenv]
 
+    def setup_from_parent(self):
+        """
+        Setup a strategy from the parent. Used when dynamically creating
+        child strategies.
+        """
+        self.setup( self.parent._original_data, 
+                    **self.parent._setup_kwargs )
+        if self.name not in self.parent._universe:
+            self.parent._universe[ self.name ] = np.nan
+    
     def get_data(self, key):
         """
         Returns additional data that was passed to the setup function via kwargs, 
@@ -661,7 +672,7 @@ class StrategyBase(Node):
 
         bidoffer_paid = 0.
         coupons = 0
-        if self.children is not None:
+        if self.children:
             for c in self._childrenv:
                 # Sweep up cash from the security nodes (from coupon payments, etc)
                 if c._issec and newpt:
@@ -744,12 +755,12 @@ class StrategyBase(Node):
                                                  self._last_value,
                                                  self._net_flows,
                                                  self._value))
-
+                
                 self._price = self._last_price * (1 + ret)
                 self._prices.values[inow] = self._price
 
         # update children weights
-        if self.children is not None:
+        if self.children:
             for c in self._childrenv:
                 # avoid useless update call
                 if c._issec and not c._needupdate:
@@ -780,10 +791,11 @@ class StrategyBase(Node):
         self._all_flows.values[inow] = self._net_flows
 
         # update paper trade if necessary
-        if newpt and self._paper_trade:
-            self._paper.update(date)
-            self._paper.run()
-            self._paper.update(date)
+        if self._paper_trade:
+            if newpt:
+                self._paper.update(date)
+                self._paper.run()
+                self._paper.update(date)
             # update price
             self._price = self._paper.price
             self._prices.values[inow] = self._price
@@ -1067,12 +1079,12 @@ class StrategyBase(Node):
 
     def _create_child_if_needed(self, child):
         if child not in self.children:
-            c = Security(child)
+            c = Security(child)            
+            # add child to tree
+            self._add_children([c], dc=False)
             c.setup(self._universe, **self._setup_kwargs)
             # update to bring up to speed
             c.update(self.now)
-            # add child to tree
-            self._add_child(c)
 
 
 class SecurityBase(Node):
@@ -1453,7 +1465,7 @@ class SecurityBase(Node):
         # if q is 0 nothing to do
         if is_zero( q ) or np.isnan(q):
             return
-
+        
         # unless we are closing out a position (q == -position)
         # we want to ensure that
         #
@@ -1538,7 +1550,7 @@ class SecurityBase(Node):
                         ' not smooth'
                     )
                 last_amount_short = full_outlay - amount
-
+        
         self.transact( q, update, False )
 
     @cy.locals(q=cy.double, update=cy.bint, update_self=cy.bint, outlay=cy.double,
@@ -1967,6 +1979,10 @@ class Strategy(StrategyBase):
         * algos (list): List of Algos to be passed into an AlgoStack
         * children (dict, list): Children - useful when you want to create
             strategies of strategies
+            Children can be any type of Node or str.
+            String values correspond to children which will be lazily created
+            with that name when needed.
+        * parent (Node): The parent Node
 
     Attributes:
         * stack (AlgoStack): The stack
@@ -1977,8 +1993,8 @@ class Strategy(StrategyBase):
 
     """
 
-    def __init__(self, name, algos=None, children=None):
-        super(Strategy, self).__init__(name, children=children )
+    def __init__(self, name, algos=None, children=None, parent=None):
+        super(Strategy, self).__init__(name, children=children, parent=parent )
         if algos is None:
             algos = []
         self.stack = AlgoStack(*algos)
