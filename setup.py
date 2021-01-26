@@ -60,7 +60,7 @@ setup(
         ],
     },
     packages=['bt'],
-    long_description=local_file('README.rst').read(),
+    long_description=local_file('README.rst').read().replace("\r\n", "\n"),
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Topic :: Software Development :: Libraries',
