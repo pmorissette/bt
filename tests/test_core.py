@@ -1920,7 +1920,7 @@ def test_strategy_tree_proper_return_calcs():
     assert s1.price == 100
     assert s2.weight == 0
 
-    # allocate to child2 via master method
+    # allocate to child2 via parent method
     m.allocate(500, 's2')
 
     assert m.capital == 0
@@ -1952,9 +1952,9 @@ def test_strategy_tree_proper_universes():
         return True
 
     child1 = Strategy('c1', [do_nothing], ['b', 'c'])
-    master = Strategy('m', [do_nothing], [child1, 'a'])
+    parent = Strategy('m', [do_nothing], [child1, 'a'])
 
-    child1 = master['c1']
+    child1 = parent['c1']
 
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(
@@ -1962,29 +1962,35 @@ def test_strategy_tree_proper_universes():
          'b': pd.Series(data=2, index=dts, name='b'),
          'c': pd.Series(data=3, index=dts, name='c')})
 
-    master.setup(data)
+    parent.setup(data, test_data1 = 'test1')
 
-    assert len(master.children) == 1
-    assert 'c1' in master.children
-    assert len(master._universe.columns) == 2
-    assert 'c1' in master._universe.columns
-    assert 'a' in master._universe.columns
+    assert len(parent.children) == 1
+    assert 'c1' in parent.children
+    assert len(parent._universe.columns) == 2
+    assert 'c1' in parent._universe.columns
+    assert 'a' in parent._universe.columns
 
     assert len(child1._universe.columns) == 2
     assert 'b' in child1._universe.columns
     assert 'c' in child1._universe.columns
     
-    assert master._has_strat_children
-    assert len(master._strat_children) == 1
+    assert parent._has_strat_children
+    assert len(parent._strat_children) == 1
+    
+    assert parent.get_data( 'test_data1' ) == 'test1'
     
     # New child strategy with parent (and using dictionary notation}
-    child2 = Strategy('c2', [do_nothing], {'a' : SecurityBase(''), 'b' : ''}, parent=master)
-    child2.setup_from_parent()
+    child2 = Strategy('c2', [do_nothing], {'a' : SecurityBase(''), 'b' : ''}, parent=parent)
+    # Setup the child from the parent, but pass in some additional data 
+    child2.setup_from_parent(test_data2 = 'test2')
     assert 'a' in child2._universe.columns
     assert 'b' in child2._universe.columns
-    assert 'c2' in master._universe.columns
+    assert 'c2' in parent._universe.columns
+    # Make sure child has data from the parent and the additional data
+    assert child2.get_data('test_data1') == 'test1'
+    assert child2.get_data('test_data2') == 'test2'
     
-    assert len(master._strat_children) == 2
+    assert len(parent._strat_children) == 2
 
 
 def test_strategy_tree_paper():
