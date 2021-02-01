@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    environment: dev
 
     strategy:
       matrix:
@@ -37,8 +38,8 @@ jobs:
 
     - name: Publish distribution 📦 to PyPI
       if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        skip_existing: true
-        username: ${{ secrets.PYPI_UN }}
-        password: ${{ secrets.PYPI_PW }}
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_UN }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PW }}
+      run: |
+        python -m twine upload dist/* --skip-existing
