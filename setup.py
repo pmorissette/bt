@@ -40,8 +40,9 @@ setup(
     description='A flexible backtesting framework for Python',
     keywords='python finance quant backtesting strategies',
     url='https://github.com/pmorissette/bt',
+    license='MIT',
     install_requires=[
-        'ffn>=0.3.4',
+        'ffn>=0.3.5',
         'pyprind>=2.10'
     ],
     extras_require={
