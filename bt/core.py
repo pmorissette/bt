@@ -80,6 +80,7 @@ class Node(object):
 
         # children helpers
         self.children = {}
+        self._lazy_children = {}
         self._universe_tickers = []        
         self._childrenv = [] # Shortcut to self.children.values()
         
@@ -150,33 +151,38 @@ class Node(object):
                 children = tmp
                 
             for c in children:
+            
+                if dc: # deepcopy object for possible later reuse
+                    c = deepcopy(c)
+                    
                 if type(c) == str:
                     if c in self._universe_tickers:
                         raise ValueError('Child %s already exists' % c)
-                    self._universe_tickers.append( c )                        
+                    # Create default security with lazy_add
+                    c = Security( c, lazy_add=True)                
+
+                if getattr( c, 'lazy_add', False ):
+                    self._lazy_children[c.name] = c
                 else:
                     if c.name in self.children:
                         raise ValueError('Child %s already exists' % c)
                     
-                    if dc: # deepcopy object for possible later reuse
-                        c = deepcopy(c)
-                    
                     c.parent = self
-                    c._set_root( self.root )                    
+                    c._set_root( self.root )
                     c.use_integer_positions( self.integer_positions )
-                    
+
                     self.children[c.name] = c
                     self._childrenv.append( c )
-                    
-                    # if strategy, turn on flag and add name to list
-                    # strategy children have special treatment
-                    if isinstance(c, StrategyBase):
-                        self._has_strat_children = True
-                        self._strat_children.append(c.name)
-                    # if not strategy, then we will want to add this to
-                    # universe_tickers to filter on setup
-                    elif c.name not in self._universe_tickers:
-                        self._universe_tickers.append(c.name)                         
+
+                # if strategy, turn on flag and add name to list
+                # strategy children have special treatment
+                if isinstance(c, StrategyBase):
+                    self._has_strat_children = True
+                    self._strat_children.append(c.name)
+                # if not strategy, then we will want to add this to
+                # universe_tickers to filter on setup
+                elif c.name not in self._universe_tickers:
+                    self._universe_tickers.append(c.name)                         
                        
     def _set_root( self, root ):
         self.root = root
@@ -1084,7 +1090,9 @@ class StrategyBase(Node):
 
     def _create_child_if_needed(self, child):
         if child not in self.children:
-            c = Security(child)            
+            # Look up name in lazy children, or create a default security
+            c = self._lazy_children.pop( child, Security(child) )
+            c.lazy_add = False
             # add child to tree
             self._add_children([c], dc=False)
             c.setup(self._universe, **self._setup_kwargs)
@@ -1103,6 +1111,10 @@ class SecurityBase(Node):
         * name (str): Security name
         * multiplier (float): security multiplier - typically used for
             derivatives.
+        * lazy_add (bool): Flag to control whether instrument should be added
+            to strategy children lazily, i.e. only when there is a transaction
+            on the instrument. This improves performance of strategies which
+            transact on a sparse set of children.
 
     Attributes:
         * name (str): Security name
@@ -1136,13 +1148,14 @@ class SecurityBase(Node):
     _bidoffer = cy.declare(cy.double)
 
     @cy.locals(multiplier=cy.double)
-    def __init__(self, name, multiplier=1):
+    def __init__(self, name, multiplier=1, lazy_add=False):
         Node.__init__(self, name, parent=None, children=None)
         self._value = 0
         self._price = 0
         self._weight = 0
         self._position = 0
         self.multiplier = multiplier
+        self.lazy_add = lazy_add
 
         # opt
         self._last_pos = 0
@@ -1701,8 +1714,13 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         * name (str): Security name
         * multiplier (float): security multiplier - typically used for
             derivatives.
-        * fixed_income (bool): Falg to control whether notional_value is based
-            only on quantity, or on market value (like an equity)
+        * fixed_income (bool): Flag to control whether notional_value is based
+            only on quantity, or on market value (like an equity).
+            Defaults to notional weighting for coupon paying instruments. 
+        * lazy_add (bool): Flag to control whether instrument should be added
+            to strategy children lazily, i.e. only when there is a transaction
+            on the instrument. This improves performance of strategies which
+            transact on a sparse set of children.
 
     Attributes:
         * SecurityBase attributes
@@ -1718,12 +1736,12 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
     _holding_cost = cy.declare(cy.double)
     
     @cy.locals(multiplier=cy.double)
-    def __init__(self, name, multiplier=1, fixed_income=True):
+    def __init__(self, name, multiplier=1, fixed_income=True, lazy_add=False):
         super(CouponPayingSecurity, self).__init__( name, multiplier )
         self._coupon = 0
         self._holding_cost = 0
-        # Use notional weighting by default
         self._fixed_income = fixed_income
+        self.lazy_add = lazy_add
 
     def setup(self, universe, **kwargs):
         """
