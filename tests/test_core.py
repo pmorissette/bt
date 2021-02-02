@@ -671,6 +671,41 @@ def test_strategybase_allocate():
     assert s.value == 1000
 
 
+def test_strategybase_lazy():
+    # A mix of test_strategybase_universe and test_strategybase_allocate
+    # to make sure that assets with lazy_add work correctly.
+    c1 = SecurityBase('c1', multiplier=2, lazy_add=True, )
+    c2 = FixedIncomeSecurity('c2', lazy_add=True)
+    s = StrategyBase('s', [c1, c2])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+    data['c1'][dts[0]] = 105
+    data['c2'][dts[0]] = 95
+
+    s.setup(data)
+
+    i = 0
+    s.update(dts[i])
+
+    assert len(s.universe) == 1
+    assert 'c1' in s.universe
+    assert 'c2' in s.universe
+    assert s.universe['c1'][dts[i]] == 105
+    assert s.universe['c2'][dts[i]] == 95
+
+    # should not have children unless allocated
+    assert len(s.children) == 0
+    
+    s.adjust(1000)
+    s.allocate(100, 'c1')
+    s.allocate(100, 'c2')
+    c1 = s['c1']
+    c2 = s['c2']
+    assert c1.multiplier == 2
+    assert isinstance( c2, FixedIncomeSecurity)
+    
+
 def test_strategybase_close():
     s = StrategyBase('s')
 
