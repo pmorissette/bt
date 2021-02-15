@@ -11,15 +11,16 @@ import numpy as np
 import pandas as pd
 from future.utils import iteritems
 
-PAR = 100.
+PAR = 100.0
 TOL = 1e-16
 
+
 @cy.locals(x=cy.double)
-def is_zero( x ):
+def is_zero(x):
     """
     Test for zero that is robust against floating point precision errors
     """
-    return abs( x ) < TOL
+    return abs(x) < TOL
 
 
 class Node(object):
@@ -36,7 +37,7 @@ class Node(object):
             the format is {name: child}, if list then list of children.
             Children can be any type of Node or str.
             String values correspond to children which will be lazily created
-            with that name when needed. 
+            with that name when needed.
 
     Attributes:
         * name (str): Node name
@@ -80,13 +81,13 @@ class Node(object):
 
         # children helpers
         self.children = {}
-        self._universe_tickers = []        
-        self._childrenv = [] # Shortcut to self.children.values()
-        
+        self._universe_tickers = []
+        self._childrenv = []  # Shortcut to self.children.values()
+
         # strategy children helpers
         self._has_strat_children = False
-        self._strat_children = []    
-        
+        self._strat_children = []
+
         if parent is None:
             self.parent = self
             self.root = self
@@ -94,10 +95,10 @@ class Node(object):
             self.integer_positions = True
         else:
             self.parent = parent
-            parent._add_children( [self], dc = False )
-            
-        self._add_children( children, dc = True )
-        
+            parent._add_children([self], dc=False)
+
+        self._add_children(children, dc=True)
+
         # set default value for now
         self.now = 0
         # make sure root has stale flag
@@ -125,49 +126,49 @@ class Node(object):
 
     def __getitem__(self, key):
         return self.children[key]
-            
+
     def _add_children(self, children, dc):
         """
         Add the collection of children to the current node, where
-        children is either an iterable of children objects/strings, or 
+        children is either an iterable of children objects/strings, or
         a dictionary
-        
+
         Args:
             dc (bool): Whether or not to deepcopy nodes before adding them.
         """
         if children is not None:
-            if isinstance(children, dict):   
+            if isinstance(children, dict):
                 # Preserve the names from the dictionary by renaming the nodes
                 tmp = []
-                for name, c in iteritems( children ):                
-                    if isinstance( c, str ):
-                        tmp.append( name )
+                for name, c in iteritems(children):
+                    if isinstance(c, str):
+                        tmp.append(name)
                     else:
                         if dc:
                             c = deepcopy(c)
                         c.name = name
-                        tmp.append( c )               
+                        tmp.append(c)
                 children = tmp
-                
+
             for c in children:
                 if type(c) == str:
                     if c in self._universe_tickers:
-                        raise ValueError('Child %s already exists' % c)
-                    self._universe_tickers.append( c )                        
+                        raise ValueError("Child %s already exists" % c)
+                    self._universe_tickers.append(c)
                 else:
                     if c.name in self.children:
-                        raise ValueError('Child %s already exists' % c)
-                    
-                    if dc: # deepcopy object for possible later reuse
+                        raise ValueError("Child %s already exists" % c)
+
+                    if dc:  # deepcopy object for possible later reuse
                         c = deepcopy(c)
-                    
+
                     c.parent = self
-                    c._set_root( self.root )                    
-                    c.use_integer_positions( self.integer_positions )
-                    
+                    c._set_root(self.root)
+                    c.use_integer_positions(self.integer_positions)
+
                     self.children[c.name] = c
-                    self._childrenv.append( c )
-                    
+                    self._childrenv.append(c)
+
                     # if strategy, turn on flag and add name to list
                     # strategy children have special treatment
                     if isinstance(c, StrategyBase):
@@ -176,12 +177,12 @@ class Node(object):
                     # if not strategy, then we will want to add this to
                     # universe_tickers to filter on setup
                     elif c.name not in self._universe_tickers:
-                        self._universe_tickers.append(c.name)                         
-                       
-    def _set_root( self, root ):
+                        self._universe_tickers.append(c.name)
+
+    def _set_root(self, root):
         self.root = root
         for c in self._childrenv:
-            c._set_root( root )
+            c._set_root(root)
 
     def use_integer_positions(self, integer_positions):
         """
@@ -257,7 +258,7 @@ class Node(object):
         """
         Setup method used to initialize a Node with a universe, and potentially other information.
         """
-        raise NotImplementedError()    
+        raise NotImplementedError()
 
     def update(self, date, data=None, inow=None):
         """
@@ -293,26 +294,23 @@ class Node(object):
         if self.parent == self:
             return self.name
         else:
-            return '%s>%s' % (self.parent.full_name, self.name)
+            return "%s>%s" % (self.parent.full_name, self.name)
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.full_name)
+        return "<%s %s>" % (self.__class__.__name__, self.full_name)
 
     def to_dot(self, root=True):
         """
         Represent the node structure in DOT format.
         """
-        name = lambda x: x.name or repr(self)
-        edges = '\n'.join(
-            '\t"%s" -> "%s"' % (name(self), name(c))
-            for c in self.children.values()
+        name = lambda x: x.name or repr(self)  # noqa: E731
+        edges = "\n".join(
+            '\t"%s" -> "%s"' % (name(self), name(c)) for c in self.children.values()
         )
-        below = '\n'.join(
-            c.to_dot(False) for c in self.children.values()
-        )
-        body = '\n'.join([edges, below]).rstrip()
+        below = "\n".join(c.to_dot(False) for c in self.children.values())
+        body = "\n".join([edges, below]).rstrip()
         if root:
-            return '\n'.join(['digraph {', body, '}'])
+            return "\n".join(["digraph {", body, "}"])
         return body
 
 
@@ -362,17 +360,17 @@ class StrategyBase(Node):
             this data to determine strategy logic.
 
     """
-    
+
     _net_flows = cy.declare(cy.double)
     _last_value = cy.declare(cy.double)
     _last_notl_value = cy.declare(cy.double)
     _last_price = cy.declare(cy.double)
     _last_fee = cy.declare(cy.double)
-    _paper_trade = cy.declare(cy.bint)    
+    _paper_trade = cy.declare(cy.bint)
     bankrupt = cy.declare(cy.bint)
 
     def __init__(self, name, children=None, parent=None):
-        Node.__init__(self, name, children=children, parent=parent)        
+        Node.__init__(self, name, children=children, parent=parent)
         self._weight = 1
         self._value = 0
         self._notl_value = 0
@@ -383,7 +381,7 @@ class StrategyBase(Node):
         self._last_value = 0
         self._last_notl_value = 0
         self._last_price = PAR
-        self._last_fee = 0        
+        self._last_fee = 0
 
         # default commission function
         self.commission_fn = self._dflt_comm_fn
@@ -408,7 +406,7 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._prices.loc[:self.now]
+        return self._prices.loc[: self.now]
 
     @property
     def values(self):
@@ -417,7 +415,7 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._values.loc[:self.now]
+        return self._values.loc[: self.now]
 
     @property
     def notional_values(self):
@@ -426,7 +424,7 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._notl_values.loc[:self.now]
+        return self._notl_values.loc[: self.now]
 
     @property
     def capital(self):
@@ -451,7 +449,7 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._fees.loc[:self.now]
+        return self._fees.loc[: self.now]
 
     @property
     def flows(self):
@@ -460,10 +458,10 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.now, None)
-        return self._all_flows.loc[:self.now]
+        return self._all_flows.loc[: self.now]
 
     @property
-    def bidoffer_paid( self ):
+    def bidoffer_paid(self):
         """
         Bid/offer spread paid on transactions in the current step
         """
@@ -472,21 +470,25 @@ class StrategyBase(Node):
                 self.root.update(self.now, None)
             return self._bidoffer_paid
         else:
-            raise Exception( 'Bid/offer accounting not turned on: '
-                            '"bidoffer" argument not provided during setup' )
+            raise Exception(
+                "Bid/offer accounting not turned on: "
+                '"bidoffer" argument not provided during setup'
+            )
 
     @property
-    def bidoffers_paid( self ):
+    def bidoffers_paid(self):
         """
         TimeSeries of bid/offer spread paid on transactions in each step
         """
         if self._bidoffer_set:
             if self.root.stale:
                 self.root.update(self.now, None)
-            return self._bidoffers_paid.loc[:self.now]
+            return self._bidoffers_paid.loc[: self.now]
         else:
-            raise Exception( 'Bid/offer accounting not turned on: '
-                            '"bidoffer" argument not provided during setup' )
+            raise Exception(
+                "Bid/offer accounting not turned on: "
+                '"bidoffer" argument not provided during setup'
+            )
 
     @property
     def universe(self):
@@ -502,7 +504,7 @@ class StrategyBase(Node):
             return self._funiverse
         else:
             self._last_chk = self.now
-            self._funiverse = self._universe.loc[:self.now]
+            self._funiverse = self._universe.loc[: self.now]
             return self._funiverse
 
     @property
@@ -530,8 +532,9 @@ class StrategyBase(Node):
         if self.root.stale:
             self.root.update(self.root.now, None)
 
-        vals = pd.DataFrame({x.name: x.positions for x in self.members
-                             if isinstance(x, SecurityBase)})
+        vals = pd.DataFrame(
+            {x.name: x.positions for x in self.members if isinstance(x, SecurityBase)}
+        )
         self._positions = vals
         return vals
 
@@ -548,9 +551,11 @@ class StrategyBase(Node):
         # strategies as the "price" is just a reference
         # value and should not be used for capital allocation
         if self.fixed_income and not self.parent.fixed_income:
-            raise ValueError('Cannot have fixed income '
-                                'strategy child (%s) of non-'
-                                'fixed income strategy (%s)' % (self.name, self.parent.name))
+            raise ValueError(
+                "Cannot have fixed income "
+                "strategy child (%s) of non-"
+                "fixed income strategy (%s)" % (self.name, self.parent.name)
+            )
 
         # determine if needs paper trading
         # and setup if so
@@ -572,8 +577,9 @@ class StrategyBase(Node):
         if self._universe_tickers:
             # if we have universe_tickers defined, limit universe to
             # those tickers
-            valid_filter = list(set(universe.columns)
-                                .intersection(self._universe_tickers))
+            valid_filter = list(
+                set(universe.columns).intersection(self._universe_tickers)
+            )
 
             funiverse = universe[valid_filter].copy()
 
@@ -595,21 +601,23 @@ class StrategyBase(Node):
         self.bankrupt = False
 
         # setup internal data
-        self.data = pd.DataFrame(index=funiverse.index,
-                                 columns=['price', 'value', 'notional_value', 'cash', 'fees', 'flows'],
-                                 data=0.0)
+        self.data = pd.DataFrame(
+            index=funiverse.index,
+            columns=["price", "value", "notional_value", "cash", "fees", "flows"],
+            data=0.0,
+        )
 
-        self._prices = self.data['price']
-        self._values = self.data['value']
-        self._notl_values = self.data['notional_value']
-        self._cash = self.data['cash']
-        self._fees = self.data['fees']
-        self._all_flows = self.data['flows']
+        self._prices = self.data["price"]
+        self._values = self.data["value"]
+        self._notl_values = self.data["notional_value"]
+        self._cash = self.data["cash"]
+        self._fees = self.data["fees"]
+        self._all_flows = self.data["flows"]
 
-        if 'bidoffer' in kwargs:
-            self._bidoffer_set = True            
-            self.data['bidoffer_paid'] = 0.
-            self._bidoffers_paid = self.data['bidoffer_paid']
+        if "bidoffer" in kwargs:
+            self._bidoffer_set = True
+            self.data["bidoffer_paid"] = 0.0
+            self._bidoffers_paid = self.data["bidoffer_paid"]
 
         # setup children as well - use original universe here - don't want to
         # pollute with potential strategy children in funiverse
@@ -620,29 +628,35 @@ class StrategyBase(Node):
         """
         Setup a strategy from the parent. Used when dynamically creating
         child strategies.
-        
+
         Args:
-            * kwargs: additional arguments that will be passed to setup 
+            * kwargs: additional arguments that will be passed to setup
                 (potentially overriding those from the parent)
         """
         all_kwargs = self.parent._setup_kwargs.copy()
-        all_kwargs.update( kwargs )
-        self.setup( self.parent._original_data, **all_kwargs )
+        all_kwargs.update(kwargs)
+        self.setup(self.parent._original_data, **all_kwargs)
         if self.name not in self.parent._universe:
-            self.parent._universe[ self.name ] = np.nan
-    
+            self.parent._universe[self.name] = np.nan
+
     def get_data(self, key):
         """
-        Returns additional data that was passed to the setup function via kwargs, 
+        Returns additional data that was passed to the setup function via kwargs,
         for use in the algos. This allows algos to reference data sources "by name",
         where the binding of the data to the name happens at Backtest creation
         time rather than at Strategy definition time, allowing the same strategies
-        to be run against different data sets more easily. 
+        to be run against different data sets more easily.
         """
-        return self._setup_kwargs[ key ]
-        
-    @cy.locals(newpt=cy.bint, val=cy.double, ret=cy.double, coupons=cy.double,
-               notl_val=cy.double, bidoffer_paid=cy.double)
+        return self._setup_kwargs[key]
+
+    @cy.locals(
+        newpt=cy.bint,
+        val=cy.double,
+        ret=cy.double,
+        coupons=cy.double,
+        notl_val=cy.double,
+        bidoffer_paid=cy.double,
+    )
     def update(self, date, data=None, inow=None):
         """
         Update strategy. Updates prices, values, weight, etc.
@@ -673,9 +687,9 @@ class StrategyBase(Node):
 
         # update children if any and calculate value
         val = self._capital  # default if no children
-        notl_val = 0. # Capital doesn't count towards notional value
+        notl_val = 0.0  # Capital doesn't count towards notional value
 
-        bidoffer_paid = 0.
+        bidoffer_paid = 0.0
         coupons = 0
         if self.children:
             for c in self._childrenv:
@@ -690,7 +704,7 @@ class StrategyBase(Node):
                 c.update(date, data, inow)
                 val += c.value
                 # Strategies always have positive notional value
-                notl_val += abs( c.notional_value )
+                notl_val += abs(c.notional_value)
 
                 if self._bidoffer_set:
                     bidoffer_paid += c.bidoffer_paid
@@ -699,7 +713,12 @@ class StrategyBase(Node):
         val += coupons
 
         if self.root == self:
-            if (val < 0) and not self.bankrupt and not self.fixed_income and not is_zero(val):
+            if (
+                (val < 0)
+                and not self.bankrupt
+                and not self.fixed_income
+                and not is_zero(val)
+            ):
                 # Declare a bankruptcy
                 self.bankrupt = True
                 self.flatten()
@@ -707,7 +726,11 @@ class StrategyBase(Node):
         # update data if this value is different or
         # if now has changed - avoid all this if not since it
         # won't change
-        if newpt or not is_zero( self._value - val ) or not is_zero( self._notl_value - notl_val ):
+        if (
+            newpt
+            or not is_zero(self._value - val)
+            or not is_zero(self._notl_value - notl_val)
+        ):
             self._value = val
             self._values.values[inow] = val
 
@@ -721,46 +744,49 @@ class StrategyBase(Node):
             if self.fixed_income:
                 # For notional weights, we compute additive return
                 pnl = self._value - (self._last_value + self._net_flows)
-                if not is_zero( self._last_notl_value ):
-                    ret = pnl / self._last_notl_value  * PAR
-                elif not is_zero( self._notl_value ):
+                if not is_zero(self._last_notl_value):
+                    ret = pnl / self._last_notl_value * PAR
+                elif not is_zero(self._notl_value):
                     # This case happens when paying bid/offer or fees when building an initial position
-                    ret = pnl / self._notl_value  * PAR
+                    ret = pnl / self._notl_value * PAR
                 else:
-                    if is_zero( pnl ):
-                       ret = 0
+                    if is_zero(pnl):
+                        ret = 0
                     else:
                         raise ZeroDivisionError(
-                            'Could not update %s on %s. Last notional value '
-                            'was %s and pnl was %s. Therefore, '
-                            'we are dividing by zero to obtain the pnl '
-                            'per unit notional for the period.' % (self.name,
-                                                 self.now,
-                                                 self._last_notl_value,
-                                                 pnl))
+                            "Could not update %s on %s. Last notional value "
+                            "was %s and pnl was %s. Therefore, "
+                            "we are dividing by zero to obtain the pnl "
+                            "per unit notional for the period."
+                            % (self.name, self.now, self._last_notl_value, pnl)
+                        )
 
                 self._price = self._last_price + ret
                 self._prices.values[inow] = self._price
 
             else:
                 bottom = self._last_value + self._net_flows
-                if not is_zero( bottom ):
+                if not is_zero(bottom):
                     ret = self._value / (self._last_value + self._net_flows) - 1
                 else:
-                    if is_zero( self._value ):
+                    if is_zero(self._value):
                         ret = 0
                     else:
                         raise ZeroDivisionError(
-                            'Could not update %s on %s. Last value '
-                            'was %s and net flows were %s. Current'
-                            'value is %s. Therefore, '
-                            'we are dividing by zero to obtain the return '
-                            'for the period.' % (self.name,
-                                                 self.now,
-                                                 self._last_value,
-                                                 self._net_flows,
-                                                 self._value))
-                
+                            "Could not update %s on %s. Last value "
+                            "was %s and net flows were %s. Current"
+                            "value is %s. Therefore, "
+                            "we are dividing by zero to obtain the return "
+                            "for the period."
+                            % (
+                                self.name,
+                                self.now,
+                                self._last_value,
+                                self._net_flows,
+                                self._value,
+                            )
+                        )
+
                 self._price = self._last_price * (1 + ret)
                 self._prices.values[inow] = self._price
 
@@ -772,12 +798,12 @@ class StrategyBase(Node):
                     continue
 
                 if self.fixed_income:
-                    if not is_zero( notl_val ):
+                    if not is_zero(notl_val):
                         c._weight = c.notional_value / notl_val
                     else:
                         c._weight = 0.0
                 else:
-                    if not is_zero( val ):
+                    if not is_zero(val):
                         c._weight = c.value / val
                     else:
                         c._weight = 0.0
@@ -858,7 +884,7 @@ class StrategyBase(Node):
         """
         # allocate to child
         if child is not None:
-            self._create_child_if_needed( child )
+            self._create_child_if_needed(child)
 
             # allocate to child
             self.children[child].allocate(amount)
@@ -879,8 +905,7 @@ class StrategyBase(Node):
             # push allocation down to children if any
             # use _weight to avoid triggering an update
             if self.children is not None:
-                [c.allocate(amount * c._weight, update=False)
-                 for c in self._childrenv]
+                [c.allocate(amount * c._weight, update=False) for c in self._childrenv]
 
             # mark as stale if update requested
             if update:
@@ -904,7 +929,7 @@ class StrategyBase(Node):
         """
         # allocate to child
         if child is not None:
-            self._create_child_if_needed( child )
+            self._create_child_if_needed(child)
 
             # allocate to child
             self.children[child].transact(q)
@@ -913,8 +938,7 @@ class StrategyBase(Node):
             # push allocation down to children if any
             # use _weight to avoid triggering an update
             if self.children is not None:
-                [c.transact(q * c._weight, update=False)
-                 for c in self._childrenv]
+                [c.transact(q * c._weight, update=False) for c in self._childrenv]
 
             # mark as stale if update requested
             if update:
@@ -946,9 +970,9 @@ class StrategyBase(Node):
 
         """
         # if weight is 0 - we want to close child
-        if is_zero( weight ):
+        if is_zero(weight):
             if child in self.children:
-                return self.close(child, update = update)
+                return self.close(child, update=update)
             else:
                 return
 
@@ -960,7 +984,7 @@ class StrategyBase(Node):
                 base = self.value
 
         # else make sure we have child
-        self._create_child_if_needed( child )
+        self._create_child_if_needed(child)
 
         # allocate to child
         # figure out weight delta
@@ -976,13 +1000,13 @@ class StrategyBase(Node):
             # before finishing.
             if c.fixed_income:
                 delta = weight * base - c.weight * self.notional_value
-                c.transact( delta, update = update)
+                c.transact(delta, update=update)
             else:
                 delta = weight * base - c.weight * self.notional_value
-                c.allocate(delta, update = update)
+                c.allocate(delta, update=update)
         else:
             delta = weight - c.weight
-            c.allocate(delta * base, update = update)
+            c.allocate(delta * base, update=update)
 
     @cy.locals(update=cy.bint)
     def close(self, child, update=True):
@@ -999,11 +1023,11 @@ class StrategyBase(Node):
             c.flatten()
 
         if self.fixed_income:
-            if c.position != 0.:
-                c.transact(-c.position, update = update)
+            if c.position != 0.0:
+                c.transact(-c.position, update=update)
         else:
-            if c.value != 0. and not np.isnan(c.value):
-                c.allocate(-c.value, update = update)
+            if c.value != 0.0 and not np.isnan(c.value):
+                c.allocate(-c.value, update=update)
 
     def flatten(self):
         """
@@ -1011,9 +1035,17 @@ class StrategyBase(Node):
         """
         # go right to base alloc
         if self.fixed_income:
-            [c.transact(-c.position, update=False) for c in self._childrenv if c.position != 0]
+            [
+                c.transact(-c.position, update=False)
+                for c in self._childrenv
+                if c.position != 0
+            ]
         else:
-            [c.allocate(-c.value, update=False) for c in self._childrenv if c.value != 0]
+            [
+                c.allocate(-c.value, update=False)
+                for c in self._childrenv
+                if c.value != 0
+            ]
 
         self.root.stale = True
 
@@ -1039,7 +1071,7 @@ class StrategyBase(Node):
         for c in self._childrenv:
             if isinstance(c, StrategyBase):
                 c.set_commissions(fn)
-                
+
     def get_transactions(self):
         """
         Helper function that returns the transactions in the following format:
@@ -1063,15 +1095,17 @@ class StrategyBase(Node):
 
         # Adjust prices for bid/offer paid if needed
         if self._bidoffer_set:
-            bidoffer = pd.DataFrame({x.name: x.bidoffers_paid
-                                     for x in self.securities }).unstack()
+            bidoffer = pd.DataFrame(
+                {x.name: x.bidoffers_paid for x in self.securities}
+            ).unstack()
             prc += bidoffer / trades
 
-        res = pd.DataFrame({'price': prc, 'quantity': trades}).dropna(
-            subset=['quantity'])
+        res = pd.DataFrame({"price": prc, "quantity": trades}).dropna(
+            subset=["quantity"]
+        )
 
         # set names
-        res.index.names = ['Security', 'Date']
+        res.index.names = ["Security", "Date"]
 
         # swap levels so that we have (date, security) as index and sort
         res = res.swaplevel().sort_index()
@@ -1080,11 +1114,11 @@ class StrategyBase(Node):
 
     @cy.locals(q=cy.double, p=cy.double)
     def _dflt_comm_fn(self, q, p):
-        return 0.
+        return 0.0
 
     def _create_child_if_needed(self, child):
         if child not in self.children:
-            c = Security(child)            
+            c = Security(child)
             # add child to tree
             self._add_children([c], dc=False)
             c.setup(self._universe, **self._setup_kwargs)
@@ -1169,7 +1203,7 @@ class SecurityBase(Node):
         # if accessing and stale - update first
         if self._needupdate or self.now != self.parent.now:
             self.update(self.root.now)
-        return self._prices.loc[:self.now]
+        return self._prices.loc[: self.now]
 
     @property
     def values(self):
@@ -1181,7 +1215,7 @@ class SecurityBase(Node):
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return self._values.loc[:self.now]
+        return self._values.loc[: self.now]
 
     @property
     def notional_values(self):
@@ -1193,7 +1227,7 @@ class SecurityBase(Node):
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return self._notl_values.loc[:self.now]
+        return self._notl_values.loc[: self.now]
 
     @property
     def position(self):
@@ -1213,7 +1247,7 @@ class SecurityBase(Node):
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return self._positions.loc[:self.now]
+        return self._positions.loc[: self.now]
 
     @property
     def outlays(self):
@@ -1228,7 +1262,7 @@ class SecurityBase(Node):
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return self._outlays.loc[:self.now]
+        return self._outlays.loc[: self.now]
 
     @property
     def bidoffer(self):
@@ -1249,10 +1283,12 @@ class SecurityBase(Node):
             # if accessing and stale - update first
             if self._needupdate or self.now != self.parent.now:
                 self.update(self.root.now)
-            return self._bidoffers.loc[:self.now]
+            return self._bidoffers.loc[: self.now]
         else:
-            raise Exception( 'Bid/offer accounting not turned on: '
-                            '"bidoffer" argument not provided during setup' )
+            raise Exception(
+                "Bid/offer accounting not turned on: "
+                '"bidoffer" argument not provided during setup'
+            )
 
     @property
     def bidoffer_paid(self):
@@ -1261,8 +1297,8 @@ class SecurityBase(Node):
         """
         # if accessing and stale - update first
         if self._needupdate or self.now != self.parent.now:
-            self.update(self.root.now)            
-        return self._bidoffer_paid        
+            self.update(self.root.now)
+        return self._bidoffer_paid
 
     @property
     def bidoffers_paid(self):
@@ -1275,10 +1311,12 @@ class SecurityBase(Node):
                 self.update(self.root.now)
             if self.root.stale:
                 self.root.update(self.root.now, None)
-            return self._bidoffers_paid.loc[:self.now]
+            return self._bidoffers_paid.loc[: self.now]
         else:
-            raise Exception( 'Bid/offer accounting not turned on: '
-                            '"bidoffer" argument not provided during setup' )
+            raise Exception(
+                "Bid/offer accounting not turned on: "
+                '"bidoffer" argument not provided during setup'
+            )
 
     def setup(self, universe, **kwargs):
         """
@@ -1300,44 +1338,48 @@ class SecurityBase(Node):
         # setup internal data
         if prices is not None:
             self._prices = prices
-            self.data = pd.DataFrame(index=universe.index,
-                                     columns=['value', 'position', 'notional_value'],
-                                     data=0.0)
+            self.data = pd.DataFrame(
+                index=universe.index,
+                columns=["value", "position", "notional_value"],
+                data=0.0,
+            )
             self._prices_set = True
         else:
-            self.data = pd.DataFrame(index=universe.index,
-                                     columns=['price', 'value', 'position', 'notional_value'])
-            self._prices = self.data['price']
+            self.data = pd.DataFrame(
+                index=universe.index,
+                columns=["price", "value", "position", "notional_value"],
+            )
+            self._prices = self.data["price"]
             self._prices_set = False
 
-        self._values = self.data['value']
-        self._notl_values = self.data['notional_value']
-        self._positions = self.data['position']
+        self._values = self.data["value"]
+        self._notl_values = self.data["notional_value"]
+        self._positions = self.data["position"]
 
         # add _outlay
-        self.data['outlay'] = 0.
-        self._outlays = self.data['outlay']
+        self.data["outlay"] = 0.0
+        self._outlays = self.data["outlay"]
 
         # save bidoffer, if provided
-        if 'bidoffer' in kwargs:
+        if "bidoffer" in kwargs:
             self._bidoffer_set = True
-            self._bidoffers = kwargs['bidoffer']
+            self._bidoffers = kwargs["bidoffer"]
             try:
                 bidoffers = self._bidoffers[self.name]
             except KeyError:
                 bidoffers = None
 
             if bidoffers is not None:
-                if bidoffers.index.equals( universe.index ):
+                if bidoffers.index.equals(universe.index):
                     self._bidoffers = bidoffers
                 else:
-                    raise ValueError('Index of bidoffer must match universe data')
+                    raise ValueError("Index of bidoffer must match universe data")
             else:
-                self.data['bidoffer'] = 0.
-                self._bidoffers = self.data['bidoffer']
+                self.data["bidoffer"] = 0.0
+                self._bidoffers = self.data["bidoffer"]
 
-            self.data['bidoffer_paid'] = 0.
-            self._bidoffers_paid = self.data['bidoffer_paid']
+            self.data["bidoffer_paid"] = 0.0
+            self._bidoffers_paid = self.data["bidoffer_paid"]
 
     @cy.locals(prc=cy.double)
     def update(self, date, data=None, inow=None):
@@ -1371,21 +1413,23 @@ class SecurityBase(Node):
                 self._price = prc
                 self._prices.values[inow] = prc
 
-            #update bid/offer
+            # update bid/offer
             if self._bidoffer_set:
                 self._bidoffer = self._bidoffers.values[inow]
-                self._bidoffer_paid = 0.
+                self._bidoffer_paid = 0.0
 
         self._positions.values[inow] = self._position
         self._last_pos = self._position
 
         if np.isnan(self._price):
-            if is_zero( self._position ):
+            if is_zero(self._position):
                 self._value = 0
             else:
                 raise Exception(
-                    'Position is open (non-zero: %s) and latest price is NaN '
-                    'for security %s on %s. Cannot update node value.' % (self._position, self.name, date))
+                    "Position is open (non-zero: %s) and latest price is NaN "
+                    "for security %s on %s. Cannot update node value."
+                    % (self._position, self.name, date)
+                )
         else:
             self._value = self._position * self._price * self.multiplier
 
@@ -1394,7 +1438,7 @@ class SecurityBase(Node):
         self._values.values[inow] = self._value
         self._notl_values.values[inow] = self._notl_value
 
-        if is_zero( self._weight ) and is_zero( self._position ):
+        if is_zero(self._weight) and is_zero(self._position):
             self._needupdate = False
 
         # save outlay to outlays
@@ -1406,9 +1450,9 @@ class SecurityBase(Node):
         if self._bidoffer_set:
             self._bidoffers_paid.values[inow] = self._bidoffer_paid
 
-
-    @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double,
-               i=cy.int)
+    @cy.locals(
+        amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double, i=cy.int
+    )
     def allocate(self, amount, update=True):
         """
         This allocates capital to the Security. This is the method used to
@@ -1438,29 +1482,28 @@ class SecurityBase(Node):
         # to close it at zero price, because at that point amount=0.
         # Note also that we don't erase the position in an asset which price
         # has dropped to zero (though the weight will indeed be = 0)
-        if is_zero( amount ):
+        if is_zero(amount):
             return
 
         if self.parent is self or self.parent is None:
-            raise Exception(
-                'Cannot allocate capital to a parentless security')
+            raise Exception("Cannot allocate capital to a parentless security")
 
-        if is_zero( self._price ) or np.isnan(self._price):
+        if is_zero(self._price) or np.isnan(self._price):
             raise Exception(
-                'Cannot allocate capital to '
-                '%s because price is %s as of %s'
-                % (self.name, self._price, self.parent.now))
+                "Cannot allocate capital to "
+                "%s because price is %s as of %s"
+                % (self.name, self._price, self.parent.now)
+            )
 
         # buy/sell
         # determine quantity - must also factor in commission
         # closing out?
-        if is_zero( amount + self._value ):
+        if is_zero(amount + self._value):
             q = -self._position
         else:
             q = amount / (self._price * self.multiplier)
             if self.integer_positions:
-                if (self._position > 0) or ( is_zero(self._position) and (
-                        amount > 0)):
+                if (self._position > 0) or (is_zero(self._position) and (amount > 0)):
                     # if we're going long or changing long position
                     q = math.floor(q)
                 else:
@@ -1468,9 +1511,9 @@ class SecurityBase(Node):
                     q = math.ceil(q)
 
         # if q is 0 nothing to do
-        if is_zero( q ) or np.isnan(q):
+        if is_zero(q) or np.isnan(q):
             return
-        
+
         # unless we are closing out a position (q == -position)
         # we want to ensure that
         #
@@ -1503,9 +1546,11 @@ class SecurityBase(Node):
             i = 0
             last_q = q
             last_amount_short = full_outlay - amount
-            while not np.isclose(full_outlay, amount, rtol=0.) and q != 0:
+            while not np.isclose(full_outlay, amount, rtol=0.0) and q != 0:
 
-                dq_wout_considering_tx_costs = (full_outlay - amount)/(self._price * self.multiplier)
+                dq_wout_considering_tx_costs = (full_outlay - amount) / (
+                    self._price * self.multiplier
+                )
                 q = q - dq_wout_considering_tx_costs
 
                 if self.integer_positions:
@@ -1530,36 +1575,42 @@ class SecurityBase(Node):
                 i = i + 1
                 if i > 1e4:
                     raise Exception(
-                        'Potentially infinite loop detected. This occurred '
-                        'while trying to reduce the amount of shares purchased'
-                        ' to respect the outlay <= amount rule. This is most '
-                        'likely due to a commission function that outputs a '
-                        'commission that is greater than the amount of cash '
-                        'a short sale can raise.')
+                        "Potentially infinite loop detected. This occurred "
+                        "while trying to reduce the amount of shares purchased"
+                        " to respect the outlay <= amount rule. This is most "
+                        "likely due to a commission function that outputs a "
+                        "commission that is greater than the amount of cash "
+                        "a short sale can raise."
+                    )
 
                 if self.integer_positions and last_q == q:
                     raise Exception(
-                        'Newton Method like root search for quantity is stuck!'
-                        ' q did not change in iterations so it is probably a bug'
-                        ' but we are not entirely sure it is wrong! Consider '
-                        ' changing to warning.'
+                        "Newton Method like root search for quantity is stuck!"
+                        " q did not change in iterations so it is probably a bug"
+                        " but we are not entirely sure it is wrong! Consider "
+                        " changing to warning."
                     )
                 last_q = q
 
                 if np.abs(full_outlay - amount) > np.abs(last_amount_short):
                     raise Exception(
-                        'The difference between what we have raised with q and'
-                        ' the amount we are trying to raise has gotten bigger since'
-                        ' last iteration! full_outlay should always be approaching'
-                        ' amount! There may be a case where the commission fn is'
-                        ' not smooth'
+                        "The difference between what we have raised with q and"
+                        " the amount we are trying to raise has gotten bigger since"
+                        " last iteration! full_outlay should always be approaching"
+                        " amount! There may be a case where the commission fn is"
+                        " not smooth"
                     )
                 last_amount_short = full_outlay - amount
-        
-        self.transact( q, update, False )
 
-    @cy.locals(q=cy.double, update=cy.bint, update_self=cy.bint, outlay=cy.double,
-               bidoffer=cy.double)
+        self.transact(q, update, False)
+
+    @cy.locals(
+        q=cy.double,
+        update=cy.bint,
+        update_self=cy.bint,
+        outlay=cy.double,
+        bidoffer=cy.double,
+    )
     def transact(self, q, update=True, update_self=True, price=None):
         """
         This transacts the Security. This is the method used to
@@ -1579,7 +1630,7 @@ class SecurityBase(Node):
         # will need to update if this has been idle for a while...
         # update if needupdate or if now is stale
         # fetch parent's now since our now is stale
-        if update_self and ( self._needupdate or self.now != self.parent.now ):
+        if update_self and (self._needupdate or self.now != self.parent.now):
             self.update(self.parent.now)
 
         # if q is 0 nothing to do
@@ -1587,8 +1638,10 @@ class SecurityBase(Node):
             return
 
         if price is not None and not self._bidoffer_set:
-            raise ValueError('Cannot transact at custom prices when "bidoffer" has '
-                             'not been passed during setup to enable bid-offer tracking.')
+            raise ValueError(
+                'Cannot transact at custom prices when "bidoffer" has '
+                "not been passed during setup to enable bid-offer tracking."
+            )
 
         # this security will need an update, even if pos is 0 (for example if
         # we close the positions, value and pos is 0, but still need to do that
@@ -1654,7 +1707,7 @@ class SecurityBase(Node):
         pass
 
 
-class Security( SecurityBase ):
+class Security(SecurityBase):
     """
     A standard security with no special features, and where notional value
     is measured based on market value (notional times price).
@@ -1662,14 +1715,16 @@ class Security( SecurityBase ):
     ones via isinstance, i.e. isinstance( sec, Security ) would only return
     true for a vanilla security
     """
+
     pass
 
 
-class FixedIncomeSecurity( SecurityBase ):
+class FixedIncomeSecurity(SecurityBase):
     """
     A Fixed Income Security is a security where notional value is
     measured only based on the quantity (par value) of the security.
     """
+
     @cy.locals(coupon=cy.double)
     def update(self, date, data=None, inow=None):
         """
@@ -1683,18 +1738,18 @@ class FixedIncomeSecurity( SecurityBase ):
             else:
                 inow = self.data.index.get_loc(date)
 
-        super(FixedIncomeSecurity, self).update( date, data, inow )
+        super(FixedIncomeSecurity, self).update(date, data, inow)
 
         # For fixed income securities (bonds, swaps), notional value is position size, not value!
         self._notl_value = self._position
-        self._notl_values.values[ inow ] = self._notl_value
+        self._notl_values.values[inow] = self._notl_value
 
 
-class CouponPayingSecurity( FixedIncomeSecurity ):
+class CouponPayingSecurity(FixedIncomeSecurity):
     """
     CouponPayingSecurity expands on SecurityBase to handle securities which
     pay (possibly irregular) coupons (or other forms of cash disbursement).
-    More generally, this can include instruments with any sort of carry, 
+    More generally, this can include instruments with any sort of carry,
     including (potentially asymmetric) holding costs.
 
     Args:
@@ -1716,10 +1771,10 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
 
     _coupon = cy.declare(cy.double)
     _holding_cost = cy.declare(cy.double)
-    
+
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1, fixed_income=True):
-        super(CouponPayingSecurity, self).__init__( name, multiplier )
+        super(CouponPayingSecurity, self).__init__(name, multiplier)
         self._coupon = 0
         self._holding_cost = 0
         # Use notional weighting by default
@@ -1735,34 +1790,36 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
             ** kwargs (DataFrames): DataFrames of additional security level
                 information (i.e. bid/ask spread, risk, etc).
         """
-        super(CouponPayingSecurity, self).setup( universe, **kwargs )
+        super(CouponPayingSecurity, self).setup(universe, **kwargs)
 
         # Handle coupons
-        if 'coupons' not in kwargs:
-            raise Exception( '"coupons" must be passed to setup for a CouponPayingSecurity')
+        if "coupons" not in kwargs:
+            raise Exception(
+                '"coupons" must be passed to setup for a CouponPayingSecurity'
+            )
 
         try:
-            self._coupons = kwargs['coupons'][self.name]
+            self._coupons = kwargs["coupons"][self.name]
         except KeyError:
             self._coupons = None
 
-        if self._coupons is None or not self._coupons.index.equals( universe.index ):
-            raise ValueError('Index of coupons must match universe data')
+        if self._coupons is None or not self._coupons.index.equals(universe.index):
+            raise ValueError("Index of coupons must match universe data")
 
         # Handle holding costs
         try:
-            self._cost_long = kwargs['cost_long'][self.name]
+            self._cost_long = kwargs["cost_long"][self.name]
         except KeyError:
             self._cost_long = None
         try:
-            self._cost_short = kwargs['cost_short'][self.name]
+            self._cost_short = kwargs["cost_short"][self.name]
         except KeyError:
             self._cost_short = None
-        
-        self.data['coupon'] = 0.
-        self.data['holding_cost'] = 0.
-        self._coupon_income = self.data['coupon']
-        self._holding_costs = self.data['holding_cost']
+
+        self.data["coupon"] = 0.0
+        self.data["holding_cost"] = 0.0
+        self._coupon_income = self.data["coupon"]
+        self._holding_costs = self.data["holding_cost"]
 
     @cy.locals(coupon=cy.double, cost=cy.double)
     def update(self, date, data=None, inow=None):
@@ -1777,10 +1834,10 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
                 inow = self.data.index.get_loc(date)
 
         if self._coupons is None:
-            raise Exception('coupons have not been set for security %s' % self.name )
+            raise Exception("coupons have not been set for security %s" % self.name)
 
         # Standard update
-        super(CouponPayingSecurity, self).update( date, data, inow )
+        super(CouponPayingSecurity, self).update(date, data, inow)
 
         coupon = self._coupons.values[inow]
         # If we were to call self.parent.adjust, then all the child weights would
@@ -1789,12 +1846,14 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         # swept up as part of the strategy update
 
         if np.isnan(coupon):
-            if is_zero( self._position ):
-                self._coupon = 0.
+            if is_zero(self._position):
+                self._coupon = 0.0
             else:
                 raise Exception(
-                    'Position is open (non-zero) and latest coupon is NaN '
-                    'for security %s on %s. Cannot update node value.' % (self.name, date))
+                    "Position is open (non-zero) and latest coupon is NaN "
+                    "for security %s on %s. Cannot update node value."
+                    % (self.name, date)
+                )
         else:
             self._coupon = self._position * coupon
 
@@ -1805,8 +1864,8 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
             cost = self._cost_short.values[inow]
             self._holding_cost = -self._position * cost
         else:
-            self._holding_cost = 0.
-            
+            self._holding_cost = 0.0
+
         self._capital = self._coupon - self._holding_cost
         self._coupon_income.values[inow] = self._coupon
         self._holding_costs.values[inow] = self._holding_cost
@@ -1816,7 +1875,9 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         """
         Current coupon payment (scaled by position)
         """
-        if self.root.stale: # Stale check needed because coupon paid depends on position
+        if (
+            self.root.stale
+        ):  # Stale check needed because coupon paid depends on position
             self.root.update(self.root.now, None)
         return self._coupon
 
@@ -1825,16 +1886,20 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         """
         TimeSeries of coupons paid (scaled by position)
         """
-        if self.root.stale: # Stale check needed because coupon paid depends on position
+        if (
+            self.root.stale
+        ):  # Stale check needed because coupon paid depends on position
             self.root.update(self.root.now, None)
-        return self._coupon_income.loc[:self.now]
-        
+        return self._coupon_income.loc[: self.now]
+
     @property
     def holding_cost(self):
         """
         Current holding cost (scaled by position)
         """
-        if self.root.stale: # Stale check needed because coupon paid depends on position
+        if (
+            self.root.stale
+        ):  # Stale check needed because coupon paid depends on position
             self.root.update(self.root.now, None)
         return self._holding_cost
 
@@ -1843,12 +1908,14 @@ class CouponPayingSecurity( FixedIncomeSecurity ):
         """
         TimeSeries of coupons paid (scaled by position)
         """
-        if self.root.stale: # Stale check needed because coupon paid depends on position
+        if (
+            self.root.stale
+        ):  # Stale check needed because coupon paid depends on position
             self.root.update(self.root.now, None)
-        return self._holding_costs.loc[:self.now]
+        return self._holding_costs.loc[: self.now]
 
 
-class HedgeSecurity( SecurityBase ):
+class HedgeSecurity(SecurityBase):
     """
     HedgeSecurity is a SecurityBase where the notional value is set to zero, and thus
     does not count towards the notional value of the strategy. It is intended for use
@@ -1864,12 +1931,12 @@ class HedgeSecurity( SecurityBase ):
         Update security with a given date and optionally, some data.
         This will update price, value, weight, etc.
         """
-        super( HedgeSecurity, self ).update( date, data, inow )
-        self._notl_value = 0.
-        self._notl_values.values.fill(0.)
+        super(HedgeSecurity, self).update(date, data, inow)
+        self._notl_value = 0.0
+        self._notl_values.values.fill(0.0)
 
 
-class CouponPayingHedgeSecurity( CouponPayingSecurity ):
+class CouponPayingHedgeSecurity(CouponPayingSecurity):
     """
     CouponPayingHedgeSecurity is a CouponPayingSecurity where the notional value is set to zero, and thus
     does not count towards the notional value of the strategy. It is intended for use
@@ -1885,9 +1952,9 @@ class CouponPayingHedgeSecurity( CouponPayingSecurity ):
         Update security with a given date and optionally, some data.
         This will update price, value, weight, etc.
         """
-        super( CouponPayingHedgeSecurity, self ).update( date, data, inow )
-        self._notl_value = 0.
-        self._notl_values.values.fill(0.)
+        super(CouponPayingHedgeSecurity, self).update(date, data, inow)
+        self._notl_value = 0.0
+        self._notl_values.values.fill(0.0)
 
 
 class Algo(object):
@@ -1943,8 +2010,7 @@ class AlgoStack(Algo):
     def __init__(self, *algos):
         super(AlgoStack, self).__init__()
         self.algos = algos
-        self.check_run_always = any(hasattr(x, 'run_always')
-                                    for x in self.algos)
+        self.check_run_always = any(hasattr(x, "run_always") for x in self.algos)
 
     def __call__(self, target):
         # normal running mode
@@ -1962,7 +2028,7 @@ class AlgoStack(Algo):
             for algo in self.algos:
                 if res:
                     res = algo(target)
-                elif hasattr(algo, 'run_always'):
+                elif hasattr(algo, "run_always"):
                     if algo.run_always:
                         algo(target)
             return res
@@ -1999,7 +2065,7 @@ class Strategy(StrategyBase):
     """
 
     def __init__(self, name, algos=None, children=None, parent=None):
-        super(Strategy, self).__init__(name, children=children, parent=parent )
+        super(Strategy, self).__init__(name, children=children, parent=parent)
         if algos is None:
             algos = []
         self.stack = AlgoStack(*algos)
@@ -2018,7 +2084,7 @@ class Strategy(StrategyBase):
             c.run()
 
 
-class FixedIncomeStrategy( Strategy ):
+class FixedIncomeStrategy(Strategy):
     """
     FixedIncomeStrategy is an alias for Strategy where the fixed_income flag
     is set to True.
