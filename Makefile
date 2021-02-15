@@ -2,7 +2,17 @@ TMPREPO=/tmp/docs/bt
 
 default: build_dev
 
-.PHONY: dist upload docs pages serve klink notebooks
+.PHONY: dist upload docs pages serve klink notebooks test lint fix
+
+test:
+	python -m nose --with-coverage --cover-package bt
+
+lint:
+	python -m flake8 bt setup.py
+
+fix:
+	python -m black bt setup.py
+
 
 dist:
 	python setup.py sdist
