@@ -764,7 +764,7 @@ class SelectWhere(Algo):
             sig = signal.loc[target.now]
             # get tickers where True
             # selected = sig.index[sig]
-            selected = sig[sig is True].index
+            selected = sig[sig == True].index  # noqa: E712
             # save as list
             if not self.include_no_data:
                 universe = target.universe.loc[target.now, list(selected)].dropna()
