@@ -31,7 +31,7 @@ jobs:
 
     - name: Lint
       run: |
-        python -m flake8 ffn setup.py
+        python -m flake8 bt setup.py
 
     - name: Test
       run: |
