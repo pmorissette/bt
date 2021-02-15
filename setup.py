@@ -1,8 +1,9 @@
-from setuptools import setup
-from setuptools.extension import Extension
 import codecs
 import os
 import re
+
+from setuptools import setup
+from setuptools.extension import Extension
 
 
 def local_file(filename):
@@ -43,20 +44,23 @@ setup(
     license='MIT',
     install_requires=[
         'ffn>=0.3.5',
-        'pyprind>=2.10'
+        'pyprind>=2.11'
     ],
     extras_require={
         'dev': [
+            "black>=20.8b1",
             'codecov',
             'coverage',
             'cython>=0.25',
+            "flake8",
+            "flake8-black",
             'future',
             'mock',
             'nose',
             'numpy>=1',
             'pandas>=0.19',
-            'matplotlib>=2,<3',
-            'ffn>=0.3.4',
+            'matplotlib>=2',
+            'ffn>=0.3.5',
             'pyprind>=2.11',
         ],
     },

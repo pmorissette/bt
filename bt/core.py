@@ -2,14 +2,14 @@
 Contains the core building blocks of the framework.
 """
 from __future__ import division
-from future.utils import iteritems
+
 import math
 from copy import deepcopy
 
-import pandas as pd
-import numpy as np
 import cython as cy
-
+import numpy as np
+import pandas as pd
+from future.utils import iteritems
 
 PAR = 100.
 TOL = 1e-16
