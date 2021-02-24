@@ -2,17 +2,18 @@
 A collection of Algos used to create Strategy logic.
 """
 from __future__ import division
-from future.utils import iteritems
+
 import abc
-import bt
-from bt.core import Algo, AlgoStack, SecurityBase, is_zero
-import cython as cy
-import pandas as pd
-import numpy as np
 import random
 import re
 
+import numpy as np
+import pandas as pd
 import sklearn.covariance
+from future.utils import iteritems
+
+import bt
+from bt.core import Algo, AlgoStack, SecurityBase, is_zero
 
 
 def run_always(f):
@@ -50,6 +51,7 @@ class PrintTempData(Algo):
             target's temp dict. Therefore, you should provide
             what you want to examine within curly braces ( { } )
     """
+
     def __init__(self, fmt_string=None):
         super(PrintTempData, self).__init__()
         self.fmt_string = fmt_string
@@ -82,7 +84,7 @@ class PrintInfo(Algo):
 
     """
 
-    def __init__(self, fmt_string='{name} {now}'):
+    def __init__(self, fmt_string="{name} {now}"):
         super(PrintInfo, self).__init__()
         self.fmt_string = fmt_string
 
@@ -101,6 +103,7 @@ class Debug(Algo):
 
     def __call__(self, target):
         import pdb
+
         pdb.set_trace()
         return True
 
@@ -134,8 +137,9 @@ class RunOnce(Algo):
 
 
 class RunPeriod(Algo):
-
-    def __init__(self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False):
+    def __init__(
+        self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False
+    ):
         super(RunPeriod, self).__init__()
         self._run_on_first_date = run_on_first_date
         self._run_on_end_of_period = run_on_end_of_period
@@ -187,7 +191,7 @@ class RunPeriod(Algo):
 
     @abc.abstractmethod
     def compare_dates(self, now, date_to_compare):
-        raise(NotImplementedError('RunPeriod Algo is an abstract class!'))
+        raise (NotImplementedError("RunPeriod Algo is an abstract class!"))
 
 
 class RunDaily(RunPeriod):
@@ -206,6 +210,7 @@ class RunDaily(RunPeriod):
     Useful for daily rebalancing strategies.
 
     """
+
     def compare_dates(self, now, date_to_compare):
         if now.date() != date_to_compare.date():
             return True
@@ -233,6 +238,7 @@ class RunWeekly(RunPeriod):
         if now.year != date_to_compare.year or now.week != date_to_compare.week:
             return True
         return False
+
 
 class RunMonthly(RunPeriod):
 
@@ -278,6 +284,7 @@ class RunQuarterly(RunPeriod):
         if now.year != date_to_compare.year or now.quarter != date_to_compare.quarter:
             return True
         return False
+
 
 class RunYearly(RunPeriod):
 
@@ -382,13 +389,14 @@ class RunAfterDays(Algo):
             return False
         return True
 
+
 class RunIfOutOfBounds(Algo):
 
     """
     This algo returns true if any of the target weights deviate by an amount greater
     than tolerance. For example, it will be run if the tolerance is set to 0.5 and
     a security grows from a target weight of 0.2 to greater than 0.3.
-    
+
     A strategy where rebalancing is performed quarterly or whenever any
     security's weight deviates by more than 20% could be implemented by:
 
@@ -407,25 +415,26 @@ class RunIfOutOfBounds(Algo):
         super(RunIfOutOfBounds, self).__init__()
 
     def __call__(self, target):
-        if 'weights' not in target.temp:
+        if "weights" not in target.temp:
             return True
 
-        targets = target.temp['weights']
+        targets = target.temp["weights"]
 
         for cname in target.children:
             if cname in targets:
                 c = target.children[cname]
                 deviation = abs((c.weight - targets[cname]) / targets[cname])
                 if deviation > self.tolerance:
-                    return True        
-        
-        if 'cash' in target.temp:
-            cash_deviation = abs((target.capital - targets.value) / targets.value - target.temp['cash'])
+                    return True
+
+        if "cash" in target.temp:
+            cash_deviation = abs(
+                (target.capital - targets.value) / targets.value - target.temp["cash"]
+            )
             if cash_deviation > self.tolerance:
                 return True
 
         return False
-
 
 
 class RunEveryNPeriods(Algo):
@@ -493,13 +502,13 @@ class SelectAll(Algo):
 
     def __call__(self, target):
         if self.include_no_data:
-            target.temp['selected'] = target.universe.columns
+            target.temp["selected"] = target.universe.columns
         else:
             universe = target.universe.loc[target.now].dropna()
             if self.include_negative:
-                target.temp['selected'] = list(universe.index)
+                target.temp["selected"] = list(universe.index)
             else:
-                target.temp['selected'] = list(universe[universe > 0].index)
+                target.temp["selected"] = list(universe[universe > 0].index)
         return True
 
 
@@ -527,13 +536,13 @@ class SelectThese(Algo):
 
     def __call__(self, target):
         if self.include_no_data:
-            target.temp['selected'] = self.tickers
+            target.temp["selected"] = self.tickers
         else:
-            universe = target.universe.loc[target.now,self.tickers].dropna()
+            universe = target.universe.loc[target.now, self.tickers].dropna()
             if self.include_negative:
-                 target.temp['selected'] = list(universe.index)
+                target.temp["selected"] = list(universe.index)
             else:
-                target.temp['selected'] = list(universe[universe > 0].index)
+                target.temp["selected"] = list(universe[universe > 0].index)
         return True
 
 
@@ -574,8 +583,13 @@ class SelectHasData(Algo):
 
     """
 
-    def __init__(self, lookback=pd.DateOffset(months=3),
-                 min_count=None, include_no_data=False, include_negative=False):
+    def __init__(
+        self,
+        lookback=pd.DateOffset(months=3),
+        min_count=None,
+        include_no_data=False,
+        include_negative=False,
+    ):
         super(SelectHasData, self).__init__()
         self.lookback = lookback
         if min_count is None:
@@ -585,19 +599,19 @@ class SelectHasData(Algo):
         self.include_negative = include_negative
 
     def __call__(self, target):
-        if 'selected' in target.temp:
-            selected = target.temp['selected']
+        if "selected" in target.temp:
+            selected = target.temp["selected"]
         else:
             selected = target.universe.columns
 
-        filt = target.universe.loc[target.now - self.lookback:,selected]
+        filt = target.universe.loc[target.now - self.lookback :, selected]
         cnt = filt.count()
         cnt = cnt[cnt >= self.min_count]
         if not self.include_no_data:
-            cnt = cnt[ ~target.universe.loc[target.now, selected].isnull() ]
+            cnt = cnt[~target.universe.loc[target.now, selected].isnull()]
             if not self.include_negative:
                 cnt = cnt[target.universe.loc[target.now, selected] > 0]
-        target.temp['selected'] = list(cnt.index)
+        target.temp["selected"] = list(cnt.index)
         return True
 
 
@@ -628,23 +642,22 @@ class SelectN(Algo):
 
     """
 
-    def __init__(self, n, sort_descending=True,
-                 all_or_none=False,
-                 filter_selected=False):
+    def __init__(
+        self, n, sort_descending=True, all_or_none=False, filter_selected=False
+    ):
         super(SelectN, self).__init__()
         if n < 0:
-            raise ValueError('n cannot be negative')
+            raise ValueError("n cannot be negative")
         self.n = n
         self.ascending = not sort_descending
         self.all_or_none = all_or_none
         self.filter_selected = filter_selected
 
     def __call__(self, target):
-        stat = target.temp['stat'].dropna()
-        if self.filter_selected and 'selected' in target.temp:
-            stat = stat.loc[ stat.index.intersection( target.temp['selected'] )]
-        stat.sort_values(ascending=self.ascending,
-                         inplace=True)
+        stat = target.temp["stat"].dropna()
+        if self.filter_selected and "selected" in target.temp:
+            stat = stat.loc[stat.index.intersection(target.temp["selected"])]
+        stat.sort_values(ascending=self.ascending, inplace=True)
 
         # handle percent n
         keep_n = self.n
@@ -656,7 +669,7 @@ class SelectN(Algo):
         if self.all_or_none and len(sel) < keep_n:
             sel = []
 
-        target.temp['selected'] = sel
+        target.temp["selected"] = sel
 
         return True
 
@@ -690,13 +703,18 @@ class SelectMomentum(AlgoStack):
 
     """
 
-    def __init__(self, n, lookback=pd.DateOffset(months=3),
-                 lag=pd.DateOffset(days=0), sort_descending=True,
-                 all_or_none=False):
+    def __init__(
+        self,
+        n,
+        lookback=pd.DateOffset(months=3),
+        lag=pd.DateOffset(days=0),
+        sort_descending=True,
+        all_or_none=False,
+    ):
         super(SelectMomentum, self).__init__(
             StatTotalReturn(lookback=lookback, lag=lag),
-            SelectN(n=n, sort_descending=sort_descending,
-                    all_or_none=all_or_none))
+            SelectN(n=n, sort_descending=sort_descending, all_or_none=all_or_none),
+        )
 
 
 class SelectWhere(Algo):
@@ -725,13 +743,13 @@ class SelectWhere(Algo):
 
     def __init__(self, signal, include_no_data=False, include_negative=False):
         super(SelectWhere, self).__init__()
-        if isinstance( signal, pd.DataFrame ):
+        if isinstance(signal, pd.DataFrame):
             self.signal_name = None
             self.signal = signal
         else:
-            self.signal_name = signal 
+            self.signal_name = signal
             self.signal = None
-            
+
         self.include_no_data = include_no_data
         self.include_negative = include_negative
 
@@ -740,22 +758,21 @@ class SelectWhere(Algo):
         if self.signal_name is None:
             signal = self.signal
         else:
-            signal = target.get_data( self.signal_name )        
-            
+            signal = target.get_data(self.signal_name)
+
         if target.now in signal.index:
             sig = signal.loc[target.now]
             # get tickers where True
-            #selected = sig.index[sig]
-            selected = sig[sig == True].index
+            # selected = sig.index[sig]
+            selected = sig[sig == True].index  # noqa: E712
             # save as list
             if not self.include_no_data:
-                universe = target.universe.loc[
-                    target.now, list(selected)].dropna()
+                universe = target.universe.loc[target.now, list(selected)].dropna()
                 if self.include_negative:
                     selected = list(universe.index)
                 else:
                     selected = list(universe[universe > 0].index)
-            target.temp['selected'] = list(selected)
+            target.temp["selected"] = list(selected)
 
         return True
 
@@ -800,8 +817,8 @@ class SelectRandomly(AlgoStack):
         self.include_negative = include_negative
 
     def __call__(self, target):
-        if 'selected' in target.temp:
-            sel = target.temp['selected']
+        if "selected" in target.temp:
+            sel = target.temp["selected"]
         else:
             sel = list(target.universe.columns)
 
@@ -816,7 +833,7 @@ class SelectRandomly(AlgoStack):
             n = self.n if self.n < len(sel) else len(sel)
             sel = random.sample(sel, int(n))
 
-        target.temp['selected'] = sel
+        target.temp["selected"] = sel
         return True
 
 
@@ -841,9 +858,9 @@ class SelectRegex(Algo):
         self.regex = re.compile(regex)
 
     def __call__(self, target):
-        selected = target.temp['selected']
-        selected = [ s for s in selected if self.regex.search(s) ]
-        target.temp['selected'] = selected
+        selected = target.temp["selected"]
+        selected = [s for s in selected if self.regex.search(s)]
+        target.temp["selected"] = selected
         return True
 
 
@@ -881,8 +898,8 @@ class ResolveOnTheRun(Algo):
     def __call__(self, target):
         # Resolve real tickers based on OTR
         on_the_run = target.get_data(self.on_the_run)
-        selected = target.temp['selected']
-        aliases = [ s for s in selected if s in on_the_run.columns ]
+        selected = target.temp["selected"]
+        aliases = [s for s in selected if s in on_the_run.columns]
         resolved = on_the_run.loc[target.now, aliases].tolist()
         if not self.include_no_data:
             universe = target.universe.loc[target.now, resolved].dropna()
@@ -890,8 +907,9 @@ class ResolveOnTheRun(Algo):
                 resolved = list(universe.index)
             else:
                 resolved = list(universe[universe > 0].index)
-        target.temp['selected'] = resolved + [ s for s in selected
-                                              if s not in on_the_run.columns ]
+        target.temp["selected"] = resolved + [
+            s for s in selected if s not in on_the_run.columns
+        ]
         return True
 
 
@@ -903,25 +921,25 @@ class SetStat(Algo):
     Args:
         * stat (str|DataFrame): A dataframe of the same dimension as target.universe
             If a string is passed, frame is accessed using target.get_data
-            This is the preferred way of using the algo. 
+            This is the preferred way of using the algo.
     Sets:
         * stat
     """
 
-    def __init__(self, stat):        
-        if isinstance( stat, pd.DataFrame ):
+    def __init__(self, stat):
+        if isinstance(stat, pd.DataFrame):
             self.stat_name = None
             self.stat = stat
         else:
-            self.stat_name = stat 
+            self.stat_name = stat
             self.stat = None
 
     def __call__(self, target):
         if self.stat_name is None:
             stat = self.stat
         else:
-            stat = target.get_data( self.stat_name )
-        target.temp['stat'] = stat.loc[target.now]
+            stat = target.get_data(self.stat_name)
+        target.temp["stat"] = stat.loc[target.now]
         return True
 
 
@@ -947,17 +965,16 @@ class StatTotalReturn(Algo):
 
     """
 
-    def __init__(self, lookback=pd.DateOffset(months=3),
-                 lag=pd.DateOffset(days=0)):
+    def __init__(self, lookback=pd.DateOffset(months=3), lag=pd.DateOffset(days=0)):
         super(StatTotalReturn, self).__init__()
         self.lookback = lookback
         self.lag = lag
 
     def __call__(self, target):
-        selected = target.temp['selected']
+        selected = target.temp["selected"]
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback:t0,selected]
-        target.temp['stat'] = prc.calc_total_return()
+        prc = target.universe.loc[t0 - self.lookback : t0, selected]
+        target.temp["stat"] = prc.calc_total_return()
         return True
 
 
@@ -981,14 +998,14 @@ class WeighEqually(Algo):
         super(WeighEqually, self).__init__()
 
     def __call__(self, target):
-        selected = target.temp['selected']
+        selected = target.temp["selected"]
         n = len(selected)
 
         if n == 0:
-            target.temp['weights'] = {}
+            target.temp["weights"] = {}
         else:
             w = 1.0 / n
-            target.temp['weights'] = {x: w for x in selected}
+            target.temp["weights"] = {x: w for x in selected}
 
         return True
 
@@ -1014,7 +1031,7 @@ class WeighSpecified(Algo):
 
     def __call__(self, target):
         # added copy to make sure these are not overwritten
-        target.temp['weights'] = self.weights.copy()
+        target.temp["weights"] = self.weights.copy()
         return True
 
 
@@ -1041,8 +1058,9 @@ class ScaleWeights(Algo):
         self.scale = scale
 
     def __call__(self, target):
-        target.temp['weights'] = { k : self.scale * w
-                                  for k, w in iteritems( target.temp['weights'] ) }
+        target.temp["weights"] = {
+            k: self.scale * w for k, w in iteritems(target.temp["weights"])
+        }
         return True
 
 
@@ -1066,7 +1084,7 @@ class WeighTarget(Algo):
     Args:
         * weights (str|DataFrame): DataFrame containing the target weights
             If a string is passed, frame is accessed using target.get_data
-            This is the preferred way of using the algo. 
+            This is the preferred way of using the algo.
 
     Sets:
         * weights
@@ -1075,11 +1093,11 @@ class WeighTarget(Algo):
 
     def __init__(self, weights):
         super(WeighTarget, self).__init__()
-        if isinstance( weights, pd.DataFrame ):
+        if isinstance(weights, pd.DataFrame):
             self.weights_name = None
             self.weights = weights
         else:
-            self.weights_name = weights 
+            self.weights_name = weights
             self.weights = None
 
     def __call__(self, target):
@@ -1087,13 +1105,13 @@ class WeighTarget(Algo):
         if self.weights_name is None:
             weights = self.weights
         else:
-            weights = target.get_data( self.weights_name )
-            
+            weights = target.get_data(self.weights_name)
+
         if target.now in weights.index:
             w = weights.loc[target.now]
 
             # dropna and save
-            target.temp['weights'] = w.dropna()
+            target.temp["weights"] = w.dropna()
 
             return True
         else:
@@ -1121,28 +1139,26 @@ class WeighInvVol(Algo):
 
     """
 
-    def __init__(self, lookback=pd.DateOffset(months=3),
-                 lag=pd.DateOffset(days=0)):
+    def __init__(self, lookback=pd.DateOffset(months=3), lag=pd.DateOffset(days=0)):
         super(WeighInvVol, self).__init__()
         self.lookback = lookback
         self.lag = lag
 
     def __call__(self, target):
-        selected = target.temp['selected']
+        selected = target.temp["selected"]
 
         if len(selected) == 0:
-            target.temp['weights'] = {}
+            target.temp["weights"] = {}
             return True
 
         if len(selected) == 1:
-            target.temp['weights'] = {selected[0]: 1.}
+            target.temp["weights"] = {selected[0]: 1.0}
             return True
 
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback:t0,selected]
-        tw = bt.ffn.calc_inv_vol_weights(
-            prc.to_returns().dropna())
-        target.temp['weights'] = tw.dropna()
+        prc = target.universe.loc[t0 - self.lookback : t0, selected]
+        tw = bt.ffn.calc_inv_vol_weights(prc.to_returns().dropna())
+        target.temp["weights"] = tw.dropna()
         return True
 
 
@@ -1185,15 +1201,17 @@ class WeighERC(Algo):
 
     """
 
-    def __init__(self,
-                 lookback=pd.DateOffset(months=3),
-                 initial_weights=None,
-                 risk_weights=None,
-                 covar_method='ledoit-wolf',
-                 risk_parity_method='ccd',
-                 maximum_iterations=100,
-                 tolerance=1E-8,
-                 lag=pd.DateOffset(days=0)):
+    def __init__(
+        self,
+        lookback=pd.DateOffset(months=3),
+        initial_weights=None,
+        risk_weights=None,
+        covar_method="ledoit-wolf",
+        risk_parity_method="ccd",
+        maximum_iterations=100,
+        tolerance=1e-8,
+        lag=pd.DateOffset(days=0),
+    ):
 
         super(WeighERC, self).__init__()
         self.lookback = lookback
@@ -1206,18 +1224,18 @@ class WeighERC(Algo):
         self.lag = lag
 
     def __call__(self, target):
-        selected = target.temp['selected']
+        selected = target.temp["selected"]
 
         if len(selected) == 0:
-            target.temp['weights'] = {}
+            target.temp["weights"] = {}
             return True
 
         if len(selected) == 1:
-            target.temp['weights'] = {selected[0]: 1.}
+            target.temp["weights"] = {selected[0]: 1.0}
             return True
 
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback:t0,selected]
+        prc = target.universe.loc[t0 - self.lookback : t0, selected]
         tw = bt.ffn.calc_erc_weights(
             prc.to_returns().dropna(),
             initial_weights=self.initial_weights,
@@ -1225,9 +1243,10 @@ class WeighERC(Algo):
             covar_method=self.covar_method,
             risk_parity_method=self.risk_parity_method,
             maximum_iterations=self.maximum_iterations,
-            tolerance=self.tolerance)
+            tolerance=self.tolerance,
+        )
 
-        target.temp['weights'] = tw.dropna()
+        target.temp["weights"] = tw.dropna()
         return True
 
 
@@ -1258,9 +1277,14 @@ class WeighMeanVar(Algo):
 
     """
 
-    def __init__(self, lookback=pd.DateOffset(months=3),
-                 bounds=(0., 1.), covar_method='ledoit-wolf',
-                 rf=0., lag=pd.DateOffset(days=0)):
+    def __init__(
+        self,
+        lookback=pd.DateOffset(months=3),
+        bounds=(0.0, 1.0),
+        covar_method="ledoit-wolf",
+        rf=0.0,
+        lag=pd.DateOffset(days=0),
+    ):
         super(WeighMeanVar, self).__init__()
         self.lookback = lookback
         self.lag = lag
@@ -1269,23 +1293,26 @@ class WeighMeanVar(Algo):
         self.rf = rf
 
     def __call__(self, target):
-        selected = target.temp['selected']
+        selected = target.temp["selected"]
 
         if len(selected) == 0:
-            target.temp['weights'] = {}
+            target.temp["weights"] = {}
             return True
 
         if len(selected) == 1:
-            target.temp['weights'] = {selected[0]: 1.}
+            target.temp["weights"] = {selected[0]: 1.0}
             return True
 
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback:t0,selected]
+        prc = target.universe.loc[t0 - self.lookback : t0, selected]
         tw = bt.ffn.calc_mean_var_weights(
-            prc.to_returns().dropna(), weight_bounds=self.bounds,
-            covar_method=self.covar_method, rf=self.rf)
+            prc.to_returns().dropna(),
+            weight_bounds=self.bounds,
+            covar_method=self.covar_method,
+            rf=self.rf,
+        )
 
-        target.temp['weights'] = tw.dropna()
+        target.temp["weights"] = tw.dropna()
         return True
 
 
@@ -1318,24 +1345,23 @@ class WeighRandomly(Algo):
 
     """
 
-    def __init__(self, bounds=(0., 1.), weight_sum=1):
+    def __init__(self, bounds=(0.0, 1.0), weight_sum=1):
         super(WeighRandomly, self).__init__()
         self.bounds = bounds
         self.weight_sum = weight_sum
 
     def __call__(self, target):
-        sel = target.temp['selected']
+        sel = target.temp["selected"]
         n = len(sel)
 
         w = {}
         try:
-            rw = bt.ffn.random_weights(
-                n, self.bounds, self.weight_sum)
+            rw = bt.ffn.random_weights(n, self.bounds, self.weight_sum)
             w = dict(zip(sel, rw))
         except ValueError:
             pass
 
-        target.temp['weights'] = w
+        target.temp["weights"] = w
         return True
 
 
@@ -1376,12 +1402,12 @@ class LimitDeltas(Algo):
             self.global_limit = False
 
     def __call__(self, target):
-        tw = target.temp['weights']
+        tw = target.temp["weights"]
         all_keys = set(list(target.children.keys()) + list(tw.keys()))
 
         for k in all_keys:
-            tgt = tw[k] if k in tw else 0.
-            cur = target.children[k].weight if k in target.children else 0.
+            tgt = tw[k] if k in tw else 0.0
+            cur = target.children[k].weight if k in target.children else 0.0
             delta = tgt - cur
 
             # check if we need to limit
@@ -1428,10 +1454,10 @@ class LimitWeights(Algo):
         self.limit = limit
 
     def __call__(self, target):
-        if 'weights' not in target.temp:
+        if "weights" not in target.temp:
             return True
 
-        tw = target.temp['weights']
+        tw = target.temp["weights"]
         if len(tw) == 0:
             return True
 
@@ -1440,7 +1466,7 @@ class LimitWeights(Algo):
             tw = {}
         else:
             tw = bt.ffn.limit_weights(tw, self.limit)
-        target.temp['weights'] = tw
+        target.temp["weights"] = tw
 
         return True
 
@@ -1467,12 +1493,12 @@ class TargetVol(Algo):
     """
 
     def __init__(
-            self,
-            target_volatility,
-            lookback=pd.DateOffset(months=3),
-            lag=pd.DateOffset(days=0),
-            covar_method='standard',
-            annualization_factor=252
+        self,
+        target_volatility,
+        lookback=pd.DateOffset(months=3),
+        lag=pd.DateOffset(days=0),
+        covar_method="standard",
+        annualization_factor=252,
     ):
 
         super(TargetVol, self).__init__()
@@ -1484,47 +1510,48 @@ class TargetVol(Algo):
 
     def __call__(self, target):
 
-        current_weights = target.temp['weights']
+        current_weights = target.temp["weights"]
         selected = current_weights.keys()
 
         # if there were no weights already set then skip
         if len(selected) == 0:
             return True
 
-
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback:t0, selected]
+        prc = target.universe.loc[t0 - self.lookback : t0, selected]
         returns = bt.ffn.to_returns(prc)
 
         # calc covariance matrix
-        if self.covar_method == 'ledoit-wolf':
+        if self.covar_method == "ledoit-wolf":
             covar = sklearn.covariance.ledoit_wolf(returns)
-        elif self.covar_method == 'standard':
+        elif self.covar_method == "standard":
             covar = returns.cov()
         else:
-            raise NotImplementedError('covar_method not implemented')
+            raise NotImplementedError("covar_method not implemented")
 
         weights = pd.Series(
-            [current_weights[x] for x in covar.columns],
-            index=covar.columns
+            [current_weights[x] for x in covar.columns], index=covar.columns
         )
 
-        vol = np.sqrt(np.matmul(weights.values.T,np.matmul(covar.values, weights.values))*self.annualization_factor)
+        vol = np.sqrt(
+            np.matmul(weights.values.T, np.matmul(covar.values, weights.values))
+            * self.annualization_factor
+        )
 
-        #vol is too high
+        # vol is too high
         if vol > self.target_volatility:
-            mult = self.target_volatility/vol
-        #vol is too low
+            mult = self.target_volatility / vol
+        # vol is too low
         elif vol < self.target_volatility:
-            mult = self.target_volatility/vol
+            mult = self.target_volatility / vol
         else:
             mult = 1
 
-        for k in target.temp['weights'].keys():
-            target.temp['weights'][k] = target.temp['weights'][k]*mult
-
+        for k in target.temp["weights"].keys():
+            target.temp["weights"][k] = target.temp["weights"][k] * mult
 
         return True
+
 
 class PTE_Rebalance(Algo):
     """
@@ -1542,13 +1569,13 @@ class PTE_Rebalance(Algo):
     """
 
     def __init__(
-            self,
-            PTE_volatility_cap,
-            target_weights,
-            lookback=pd.DateOffset(months=3),
-            lag=pd.DateOffset(days=0),
-            covar_method='standard',
-            annualization_factor=252
+        self,
+        PTE_volatility_cap,
+        target_weights,
+        lookback=pd.DateOffset(months=3),
+        lag=pd.DateOffset(days=0),
+        covar_method="standard",
+        annualization_factor=252,
     ):
 
         super(PTE_Rebalance, self).__init__()
@@ -1574,39 +1601,38 @@ class PTE_Rebalance(Algo):
         if prices is None:
             return True
 
-        current_weights = positions*prices/target.value
+        current_weights = positions * prices / target.value
 
-        target_weights = self.target_weights.loc[target.now,:]
+        target_weights = self.target_weights.loc[target.now, :]
 
         cols = list(current_weights.index.copy())
         for c in target_weights.keys():
-            if not c in cols:
+            if c not in cols:
                 cols.append(c)
 
-        weights = pd.Series(
-            np.zeros(len(cols)),
-            index=cols
-        )
+        weights = pd.Series(np.zeros(len(cols)), index=cols)
         for c in cols:
             if c in current_weights:
                 weights[c] = current_weights[c]
             if c in target_weights:
                 weights[c] -= target_weights[c]
 
-
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback:t0, cols]
+        prc = target.universe.loc[t0 - self.lookback : t0, cols]
         returns = bt.ffn.to_returns(prc)
 
         # calc covariance matrix
-        if self.covar_method == 'ledoit-wolf':
+        if self.covar_method == "ledoit-wolf":
             covar = sklearn.covariance.ledoit_wolf(returns)
-        elif self.covar_method == 'standard':
+        elif self.covar_method == "standard":
             covar = returns.cov()
         else:
-            raise NotImplementedError('covar_method not implemented')
+            raise NotImplementedError("covar_method not implemented")
 
-        PTE_vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
+        PTE_vol = np.sqrt(
+            np.matmul(weights.values.T, np.matmul(covar.values, weights.values))
+            * self.annualization_factor
+        )
 
         if pd.isnull(PTE_vol):
             return False
@@ -1676,10 +1702,10 @@ class CloseDead(Algo):
         super(CloseDead, self).__init__()
 
     def __call__(self, target):
-        if 'weights' not in target.temp:
+        if "weights" not in target.temp:
             return True
 
-        targets = target.temp['weights']
+        targets = target.temp["weights"]
         for c in target.children:
             if target.universe[c].loc[target.now] <= 0:
                 target.close(c)
@@ -1696,25 +1722,26 @@ class SetNotional(Algo):
     FixedIncomestrategy targets
 
     Args:
-        * notional_value (str): Name of a pd.Series object containing the 
-            target notional values of the strategy over time. 
+        * notional_value (str): Name of a pd.Series object containing the
+            target notional values of the strategy over time.
 
     Sets:
         * notional_value
     """
+
     def __init__(self, notional_value):
         self.notional_value = notional_value
         super(SetNotional, self).__init__()
 
     def __call__(self, target):
-        notional_value = target.get_data( self.notional_value )
-            
-        if target.now in notional_value.index:            
-            target.temp['notional_value'] = notional_value.loc[target.now]
+        notional_value = target.get_data(self.notional_value)
+
+        if target.now in notional_value.index:
+            target.temp["notional_value"] = notional_value.loc[target.now]
 
             return True
         else:
-            return False        
+            return False
 
 
 class Rebalance(Algo):
@@ -1742,17 +1769,17 @@ class Rebalance(Algo):
         super(Rebalance, self).__init__()
 
     def __call__(self, target):
-        if 'weights' not in target.temp:
+        if "weights" not in target.temp:
             return True
 
-        targets = target.temp['weights']
+        targets = target.temp["weights"]
 
         # save value because it will change after each call to allocate
         # use it as base in rebalance calls
         # call it before de-allocation so that notional_value is correct
         if target.fixed_income:
-            if 'notional_value' in target.temp:
-                base = target.temp['notional_value']
+            if "notional_value" in target.temp:
+                base = target.temp["notional_value"]
             else:
                 base = target.notional_value
         else:
@@ -1772,20 +1799,20 @@ class Rebalance(Algo):
             else:
                 v = c.value
             # if non-zero and non-null, we need to close it out
-            if v != 0. and not np.isnan(v):
+            if v != 0.0 and not np.isnan(v):
                 target.close(cname, update=False)
 
         # If cash is set (it should be a value between 0-1 representing the
         # proportion of cash to keep), calculate the new 'base'
-        if 'cash' in target.temp and not target.fixed_income:
-            base = base * (1 - target.temp['cash'])
+        if "cash" in target.temp and not target.fixed_income:
+            base = base * (1 - target.temp["cash"])
 
         # Turn off updating while we rebalance each child
         for item in iteritems(targets):
             target.rebalance(item[1], child=item[0], base=base, update=False)
 
         # Now update
-        target.root.update( target.now )
+        target.root.update(target.now)
 
         return True
 
@@ -1832,8 +1859,8 @@ class RebalanceOverTime(Algo):
 
     def __call__(self, target):
         # new weights specified - update rebalance data
-        if 'weights' in target.temp:
-            self._weights = target.temp['weights']
+        if "weights" in target.temp:
+            self._weights = target.temp["weights"]
             self._days_left = self.n
 
         # if _weights are not None, we have some work to do
@@ -1842,13 +1869,12 @@ class RebalanceOverTime(Algo):
             # scale delta relative to # of periods left and set that as the new
             # target
             for t in self._weights:
-                curr = target.children[t].weight if t in \
-                    target.children else 0.
+                curr = target.children[t].weight if t in target.children else 0.0
                 dlt = (self._weights[t] - curr) / self._days_left
                 tgt[t] = curr + dlt
 
             # mock weights and call real Rebalance
-            target.temp['weights'] = tgt
+            target.temp["weights"] = tgt
             self._rb(target)
 
             # dec _days_left. If 0, set to None & set _weights to None
@@ -1907,17 +1933,18 @@ class Require(Algo):
 class Not(Algo):
     """
     Flow control Algo
-    
+
     It is usful for "inverting" other flow control algos,
     For example Not( RunAfterDate(...) ), Not( RunAfterDays(...) ), etc
-    
+
     Args:
         * list_of_algos (Algo): The algo to run and invert the return value of
     """
-    def __init__( self, algo ):
+
+    def __init__(self, algo):
         super(Not, self).__init__()
         self._algo = algo
-        
+
     def __call__(self, target):
         return not self._algo(target)
 
@@ -1975,12 +2002,15 @@ class SelectTypes(Algo):
         self.exclude_types = exclude_types or (type(None),)
 
     def __call__(self, target):
-        selected = [ sec_name for sec_name, sec in target.children.items()
-                    if isinstance( sec, self.include_types )
-                    and not isinstance( sec, self.exclude_types ) ]
-        if 'selected' in target.temp:
-            selected = [ s for s in selected if s in target.temp['selected'] ]
-        target.temp['selected'] = selected
+        selected = [
+            sec_name
+            for sec_name, sec in target.children.items()
+            if isinstance(sec, self.include_types)
+            and not isinstance(sec, self.exclude_types)
+        ]
+        if "selected" in target.temp:
+            selected = [s for s in selected if s in target.temp["selected"]]
+        target.temp["selected"] = selected
         return True
 
 
@@ -2015,25 +2045,28 @@ class ClosePositionsAfterDates(Algo):
         self.close_dates = close_dates
 
     def __call__(self, target):
-        if 'closed' not in target.perm:
-            target.perm['closed'] = set()
-        close_dates = target.get_data( self.close_dates )['date']
+        if "closed" not in target.perm:
+            target.perm["closed"] = set()
+        close_dates = target.get_data(self.close_dates)["date"]
         # Find securities that are candidate for closing
-        sec_names = [ sec_name for sec_name, sec in iteritems(target.children)
-                        if isinstance( sec, SecurityBase ) \
-                        and sec_name in close_dates.index \
-                        and sec_name not in target.perm['closed']]
+        sec_names = [
+            sec_name
+            for sec_name, sec in iteritems(target.children)
+            if isinstance(sec, SecurityBase)
+            and sec_name in close_dates.index
+            and sec_name not in target.perm["closed"]
+        ]
 
         # Check whether closed
-        is_closed = close_dates.loc[ sec_names ] <= target.now
+        is_closed = close_dates.loc[sec_names] <= target.now
 
         # Close position
-        for sec_name in is_closed[ is_closed ].index:
-            target.close( sec_name, update=False )
-            target.perm['closed'].add( sec_name )
+        for sec_name in is_closed[is_closed].index:
+            target.close(sec_name, update=False)
+            target.perm["closed"].add(sec_name)
 
         # Now update
-        target.root.update( target.now )
+        target.root.update(target.now)
 
         return True
 
@@ -2065,34 +2098,37 @@ class RollPositionsAfterDates(Algo):
         self.roll_data = roll_data
 
     def __call__(self, target):
-        if 'rolled' not in target.perm:
-            target.perm['rolled'] = set()
-        roll_data = target.get_data( self.roll_data )
+        if "rolled" not in target.perm:
+            target.perm["rolled"] = set()
+        roll_data = target.get_data(self.roll_data)
         transactions = {}
         # Find securities that are candidate for roll
-        sec_names = [ sec_name for sec_name, sec in iteritems(target.children)
-                        if isinstance( sec, SecurityBase ) \
-                        and sec_name in roll_data.index \
-                        and sec_name not in target.perm['rolled']]
+        sec_names = [
+            sec_name
+            for sec_name, sec in iteritems(target.children)
+            if isinstance(sec, SecurityBase)
+            and sec_name in roll_data.index
+            and sec_name not in target.perm["rolled"]
+        ]
 
         # Calculate new transaction and close old position
-        for sec_name, sec_fields in roll_data.loc[ sec_names ].iterrows():
-            if sec_fields['date'] <= target.now:
-                target.perm['rolled'].add( sec_name )
-                new_quantity = sec_fields['factor'] * target[sec_name].position
-                new_sec = sec_fields['target']
+        for sec_name, sec_fields in roll_data.loc[sec_names].iterrows():
+            if sec_fields["date"] <= target.now:
+                target.perm["rolled"].add(sec_name)
+                new_quantity = sec_fields["factor"] * target[sec_name].position
+                new_sec = sec_fields["target"]
                 if new_sec in transactions:
-                    transactions[ new_sec ] += new_quantity
+                    transactions[new_sec] += new_quantity
                 else:
-                    transactions[ new_sec ] = new_quantity      
-                target.close( sec_name, update=False )
+                    transactions[new_sec] = new_quantity
+                target.close(sec_name, update=False)
 
         # Do all the new transactions at the end, to do any necessary aggregations first
         for new_sec, quantity in iteritems(transactions):
-            target.transact( quantity, new_sec, update=False)
+            target.transact(quantity, new_sec, update=False)
 
         # Now update
-        target.root.update( target.now )
+        target.root.update(target.now)
 
         return True
 
@@ -2115,11 +2151,11 @@ class SelectActive(Algo):
     """
 
     def __call__(self, target):
-        selected = target.temp['selected']
-        rolled = target.perm.get('rolled',set())
-        closed = target.perm.get('closed',set())
-        selected = [ s for s in selected if s not in set.union(rolled, closed)]
-        target.temp['selected'] = selected
+        selected = target.temp["selected"]
+        rolled = target.perm.get("rolled", set())
+        closed = target.perm.get("closed", set())
+        selected = [s for s in selected if s not in set.union(rolled, closed)]
+        target.temp["selected"] = selected
         return True
 
 
@@ -2156,17 +2192,19 @@ class ReplayTransactions(Algo):
         if index == 0:
             start = pd.Timestamp.min
         else:
-            start = timeline[index-1]
+            start = timeline[index - 1]
         # Get the transactions since the last update
-        all_transactions = target.get_data( self.transactions )
-        timestamps = all_transactions.index.get_level_values('Date')
-        transactions = all_transactions[ (timestamps > start) & (timestamps <= end) ]
-        for (_,security), transaction in transactions.iterrows():
-            c = target[ security ]
-            c.transact( transaction['quantity'], price = transaction['price'], update=False)
+        all_transactions = target.get_data(self.transactions)
+        timestamps = all_transactions.index.get_level_values("Date")
+        transactions = all_transactions[(timestamps > start) & (timestamps <= end)]
+        for (_, security), transaction in transactions.iterrows():
+            c = target[security]
+            c.transact(
+                transaction["quantity"], price=transaction["price"], update=False
+            )
 
         # Now update
-        target.root.update( target.now )
+        target.root.update(target.now)
 
         return True
 
@@ -2187,6 +2225,7 @@ class SimulateRFQTransactions(Algo):
             and which returns a set of transactions, a MultiIndex DataFrame with:
                 Date, Security | quantity, price
     """
+
     def __init__(self, rfqs, model):
         super(SimulateRFQTransactions, self).__init__()
         self.rfqs = rfqs
@@ -2199,32 +2238,34 @@ class SimulateRFQTransactions(Algo):
         if index == 0:
             start = pd.Timestamp.min
         else:
-            start = timeline[index-1]
+            start = timeline[index - 1]
         # Get the RFQs since the last update
-        all_rfqs = target.get_data( self.rfqs )
-        timestamps = all_rfqs.index.get_level_values('Date')
-        rfqs = all_rfqs[ (timestamps > start) & (timestamps <= end) ]
+        all_rfqs = target.get_data(self.rfqs)
+        timestamps = all_rfqs.index.get_level_values("Date")
+        rfqs = all_rfqs[(timestamps > start) & (timestamps <= end)]
 
         # Turn the RFQs into transactions
-        transactions = self.model( rfqs, target )
+        transactions = self.model(rfqs, target)
 
-        for (_,security), transaction in transactions.iterrows():
-            c = target[ security ]
-            c.transact( transaction['quantity'], price = transaction['price'], update=False)
+        for (_, security), transaction in transactions.iterrows():
+            c = target[security]
+            c.transact(
+                transaction["quantity"], price=transaction["price"], update=False
+            )
 
         # Now update
-        target.root.update( target.now )
+        target.root.update(target.now)
 
         return True
 
 
-def _get_unit_risk( security, data, index = None):
+def _get_unit_risk(security, data, index=None):
     try:
-        unit_risks = data[ security ]
-        unit_risk = unit_risks.values[ index ]
+        unit_risks = data[security]
+        unit_risk = unit_risks.values[index]
     except Exception:
         # No risk data, assume zero
-        unit_risk = 0.
+        unit_risk = 0.0
     return unit_risk
 
 
@@ -2234,7 +2275,7 @@ class UpdateRisk(Algo):
     Tracks a risk measure on all nodes of the strategy. To use this node, target.setup
     must be called with a "unit_risk" additional argument, which is a dictionary, keyed
     by risk measure, of DataFrames with a column per security that is sensitive to that measure.
-        
+
 
     Args:
         * name (str): the name of the risk measure (IR01, PVBP, IsIndustials, etc).
@@ -2250,52 +2291,52 @@ class UpdateRisk(Algo):
     """
 
     def __init__(self, measure, history=0):
-        super(UpdateRisk, self).__init__( name = 'UpdateRisk>%s' % measure)
+        super(UpdateRisk, self).__init__(name="UpdateRisk>%s" % measure)
         self.measure = measure
         self.history = history
 
-    def _setup_risk( self, target, set_history ):
+    def _setup_risk(self, target, set_history):
         """ Setup risk attributes on the node in question """
         target.risk = {}
         if set_history:
-            target.risks = pd.DataFrame( index = target.data.index )
+            target.risks = pd.DataFrame(index=target.data.index)
 
-    def _setup_measure( self, target, set_history ):
+    def _setup_measure(self, target, set_history):
         """ Setup a risk measure within the risk attributes on the node in question """
-        target.risk[ self.measure ] = np.NaN
+        target.risk[self.measure] = np.NaN
         if set_history:
-            target.risks[ self.measure ] = np.NaN
+            target.risks[self.measure] = np.NaN
 
-    def _set_risk_recursive( self, target, depth, unit_risk_frame ):
-        set_history = (depth < self.history)
+    def _set_risk_recursive(self, target, depth, unit_risk_frame):
+        set_history = depth < self.history
         # General setup of risk on nodes
-        if not hasattr( target, 'risk' ):
-            self._setup_risk( target, set_history )
+        if not hasattr(target, "risk"):
+            self._setup_risk(target, set_history)
         if self.measure not in target.risk:
-            self._setup_measure( target, set_history )
+            self._setup_measure(target, set_history)
 
-        if isinstance( target, bt.core.SecurityBase ):
+        if isinstance(target, bt.core.SecurityBase):
             # Use target.root.now as non-traded securities may not have been updated yet
-            # and there is no need to update them here as we only use position            
-            index = unit_risk_frame.index.get_loc( target.root.now )
-            unit_risk = _get_unit_risk( target.name, unit_risk_frame, index )
-            if is_zero( target.position ):
-                risk = 0.
+            # and there is no need to update them here as we only use position
+            index = unit_risk_frame.index.get_loc(target.root.now)
+            unit_risk = _get_unit_risk(target.name, unit_risk_frame, index)
+            if is_zero(target.position):
+                risk = 0.0
             else:
                 risk = unit_risk * target.position * target.multiplier
         else:
-            risk = 0.
+            risk = 0.0
             for child in target.children.values():
-                self._set_risk_recursive( child, depth+1, unit_risk_frame )
-                risk += child.risk[ self.measure ]
+                self._set_risk_recursive(child, depth + 1, unit_risk_frame)
+                risk += child.risk[self.measure]
 
-        target.risk[ self.measure ] = risk
+        target.risk[self.measure] = risk
         if depth < self.history:
-            target.risks.loc[ target.now, self.measure ] = risk
+            target.risks.loc[target.now, self.measure] = risk
 
     def __call__(self, target):
-        unit_risk_frame = target.get_data('unit_risk')[ self.measure ]
-        self._set_risk_recursive( target, 0, unit_risk_frame )
+        unit_risk_frame = target.get_data("unit_risk")[self.measure]
+        self._set_risk_recursive(target, 0, unit_risk_frame)
         return True
 
 
@@ -2310,12 +2351,13 @@ class PrintRisk(Algo):
             what you want to examine within curly braces ( { } )
             If not provided, will print the entire dictionary with no formatting.
     """
-    def __init__(self, fmt_string=''):
+
+    def __init__(self, fmt_string=""):
         super(PrintRisk, self).__init__()
         self.fmt_string = fmt_string
 
     def __call__(self, target):
-        if hasattr(target, 'risk'):
+        if hasattr(target, "risk"):
             if self.fmt_string:
                 print(self.fmt_string.format(**target.risk))
             else:
@@ -2343,68 +2385,70 @@ class HedgeRisks(Algo):
             otherwise hedging will occur before positions of risk_strategy are
             updated.
         * throw_nan (bool): Whether to throw on nan hedge notionals, rather
-            than simply not hedging. 
+            than simply not hedging.
 
     Requires:
         * selected
     """
 
-    def __init__(self, measures, pseudo=False, strategy=None, throw_nan=True ):
+    def __init__(self, measures, pseudo=False, strategy=None, throw_nan=True):
         super(HedgeRisks, self).__init__()
         if len(measures) == 0:
-            raise ValueError('Must pass in at least one measure to hedge')
+            raise ValueError("Must pass in at least one measure to hedge")
         self.measures = measures
         self.pseudo = pseudo
         self.strategy = strategy
         self.throw_nan = throw_nan
 
-    def _get_target_risk( self, target, measure ):
-        if not hasattr( target, 'risk' ):
-            raise ValueError('risk not set up on target %s' % target.name)
+    def _get_target_risk(self, target, measure):
+        if not hasattr(target, "risk"):
+            raise ValueError("risk not set up on target %s" % target.name)
         if measure not in target.risk:
-            raise ValueError(
-                'measure %s not set on target %s' % (measure, target.name) )
-        return target.risk[ measure ]
+            raise ValueError("measure %s not set on target %s" % (measure, target.name))
+        return target.risk[measure]
 
     def __call__(self, target):
-        securities = target.temp['selected']
+        securities = target.temp["selected"]
 
         # Get target risk
-        target_risk = np.array([ self._get_target_risk( target, m )
-                                for m in self.measures ])
+        target_risk = np.array(
+            [self._get_target_risk(target, m) for m in self.measures]
+        )
         if self.strategy is not None:
             # Add the target risk of the strategy to the risk of the target
             # (which contains existing hedges)
-            target_risk += np.array([ self._get_target_risk( strategy, m )
-                                     for m in self.measures ])
+            target_risk += np.array(
+                [self._get_target_risk(self.strategy, m) for m in self.measures]
+            )
         # Turn target_risk into a column array
-        target_risk = target_risk.reshape( len(self.measures), 1)
+        target_risk = target_risk.reshape(len(self.measures), 1)
 
         # Get hedge risk as a Jacobian matrix
         data = []
         for m in self.measures:
-            d = target.get_data('unit_risk').get( m )
+            d = target.get_data("unit_risk").get(m)
             if d is None:
                 raise ValueError(
-                    'unit_risk for %s not present in temp on %s'
-                    % (self.measure, target.name) )
-            i = d.index.get_loc( target.now )
-            data.append( (i, d) )
+                    "unit_risk for %s not present in temp on %s"
+                    % (self.measure, target.name)
+                )
+            i = d.index.get_loc(target.now)
+            data.append((i, d))
 
-        hedge_risk = np.array( [ [ _get_unit_risk( s, d, i )
-                                  for (i, d) in data ]
-                                  for s in securities ]  )
+        hedge_risk = np.array(
+            [[_get_unit_risk(s, d, i) for (i, d) in data] for s in securities]
+        )
 
         # Get hedge ratios
         if self.pseudo:
-            inv = np.linalg.pinv( hedge_risk ).T
+            inv = np.linalg.pinv(hedge_risk).T
         else:
-            inv = np.linalg.inv( hedge_risk ).T
-        notionals = np.matmul( inv, -target_risk ).flatten()
+            inv = np.linalg.inv(hedge_risk).T
+        notionals = np.matmul(inv, -target_risk).flatten()
 
         # Hedge
-        for notional, security in zip( notionals, securities ):
-            if np.isnan( notional ) and self.throw_nan:
-                raise ValueError('%s has nan hedge notional' % security)
-            target.transact( notional, security )
+        for notional, security in zip(notionals, securities):
+            if np.isnan(notional) and self.throw_nan:
+                raise ValueError("%s has nan hedge notional" % security)
+            target.transact(notional, security)
         return True
