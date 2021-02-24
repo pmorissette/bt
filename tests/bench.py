@@ -61,11 +61,11 @@ def benchmark_3():
     
 if __name__ == '__main__':
     print('\n\n\n================= Benchmark 1 =======================\n')
-    #cProfile.run('benchmark_1()', sort='tottime')
+    cProfile.run('benchmark_1()', sort='tottime')
     print('\n----------------- Benchmark 1 -----------------------\n\n\n')
     
     print('\n\n\n================= Benchmark 2 =======================\n')
-    #cProfile.run('benchmark_2()', sort='tottime')
+    cProfile.run('benchmark_2()', sort='tottime')
     print('\n----------------- Benchmark 2 -----------------------\n\n\n')
     
     print('\n\n\n================= Benchmark 3 =======================\n')
