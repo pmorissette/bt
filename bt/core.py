@@ -82,8 +82,8 @@ class Node(object):
         # children helpers
         self.children = {}
         self._lazy_children = {}
-        self._universe_tickers = []        
-        self._childrenv = [] # Shortcut to self.children.values()
+        self._universe_tickers = []
+        self._childrenv = []  # Shortcut to self.children.values()
 
         # strategy children helpers
         self._has_strat_children = False
@@ -152,10 +152,10 @@ class Node(object):
                 children = tmp
 
             for c in children:
-            
-                if dc: # deepcopy object for possible later reuse
+
+                if dc:  # deepcopy object for possible later reuse
                     c = deepcopy(c)
-                    
+
                 if type(c) == str:
                     if c in self._universe_tickers:
                         raise ValueError("Child %s already exists" % c)
@@ -168,7 +168,7 @@ class Node(object):
                 else:
                     if c.name in self.children:
                         raise ValueError("Child %s already exists" % c)
-                    
+
                     c.parent = self
                     c._set_root(self.root)
                     c.use_integer_positions(self.integer_positions)
@@ -184,8 +184,7 @@ class Node(object):
                 # if not strategy, then we will want to add this to
                 # universe_tickers to filter on setup
                 elif c.name not in self._universe_tickers:
-                    self._universe_tickers.append(c.name)                         
-
+                    self._universe_tickers.append(c.name)
 
     def _set_root(self, root):
         self.root = root
@@ -1775,7 +1774,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             derivatives.
         * fixed_income (bool): Flag to control whether notional_value is based
             only on quantity, or on market value (like an equity).
-            Defaults to notional weighting for coupon paying instruments. 
+            Defaults to notional weighting for coupon paying instruments.
         * lazy_add (bool): Flag to control whether instrument should be added
             to strategy children lazily, i.e. only when there is a transaction
             on the instrument. This improves performance of strategies which
