@@ -52,7 +52,7 @@ Before we do that, let's think about how we will code it. We could pass the SMA 
 
 For example, what if we wanted to select securities that were below their sma? Or what if we only wanted securities that were 5% above their sma?
 
-What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let's see how the implementation looks like.
+What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be much faster and much more reusable. Let's see how the implementation looks like.
 
 .. code:: python
 
