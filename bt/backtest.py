@@ -63,7 +63,7 @@ def benchmark_random(backtest, random_strategy, nsim=100):
 
     bts = []
     bts.append(backtest)
-    data = backtest.data
+    data = backtest.data.dropna()
 
     # create and run random backtests
     for i in range(nsim):
