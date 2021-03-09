@@ -1864,14 +1864,14 @@ class RebalanceOverTime(Algo):
             self._days_left = self.n
 
         # if _weights are not None, we have some work to do
-        if self._weights:
+        if self._weights is not None:
             tgt = {}
             # scale delta relative to # of periods left and set that as the new
             # target
-            for t in self._weights:
-                curr = target.children[t].weight if t in target.children else 0.0
-                dlt = (self._weights[t] - curr) / self._days_left
-                tgt[t] = curr + dlt
+            for cname in self._weights.keys():
+                curr = target.children[cname].weight if cname in target.children else 0.0
+                dlt = (self._weights[cname] - curr) / self._days_left
+                tgt[cname] = curr + dlt
 
             # mock weights and call real Rebalance
             target.temp["weights"] = tgt
