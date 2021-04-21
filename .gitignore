@@ -64,5 +64,9 @@ docs/source/.ipynb_checkpoints/
 /.idea/
 *.iml
 
+# ignore vs code
+.vscode
+
 # macOS
 .DS_Store
+
