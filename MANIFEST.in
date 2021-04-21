@@ -1,11 +1,11 @@
-include MANIFEST.in
+graft bt
+
+include LICENSE.txt
 include README.rst
 include setup.py
 
 graft docs
 prune docs/build
-
-graft bt
 
 global-exclude *.so
 global-exclude *.pyd
