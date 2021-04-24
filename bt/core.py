@@ -61,7 +61,7 @@ class Node(object):
         * members (list): Current Node + node's children
         * fixed_income (bool): Whether the node corresponds to a fixed income
           component, which would use notional-weighting instead of market
-          value weighing. See also :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>` 
+          value weighing. See also :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`
           for more details.
     """
 
@@ -1348,7 +1348,7 @@ class SecurityBase(Node):
               strategy will account for these costs when rebalancing.
             * kwargs (dict): Dictionary of additional information needed by
               the strategy. In particular, often takes the form of a DataFrame
-              of security level information (i.e. signals, risk, etc).              
+              of security level information (i.e. signals, risk, etc).
         """
         # if we already have all the prices, we will store them to speed up
         # future updates
@@ -1816,15 +1816,15 @@ class CouponPayingSecurity(FixedIncomeSecurity):
         Args:
             * universe (DataFrame): DataFrame of prices with security's name as
               one of the columns.
-            * coupons (DataFrame): Manatory DataFrame of coupon/carry amount with 
-              the same schema as universe. 
+            * coupons (DataFrame): Manatory DataFrame of coupon/carry amount with
+              the same schema as universe.
             * cost_long (DataFrame): Optional DataFrame containing the cost of
-              holding a unit long position in the security (i.e. funding). 
+              holding a unit long position in the security (i.e. funding).
             * cost_short (DataFrame): Optional DataFrame containing the cost of
-              holding a unit short position in the security (i.e. repo).   
+              holding a unit short position in the security (i.e. repo).
             * kwargs (dict): Dictionary of additional information needed by
               the strategy. In particular, often takes the form of a DataFrame
-              of security level information (i.e. signals, risk, etc).  
+              of security level information (i.e. signals, risk, etc).
         """
         super(CouponPayingSecurity, self).setup(universe, **kwargs)
 
@@ -2132,8 +2132,8 @@ class FixedIncomeStrategy(Strategy):
         - strategy price is computed from additive PNL returns
           per unit of current notional_value, with a reference price of PAR.
           :class:`RenormalizedFixedIncomeResult<bt.backtest.RenormalizedFixedIncomeResult>`
-          can be used to re-calculate the price-based performance statistics 
-          using different normalization schemes on total pnl. 
+          can be used to re-calculate the price-based performance statistics
+          using different normalization schemes on total pnl.
         - "transact" assumes the role of "allocate", in order to buy/sell
           children on a weighted notional basis
         - "rebalance" adjusts notionals rather than capital allocations based
