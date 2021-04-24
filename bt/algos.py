@@ -1040,7 +1040,7 @@ class ScaleWeights(Algo):
 
     """
     Sets temp['weights'] based on a scaled version of itself.
-    Useful for going short, or scaling up/down when using 
+    Useful for going short, or scaling up/down when using
     :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`.
 
     Args:

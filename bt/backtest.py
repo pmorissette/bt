@@ -108,18 +108,18 @@ class Backtest(object):
           While the default is True, try setting to False for more robust behavior.
         * progress_bar (Bool): Display progress bar while running backtest
         * additional_data (dict): Additional kwargs passed to StrategyBase.setup, after preprocessing
-          This data can be retrieved by Algos using StrategyBase.get_data. 
+          This data can be retrieved by Algos using StrategyBase.get_data.
           The data may also be used by the Strategy itself, i.e.
             - ``bidoffer``: A DataFrame with the same format as 'data', will be used
               by the strategy for transaction cost modeling
             - ``coupons``: A DataFrame with the same format as 'data', will by used
               by :class:`CouponPayingSecurity <bt.core.CouponPayingSecurity>`
               to determine cashflows.
-            - ``cost_long``/``cost_short``: A DataFrame with the same format as 'data', 
+            - ``cost_long``/``cost_short``: A DataFrame with the same format as 'data',
               will by used
               by :class:`CouponPayingSecurity <bt.core.CouponPayingSecurity>`
               to calculate asymmetric holding cost of long (or short) positions.
-          
+
 
     Attributes:
         * strategy (Strategy): The Backtest's Strategy. This will be a deepcopy
@@ -580,7 +580,7 @@ class RandomBenchmarkResult(Result):
 
 class RenormalizedFixedIncomeResult(Result):
     """
-    A new result type to help compare results generated from 
+    A new result type to help compare results generated from
     :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`.
     Recall that in a fixed income strategy, the normalized prices are computed
     using additive returns expressed as a percentage of current outstanding
