@@ -1,5 +1,4 @@
-
-.. code:: python
+.. code:: ipython2
 
     import bt
 
@@ -11,7 +10,7 @@ Let's create a simple strategy. We will create a monthly rebalanced, long-only s
 
 First, we will download some data. By default, :func:`bt.get (alias for ffn.get) <ffn.data.get>` downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.
 
-.. code:: python
+.. code:: ipython2
 
     # fetch some data
     data = bt.get('spy,agg', start='2010-01-01')
@@ -33,7 +32,7 @@ First, we will download some data. By default, :func:`bt.get (alias for ffn.get)
 
 Once we have our data, we will create our strategy. The :class:`Strategy <bt.core.Strategy>` object contains the strategy logic by combining various :class:`Algos <bt.core.Algo>`. 
 
-.. code:: python
+.. code:: ipython2
 
     # create the strategy
     s = bt.Strategy('s1', [bt.algos.RunMonthly(),
@@ -46,7 +45,7 @@ Finally, we will create a :class:`Backtest <bt.backtest.Backtest>`, which is the
 
 Once this is done, we can run the backtest and analyze the results.
 
-.. code:: python
+.. code:: ipython2
 
     # create a backtest and run it
     test = bt.Backtest(s, data)
@@ -63,7 +62,7 @@ Once this is done, we can run the backtest and analyze the results.
 
 Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.Result>` object is a thin wrapper around `ffn.GroupStats <http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats>`__ that adds some helper methods.
 
-.. code:: python
+.. code:: ipython2
 
     # first let's see an equity curve
     res.plot()
@@ -74,7 +73,7 @@ Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.
     :class: pynb
 
 
-.. code:: python
+.. code:: ipython2
 
     # ok and what about some stats?
     res.display()
@@ -141,7 +140,7 @@ Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.
     Win 12m %            96.00%
 
 
-.. code:: python
+.. code:: ipython2
 
     # ok and how does the return distribution look like?
     res.plot_histogram()
@@ -152,7 +151,7 @@ Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.
     :class: pynb
 
 
-.. code:: python
+.. code:: ipython2
 
     # and just to make sure everything went along as planned, let's plot the security weights over time
     res.plot_security_weights()
@@ -169,7 +168,7 @@ Modifying a Strategy
 
 Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset's volatility? Well, all we have to do is plug in some different algos. See below:
 
-.. code:: python
+.. code:: ipython2
 
     # create our new strategy
     s2 = bt.Strategy('s2', [bt.algos.RunWeekly(),
@@ -197,7 +196,7 @@ Now what if we ran this strategy weekly and also used some risk parity style app
     :class: pynb
 
 
-.. code:: python
+.. code:: ipython2
 
     res2.display()
 

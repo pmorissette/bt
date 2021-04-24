@@ -1,5 +1,3 @@
-
-
 SMA Strategy
 ------------
 
@@ -15,11 +13,11 @@ Given the flexibility of **bt**, there is no strict rule. The average calculatio
 
 Now that we know what we have to do, let's get started. First we will download some data and calculate the simple moving average.
 
-.. code:: python
+.. code:: ipython2
 
     import bt
 
-.. code:: python
+.. code:: ipython2
 
     # download data
     data = bt.get('aapl,msft,c,gs,ge', start='2010-01-01')
@@ -32,7 +30,7 @@ Now that we know what we have to do, let's get started. First we will download s
 
 It's always a good idea to plot your data to make sure it looks ok. So let's see how the data + sma plot looks like.
 
-.. code:: python
+.. code:: ipython2
 
     # let's see what the data looks like - this is by no means a pretty chart, but it does the job
     plot = bt.merge(data, sma).plot(figsize=(15, 5))
@@ -52,9 +50,9 @@ Before we do that, let's think about how we will code it. We could pass the SMA 
 
 For example, what if we wanted to select securities that were below their sma? Or what if we only wanted securities that were 5% above their sma?
 
-What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be much faster and much more reusable. Let's see how the implementation looks like.
+What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let's see how the implementation looks like.
 
-.. code:: python
+.. code:: ipython2
 
     class SelectWhere(bt.Algo):
         
@@ -101,7 +99,7 @@ All we have to do now is pass in a signal matrix. In our case, it's quite easy::
 
 Simple, concise and more importantly, fast! Let's move on and test the strategy. 
 
-.. code:: python
+.. code:: ipython2
 
     # first we create the Strategy
     s = bt.Strategy('above50sma', [SelectWhere(data > sma),
@@ -125,7 +123,7 @@ Simple, concise and more importantly, fast! Let's move on and test the strategy.
 
 So just to recap, we created the strategy, created the backtest by joining Strategy+Data, and ran the backtest. Let's see the results.
 
-.. code:: python
+.. code:: ipython2
 
     # what does the equity curve look like?
     res.plot()
@@ -136,7 +134,7 @@ So just to recap, we created the strategy, created the backtest by joining Strat
     :class: pynb
 
 
-.. code:: python
+.. code:: ipython2
 
     # and some performance stats
     res.display()
@@ -208,7 +206,7 @@ Nothing stellar but at least you learnt something along the way (I hope).
 
 Oh, and one more thing. If you were to write your own "library" of backtests, you might want to write yourself a helper function that would allow you to test different parameters and securities. That function might look something like this:
 
-.. code:: python
+.. code:: ipython2
 
     def above_sma(tickers, sma_per=50, start='2010-01-01', name='above_sma'):
         """
@@ -231,7 +229,7 @@ Oh, and one more thing. If you were to write your own "library" of backtests, yo
 
 This function allows us to easily generate backtests. We could easily compare a few different SMA periods. Also, let's see if we can beat a long-only allocation to the SPY.
 
-.. code:: python
+.. code:: ipython2
 
     # simple backtest to test long-only allocation
     def long_only_ew(tickers, start='2010-01-01', name='long_only_ew'):
@@ -266,7 +264,7 @@ This function allows us to easily generate backtests. We could easily compare a 
     0%                          100%
     [############################# ] | ETA: 00:00:00
 
-.. code:: python
+.. code:: ipython2
 
     res2.plot(freq='m')
 
@@ -276,7 +274,7 @@ This function allows us to easily generate backtests. We could easily compare a 
     :class: pynb
 
 
-.. code:: python
+.. code:: ipython2
 
     res2.display()
 
@@ -355,7 +353,7 @@ Basically, when the 50 day moving average will be above the 200-day moving avera
 
 Here's the WeighTarget implementation (this Algo also already exists in the algos module):
 
-.. code:: python
+.. code:: ipython2
 
     class WeighTarget(bt.Algo):
         """
@@ -387,7 +385,7 @@ Here's the WeighTarget implementation (this Algo also already exists in the algo
 
 So let's start with a simple 50-200 day sma crossover for a single security.
 
-.. code:: python
+.. code:: ipython2
 
     ## download some data & calc SMAs
     data = bt.get('spy', start='2010-01-01')
@@ -407,7 +405,7 @@ So let's start with a simple 50-200 day sma crossover for a single security.
 
 Ok so we downloaded our data, calculated the simple moving averages, and then we setup our target weight (tw) DataFrame. Let's take a look at our target weights to see if they make any sense.
 
-.. code:: python
+.. code:: ipython2
 
     # plot the target weights + chart of price & SMAs
     tmp = bt.merge(tw, data, sma50, sma200)
@@ -425,7 +423,7 @@ As mentioned earlier, it's always a good idea to plot your strategy data. It is 
 
 Now let's move on with the Strategy & Backtest. 
 
-.. code:: python
+.. code:: ipython2
 
     ma_cross = bt.Strategy('ma_cross', [WeighTarget(tw),
                                         bt.algos.Rebalance()])
@@ -441,7 +439,7 @@ Now let's move on with the Strategy & Backtest.
     0%                          100%
     [############################# ] | ETA: 00:00:00
 
-.. code:: python
+.. code:: ipython2
 
     res.plot()
 
@@ -463,7 +461,7 @@ The most straightforward way would be to test the different sub-strategies, extr
 
 Let's see how this looks:
 
-.. code:: python
+.. code:: ipython2
 
     # first let's create a helper function to create a ma cross backtest
     def ma_cross(ticker, start='2010-01-01', 
@@ -520,7 +518,7 @@ Let's see how this looks:
     0%                          100%
     [############################# ] | ETA: 00:00:00
 
-.. code:: python
+.. code:: ipython2
 
     res.plot()
 
@@ -530,7 +528,7 @@ Let's see how this looks:
     :class: pynb
 
 
-.. code:: python
+.. code:: ipython2
 
     res.plot_weights()
 
@@ -549,7 +547,7 @@ This means that the parent strategy can use the price information (which reflect
 
 Perhaps some code will help:
 
-.. code:: python
+.. code:: ipython2
 
     # once again, we will create a few backtests
     # these will be the child strategies
@@ -579,7 +577,7 @@ Perhaps some code will help:
     0%                          100%
     [############################# ] | ETA: 00:00:00
 
-.. code:: python
+.. code:: ipython2
 
     res.plot()
 
@@ -589,7 +587,7 @@ Perhaps some code will help:
     :class: pynb
 
 
-.. code:: python
+.. code:: ipython2
 
     res.plot_weights()
 
