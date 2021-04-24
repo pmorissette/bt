@@ -1,4 +1,3 @@
-
 .. code:: ipython2
 
     import bt

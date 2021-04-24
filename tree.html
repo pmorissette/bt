@@ -1,30 +1,17 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>The Tree Structure &#8212; bt 0.2.5 documentation</title>
-    
-    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Tree Structure &#8212; bt 0.2.9 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.2.5',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Examples" href="examples.html" />
@@ -32,13 +19,10 @@
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
-            <link rel="shortcut icon" href="_static/favicon.ico">
-        
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
-  </head>
-  <body role="document">  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -47,30 +31,32 @@
             
   <div class="section" id="the-tree-structure">
 <h1>The Tree Structure<a class="headerlink" href="#the-tree-structure" title="Permalink to this headline">¶</a></h1>
-<p>In addition to the concept of <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">Algos</span></code></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal"><span class="pre">AlgoStacks</span></code></a>, a tree structure lies
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>In addition to the concept of <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgoStacks</span></code></a>, a tree structure lies
 at the heart of the framework.  It allows you to mix and match securities and strategies in order to express
 your sophisticated trading ideas.  Here is a very simple diagram to help explain this concept:</p>
 <img alt="simple tree structure" class="align-center" src="_images/tree1.png" />
-<p>This diagram represents the strategy we tested in the <a class="reference internal" href="index.html"><span class="doc">overview example</span></a>. A simple <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal"><span class="pre">strategy</span></code></a>
-with two children that happen to be <a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal"><span class="pre">securities</span></code></a>. However, children nodes don&#8217;t have to be
+<p>This diagram represents the strategy we tested in the <a class="reference internal" href="index.html"><span class="doc">overview example</span></a>. A simple <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">strategy</span></code></a>
+with two children that happen to be <a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">securities</span></code></a>. However, children nodes don’t have to be
 securities. They can also be strategies. This concept is very powerful as it
 allows you to combine strategies together and allocate capital dynamically
 between different strategies as time progresses using sophisticated allocation
 logic. This is similar to what hedge funds do - they have a portfolio of strategies and dynamically allocate capital
 according to a set of rules.</p>
-<p>For example, say we didn&#8217;t mind having a passive bond allocation (AGG in the
+<p>For example, say we didn’t mind having a passive bond allocation (AGG in the
 above graph), but we wanted to swap out the equity portion (SPY) for something a
 little more sophisticated. In this case, we will swap out the SPY node for another strategy.
 This strategy could be a momentum strategy that attempts to pick the best
-performing ETF every month (to keep it simple, let&#8217;s say it picks either the SPY
+performing ETF every month (to keep it simple, let’s say it picks either the SPY
 or the EEM based on total return over the past 3 months).</p>
 <p>Here is the updated graph:</p>
 <img alt="advanced tree structure" class="align-center" src="_images/tree2.png" />
 <p>This approach allows you to build complex systems even though all of the building
 blocks may be relatively simple. Hopefully you can see how powerful this can be
 when designing and testing quantitative strategies.</p>
-<p>Oh and here&#8217;s the code for the second example - not much more complex:</p>
-<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
+<p>Oh and here’s the code for the second example - not much more complex:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
 
 <span class="c1"># create the momentum strategy - we will specify the children (3rd argument)</span>
 <span class="c1"># to limit the universe the strategy can choose from</span>
@@ -81,25 +67,106 @@ when designing and testing quantitative strategies.</p>
                               <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
                     <span class="p">[</span><span class="s1">&#39;spy&#39;</span><span class="p">,</span> <span class="s1">&#39;eem&#39;</span><span class="p">])</span>
 
-<span class="c1"># create the master strategy - this is the top-most node in the tree</span>
+<span class="c1"># create the parent strategy - this is the top-most node in the tree</span>
 <span class="c1"># Once again, we are also specifying  the children. In this case, one of the</span>
 <span class="c1"># children is a Security and the other is a Strategy.</span>
-<span class="n">master</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;master&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+<span class="n">parent</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;parent&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
                                 <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                                 <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
                                 <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
                     <span class="p">[</span><span class="n">mom_s</span><span class="p">,</span> <span class="s1">&#39;agg&#39;</span><span class="p">])</span>
 
 <span class="c1"># create the backtest and run it</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">master</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">r</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>So there you have it. Please read the rest of the docs to have a better idea of
-all the features packed into bt.</p>
+<p>For even more sophisticated strategies, sub-strategies can be dynamically
+created by constructing them with the appropriate parent argument. The code below
+is equivalent to the example above, but knowledge of the sub-strategy is not
+needed at construction time of the parent:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># create the parent strategy first - this is the top-most node in the tree</span>
+<span class="c1"># To start, there is only one child, which is a Security</span>
+<span class="n">parent</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;parent&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
+                    <span class="p">[</span><span class="s1">&#39;agg&#39;</span><span class="p">])</span>
+
+<span class="c1"># Create the momentum strategy dynamically - we will specify the children</span>
+<span class="c1"># (3rd argument) to limit the universe the strategy can choose from</span>
+<span class="n">mom_s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;mom_s&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectMomentum</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                              <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()],</span>
+                    <span class="p">[</span><span class="s1">&#39;spy&#39;</span><span class="p">,</span> <span class="s1">&#39;eem&#39;</span><span class="p">],</span> <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="p">)</span>
+
+<span class="c1"># create the backtest and run it</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>While this seems like a trivial example, it enables algos to create sub-strategies
+on-the-fly (based on market conditions/triggers) and register them to the target.
+Each of these sub-strategies will have its own algos and performance measurement.</p>
+</div>
+<div class="section" id="types">
+<h2>Types<a class="headerlink" href="#types" title="Permalink to this headline">¶</a></h2>
+<p>The base class for nodes in the tree is <a class="reference internal" href="bt.html#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></a>, and these
+can be either of type <a class="reference internal" href="bt.html#bt.core.StrategyBase" title="bt.core.StrategyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StrategyBase</span></code></a> or
+<a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecurityBase</span></code></a>.</p>
+<p>Each node offers an interface to the <strong>current values</strong> of many quantities of
+interest (price, value, weight, etc), which is useful for building Algos.
+Furthermore, they also offer an interface to the <strong>history</strong> of these quantities,
+which is useful for building <strong>path-dependent</strong> algos as well as for drilling
+into the strategy behavior <em>after</em> the backtest has run.</p>
+<p>For more information, see the APIs for <a class="reference internal" href="bt.html#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></a>,
+<a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecurityBase</span></code></a> and <a class="reference internal" href="bt.html#bt.core.StrategyBase" title="bt.core.StrategyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StrategyBase</span></code></a>.</p>
+<dl class="simple">
+<dt>There are two main sub-types of <a class="reference internal" href="bt.html#bt.core.StrategyBase" title="bt.core.StrategyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StrategyBase</span></code></a>:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a>: Market-value weighted strategy based on
+<a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="bt.html#bt.core.FixedIncomeStrategy" title="bt.core.FixedIncomeStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FixedIncomeStrategy</span></code></a>: Notional weighted
+strategy based on <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt>There are also two main sub-types of <a class="reference internal" href="bt.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecurityBase</span></code></a>:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="bt.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a>: Standard security. If used within a
+<a class="reference internal" href="bt.html#bt.core.FixedIncomeStrategy" title="bt.core.FixedIncomeStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FixedIncomeStrategy</span></code></a>, its notional weight
+is equal to market value. i.e. common stock.</p></li>
+<li><p><a class="reference internal" href="bt.html#bt.core.CouponPayingSecurity" title="bt.core.CouponPayingSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CouponPayingSecurity</span></code></a>: A security that
+pays regular or irregular cashflows, and can have (asymmetric) holding costs.
+i.e. a corporate bond with funding and repo costs, or an unfunded swap.</p></li>
+</ul>
+</dd>
+</dl>
+<p>When using <a class="reference internal" href="bt.html#bt.core.FixedIncomeStrategy" title="bt.core.FixedIncomeStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FixedIncomeStrategy</span></code></a>,
+there are additional security types that are helpful due to the different
+treatment of their notional weight in the portfolio. These have no effect in a standard
+<a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a>.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="bt.html#bt.core.FixedIncomeSecurity" title="bt.core.FixedIncomeSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">FixedIncomeSecurity</span></code></a>: A
+<a class="reference internal" href="bt.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a> for which position (rather than market value)
+will be used as the notional weight, i.e. a zero-coupon bond.</p></li>
+<li><p><a class="reference internal" href="bt.html#bt.core.HedgeSecurity" title="bt.core.HedgeSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">HedgeSecurity</span></code></a>: A <a class="reference internal" href="bt.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a>
+for which the notional weight is zero, i.e. an ETF hedge in a bond strategy.</p></li>
+<li><p><a class="reference internal" href="bt.html#bt.core.CouponPayingHedgeSecurity" title="bt.core.CouponPayingHedgeSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CouponPayingHedgeSecurity</span></code></a>:
+A <a class="reference internal" href="bt.html#bt.core.CouponPayingSecurity" title="bt.core.CouponPayingSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CouponPayingSecurity</span></code></a>
+for which the notional weight is zero, i.e. a rates swap hedge in a CDS strategy.</p></li>
+</ul>
+</div></blockquote>
+<p>As in the examples, a list of strings can be passed to the strategy constructors,
+which will be automatically converted to instances of <a class="reference internal" href="bt.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a>
+when needed. For more fine-grained control over which security types are used
+(or over other arguments like the <code class="docutils literal notranslate"><span class="pre">`multiplier`</span></code>), explicitly construct the
+security nodes yourself before passing them to the strategy.</p>
+</div>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -119,7 +186,11 @@ all the features packed into bt.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#"> The Tree Structure</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"> The Tree Structure</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#types">Types</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
 </ul>
@@ -131,15 +202,15 @@ all the features packed into bt.</p>
             </ul>
             
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </aside>
     
       <div class="clearer"></div>

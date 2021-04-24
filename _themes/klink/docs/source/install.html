@@ -1,42 +1,26 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Installation Guide &#8212; bt 0.2.5 documentation</title>
-    
-    <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installation Guide &#8212; bt 0.2.9 documentation</title>
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../../',
-        VERSION:     '0.2.5',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
-            <link rel="shortcut icon" href="../../../../_static/favicon.ico">
-        
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
-  </head>
-  <body role="document">  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -48,15 +32,15 @@
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>Assuming you have pip installed:</p>
-<div class="code sh highlight-default"><div class="highlight"><pre><span></span>$ pip install klink
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ pip install klink
 </pre></div>
 </div>
-<p>That&#8217;s it.</p>
+<p>That’s it.</p>
 </div>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>In your docs&#8217; <strong>conf.py</strong> file, add the following:</p>
-<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">klink</span>
+<p>In your docs’ <strong>conf.py</strong> file, add the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">klink</span>
 
 <span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;klink&#39;</span>
 <span class="n">html_theme_path</span> <span class="p">[</span><span class="n">klink</span><span class="o">.</span><span class="n">get_html_theme_path</span><span class="p">()]</span>
@@ -72,14 +56,14 @@ IPython Notebook into a .rst file. It basically converts the Notebook to .rst
 and copies the static data (images, etc) to your _static dir.</p>
 <p>If you have IPython Notebooks that you would like to integrate, use the
 following code to your <strong>conf.py</strong>:</p>
-<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">klink</span><span class="o">.</span><span class="n">convert_notebooks</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">klink</span><span class="o">.</span><span class="n">convert_notebooks</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Once the conversion is done, you will have a .rst file with the same name as
 each one of your notebooks.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Place your notebooks in your docs&#8217; source dir. <strong>Do not</strong> give them the same
+<p class="admonition-title">Note</p>
+<p>Place your notebooks in your docs’ source dir. <strong>Do not</strong> give them the same
 name as another reST file as this file will be <strong>overwriiten</strong> when you call
 klink.convert_notebooks.</p>
 </div>
@@ -90,14 +74,14 @@ docs.</p>
 <h2>Customization<a class="headerlink" href="#customization" title="Permalink to this headline">¶</a></h2>
 <p>Obviously, some of you will want to customize the theme. The easiest way to
 achieve this is to clone the repo into your _themes folder (create it if it does
-not exist in your docs&#8217; source dir). To change the style, I recommend editing
+not exist in your docs’ source dir). To change the style, I recommend editing
 the LESS files themselves. You will also need lessc to convert from less to css.
 See the css command in the Makefile for an example.</p>
 <p>You may also want to explore the option of using <strong>git subtree</strong>. Here is a good
 <a class="reference external" href="http://makingsoftware.wordpress.com/2013/02/16/using-git-subtrees-for-repository-separation/">intro tutorial</a>.</p>
 <p>You will also need to change your conf.py file. The following settings should
 work:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;klink&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;klink&#39;</span>
 <span class="n">html_theme_path</span> <span class="p">[</span><span class="s1">&#39;_themes&#39;</span><span class="p">]</span>
 <span class="n">html_theme_options</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;github&#39;</span><span class="p">:</span> <span class="s1">&#39;yourname/yourrepo&#39;</span><span class="p">,</span>
@@ -110,6 +94,7 @@ work:</p>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -135,15 +120,15 @@ work:</p>
             </ul>
             
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </aside>
     
       <div class="clearer"></div>

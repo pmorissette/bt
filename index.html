@@ -1,43 +1,27 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>bt - Flexible Backtesting for Python &#8212; bt 0.2.5 documentation</title>
-    
-    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bt - Flexible Backtesting for Python &#8212; bt 0.2.9 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.2.5',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Getting Started" href="install.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
-            <link rel="shortcut icon" href="_static/favicon.ico">
-        
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
-  </head>
-  <body role="document">  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -51,7 +35,7 @@
 <p><strong>bt</strong> is a flexible backtesting framework for Python used to test quantitative
 trading strategies. <strong>Backtesting</strong> is the process of testing a strategy over a given
 data set. This framework allows you to easily create strategies that mix and match
-different <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">Algos</span></code></a>. It aims to foster the creation of easily testable, re-usable and
+different <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>. It aims to foster the creation of easily testable, re-usable and
 flexible blocks of strategy logic to facilitate the rapid development of complex
 trading strategies.</p>
 <p>The goal: to save <strong>quants</strong> from re-inventing the wheel and let them focus on the
@@ -59,25 +43,25 @@ important part of the job - strategy development.</p>
 <p><strong>bt</strong> is coded in <strong>Python</strong> and joins a vibrant and rich ecosystem for data analysis.
 Numerous libraries exist for machine learning, signal processing and statistics and can be leveraged to avoid
 re-inventing the wheel - something that happens all too often when using other
-languages that don&#8217;t have the same wealth of high-quality, open-source projects.</p>
+languages that don’t have the same wealth of high-quality, open-source projects.</p>
 <p>bt is built atop <a class="reference external" href="https://github.com/pmorissette/ffn">ffn</a> - a financial function library for Python. Check it out!</p>
 </div>
 <div class="section" id="a-quick-example">
 <h2>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h2>
 <p>Here is a quick taste of bt:</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
 </pre></div>
 </div>
 <div class="section" id="a-simple-strategy-backtest">
 <h3>A Simple Strategy Backtest<a class="headerlink" href="#a-simple-strategy-backtest" title="Permalink to this headline">¶</a></h3>
-<p>Let&#8217;s create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.</p>
-<p>First, we will download some data. By default, <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.data.get" title="(in ffn v0.2.2)"><code class="xref py py-func docutils literal"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></code></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># fetch some data</span>
+<p>Let’s create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.</p>
+<p>First, we will download some data. By default, <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.data.get" title="(in ffn v0.3.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></code></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fetch some data</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spy,agg&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">)</span>
 <span class="nb">print</span> <span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span>                  <span class="n">spy</span>        <span class="n">agg</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span>                  <span class="n">spy</span>        <span class="n">agg</span>
 <span class="n">Date</span>
 <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">04</span>  <span class="mf">98.214371</span>  <span class="mf">84.963075</span>
 <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">05</span>  <span class="mf">98.474354</span>  <span class="mf">85.349609</span>
@@ -86,37 +70,37 @@ languages that don&#8217;t have the same wealth of high-quality, open-source pro
 <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">08</span>  <span class="mf">99.288981</span>  <span class="mf">85.250923</span>
 </pre></div>
 </div>
-<p>Once we have our data, we will create our strategy. The <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal"><span class="pre">Strategy</span></code></a> object contains the strategy logic by combining various <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">Algos</span></code></a>.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># create the strategy</span>
+<p>Once we have our data, we will create our strategy. The <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a> object contains the strategy logic by combining various <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create the strategy</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s1&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
 </pre></div>
 </div>
-<p>Finally, we will create a <a class="reference internal" href="bt.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal"><span class="pre">Backtest</span></code></a>, which is the logical combination of a strategy with a data set.</p>
+<p>Finally, we will create a <a class="reference internal" href="bt.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backtest</span></code></a>, which is the logical combination of a strategy with a data set.</p>
 <p>Once this is done, we can run the backtest and analyze the results.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># create a backtest and run it</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a backtest and run it</span>
 <span class="n">test</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">s1</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">s1</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<p>Now we can analyze the results of our backtest. The <a class="reference internal" href="bt.html#bt.backtest.Result" title="bt.backtest.Result"><code class="xref py py-class docutils literal"><span class="pre">Result</span></code></a> object is a thin wrapper around <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats">ffn.GroupStats</a> that adds some helper methods.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s see an equity curve</span>
+<p>Now we can analyze the results of our backtest. The <a class="reference internal" href="bt.html#bt.backtest.Result" title="bt.backtest.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object is a thin wrapper around <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats">ffn.GroupStats</a> that adds some helper methods.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s see an equity curve</span>
 <span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/intro_8_0.png" class="pynb" src="_images/intro_8_0.png" />
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># ok and what about some stats?</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and what about some stats?</span>
 <span class="n">res</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">s1</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">s1</span>
 <span class="o">-------------------</span>  <span class="o">----------</span>
 <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
 <span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
@@ -174,12 +158,12 @@ languages that don&#8217;t have the same wealth of high-quality, open-source pro
 <span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">96.00</span><span class="o">%</span>
 </pre></div>
 </div>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># ok and how does the return distribution look like?</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and how does the return distribution look like?</span>
 <span class="n">res</span><span class="o">.</span><span class="n">plot_histogram</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/intro_10_0.png" class="pynb" src="_images/intro_10_0.png" />
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># and just to make sure everything went along as planned, let&#39;s plot the security weights over time</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># and just to make sure everything went along as planned, let&#39;s plot the security weights over time</span>
 <span class="n">res</span><span class="o">.</span><span class="n">plot_security_weights</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -187,8 +171,8 @@ languages that don&#8217;t have the same wealth of high-quality, open-source pro
 </div>
 <div class="section" id="modifying-a-strategy">
 <h3>Modifying a Strategy<a class="headerlink" href="#modifying-a-strategy" title="Permalink to this headline">¶</a></h3>
-<p>Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset&#8217;s volatility? Well, all we have to do is plug in some different algos. See below:</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># create our new strategy</span>
+<p>Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset’s volatility? Well, all we have to do is plug in some different algos. See below:</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create our new strategy</span>
 <span class="n">s2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s2&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunWeekly</span><span class="p">(),</span>
                         <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                         <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
@@ -202,16 +186,16 @@ languages that don&#8217;t have the same wealth of high-quality, open-source pro
 <span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">s2</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">s2</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
 <img alt="_images/intro_13_1.png" class="pynb" src="_images/intro_13_1.png" />
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">s1</span>          <span class="n">s2</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">s1</span>          <span class="n">s2</span>
 <span class="o">-------------------</span>  <span class="o">----------</span>  <span class="o">----------</span>
 <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
 <span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
@@ -277,33 +261,47 @@ core building blocks of bt.</p>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt><strong>Tree Structure</strong></dt>
-<dd><a class="reference internal" href="tree.html"><span class="doc">The tree structure</span></a> facilitates the construction and composition of complex algorithmic trading
-strategies that are modular and re-usable. Furthermore, each tree <a class="reference internal" href="bt.html#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal"><span class="pre">Node</span></code></a>
-has its own <a class="reference internal" href="bt.html#bt.core.Node.prices" title="bt.core.Node.prices"><code class="xref py py-func docutils literal"><span class="pre">price</span> <span class="pre">index</span></code></a> that can be
-used by Algos to determine a Node&#8217;s allocation.</dd>
+<li><dl class="simple">
+<dt><strong>Tree Structure</strong></dt><dd><p><a class="reference internal" href="tree.html"><span class="doc">The tree structure</span></a> facilitates the construction and composition of complex algorithmic trading
+strategies that are modular and re-usable. Furthermore, each tree <a class="reference internal" href="bt.html#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></a>
+has its own <a class="reference internal" href="bt.html#bt.core.Node.prices" title="bt.core.Node.prices"><code class="xref py py-func docutils literal notranslate"><span class="pre">price</span> <span class="pre">index</span></code></a> that can be
+used by Algos to determine a Node’s allocation.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><strong>Algorithm Stacks</strong></dt>
-<dd><a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal"><span class="pre">Algos</span></code></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal"><span class="pre">AlgoStacks</span></code></a> are
+<li><dl class="simple">
+<dt><strong>Algorithm Stacks</strong></dt><dd><p><a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgoStacks</span></code></a> are
 another core feature that facilitate the creation of modular and re-usable strategy
 logic. Due to their modularity, these logic blocks are also easier to test -
-an important step in building robust financial solutions.</dd>
+an important step in building robust financial solutions.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><strong>Charting and Reporting</strong></dt>
-<dd>bt also provides many useful charting functions that help visualize backtest
+<li><dl class="simple">
+<dt><strong>Transaction Cost Modeling</strong></dt><dd><p>Through the use of a commission function and instrument-specific, time-varying
+bid/offer spreads passed to the
+<a class="reference internal" href="bt.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backtest</span></code></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Fixed Income</strong></dt><dd><p>Strategies can include coupon-paying instruments such as bonds,
+unfunded instruments such as swaps, holding costs, and the option for notional weighting.
+These are extensions of <a class="reference internal" href="tree.html"><span class="doc">the tree structure</span></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Charting and Reporting</strong></dt><dd><p>bt also provides many useful charting functions that help visualize backtest
 results. We also plan to add more charts, tables and report formats in the future,
-such as automatically generated PDF reports.</dd>
+such as automatically generated PDF reports.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><strong>Detailed Statistics</strong></dt>
-<dd>Furthermore, bt calculates a bunch of stats relating to a backtest and offers a quick way to compare
-these various statistics across many different backtests via <code class="xref py py-class docutils literal"><span class="pre">Results'</span></code> display methods.</dd>
+<li><dl class="simple">
+<dt><strong>Detailed Statistics</strong></dt><dd><p>Furthermore, bt calculates a bunch of stats relating to a backtest and offers a quick way to compare
+these various statistics across many different backtests via <code class="xref py py-class docutils literal notranslate"><span class="pre">Results'</span></code> display methods.</p>
+</dd>
 </dl>
 </li>
 </ul>
@@ -312,24 +310,24 @@ these various statistics across many different backtests via <code class="xref p
 <h2>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this headline">¶</a></h2>
 <p>Future development efforts will focus on:</p>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt><strong>Speed</strong></dt>
-<dd>Due to the flexible nature of bt, a trade-off had to be made between
+<li><dl class="simple">
+<dt><strong>Speed</strong></dt><dd><p>Due to the flexible nature of bt, a trade-off had to be made between
 usability and performance. Usability will always be the priority, but we do
-wish to enhance the performance as much as possible.</dd>
+wish to enhance the performance as much as possible.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><strong>Algos</strong></dt>
-<dd>We will also be developing more algorithms as time goes on. We also
-encourage anyone to contribute their own algos as well.</dd>
+<li><dl class="simple">
+<dt><strong>Algos</strong></dt><dd><p>We will also be developing more algorithms as time goes on. We also
+encourage anyone to contribute their own algos as well.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt><strong>Charting and Reporting</strong></dt>
-<dd>This is another area we wish to constantly improve on
+<li><dl class="simple">
+<dt><strong>Charting and Reporting</strong></dt><dd><p>This is another area we wish to constantly improve on
 as reporting is an important aspect of the job. Charting and reporting also
-facilitate finding bugs in strategy logic.</dd>
+facilitate finding bugs in strategy logic.</p>
+</dd>
 </dl>
 </li>
 </ul>
@@ -351,9 +349,14 @@ facilitate finding bugs in strategy logic.</dd>
 <li class="toctree-l2"><a class="reference internal" href="algos.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="algos.html#data-passing">Data Passing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="algos.html#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="algos.html#best-practices">Best Practices</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tree.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tree.html#types">Types</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#sma-strategy">SMA Strategy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#sma-crossover-strategy">SMA Crossover Strategy</a></li>
@@ -361,10 +364,10 @@ facilitate finding bugs in strategy logic.</dd>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#id1"><code class="docutils literal"><span class="pre">bt</span></code> Package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.algos"><code class="docutils literal"><span class="pre">algos</span></code> Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.backtest"><code class="docutils literal"><span class="pre">backtest</span></code> Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.core"><code class="docutils literal"><span class="pre">core</span></code> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bt.html#id1"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bt</span></code> Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.algos"><code class="xref py py-mod docutils literal notranslate"><span class="pre">algos</span></code> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.backtest"><code class="xref py py-mod docutils literal notranslate"><span class="pre">backtest</span></code> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.core"><code class="xref py py-mod docutils literal notranslate"><span class="pre">core</span></code> Module</a></li>
 </ul>
 </li>
 </ul>
@@ -373,6 +376,7 @@ facilitate finding bugs in strategy logic.</dd>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -404,15 +408,15 @@ facilitate finding bugs in strategy logic.</dd>
             </ul>
             
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </aside>
     
       <div class="clearer"></div>

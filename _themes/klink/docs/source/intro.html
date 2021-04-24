@@ -1,42 +1,26 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>A Quick Example &#8212; bt 0.2.5 documentation</title>
-    
-    <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A Quick Example &#8212; bt 0.2.9 documentation</title>
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../../',
-        VERSION:     '0.2.5',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
-            <link rel="shortcut icon" href="../../../../_static/favicon.ico">
-        
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
-  </head>
-  <body role="document">  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -48,33 +32,33 @@
 <p>Here is a quick example of what it looks like. I am writing this in my
 notebook file by the way (using a Mardown cell).</p>
 <p>Here is some code + output:</p>
-<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="c1"># have to comment out the magic IPython functions because of a bug</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># have to comment out the magic IPython functions because of a bug</span>
 <span class="c1">#%pylab inline</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 </pre></div>
 </div>
-<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="nb">print</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="o">-</span><span class="mf">0.81256785</span> <span class="o">-</span><span class="mf">1.16630768</span>  <span class="mf">0.27555802</span>  <span class="mf">0.57729188</span> <span class="o">-</span><span class="mf">0.64691411</span>  <span class="mf">0.62288591</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="o">-</span><span class="mf">0.81256785</span> <span class="o">-</span><span class="mf">1.16630768</span>  <span class="mf">0.27555802</span>  <span class="mf">0.57729188</span> <span class="o">-</span><span class="mf">0.64691411</span>  <span class="mf">0.62288591</span>
   <span class="mf">0.27943851</span>  <span class="mf">0.10512695</span>  <span class="mf">0.23808598</span> <span class="o">-</span><span class="mf">1.45293996</span> <span class="o">-</span><span class="mf">0.24394825</span> <span class="o">-</span><span class="mf">0.14631097</span>
   <span class="mf">1.56377514</span> <span class="o">-</span><span class="mf">0.87629984</span>  <span class="mf">1.64059433</span> <span class="o">-</span><span class="mf">0.10259616</span>  <span class="mf">0.84435183</span>  <span class="mf">0.11718899</span>
  <span class="o">-</span><span class="mf">0.66617413</span> <span class="o">-</span><span class="mf">0.81800771</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">AxesSubplot</span> <span class="n">at</span> <span class="mh">0x7f28246381d0</span><span class="o">&gt;</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">AxesSubplot</span> <span class="n">at</span> <span class="mh">0x7f28246381d0</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 <img alt="../../../../_images/intro_3_1.png" class="pynb" src="../../../../_images/intro_3_1.png" />
 <div class="section" id="raw-nbconvert-cells">
 <h2>Raw NBConvert Cells<a class="headerlink" href="#raw-nbconvert-cells" title="Permalink to this headline">¶</a></h2>
-<p>In addition to markdown cells, you may also use <strong>Raw NBConvert</strong> cells. This allows you to input reST directly in your notebook. It won&#8217;t look as pretty in the notebook itself, but will work great for your docs. Special reST and Sphinx markup will work within a Raw NBConvert (link, code markup, etc.).</p>
-<p>By the way, <a class="reference internal" href="klink.html#klink.__init__.convert_notebooks" title="klink.__init__.convert_notebooks"><code class="xref py py-func docutils literal"><span class="pre">convert_notebooks</span></code></a> basically calls:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ipython</span> <span class="n">nbconvert</span> <span class="o">--</span><span class="n">to</span> <span class="n">rst</span>
+<p>In addition to markdown cells, you may also use <strong>Raw NBConvert</strong> cells. This allows you to input reST directly in your notebook. It won’t look as pretty in the notebook itself, but will work great for your docs. Special reST and Sphinx markup will work within a Raw NBConvert (link, code markup, etc.).</p>
+<p>By the way, <a class="reference internal" href="klink.html#klink.__init__.convert_notebooks" title="klink.__init__.convert_notebooks"><code class="xref py py-func docutils literal notranslate"><span class="pre">convert_notebooks</span></code></a> basically calls:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ipython</span> <span class="n">nbconvert</span> <span class="o">--</span><span class="n">to</span> <span class="n">rst</span>
 </pre></div>
 </div>
 <p>on all the notebooks it finds. It also handles special cases and adds special css classes for display formatting purposes. If you plan on using IPython Notebook integration, you will need an up-to-date version of <a class="reference external" href="http://johnmacfarlane.net/pandoc/">pandoc</a> for this to work properly.</p>
@@ -82,6 +66,7 @@ notebook file by the way (using a Mardown cell).</p>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -107,15 +92,15 @@ notebook file by the way (using a Mardown cell).</p>
             </ul>
             
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </aside>
     
       <div class="clearer"></div>

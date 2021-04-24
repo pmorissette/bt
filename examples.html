@@ -1,30 +1,17 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Examples &#8212; bt 0.2.5 documentation</title>
-    
-    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Examples &#8212; bt 0.2.9 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.2.5',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="bt Package" href="bt.html" />
@@ -32,13 +19,10 @@
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
-            <link rel="shortcut icon" href="_static/favicon.ico">
-        
         <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
         <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
     
-  </head>
-  <body role="document">  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -50,19 +34,19 @@
 <p>Here are a few examples to give you a better idea of what <strong>bt</strong> is all about.</p>
 <div class="section" id="sma-strategy">
 <h2>SMA Strategy<a class="headerlink" href="#sma-strategy" title="Permalink to this headline">¶</a></h2>
-<p>Let&#8217;s start off with a Simple Moving Average (SMA) strategy. We will start with a simple version of the strategy, namely:</p>
+<p>Let’s start off with a Simple Moving Average (SMA) strategy. We will start with a simple version of the strategy, namely:</p>
 <ul class="simple">
-<li><strong>Select</strong> the securities that are currently above their 50 day moving average</li>
-<li><strong>Weigh</strong> each selected security equally</li>
-<li><strong>Rebalance</strong> the portfolio to reflect the target weights</li>
+<li><p><strong>Select</strong> the securities that are currently above their 50 day moving average</p></li>
+<li><p><strong>Weigh</strong> each selected security equally</p></li>
+<li><p><strong>Rebalance</strong> the portfolio to reflect the target weights</p></li>
 </ul>
 <p>This should be pretty simple to build. The only thing missing above is the calculation of the simple moving average. When should this take place?</p>
 <p>Given the flexibility of <strong>bt</strong>, there is no strict rule. The average calculation could be performed in an Algo, but that would be pretty inefficient. A better way would be to calculate the moving average at the beginning - before starting the backtest. After all, all the data is known in advance.</p>
-<p>Now that we know what we have to do, let&#8217;s get started. First we will download some data and calculate the simple moving average.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
+<p>Now that we know what we have to do, let’s get started. First we will download some data and calculate the simple moving average.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
 </pre></div>
 </div>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># download data</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># download data</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;aapl,msft,c,gs,ge&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">)</span>
 
 <span class="c1"># calculate moving average DataFrame using pandas&#39; rolling_mean</span>
@@ -71,18 +55,18 @@
 <span class="n">sma</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>It&#8217;s always a good idea to plot your data to make sure it looks ok. So let&#8217;s see how the data + sma plot looks like.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># let&#39;s see what the data looks like - this is by no means a pretty chart, but it does the job</span>
+<p>It’s always a good idea to plot your data to make sure it looks ok. So let’s see how the data + sma plot looks like.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># let&#39;s see what the data looks like - this is by no means a pretty chart, but it does the job</span>
 <span class="n">plot</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sma</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_4_0.png" class="pynb" src="_images/examples-nb_4_0.png" />
 <p>Looks legit.</p>
-<p>Now that we have our data, we will need to create our security selection logic. Let&#8217;s create a basic Algo that will select the securities that are above their moving average.</p>
-<p>Before we do that, let&#8217;s think about how we will code it. We could pass the SMA data and then extract the row (from the sma DataFrame) on the current date, compare the values to the current prices, and then keep a list of those securities where the price is above the SMA. This is the most straightforward approach. However, this is not very re-usable because the logic within the Algo will be quite specific to the task at hand and if we wish to change the logic, we will have to write a new algo.</p>
+<p>Now that we have our data, we will need to create our security selection logic. Let’s create a basic Algo that will select the securities that are above their moving average.</p>
+<p>Before we do that, let’s think about how we will code it. We could pass the SMA data and then extract the row (from the sma DataFrame) on the current date, compare the values to the current prices, and then keep a list of those securities where the price is above the SMA. This is the most straightforward approach. However, this is not very re-usable because the logic within the Algo will be quite specific to the task at hand and if we wish to change the logic, we will have to write a new algo.</p>
 <p>For example, what if we wanted to select securities that were below their sma? Or what if we only wanted securities that were 5% above their sma?</p>
-<p>What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let&#8217;s see how the implementation looks like.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SelectWhere</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+<p>What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let’s see how the implementation looks like.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SelectWhere</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Selects securities based on an indicator DataFrame.</span>
@@ -96,13 +80,13 @@
 <span class="sd">        * selected</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="c1"># get signal on target.now</span>
         <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+            <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
 
             <span class="c1"># get indices where true as list</span>
             <span class="n">selected</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">sig</span><span class="p">])</span>
@@ -116,16 +100,16 @@
 </div>
 <p>So there we have it. Our selection Algo.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">By the way, this Algo already exists - I just wanted to show you how you would code it from scratch.
-<a class="reference internal" href="bt.html#bt.algos.SelectWhere" title="bt.algos.SelectWhere"><code class="xref py py-class docutils literal"><span class="pre">Here</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">code</span></code></a>.</p>
+<p class="admonition-title">Note</p>
+<p>By the way, this Algo already exists - I just wanted to show you how you would code it from scratch.
+<a class="reference internal" href="bt.html#bt.algos.SelectWhere" title="bt.algos.SelectWhere"><code class="xref py py-class docutils literal notranslate"><span class="pre">Here</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">code</span></code></a>.</p>
 </div>
-<p>All we have to do now is pass in a signal matrix. In our case, it&#8217;s quite easy:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">signal</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span>
+<p>All we have to do now is pass in a signal matrix. In our case, it’s quite easy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">signal</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span>
 </pre></div>
 </div>
-<p>Simple, concise and more importantly, fast! Let&#8217;s move on and test the strategy.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># first we create the Strategy</span>
+<p>Simple, concise and more importantly, fast! Let’s move on and test the strategy.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># first we create the Strategy</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;above50sma&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">),</span>
                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
                                <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
@@ -137,22 +121,22 @@
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">above50sma</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">above50sma</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<p>So just to recap, we created the strategy, created the backtest by joining Strategy+Data, and ran the backtest. Let&#8217;s see the results.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># what does the equity curve look like?</span>
+<p>So just to recap, we created the strategy, created the backtest by joining Strategy+Data, and ran the backtest. Let’s see the results.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># what does the equity curve look like?</span>
 <span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_10_0.png" class="pynb" src="_images/examples-nb_10_0.png" />
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># and some performance stats</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># and some performance stats</span>
 <span class="n">res</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">above50sma</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">above50sma</span>
 <span class="o">-------------------</span>  <span class="o">------------</span>
 <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
 <span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
@@ -211,8 +195,8 @@
 </pre></div>
 </div>
 <p>Nothing stellar but at least you learnt something along the way (I hope).</p>
-<p>Oh, and one more thing. If you were to write your own &#8220;library&#8221; of backtests, you might want to write yourself a helper function that would allow you to test different parameters and securities. That function might look something like this:</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;above_sma&#39;</span><span class="p">):</span>
+<p>Oh, and one more thing. If you were to write your own “library” of backtests, you might want to write yourself a helper function that would allow you to test different parameters and securities. That function might look something like this:</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">above_sma</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">sma_per</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;above_sma&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Long securities that are above their n period</span>
 <span class="sd">    Simple Moving Averages with equal weights.</span>
@@ -231,8 +215,8 @@
     <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This function allows us to easily generate backtests. We could easily compare a few different SMA periods. Also, let&#8217;s see if we can beat a long-only allocation to the SPY.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># simple backtest to test long-only allocation</span>
+<p>This function allows us to easily generate backtests. We could easily compare a few different SMA periods. Also, let’s see if we can beat a long-only allocation to the SPY.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># simple backtest to test long-only allocation</span>
 <span class="k">def</span> <span class="nf">long_only_ew</span><span class="p">(</span><span class="n">tickers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;long_only_ew&#39;</span><span class="p">):</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunOnce</span><span class="p">(),</span>
                            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
@@ -252,7 +236,7 @@
 <span class="n">res2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">sma10</span><span class="p">,</span> <span class="n">sma20</span><span class="p">,</span> <span class="n">sma40</span><span class="p">,</span> <span class="n">benchmark</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">sma10</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sma10</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00sma20</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
@@ -263,14 +247,14 @@
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_16_0.png" class="pynb" src="_images/examples-nb_16_0.png" />
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">sma10</span>       <span class="n">sma20</span>       <span class="n">sma40</span>       <span class="n">spy</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">sma10</span>       <span class="n">sma20</span>       <span class="n">sma40</span>       <span class="n">spy</span>
 <span class="o">-------------------</span>  <span class="o">----------</span>  <span class="o">----------</span>  <span class="o">----------</span>  <span class="o">----------</span>
 <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
 <span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
@@ -328,14 +312,14 @@
 <span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">62.67</span><span class="o">%</span>      <span class="mf">62.67</span><span class="o">%</span>      <span class="mf">72.00</span><span class="o">%</span>      <span class="mf">92.00</span><span class="o">%</span>
 </pre></div>
 </div>
-<p>And there you have it. Beating the market ain&#8217;t that easy!</p>
+<p>And there you have it. Beating the market ain’t that easy!</p>
 </div>
 <div class="section" id="sma-crossover-strategy">
 <h2>SMA Crossover Strategy<a class="headerlink" href="#sma-crossover-strategy" title="Permalink to this headline">¶</a></h2>
-<p>Let&#8217;s build on the last section to test a moving average crossover strategy. The easiest way to achieve this is to build an Algo similar to SelectWhere, but for the purpose of setting target weights. Let&#8217;s call this algo WeighTarget. This algo will take a DataFrame of target weights that we will pre-calculate.</p>
+<p>Let’s build on the last section to test a moving average crossover strategy. The easiest way to achieve this is to build an Algo similar to SelectWhere, but for the purpose of setting target weights. Let’s call this algo WeighTarget. This algo will take a DataFrame of target weights that we will pre-calculate.</p>
 <p>Basically, when the 50 day moving average will be above the 200-day moving average, we will be long (+1 target weight). Conversely, when the 50 is below the 200, we will be short (-1 target weight).</p>
-<p>Here&#8217;s the WeighTarget implementation (this Algo also already exists in the algos module):</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">WeighTarget</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+<p>Here’s the WeighTarget implementation (this Algo also already exists in the algos module):</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">WeighTarget</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets target weights based on a target weight DataFrame.</span>
 
@@ -347,13 +331,13 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tw</span> <span class="o">=</span> <span class="n">target_weights</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="c1"># get target weights on date target.now</span>
         <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tw</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
 
             <span class="c1"># save in temp - this will be used by the weighing algo</span>
             <span class="c1"># also dropping any na&#39;s just in case they pop up</span>
@@ -363,8 +347,8 @@
         <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 </div>
-<p>So let&#8217;s start with a simple 50-200 day sma crossover for a single security.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1">## download some data &amp; calc SMAs</span>
+<p>So let’s start with a simple 50-200 day sma crossover for a single security.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1">## download some data &amp; calc SMAs</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spy&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">)</span>
 <span class="n">sma50</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 <span class="n">sma200</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -380,29 +364,29 @@
 <span class="n">tw</span><span class="p">[</span><span class="n">sma200</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span> <span class="o">=</span> <span class="mf">0.0</span>
 </pre></div>
 </div>
-<p>Ok so we downloaded our data, calculated the simple moving averages, and then we setup our target weight (tw) DataFrame. Let&#8217;s take a look at our target weights to see if they make any sense.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># plot the target weights + chart of price &amp; SMAs</span>
+<p>Ok so we downloaded our data, calculated the simple moving averages, and then we setup our target weight (tw) DataFrame. Let’s take a look at our target weights to see if they make any sense.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot the target weights + chart of price &amp; SMAs</span>
 <span class="n">tmp</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sma50</span><span class="p">,</span> <span class="n">sma200</span><span class="p">)</span>
 <span class="n">tmp</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tw&#39;</span><span class="p">,</span> <span class="s1">&#39;price&#39;</span><span class="p">,</span> <span class="s1">&#39;sma50&#39;</span><span class="p">,</span> <span class="s1">&#39;sma200&#39;</span><span class="p">]</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="n">secondary_y</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;tw&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_24_0.png" class="pynb" src="_images/examples-nb_24_0.png" />
-<p>As mentioned earlier, it&#8217;s always a good idea to plot your strategy data. It is usually easier to spot logic/programming errors this way, especially when dealing with lots of data.</p>
-<p>Now let&#8217;s move on with the Strategy &amp; Backtest.</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">ma_cross</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;ma_cross&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">WeighTarget</span><span class="p">(</span><span class="n">tw</span><span class="p">),</span>
+<p>As mentioned earlier, it’s always a good idea to plot your strategy data. It is usually easier to spot logic/programming errors this way, especially when dealing with lots of data.</p>
+<p>Now let’s move on with the Strategy &amp; Backtest.</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">ma_cross</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;ma_cross&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">WeighTarget</span><span class="p">(</span><span class="n">tw</span><span class="p">),</span>
                                     <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">ma_cross</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">ma_cross</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ma_cross</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_27_0.png" class="pynb" src="_images/examples-nb_27_0.png" />
@@ -411,9 +395,9 @@
 <div class="section" id="exploring-the-tree-structure">
 <h2>Exploring the Tree Structure<a class="headerlink" href="#exploring-the-tree-structure" title="Permalink to this headline">¶</a></h2>
 <p>So far, we have explored strategies that allocate capital to securities. But what if we wanted to test a strategy that allocated capital to sub-strategies?</p>
-<p>The most straightforward way would be to test the different sub-strategies, extract their equity curves and create &#8220;synthetic securities&#8221; that would basically just represent the returns achieved from allocating capital to the different sub-strategies.</p>
-<p>Let&#8217;s see how this looks:</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s create a helper function to create a ma cross backtest</span>
+<p>The most straightforward way would be to test the different sub-strategies, extract their equity curves and create “synthetic securities” that would basically just represent the returns achieved from allocating capital to the different sub-strategies.</p>
+<p>Let’s see how this looks:</p>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s create a helper function to create a ma cross backtest</span>
 <span class="k">def</span> <span class="nf">ma_cross</span><span class="p">(</span><span class="n">ticker</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">,</span>
              <span class="n">short_ma</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">long_ma</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ma_cross&#39;</span><span class="p">):</span>
     <span class="c1"># these are all the same steps as above</span>
@@ -457,7 +441,7 @@
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">aapl_ma_cross</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">aapl_ma_cross</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00msft_ma_cross</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
@@ -466,19 +450,19 @@
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_30_0.png" class="pynb" src="_images/examples-nb_30_0.png" />
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_31_0.png" class="pynb" src="_images/examples-nb_31_0.png" />
 <p>As we can see above, the process is a bit more involved, but it works. It is not very elegant though, and obtaining security-level allocation information is problematic.</p>
-<p>Luckily, bt has built-in functionality for dealing with strategies of strategies. It uses the same general principal as demonstrated above but does it seamlessly. Basically, when a strategy is a child of another strategy, it will create a &#8220;paper trade&#8221; version of itself internally. As we run our strategy, it will run its internal &#8220;paper version&#8221; and use the returns from that strategy to populate the <strong>price</strong> property.</p>
+<p>Luckily, bt has built-in functionality for dealing with strategies of strategies. It uses the same general principal as demonstrated above but does it seamlessly. Basically, when a strategy is a child of another strategy, it will create a “paper trade” version of itself internally. As we run our strategy, it will run its internal “paper version” and use the returns from that strategy to populate the <strong>price</strong> property.</p>
 <p>This means that the parent strategy can use the price information (which reflects the returns of the strategy had it been employed) to determine the appropriate allocation. Again, this is basically the same process as above, just packed into 1 step.</p>
 <p>Perhaps some code will help:</p>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="c1"># once again, we will create a few backtests</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># once again, we will create a few backtests</span>
 <span class="c1"># these will be the child strategies</span>
 <span class="n">t1</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s1">&#39;aapl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;aapl_ma_cross&#39;</span><span class="p">)</span>
 <span class="n">t2</span> <span class="o">=</span> <span class="n">ma_cross</span><span class="p">(</span><span class="s1">&#39;msft&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;msft_ma_cross&#39;</span><span class="p">)</span>
@@ -499,16 +483,16 @@
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default"><div class="highlight"><pre><span></span><span class="n">s</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">s</span>
 <span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
 <span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
 </pre></div>
 </div>
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_34_0.png" class="pynb" src="_images/examples-nb_34_0.png" />
-<div class="code ipython2 highlight-default"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_weights</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/examples-nb_35_0.png" class="pynb" src="_images/examples-nb_35_0.png" />
@@ -517,6 +501,7 @@
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -553,15 +538,15 @@
             </ul>
             
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </aside>
     
       <div class="clearer"></div>
