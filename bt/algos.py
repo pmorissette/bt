@@ -48,8 +48,8 @@ class PrintTempData(Algo):
 
     Args:
         * fmt_string (str): A string that will later be formatted with the
-            target's temp dict. Therefore, you should provide
-            what you want to examine within curly braces ( { } )
+          target's temp dict. Therefore, you should provide
+          what you want to examine within curly braces ( { } )
     """
 
     def __init__(self, fmt_string=None):
@@ -72,8 +72,8 @@ class PrintInfo(Algo):
 
     Args:
         * fmt_string (str): A string that will later be formatted with the
-            target object's __dict__ attribute. Therefore, you should provide
-            what you want to examine within curly braces ( { } )
+          target object's __dict__ attribute. Therefore, you should provide
+          what you want to examine within curly braces ( { } )
 
     Ex:
         PrintInfo('Strategy {name} : {now}')
@@ -98,7 +98,8 @@ class Debug(Algo):
     """
     Utility Algo that calls pdb.set_trace when triggered.
 
-    In the debug session, target is available and can be examined.
+    In the debug session, 'target' is available and can be examined through the
+    StrategyBase interface.
     """
 
     def __call__(self, target):
@@ -323,8 +324,8 @@ class RunOnDate(Algo):
         """
         Args:
             * dates (*args): A list of dates. Dates will be parsed
-                by pandas.to_datetime so pass anything that it can
-                parse. Typically, you will pass a string 'yyyy-mm-dd'.
+              by pandas.to_datetime so pass anything that it can
+              parse. Typically, you will pass a string 'yyyy-mm-dd'.
         """
         super(RunOnDate, self).__init__()
         # parse dates and save
@@ -445,7 +446,7 @@ class RunEveryNPeriods(Algo):
     Args:
         * n (int): Run each n periods
         * offset (int): Applies to the first run. If 0, this algo will run the
-            first time it is called.
+          first time it is called.
 
     This Algo can be useful for the following type of strategy:
         Each month, select the top 5 performers. Hold them for 3 months.
@@ -489,7 +490,7 @@ class SelectAll(Algo):
     Args:
         * include_no_data (bool): Include securities that do not have data?
         * include_negative (bool): Include securities that have negative
-            or zero prices?
+          or zero prices?
     Sets:
         * selected
 
@@ -521,7 +522,7 @@ class SelectThese(Algo):
         * ticker (list): List of tickers to select.
         * include_no_data (bool): Include securities that do not have data?
         * include_negative (bool): Include securities that have negative
-            or zero prices?
+          or zero prices?
 
     Sets:
         * selected
@@ -571,13 +572,13 @@ class SelectHasData(Algo):
 
     Args:
         * lookback (DateOffset): A DateOffset that determines the lookback
-            period.
+          period.
         * min_count (int): Minimum number of days required for a series to be
-            considered valid. If not provided, ffn's get_num_days_required is
-            used to estimate the number of points required.
+          considered valid. If not provided, ffn's get_num_days_required is
+          used to estimate the number of points required.
         * include_no_data (bool): Include securities that do not have data?
         * include_negative (bool): Include securities that have negative
-            or zero prices?
+          or zero prices?
     Sets:
         * selected
 
@@ -628,11 +629,11 @@ class SelectN(Algo):
     Args:
         * n (int): select top n items.
         * sort_descending (bool): Should the stat be sorted in descending order
-            before selecting the first n items?
+          before selecting the first n items?
         * all_or_none (bool): If true, only populates temp['selected'] if we
-            have n items. If we have less than n, then temp['selected'] = [].
+          have n items. If we have less than n, then temp['selected'] = [].
         * filter_selected (bool): If True, will only select from the existing
-            'selected' list.
+          'selected' list.
 
     Sets:
         * selected
@@ -689,11 +690,11 @@ class SelectMomentum(AlgoStack):
     Args:
         * n (int): select first N elements
         * lookback (DateOffset): lookback period for total return
-            calculation
+          calculation
         * lag (DateOffset): Lag interval for total return calculation
         * sort_descending (bool): Sort descending (highest return is best)
         * all_or_none (bool): If true, only populates temp['selected'] if we
-            have n items. If we have less than n, then temp['selected'] = [].
+          have n items. If we have less than n, then temp['selected'] = [].
 
     Sets:
         * selected
@@ -730,11 +731,11 @@ class SelectWhere(Algo):
 
     Args:
         * signal (str|DataFrame): Boolean DataFrame containing selection logic.
-            If a string is passed, frame is accessed using target.get_data
-            This is the preferred way of using the algo.
+          If a string is passed, frame is accessed using target.get_data
+          This is the preferred way of using the algo.
         * include_no_data (bool): Include securities that do not have data?
         * include_negative (bool): Include securities that have negative
-            or zero prices?
+          or zero prices?
 
     Sets:
         * selected
@@ -800,7 +801,7 @@ class SelectRandomly(AlgoStack):
         * n (int): Select N elements randomly.
         * include_no_data (bool): Include securities that do not have data?
         * include_negative (bool): Include securities that have negative
-            or zero prices?
+          or zero prices?
 
     Sets:
         * selected
@@ -879,7 +880,7 @@ class ResolveOnTheRun(Algo):
             - values are the actual security name to use for the given date
         * include_no_data (bool): Include securities that do not have data?
         * include_negative (bool): Include securities that have negative
-            or zero prices?
+          or zero prices?
 
     Requires:
         * selected
@@ -920,8 +921,8 @@ class SetStat(Algo):
 
     Args:
         * stat (str|DataFrame): A dataframe of the same dimension as target.universe
-            If a string is passed, frame is accessed using target.get_data
-            This is the preferred way of using the algo.
+          If a string is passed, frame is accessed using target.get_data
+          This is the preferred way of using the algo.
     Sets:
         * stat
     """
@@ -955,7 +956,7 @@ class StatTotalReturn(Algo):
     Args:
         * lookback (DateOffset): lookback period.
         * lag (DateOffset): Lag interval. Total return is calculated in
-            the inteval [now - lookback - lag, now - lag]
+          the inteval [now - lookback - lag, now - lag]
 
     Sets:
         * stat
@@ -1039,8 +1040,8 @@ class ScaleWeights(Algo):
 
     """
     Sets temp['weights'] based on a scaled version of itself.
-    Useful for going short, or scaling up/down fixed income
-    strategies.
+    Useful for going short, or scaling up/down when using
+    :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`.
 
     Args:
         * scale (float): the scaling factor
@@ -1083,8 +1084,8 @@ class WeighTarget(Algo):
 
     Args:
         * weights (str|DataFrame): DataFrame containing the target weights
-            If a string is passed, frame is accessed using target.get_data
-            This is the preferred way of using the algo.
+          If a string is passed, frame is accessed using target.get_data
+          This is the preferred way of using the algo.
 
     Sets:
         * weights
@@ -1185,11 +1186,11 @@ class WeighERC(Algo):
         * initial_weights (list): Starting asset weights [default inverse vol].
         * risk_weights (list): Risk target weights [default equal weight].
         * covar_method (str): method used to estimate the covariance. See ffn's
-            calc_erc_weights for more details. (default ledoit-wolf).
+          calc_erc_weights for more details. (default ledoit-wolf).
         * risk_parity_method (str): Risk parity estimation method. see ffn's
-            calc_erc_weights for more details. (default ccd).
+          calc_erc_weights for more details. (default ccd).
         * maximum_iterations (int): Maximum iterations in iterative solutions
-            (default 100).
+          (default 100).
         * tolerance (float): Tolerance level in iterative solutions (default 1E-8).
 
 
@@ -1264,9 +1265,9 @@ class WeighMeanVar(Algo):
     Args:
         * lookback (DateOffset): lookback period for estimating volatility
         * bounds ((min, max)): tuple specifying the min and max weights for
-            each asset in the optimization.
+          each asset in the optimization.
         * covar_method (str): method used to estimate the covariance. See ffn's
-            calc_mean_var_weights for more details.
+          calc_mean_var_weights for more details.
         * rf (float): risk-free rate used in optimization.
 
     Sets:
@@ -1334,7 +1335,7 @@ class WeighRandomly(Algo):
 
     Args:
         * bounds ((low, high)): Tuple including low and high bounds for each
-            security
+          security
         * weight_sum (float): What should the weights sum up to?
 
     Sets:
@@ -1382,8 +1383,8 @@ class LimitDeltas(Algo):
 
     Args:
         * limit (float, dict): Weight delta limit. If float, this will be a
-            global limit for all securities. If dict, you may specify by-ticker
-            limit.
+          global limit for all securities. If dict, you may specify by-ticker
+          limit.
 
     Sets:
         * weights
@@ -1481,7 +1482,7 @@ class TargetVol(Algo):
         * lag (DateOffset): amount of time to wait to calculate the covariance
         * covar_method: method of calculating volatility
         * annualization_factor: number of periods to annualize by.
-            It is assumed that target volatility is already annualized by this factor.
+          It is assumed that target volatility is already annualized by this factor.
 
     Updates:
         * weights
@@ -1564,7 +1565,7 @@ class PTE_Rebalance(Algo):
         * lag (DateOffset): amount of time to wait to calculate the covariance
         * covar_method: method of calculating volatility
         * annualization_factor: number of periods to annualize by.
-            It is assumed that target volatility is already annualized by this factor.
+          It is assumed that target volatility is already annualized by this factor.
 
     """
 
@@ -1719,11 +1720,11 @@ class SetNotional(Algo):
 
     """
     Sets the notional_value to use as the base for rebalancing for
-    FixedIncomestrategy targets
+    :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>` targets
 
     Args:
         * notional_value (str): Name of a pd.Series object containing the
-            target notional values of the strategy over time.
+          target notional values of the strategy over time.
 
     Sets:
         * notional_value
@@ -1756,13 +1757,13 @@ class Rebalance(Algo):
     Requires:
         * weights
         * cash (optional): You can set a 'cash' value on temp. This should be a
-            number between 0-1 and determines the amount of cash to set aside.
-            For example, if cash=0.3, the strategy will allocate 70% of its
-            value to the provided weights, and the remaining 30% will be kept
-            in cash. If this value is not provided (default), the full value
-            of the strategy is allocated to securities.
+          number between 0-1 and determines the amount of cash to set aside.
+          For example, if cash=0.3, the strategy will allocate 70% of its
+          value to the provided weights, and the remaining 30% will be kept
+          in cash. If this value is not provided (default), the full value
+          of the strategy is allocated to securities.
         * notional_value (optional): Required only for fixed_income targets. This is the base
-            balue of total notional that will apply to the weights.
+          balue of total notional that will apply to the weights.
     """
 
     def __init__(self):
@@ -1904,11 +1905,11 @@ class Require(Algo):
 
     Args:
         * pred (Algo): Function that returns a Bool given the strategy. This
-            is the definition of an Algo. However, this is typically used
-            with a simple lambda function.
+          is the definition of an Algo. However, this is typically used
+          with a simple lambda function.
         * item (str): An item within temp.
         * if_none (bool): Result if the item required is not in temp or if it's
-            value if None
+          value if None
 
     """
 
@@ -1964,8 +1965,8 @@ class Or(Algo):
 
     Args:
         * list_of_algos: Iterable list of algos.
-            Runs each algo and
-            returns true if any algo returns true.
+          Runs each algo and
+          returns true if any algo returns true.
     """
 
     def __init__(self, list_of_algos):
@@ -2034,7 +2035,7 @@ class ClosePositionsAfterDates(Algo):
 
     Args:
         * close_dates (str): the name of a dataframe indexed by security name, with columns
-            "date": the date after which we want to close the position ASAP
+          "date": the date after which we want to close the position ASAP
 
     Sets:
         * target.perm['closed'] : to keep track of which securities have already closed
@@ -2084,10 +2085,10 @@ class RollPositionsAfterDates(Algo):
 
     Args:
         * roll_data (str): the name of a dataframe indexed by security name, with columns
-            "date": the first date at which the roll can occur
-            "target": the security name we are rolling into
-            "factor": the conversion factor. One unit of the original security
-                rolls into "factor" units of the new one.
+            - "date": the first date at which the roll can occur
+            - "target": the security name we are rolling into
+            - "factor": the conversion factor. One unit of the original security
+              rolls into "factor" units of the new one.
 
     Sets:
         * target.perm['rolled'] : to keep track of which securities have already rolled
@@ -2176,7 +2177,7 @@ class ReplayTransactions(Algo):
 
     Args:
         * transactions (str): name of a MultiIndex dataframe with format
-            Date, Security | quantity, price
+          Date, Security | quantity, price.
           Note this schema follows the output of backtest.Result.get_transactions
 
     """
@@ -2218,11 +2219,11 @@ class SimulateRFQTransactions(Algo):
 
     Args:
         * rfqs (str): name of a dataframe with columns
-            Date, Security | quantity, *additional columns as required by model
+          Date, Security | quantity, *additional columns as required by model
         * model (object): a function/callable object with arguments
-                rfqs : data frame of rfqs to respond to
-                target : the strategy object, for access to position and value data
-            and which returns a set of transactions, a MultiIndex DataFrame with:
+                - rfqs : data frame of rfqs to respond to
+                - target : the strategy object, for access to position and value data
+          and which returns a set of transactions, a MultiIndex DataFrame with:
                 Date, Security | quantity, price
     """
 
@@ -2272,17 +2273,17 @@ def _get_unit_risk(security, data, index=None):
 class UpdateRisk(Algo):
 
     """
-    Tracks a risk measure on all nodes of the strategy. To use this node, target.setup
-    must be called with a "unit_risk" additional argument, which is a dictionary, keyed
+    Tracks a risk measure on all nodes of the strategy. To use this node, the
+    ``additional_data`` argument on :class:`Backtest <bt.backtest.Backtest>` must
+    have a "unit_risk" key. The value should be a dictionary, keyed
     by risk measure, of DataFrames with a column per security that is sensitive to that measure.
-
 
     Args:
         * name (str): the name of the risk measure (IR01, PVBP, IsIndustials, etc).
-            The name must coincide with the keys of the dictionary passed to setup as the
-            "unit_risk" argument.
+          The name must coincide with the keys of the dictionary passed to additional_data as the
+          "unit_risk" argument.
         * history (int): The level of depth in the tree at which to track the time series of risk numbers.
-            i.e. 0=no tracking, 1=first level only, etc. More levels is more expensive.
+          i.e. 0=no tracking, 1=first level only, etc. More levels is more expensive.
 
     Modifies:
         * The "risk" attribute on the target and all its children
@@ -2347,9 +2348,9 @@ class PrintRisk(Algo):
 
     Args:
         * fmt_string (str): A string that will later be formatted with the
-            target object's risk attributes. Therefore, you should provide
-            what you want to examine within curly braces ( { } )
-            If not provided, will print the entire dictionary with no formatting.
+          target object's risk attributes. Therefore, you should provide
+          what you want to examine within curly braces ( { } )
+          If not provided, will print the entire dictionary with no formatting.
     """
 
     def __init__(self, fmt_string=""):
@@ -2374,18 +2375,18 @@ class HedgeRisks(Algo):
     Args:
         * measures (list): the names of the risk measures to hedge
         * pseudo (bool): whether to use the pseudo-inverse to compute
-            the inverse Jacobian. If False, will fail if the number
-            of selected instruments is not equal to the number of
-            measures, or if the Jacobian is singular
+          the inverse Jacobian. If False, will fail if the number
+          of selected instruments is not equal to the number of
+          measures, or if the Jacobian is singular
         * strategy (StrategyBase): If provided, will hedge the risk
-            from this strategy in addition to the risk from target.
-            This is to allow separate tracking of hedged and unhedged
-            performance. Note that risk_strategy must occur earlier than
-            'target' in a depth-first traversal of the children of the root,
-            otherwise hedging will occur before positions of risk_strategy are
-            updated.
+          from this strategy in addition to the risk from target.
+          This is to allow separate tracking of hedged and unhedged
+          performance. Note that risk_strategy must occur earlier than
+          'target' in a depth-first traversal of the children of the root,
+          otherwise hedging will occur before positions of risk_strategy are
+          updated.
         * throw_nan (bool): Whether to throw on nan hedge notionals, rather
-            than simply not hedging.
+          than simply not hedging.
 
     Requires:
         * selected

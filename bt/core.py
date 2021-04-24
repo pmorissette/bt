@@ -34,10 +34,10 @@ class Node(object):
         * name (str): The Node name
         * parent (Node): The parent Node
         * children (dict, list): A collection of children. If dict,
-            the format is {name: child}, if list then list of children.
-            Children can be any type of Node or str.
-            String values correspond to children which will be lazily created
-            with that name when needed.
+          the format is {name: child}, if list then list of children.
+          Children can be any type of Node or str.
+          String values correspond to children which will be lazily created
+          with that name when needed.
 
     Attributes:
         * name (str): Node name
@@ -46,22 +46,23 @@ class Node(object):
         * children (dict): Node's children
         * now (datetime): Used when backtesting to store current date
         * stale (bool): Flag used to determine if Node is stale and need
-            updating
+          updating
         * prices (TimeSeries): Prices of the Node. Prices for a security will
-            be the security's price, for a strategy it will be an index that
-            reflects the value of the strategy over time.
+          be the security's price, for a strategy it will be an index that
+          reflects the value of the strategy over time.
         * price (float): last price
         * value (float): last value
         * notional_value (float): last notional value. Notional value is used
-            when fixed_income=True. It is always positive for strategies, but
-            is signed for securities (and typically set to either market value,
-            position, or zero).
+          when fixed_income=True. It is always positive for strategies, but
+          is signed for securities (and typically set to either market value,
+          position, or zero).
         * weight (float): weight in parent
         * full_name (str): Name including parents' names
         * members (list): Current Node + node's children
         * fixed_income (bool): Whether the node corresponds to a fixed income
-            component, which would use notional-weighting instead of market
-            value weighing. See also FixedIncomeStrategy for more details.
+          component, which would use notional-weighting instead of market
+          value weighing. See also :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`
+          for more details.
     """
 
     _capital = cy.declare(cy.double)
@@ -331,10 +332,10 @@ class StrategyBase(Node):
     Args:
         * name (str): Strategy name
         * children (dict, list): A collection of children. If dict,
-            the format is {name: child}, if list then list of children.
-            Children can be any type of Node or str.
-            String values correspond to children which will be lazily created
-            with that name when needed.
+          the format is {name: child}, if list then list of children.
+          Children can be any type of Node or str.
+          String values correspond to children which will be lazily created
+          with that name when needed.
         * parent (Node): The parent Node
 
     Attributes:
@@ -344,9 +345,9 @@ class StrategyBase(Node):
         * children (dict): Strategy's children
         * now (datetime): Used when backtesting to store current date
         * stale (bool): Flag used to determine if Strategy is stale and need
-            updating
+          updating
         * prices (TimeSeries): Prices of the Strategy - basically an index that
-            reflects the value of the strategy over time.
+          reflects the value of the strategy over time.
         * outlays (DataFrame): Outlays for each SecurityBase child
         * price (float): last price
         * value (float): last value
@@ -355,16 +356,16 @@ class StrategyBase(Node):
         * full_name (str): Name including parents' names
         * members (list): Current Strategy + strategy's children
         * securities (list): List of strategy children that are of type
-            SecurityBase
+          SecurityBase
         * commission_fn (fn(quantity, price)): A function used to determine the
-            commission (transaction fee) amount. Could be used to model
-            slippage (implementation shortfall). Note that often fees are
-            symmetric for buy and sell and absolute value of quantity should
-            be used for calculation.
+          commission (transaction fee) amount. Could be used to model
+          slippage (implementation shortfall). Note that often fees are
+          symmetric for buy and sell and absolute value of quantity should
+          be used for calculation.
         * capital (float): Capital amount in Strategy - cash
         * universe (DataFrame): Data universe available at the current time.
-            Universe contains the data passed in when creating a Backtest. Use
-            this data to determine strategy logic.
+          Universe contains the data passed in when creating a Backtest. Use
+          this data to determine strategy logic.
 
     """
 
@@ -848,11 +849,11 @@ class StrategyBase(Node):
             * amount (float): Amount to adjust by.
             * update (bool): Force update?
             * flow (bool): Is this adjustment a flow? A flow will not have an
-                impact on the performance (price index). Example of flows are
-                simply capital injections (say a monthly contribution to a
-                portfolio). This should not be reflected in the returns. A
-                non-flow (flow=False) does impact performance. A good example
-                of this is a commission, or a dividend.
+              impact on the performance (price index). Example of flows are
+              simply capital injections (say a monthly contribution to a
+              portfolio). This should not be reflected in the returns. A
+              non-flow (flow=False) does impact performance. A good example
+              of this is a commission, or a dividend.
 
         """
         # adjust capital
@@ -885,7 +886,7 @@ class StrategyBase(Node):
         Args:
             * amount (float): Amount to allocate.
             * child (str): If specified, allocation will be directed to child
-                only. Specified by name.
+              only. Specified by name.
             * update (bool): Force update.
 
         """
@@ -930,7 +931,7 @@ class StrategyBase(Node):
         Args:
             * q (float): Notional quantity to allocate.
             * child (str): If specified, allocation will be directed to child
-                only. Specified by name.
+              only. Specified by name.
             * update (bool): Force update.
 
         """
@@ -966,13 +967,13 @@ class StrategyBase(Node):
             * weight (float): The target weight. Usually between -1.0 and 1.0.
             * child (str): child to allocate to - specified by name.
             * base (float): If specified, this is the base amount all weight
-                delta calculations will be based off of. This is useful when we
-                determine a set of weights and want to rebalance each child
-                given these new weights. However, as we iterate through each
-                child and call this method, the base (which is by default the
-                current value) will change. Therefore, we can set this base to
-                the original value before the iteration to ensure the proper
-                allocations are made.
+              delta calculations will be based off of. This is useful when we
+              determine a set of weights and want to rebalance each child
+              given these new weights. However, as we iterate through each
+              child and call this method, the base (which is by default the
+              current value) will change. Therefore, we can set this base to
+              the original value before the iteration to ensure the proper
+              allocations are made.
             * update (bool): Force update?
 
         """
@@ -1147,11 +1148,12 @@ class SecurityBase(Node):
     Args:
         * name (str): Security name
         * multiplier (float): security multiplier - typically used for
-            derivatives.
+          derivatives or to trade in lots. The quantity of the Security will
+          always be multiplied by this to determine the underlying amount.
         * lazy_add (bool): Flag to control whether instrument should be added
-            to strategy children lazily, i.e. only when there is a transaction
-            on the instrument. This improves performance of strategies which
-            transact on a sparse set of children.
+          to strategy children lazily, i.e. only when there is a transaction
+          on the instrument. This improves performance of strategies which
+          transact on a sparse set of children.
 
     Attributes:
         * name (str): Security name
@@ -1159,13 +1161,13 @@ class SecurityBase(Node):
         * root (Security): Root node of the tree (topmost node)
         * now (datetime): Used when backtesting to store current date
         * stale (bool): Flag used to determine if Security is stale and need
-            updating
+          updating
         * prices (TimeSeries): Security prices.
         * price (float): last price
         * outlays (TimeSeries): Series of outlays. Positive outlays mean
-            capital was allocated to security and security consumed that
-            amount.  Negative outlays are the opposite. This can be useful for
-            calculating turnover at the strategy level.
+          capital was allocated to security and security consumed that
+          amount.  Negative outlays are the opposite. This can be useful for
+          calculating turnover at the strategy level.
         * value (float): last value - basically position * price * multiplier
         * weight (float): weight in parent
         * full_name (str): Name including parents' names
@@ -1340,9 +1342,13 @@ class SecurityBase(Node):
 
         Args:
             * universe (DataFrame): DataFrame of prices with security's name as
-                one of the columns.
-            ** kwargs (DataFrames): DataFrames of additional security level
-                information (i.e. bid/ask spread, risk, etc).
+              one of the columns.
+            * bidoffer (DataFrame): Optional argument that represents the
+              bid/offer spread on each security across time. If provided, the
+              strategy will account for these costs when rebalancing.
+            * kwargs (dict): Dictionary of additional information needed by
+              the strategy. In particular, often takes the form of a DataFrame
+              of security level information (i.e. signals, risk, etc).
         """
         # if we already have all the prices, we will store them to speed up
         # future updates
@@ -1729,7 +1735,8 @@ class Security(SecurityBase):
     is measured based on market value (notional times price).
     It exists to be able to identify standard securities from nonstandard
     ones via isinstance, i.e. isinstance( sec, Security ) would only return
-    true for a vanilla security
+    True for a vanilla security, whereas SecurityBase would return True for
+    all securities.
     """
 
     pass
@@ -1739,6 +1746,7 @@ class FixedIncomeSecurity(SecurityBase):
     """
     A Fixed Income Security is a security where notional value is
     measured only based on the quantity (par value) of the security.
+    Only relevant when using :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`.
     """
 
     @cy.locals(coupon=cy.double)
@@ -1771,14 +1779,14 @@ class CouponPayingSecurity(FixedIncomeSecurity):
     Args:
         * name (str): Security name
         * multiplier (float): security multiplier - typically used for
-            derivatives.
+          derivatives.
         * fixed_income (bool): Flag to control whether notional_value is based
-            only on quantity, or on market value (like an equity).
-            Defaults to notional weighting for coupon paying instruments.
+          only on quantity, or on market value (like an equity).
+          Defaults to notional weighting for coupon paying instruments.
         * lazy_add (bool): Flag to control whether instrument should be added
-            to strategy children lazily, i.e. only when there is a transaction
-            on the instrument. This improves performance of strategies which
-            transact on a sparse set of children.
+          to strategy children lazily, i.e. only when there is a transaction
+          on the instrument. This improves performance of strategies which
+          transact on a sparse set of children.
 
     Attributes:
         * SecurityBase attributes
@@ -1807,9 +1815,16 @@ class CouponPayingSecurity(FixedIncomeSecurity):
 
         Args:
             * universe (DataFrame): DataFrame of prices with security's name as
-                one of the columns.
-            ** kwargs (DataFrames): DataFrames of additional security level
-                information (i.e. bid/ask spread, risk, etc).
+              one of the columns.
+            * coupons (DataFrame): Manatory DataFrame of coupon/carry amount with
+              the same schema as universe.
+            * cost_long (DataFrame): Optional DataFrame containing the cost of
+              holding a unit long position in the security (i.e. funding).
+            * cost_short (DataFrame): Optional DataFrame containing the cost of
+              holding a unit short position in the security (i.e. repo).
+            * kwargs (dict): Dictionary of additional information needed by
+              the strategy. In particular, often takes the form of a DataFrame
+              of security level information (i.e. signals, risk, etc).
         """
         super(CouponPayingSecurity, self).setup(universe, **kwargs)
 
@@ -2070,18 +2085,18 @@ class Strategy(StrategyBase):
         * name (str): Strategy name
         * algos (list): List of Algos to be passed into an AlgoStack
         * children (dict, list): Children - useful when you want to create
-            strategies of strategies
-            Children can be any type of Node or str.
-            String values correspond to children which will be lazily created
-            with that name when needed.
+          strategies of strategies
+          Children can be any type of Node or str.
+          String values correspond to children which will be lazily created
+          with that name when needed.
         * parent (Node): The parent Node
 
     Attributes:
         * stack (AlgoStack): The stack
         * temp (dict): A dict containing temporary data - cleared on each call
-            to run. This can be used to pass info to other algos.
+          to run. This can be used to pass info to other algos.
         * perm (dict): Permanent data used to pass info from one algo to
-            another. Not cleared on each pass.
+          another. Not cleared on each pass.
 
     """
 
@@ -2112,14 +2127,17 @@ class FixedIncomeStrategy(Strategy):
 
     For this type of strategy:
         - capital allocations are not necessary, and initial capital is not used
-        - bankruptcy is disabled
+        - bankruptcy is disabled (and should be modeled explicitly via an Algo)
         - weights are based off notional_value rather than value
         - strategy price is computed from additive PNL returns
-            per unit of notional_value, with a reference price of PAR
+          per unit of current notional_value, with a reference price of PAR.
+          :class:`RenormalizedFixedIncomeResult<bt.backtest.RenormalizedFixedIncomeResult>`
+          can be used to re-calculate the price-based performance statistics
+          using different normalization schemes on total pnl.
         - "transact" assumes the role of "allocate", in order to buy/sell
-            children on a weighted notional basis
+          children on a weighted notional basis
         - "rebalance" adjusts notionals rather than capital allocations based
-            on weights
+          on weights
     """
 
     def __init__(self, name, algos=None, children=None):
