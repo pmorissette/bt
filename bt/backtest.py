@@ -45,8 +45,8 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     Args:
         * backtest (Backtest): A backtest you want to benchmark
         * random_strategy (Strategy): A strategy you want to benchmark
-            against. The strategy should have a random component to
-            emulate skilless behavior.
+          against. The strategy should have a random component to
+          emulate skilless behavior.
         * nsim (int): number of random strategies to create.
 
     Returns:
@@ -95,18 +95,35 @@ class Backtest(object):
     Args:
         * strategy (Strategy, Node, StrategyBase): The Strategy to be tested.
         * data (DataFrame): DataFrame containing data used in backtest. This
-            will be the Strategy's "universe".
+          will be the Strategy's "universe".
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
-            Strategy.
+          Strategy.
         * commissions (fn(quantity, price)): The commission function
-        to be used. Ex: commissions=lambda q, p: max(1, abs(q) * 0.01)
+          to be used. Ex: commissions=lambda q, p: max(1, abs(q) * 0.01)
+        * integer_positions (bool): Whether to use integer positions for securities
+          in the backtest. This can have unintended consequences when prices are
+          high relative to the amount of capital (i.e. though split-adjusted prices,
+          or too-low of a capital amount), causing allocated positions to round to zero.
+          While the default is True, try setting to False for more robust behavior.
         * progress_bar (Bool): Display progress bar while running backtest
         * additional_data (dict): Additional kwargs passed to StrategyBase.setup, after preprocessing
+          This data can be retrieved by Algos using StrategyBase.get_data.
+          The data may also be used by the Strategy itself, i.e.
+            - ``bidoffer``: A DataFrame with the same format as 'data', will be used
+              by the strategy for transaction cost modeling
+            - ``coupons``: A DataFrame with the same format as 'data', will by used
+              by :class:`CouponPayingSecurity <bt.core.CouponPayingSecurity>`
+              to determine cashflows.
+            - ``cost_long``/``cost_short``: A DataFrame with the same format as 'data',
+              will by used
+              by :class:`CouponPayingSecurity <bt.core.CouponPayingSecurity>`
+              to calculate asymmetric holding cost of long (or short) positions.
+
 
     Attributes:
         * strategy (Strategy): The Backtest's Strategy. This will be a deepcopy
-            of the Strategy that was passed in.
+          of the Strategy that was passed in.
         * data (DataFrame): Data passed in
         * dates (DateTimeIndex): Data's index
         * initial_capital (float): Initial capital
@@ -115,8 +132,8 @@ class Backtest(object):
         * has_run (bool): Run flag
         * weights (DataFrame): Weights of each component over time
         * security_weights (DataFrame): Weights of each security as a
-            percentage of the whole portfolio over time
-        * additional_data (dict): Additional data passed to strategy setup
+          percentage of the whole portfolio over time
+        * additional_data (dict): Additional data passed at construction
 
     """
 
@@ -408,10 +425,10 @@ class Result(ffn.GroupStats):
 
         Args:
             * backtest (str, int): Backtest can be either a index (int) or the
-                name (str)
+              name (str)
             * filter (list, str): filter columns for specific columns. Filter
-                is simply passed as is to DataFrame[filter], so use something
-                that makes sense with a DataFrame.
+              is simply passed as is to DataFrame[filter], so use something
+              that makes sense with a DataFrame.
             * figsize ((width, height)): figure size
             * kwds (dict): Keywords passed to plot
 
@@ -489,7 +506,7 @@ class Result(ffn.GroupStats):
 
         Args:
             * strategy_name (str): If none, it will take the first backtest's
-                strategy (self.backtest_list[0].name)
+              strategy (self.backtest_list[0].name)
 
         """
         if strategy_name is None:
@@ -536,7 +553,7 @@ class RandomBenchmarkResult(Result):
 
         Args:
             * statistic (str): Statistic - any numeric statistic in
-                Result is valid.
+              Result is valid.
             * figsize ((x, y)): Figure size
             * title (str): Chart title
             * bins (int): Number of bins
@@ -563,7 +580,8 @@ class RandomBenchmarkResult(Result):
 
 class RenormalizedFixedIncomeResult(Result):
     """
-    A new result type to help compare fixed income strategies.
+    A new result type to help compare results generated from
+    :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`.
     Recall that in a fixed income strategy, the normalized prices are computed
     using additive returns expressed as a percentage of current outstanding
     notional (i.e. fixed-notional equivalent).
