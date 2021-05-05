@@ -142,10 +142,6 @@ class Node(object):
         """
         # if at least 1 children is specified
         if children is not None:
-            # initialize the universe tickers list, 
-            # which also identifies that we might have to filter the universe
-            if self._universe_tickers is None:
-                self._universe_tickers = []
             if isinstance(children, dict):
                 # Preserve the names from the dictionary by renaming the nodes
                 tmp = []
