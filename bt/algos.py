@@ -1539,17 +1539,16 @@ class TargetVol(Algo):
             * self.annualization_factor
         )
 
-        # vol is too high
-        if vol > self.target_volatility:
-            mult = self.target_volatility / vol
-        # vol is too low
-        elif vol < self.target_volatility:
-            mult = self.target_volatility / vol
-        else:
-            mult = 1
+        if isinstance(self.target_volatility, (float, int)):
+            self.target_volatility = {
+                k: self.target_volatility for k in target.temp["weights"].keys()
+            }
 
         for k in target.temp["weights"].keys():
-            target.temp["weights"][k] = target.temp["weights"][k] * mult
+            if k in self.target_volatility.keys():
+                target.temp["weights"][k] = (
+                    target.temp["weights"][k] * self.target_volatility[k] / vol
+                )
 
         return True
 
