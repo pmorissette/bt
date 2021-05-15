@@ -85,8 +85,9 @@ class Node(object):
         self._lazy_children = {}
         self._universe_tickers = []
         self._childrenv = []  # Shortcut to self.children.values()
-        self._original_children_are_present = (children is not None) and\
-                                              (len(children) >= 1)  
+        self._original_children_are_present = (children is not None) and (
+            len(children) >= 1
+        )
 
         # strategy children helpers
         self._has_strat_children = False
@@ -179,7 +180,7 @@ class Node(object):
 
                     self.children[c.name] = c
                     self._childrenv.append(c)
-                    
+
                 # if strategy, turn on flag and add name to list
                 # strategy children have special treatment
                 if isinstance(c, StrategyBase):
@@ -587,7 +588,7 @@ class StrategyBase(Node):
 
         # filter only if the node has any children specified as input,
         # otherwise we use the full universe. If all children are strategies,
-        # funiverse will be empty, to signal that no other ticker should be 
+        # funiverse will be empty, to signal that no other ticker should be
         # used in addition to the strategies
         if self._original_children_are_present:
             # if we have universe_tickers defined, limit universe to
@@ -603,7 +604,7 @@ class StrategyBase(Node):
             if self._has_strat_children:
                 for c in self._strat_children:
                     funiverse[c] = np.nan
-                    
+
             # must create to avoid pandas warning
             funiverse = pd.DataFrame(funiverse)
 
