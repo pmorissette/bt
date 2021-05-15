@@ -2297,13 +2297,13 @@ class UpdateRisk(Algo):
         self.history = history
 
     def _setup_risk(self, target, set_history):
-        """ Setup risk attributes on the node in question """
+        """Setup risk attributes on the node in question"""
         target.risk = {}
         if set_history:
             target.risks = pd.DataFrame(index=target.data.index)
 
     def _setup_measure(self, target, set_history):
-        """ Setup a risk measure within the risk attributes on the node in question """
+        """Setup a risk measure within the risk attributes on the node in question"""
         target.risk[self.measure] = np.NaN
         if set_history:
             target.risks[self.measure] = np.NaN
