@@ -46,6 +46,16 @@ Features
     another core feature that facilitate the creation of modular and re-usable strategy
     logic. Due to their modularity, these logic blocks are also easier to test -
     an important step in building robust financial solutions.
+    
+* **Transaction Cost Modeling**
+    Through the use of a commission function and instrument-specific, time-varying
+    bid/offer spreads passed to the 
+    :class:`Backtest <bt.backtest.Backtest>`.
+    
+* **Fixed Income** 
+    Strategies can include coupon-paying instruments such as bonds, 
+    unfunded instruments such as swaps, holding costs, and the option for notional weighting. 
+    These are extensions of :doc:`the tree structure <tree>`.
 
 * **Charting and Reporting**
     bt also provides many useful charting functions that help visualize backtest
