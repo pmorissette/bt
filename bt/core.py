@@ -529,7 +529,13 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.root.now, None)
-        return pd.DataFrame({x.name: x.outlays for x in self.securities})
+        outlays = pd.DataFrame()
+        for x in self.securities:
+            if x.name in outlays.columns:
+                outlays[x.name] += x.outlays
+            else:
+                outlays[x.name] = x.outlays
+        return outlays
 
     @property
     def positions(self):
@@ -540,9 +546,13 @@ class StrategyBase(Node):
         if self.root.stale:
             self.root.update(self.root.now, None)
 
-        vals = pd.DataFrame(
-            {x.name: x.positions for x in self.members if isinstance(x, SecurityBase)}
-        )
+        vals = pd.DataFrame()
+        for x in self.members:
+            if isinstance(x, SecurityBase):
+                if x.name in vals.columns:
+                    vals[x.name] += x.positions
+                else:
+                    vals[x.name] = x.positions
         self._positions = vals
         return vals
 
@@ -1093,7 +1103,12 @@ class StrategyBase(Node):
         prc = pd.DataFrame({x.name: x.prices for x in self.securities}).unstack()
 
         # get security positions
-        positions = pd.DataFrame({x.name: x.positions for x in self.securities})
+        positions = pd.DataFrame()
+        for x in self.securities:
+            if x.name in positions.columns:
+                positions[x.name] += x.positions
+            else:
+                positions[x.name] = x.positions
         # trades are diff
         trades = positions.diff()
         # must adjust first row
