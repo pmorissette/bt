@@ -341,7 +341,7 @@ class Backtest(object):
         a given portfolio
         """
         w = self.security_weights
-        return (w ** 2).sum(axis=1)
+        return (w**2).sum(axis=1)
 
     @property
     def turnover(self):
