@@ -50,12 +50,6 @@ jobs:
         codecov
       if: ${{ github.event_name == matrix.event-name }}
 
-    - name: Publish Unit Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      with:
-        files: python_junit.xml
-      if: ${{ github.event_name == matrix.event-name && matrix.os == 'ubuntu-latest' }}
-
     - name: Package and check
       run: |
         python setup.py sdist bdist_wheel
