@@ -9,6 +9,10 @@ on:
     # run on sunday nights
     - cron:  '0 0 * * 0'
 
+concurrency:
+   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+   cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -18,6 +22,7 @@ jobs:
       matrix:
         python-version: [3.7, 3.9]
         os: [ubuntu-latest, macos-latest, windows-latest]
+        event-name: [push]
 
     steps:
     - uses: actions/checkout@v2
@@ -38,10 +43,12 @@ jobs:
     - name: Test
       run: |
         python -m nose --with-coverage --cover-package bt
+      if: ${{ github.event_name == matrix.event-name }}
 
     - name: Coverage
       run: |
         codecov
+      if: ${{ github.event_name == matrix.event-name }}
 
     - name: Package and check
       run: |
