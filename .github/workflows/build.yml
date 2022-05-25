@@ -5,9 +5,6 @@ on:
     branches:
       - master
   pull_request:
-  schedule:
-    # run on sunday nights
-    - cron:  '0 0 * * 0'
 
 concurrency:
    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
