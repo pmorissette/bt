@@ -5,9 +5,6 @@ on:
     branches:
       - master
   pull_request:
-  schedule:
-    # run on sunday nights
-    - cron:  '0 0 * * 0'
 
 concurrency:
    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -27,9 +24,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'setup.py'
 
     - name: Install dependencies
       run: |
@@ -46,8 +45,7 @@ jobs:
       if: ${{ github.event_name == matrix.event-name }}
 
     - name: Coverage
-      run: |
-        codecov
+      uses: codecov/codecov-action@v2
       if: ${{ github.event_name == matrix.event-name }}
 
     - name: Package and check
