@@ -86,6 +86,9 @@ class Node(object):
         self._lazy_children = {}
         self._universe_tickers = []
         self._childrenv = []  # Shortcut to self.children.values()
+        self._original_children_are_present = (children is not None) and (
+            len(children) >= 1
+        )
 
         # strategy children helpers
         self._has_strat_children = False
@@ -139,6 +142,7 @@ class Node(object):
         Args:
             dc (bool): Whether or not to deepcopy nodes before adding them.
         """
+        # if at least 1 children is specified
         if children is not None:
             if isinstance(children, dict):
                 # Preserve the names from the dictionary by renaming the nodes
@@ -595,7 +599,11 @@ class StrategyBase(Node):
         # of substrategies. is this desired?
         funiverse = universe.copy()
 
-        if self._universe_tickers:
+        # filter only if the node has any children specified as input,
+        # otherwise we use the full universe. If all children are strategies,
+        # funiverse will be empty, to signal that no other ticker should be
+        # used in addition to the strategies
+        if self._original_children_are_present:
             # if we have universe_tickers defined, limit universe to
             # those tickers
             valid_filter = list(
