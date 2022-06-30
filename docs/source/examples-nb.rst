@@ -13,11 +13,15 @@ Given the flexibility of **bt**, there is no strict rule. The average calculatio
 
 Now that we know what we have to do, let's get started. First we will download some data and calculate the simple moving average.
 
-.. code:: ipython2
+.. code:: ipython3
 
     import bt
 
-.. code:: ipython2
+.. code:: ipython3
+
+    %matplotlib inline
+
+.. code:: ipython3
 
     # download data
     data = bt.get('aapl,msft,c,gs,ge', start='2010-01-01')
@@ -30,15 +34,17 @@ Now that we know what we have to do, let's get started. First we will download s
 
 It's always a good idea to plot your data to make sure it looks ok. So let's see how the data + sma plot looks like.
 
-.. code:: ipython2
+.. code:: ipython3
 
     # let's see what the data looks like - this is by no means a pretty chart, but it does the job
     plot = bt.merge(data, sma).plot(figsize=(15, 5))
 
 
 
-.. image:: _static/examples-nb_4_0.png
-    :class: pynb
+.. image:: _static/examples-nb_5_0.png
+   :class: pynb
+   :width: 877px
+   :height: 300px
 
 
 
@@ -50,9 +56,9 @@ Before we do that, let's think about how we will code it. We could pass the SMA 
 
 For example, what if we wanted to select securities that were below their sma? Or what if we only wanted securities that were 5% above their sma?
 
-What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be much faster and much more reusable. Let's see how the implementation looks like.
+What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let's see how the implementation looks like.
 
-.. code:: ipython2
+.. code:: ipython3
 
     class SelectWhere(bt.Algo):
         
@@ -99,7 +105,7 @@ All we have to do now is pass in a signal matrix. In our case, it's quite easy::
 
 Simple, concise and more importantly, fast! Let's move on and test the strategy. 
 
-.. code:: ipython2
+.. code:: ipython3
 
     # first we create the Strategy
     s = bt.Strategy('above50sma', [SelectWhere(data > sma),
@@ -113,92 +119,86 @@ Simple, concise and more importantly, fast! Let's move on and test the strategy.
     res = bt.run(t)
 
 
-.. parsed-literal::
-    :class: pynb-result
-
-    above50sma
-    0%                          100%
-    [############################# ] | ETA: 00:00:00
-
-
 So just to recap, we created the strategy, created the backtest by joining Strategy+Data, and ran the backtest. Let's see the results.
 
-.. code:: ipython2
+.. code:: ipython3
 
     # what does the equity curve look like?
-    res.plot()
+    res.plot();
 
 
 
-.. image:: _static/examples-nb_10_0.png
-    :class: pynb
+.. image:: _static/examples-nb_11_0.png
+   :class: pynb
+   :width: 877px
+   :height: 302px
 
 
-.. code:: ipython2
+.. code:: ipython3
 
     # and some performance stats
     res.display()
 
 
 .. parsed-literal::
-    :class: pynb-result
+   :class: pynb-result
 
     Stat                 above50sma
     -------------------  ------------
     Start                2010-01-03
-    End                  2017-02-22
+    End                  2022-06-30
     Risk-free rate       0.00%
     
-    Total Return         82.61%
-    Daily Sharpe         0.56
-    Daily Sortino        0.68
-    CAGR                 8.80%
-    Max Drawdown         -31.96%
-    Calmar Ratio         0.28
+    Total Return         116.08%
+    Daily Sharpe         0.42
+    Daily Sortino        0.63
+    CAGR                 6.36%
+    Max Drawdown         -39.43%
+    Calmar Ratio         0.16
     
-    MTD                  7.10%
-    3m                   13.58%
-    6m                   28.80%
-    YTD                  6.85%
-    1Y                   35.60%
-    3Y (ann.)            16.24%
-    5Y (ann.)            13.20%
-    10Y (ann.)           8.80%
-    Since Incep. (ann.)  8.80%
+    MTD                  -7.41%
+    3m                   -20.85%
+    6m                   -26.49%
+    YTD                  -26.03%
+    1Y                   -22.21%
+    3Y (ann.)            10.35%
+    5Y (ann.)            2.34%
+    10Y (ann.)           8.71%
+    Since Incep. (ann.)  6.36%
     
-    Daily Sharpe         0.56
-    Daily Sortino        0.68
-    Daily Mean (ann.)    10.09%
-    Daily Vol (ann.)     18.12%
-    Daily Skew           -0.54
-    Daily Kurt           4.49
+    Daily Sharpe         0.42
+    Daily Sortino        0.63
+    Daily Mean (ann.)    8.08%
+    Daily Vol (ann.)     19.45%
+    Daily Skew           -0.65
+    Daily Kurt           4.74
     Best Day             5.78%
-    Worst Day            -7.99%
+    Worst Day            -8.26%
     
-    Monthly Sharpe       0.51
-    Monthly Sortino      0.72
-    Monthly Mean (ann.)  10.74%
-    Monthly Vol (ann.)   20.97%
-    Monthly Skew         -0.50
-    Monthly Kurt         0.46
-    Best Month           13.64%
-    Worst Month          -16.03%
+    Monthly Sharpe       0.39
+    Monthly Sortino      0.65
+    Monthly Mean (ann.)  8.65%
+    Monthly Vol (ann.)   21.93%
+    Monthly Skew         -0.37
+    Monthly Kurt         0.70
+    Best Month           21.65%
+    Worst Month          -17.26%
     
-    Yearly Sharpe        0.65
-    Yearly Sortino       2.03
-    Yearly Mean          10.91%
-    Yearly Vol           16.75%
-    Yearly Skew          -0.13
-    Yearly Kurt          -0.68
+    Yearly Sharpe        0.41
+    Yearly Sortino       0.83
+    Yearly Mean          9.78%
+    Yearly Vol           23.65%
+    Yearly Skew          -0.88
+    Yearly Kurt          -0.67
     Best Year            34.85%
-    Worst Year           -13.42%
+    Worst Year           -34.38%
     
-    Avg. Drawdown        -3.51%
-    Avg. Drawdown Days   54.34
-    Avg. Up Month        4.92%
-    Avg. Down Month      -4.59%
-    Win Year %           71.43%
-    Win 12m %            68.00%
+    Avg. Drawdown        -3.56%
+    Avg. Drawdown Days   47.26
+    Avg. Up Month        4.76%
+    Avg. Down Month      -5.44%
+    Win Year %           66.67%
+    Win 12m %            67.63%
 
 
 
@@ -206,7 +206,7 @@ Nothing stellar but at least you learnt something along the way (I hope).
 
 Oh, and one more thing. If you were to write your own "library" of backtests, you might want to write yourself a helper function that would allow you to test different parameters and securities. That function might look something like this:
 
-.. code:: ipython2
+.. code:: ipython3
 
     def above_sma(tickers, sma_per=50, start='2010-01-01', name='above_sma'):
         """
@@ -229,7 +229,7 @@ Oh, and one more thing. If you were to write your own "library" of backtests, yo
 
 This function allows us to easily generate backtests. We could easily compare a few different SMA periods. Also, let's see if we can beat a long-only allocation to the SPY.
 
-.. code:: ipython2
+.. code:: ipython3
 
     # simple backtest to test long-only allocation
     def long_only_ew(tickers, start='2010-01-01', name='long_only_ew'):
@@ -250,94 +250,82 @@ This function allows us to easily generate backtests. We could easily compare a 
     # run all the backtests!
     res2 = bt.run(sma10, sma20, sma40, benchmark)
 
+.. code:: ipython3
 
-.. parsed-literal::
-    :class: pynb-result
-
-    sma10
-    0%                          100%
-    [############################# ] | ETA: 00:00:00sma20
-    0%                          100%
-    [############################# ] | ETA: 00:00:00sma40
-    0%                          100%
-    [############################# ] | ETA: 00:00:00spy
-    0%                          100%
-    [############################# ] | ETA: 00:00:00
-
-.. code:: ipython2
-
-    res2.plot(freq='m')
+    res2.plot(freq='m');
 
 
 
-.. image:: _static/examples-nb_16_0.png
-    :class: pynb
+.. image:: _static/examples-nb_17_0.png
+   :class: pynb
+   :width: 877px
+   :height: 318px
 
 
-.. code:: ipython2
+.. code:: ipython3
 
     res2.display()
 
 
 .. parsed-literal::
-    :class: pynb-result
+   :class: pynb-result
 
     Stat                 sma10       sma20       sma40       spy
     -------------------  ----------  ----------  ----------  ----------
     Start                2010-01-03  2010-01-03  2010-01-03  2010-01-03
-    End                  2017-02-22  2017-02-22  2017-02-22  2017-02-22
+    End                  2022-06-30  2022-06-30  2022-06-30  2022-06-30
     Risk-free rate       0.00%       0.00%       0.00%       0.00%
     
-    Total Return         77.09%      103.52%     106.10%     140.56%
-    Daily Sharpe         0.52        0.65        0.67        0.88
-    Daily Sortino        0.63        0.79        0.84        1.13
-    CAGR                 8.34%       10.47%      10.66%      13.09%
-    Max Drawdown         -26.87%     -26.94%     -32.56%     -18.60%
-    Calmar Ratio         0.31        0.39        0.33        0.70
+    Total Return         280.43%     230.04%     145.62%     325.28%
+    Daily Sharpe         0.63        0.58        0.47        0.76
+    Daily Sortino        0.99        0.91        0.73        1.15
+    CAGR                 11.29%      10.03%      7.46%       12.29%
+    Max Drawdown         -31.77%     -40.72%     -34.93%     -33.72%
+    Calmar Ratio         0.36        0.25        0.21        0.36
     
-    MTD                  6.62%       6.85%       6.86%       3.85%
-    3m                   15.24%      12.92%      15.09%      7.75%
-    6m                   30.05%      30.43%      31.39%      9.31%
-    YTD                  8.03%       7.86%       8.05%       5.70%
-    1Y                   48.12%      39.04%      33.57%      23.91%
-    3Y (ann.)            8.20%       10.16%      15.75%      10.76%
-    5Y (ann.)            10.07%      11.58%      14.10%      13.99%
-    10Y (ann.)           8.34%       10.47%      10.66%      13.09%
-    Since Incep. (ann.)  8.34%       10.47%      10.66%      13.09%
+    MTD                  -2.19%      -13.50%     -9.98%      -7.71%
+    3m                   -11.31%     -23.39%     -20.18%     -16.92%
+    6m                   -9.89%      -32.10%     -30.74%     -19.71%
+    YTD                  -9.47%      -31.76%     -30.31%     -19.51%
+    1Y                   -12.46%     -24.34%     -27.30%     -10.09%
+    3Y (ann.)            28.73%      14.82%      3.73%       10.46%
+    5Y (ann.)            16.58%      8.86%       2.41%       11.35%
+    10Y (ann.)           13.92%      10.97%      9.68%       12.89%
+    Since Incep. (ann.)  11.29%      10.03%      7.46%       12.29%
     
-    Daily Sharpe         0.52        0.65        0.67        0.88
-    Daily Sortino        0.63        0.79        0.84        1.13
-    Daily Mean (ann.)    9.76%       11.58%      11.68%      13.48%
-    Daily Vol (ann.)     18.65%      17.96%      17.53%      15.30%
-    Daily Skew           -0.40       -0.49       -0.35       -0.38
-    Daily Kurt           6.58        4.47        3.44        4.05
-    Best Day             9.58%       5.78%       5.78%       4.65%
-    Worst Day            -7.99%      -7.99%      -5.64%      -6.51%
+    Daily Sharpe         0.63        0.58        0.47        0.76
+    Daily Sortino        0.99        0.91        0.73        1.15
+    Daily Mean (ann.)    12.81%      11.53%      9.01%       13.11%
+    Daily Vol (ann.)     20.48%      19.79%      18.98%      17.35%
+    Daily Skew           -0.12       -0.29       -0.45       -0.60
+    Daily Kurt           6.60        6.24        4.32        11.75
+    Best Day             10.47%      10.47%      6.20%       9.06%
+    Worst Day            -8.26%      -8.26%      -8.26%      -10.94%
     
-    Monthly Sharpe       0.54        0.60        0.60        1.12
-    Monthly Sortino      0.79        1.08        1.02        1.83
-    Monthly Mean (ann.)  11.21%      12.03%      12.37%      13.99%
-    Monthly Vol (ann.)   20.60%      19.97%      20.70%      12.51%
-    Monthly Skew         -0.30       -0.02       -0.17       -0.15
-    Monthly Kurt         0.87        -0.15       -0.24       0.32
-    Best Month           18.65%      14.34%      13.07%      10.91%
-    Worst Month          -16.94%     -14.23%     -15.05%     -7.94%
+    Monthly Sharpe       0.64        0.55        0.43        0.93
+    Monthly Sortino      1.16        1.03        0.75        1.64
+    Monthly Mean (ann.)  13.58%      12.02%      9.78%       13.16%
+    Monthly Vol (ann.)   21.08%      21.97%      22.49%      14.21%
+    Monthly Skew         -0.05       0.22        -0.10       -0.40
+    Monthly Kurt         1.01        1.08        0.64        0.87
+    Best Month           22.75%      24.73%      21.97%      12.70%
+    Worst Month          -16.94%     -14.34%     -15.86%     -12.49%
     
-    Yearly Sharpe        0.47        0.48        0.66        1.10
-    Yearly Sortino       1.54        11.38       -           -
-    Yearly Mean          8.25%       10.34%      10.45%      11.80%
-    Yearly Vol           17.65%      21.47%      15.82%      10.71%
-    Yearly Skew          0.09        0.63        -0.97       1.20
-    Yearly Kurt          -1.72       0.33        1.75        1.73
-    Best Year            32.80%      47.67%      30.59%      32.31%
-    Worst Year           -13.38%     -14.11%     -19.19%     1.23%
+    Yearly Sharpe        0.55        0.43        0.40        0.81
+    Yearly Sortino       2.05        1.04        0.77        2.25
+    Yearly Mean          13.49%      13.92%      9.76%       12.73%
+    Yearly Vol           24.53%      32.71%      24.22%      15.65%
+    Yearly Skew          0.41        -0.14       -0.87       -0.64
+    Yearly Kurt          -0.40       -0.95       -0.59       0.01
+    Best Year            62.47%      66.99%      39.35%      32.31%
+    Worst Year           -18.59%     -37.01%     -32.06%     -19.51%
     
-    Avg. Drawdown        -4.69%      -3.45%      -3.09%      -1.65%
-    Avg. Drawdown Days   61.50       46.67       51.78       17.55
-    Avg. Up Month        4.58%       4.71%       4.91%       3.06%
-    Avg. Down Month      -4.81%      -4.55%      -4.80%      -2.90%
-    Win Year %           57.14%      71.43%      85.71%      100.00%
-    Win 12m %            62.67%      62.67%      72.00%      92.00%
+    Avg. Drawdown        -4.00%      -3.52%      -3.68%      -1.68%
+    Avg. Drawdown Days   40.84       35.41       48.78       15.84
+    Avg. Up Month        4.67%       4.99%       4.69%       3.20%
+    Avg. Down Month      -5.09%      -4.92%      -5.80%      -3.62%
+    Win Year %           58.33%      66.67%      75.00%      83.33%
+    Win 12m %            68.35%      66.91%      69.78%      92.09%
 
 
 
@@ -353,7 +341,7 @@ Basically, when the 50 day moving average will be above the 200-day moving avera
 
 Here's the WeighTarget implementation (this Algo also already exists in the algos module):
 
-.. code:: ipython2
+.. code:: ipython3
 
     class WeighTarget(bt.Algo):
         """
@@ -385,7 +373,7 @@ Here's the WeighTarget implementation (this Algo also already exists in the algo
 
 So let's start with a simple 50-200 day sma crossover for a single security.
 
-.. code:: ipython2
+.. code:: ipython3
 
     ## download some data & calc SMAs
     data = bt.get('spy', start='2010-01-01')
@@ -405,7 +393,7 @@ So let's start with a simple 50-200 day sma crossover for a single security.
 
 Ok so we downloaded our data, calculated the simple moving averages, and then we setup our target weight (tw) DataFrame. Let's take a look at our target weights to see if they make any sense.
 
-.. code:: ipython2
+.. code:: ipython3
 
     # plot the target weights + chart of price & SMAs
     tmp = bt.merge(tw, data, sma50, sma200)
@@ -414,8 +402,10 @@ Ok so we downloaded our data, calculated the simple moving averages, and then we
 
 
 
-.. image:: _static/examples-nb_24_0.png
-    :class: pynb
+.. image:: _static/examples-nb_25_0.png
+   :class: pynb
+   :width: 915px
+   :height: 300px
 
 
 
@@ -423,7 +413,7 @@ As mentioned earlier, it's always a good idea to plot your strategy data. It is 
 
 Now let's move on with the Strategy & Backtest. 
 
-.. code:: ipython2
+.. code:: ipython3
 
     ma_cross = bt.Strategy('ma_cross', [WeighTarget(tw),
                                         bt.algos.Rebalance()])
@@ -431,22 +421,16 @@ Now let's move on with the Strategy & Backtest.
     t = bt.Backtest(ma_cross, data)
     res = bt.run(t)
 
+.. code:: ipython3
 
-.. parsed-literal::
-    :class: pynb-result
-
-    ma_cross
-    0%                          100%
-    [############################# ] | ETA: 00:00:00
-
-.. code:: ipython2
-
-    res.plot()
+    res.plot();
 
 
 
-.. image:: _static/examples-nb_27_0.png
-    :class: pynb
+.. image:: _static/examples-nb_28_0.png
+   :class: pynb
+   :width: 877px
+   :height: 302px
 
 
 
@@ -461,7 +445,7 @@ The most straightforward way would be to test the different sub-strategies, extr
 
 Let's see how this looks:
 
-.. code:: ipython2
+.. code:: ipython3
 
     # first let's create a helper function to create a ma cross backtest
     def ma_cross(ticker, start='2010-01-01', 
@@ -506,36 +490,28 @@ Let's see how this looks:
     t = bt.Backtest(s, data)
     res = bt.run(t)
 
+.. code:: ipython3
 
-.. parsed-literal::
-    :class: pynb-result
-
-    aapl_ma_cross
-    0%                          100%
-    [############################# ] | ETA: 00:00:00msft_ma_cross
-    0%                          100%
-    [############################# ] | ETA: 00:00:00s
-    0%                          100%
-    [############################# ] | ETA: 00:00:00
-
-.. code:: ipython2
-
-    res.plot()
-
-
-
-.. image:: _static/examples-nb_30_0.png
-    :class: pynb
-
-
-.. code:: ipython2
-
-    res.plot_weights()
+    res.plot();
 
 
 
 .. image:: _static/examples-nb_31_0.png
-    :class: pynb
+   :class: pynb
+   :width: 877px
+   :height: 302px
+
+
+.. code:: ipython3
+
+    res.plot_weights();
+
+
+
+.. image:: _static/examples-nb_32_0.png
+   :class: pynb
+   :width: 874px
+   :height: 287px
 
 
 
@@ -547,7 +523,7 @@ This means that the parent strategy can use the price information (which reflect
 
 Perhaps some code will help:
 
-.. code:: ipython2
+.. code:: ipython3
 
     # once again, we will create a few backtests
     # these will be the child strategies
@@ -569,33 +545,30 @@ Perhaps some code will help:
     t = bt.Backtest(s, data)
     res = bt.run(t)
 
+.. code:: ipython3
 
-.. parsed-literal::
-    :class: pynb-result
-
-    s
-    0%                          100%
-    [############################# ] | ETA: 00:00:00
-
-.. code:: ipython2
-
-    res.plot()
-
-
-
-.. image:: _static/examples-nb_34_0.png
-    :class: pynb
-
-
-.. code:: ipython2
-
-    res.plot_weights()
+    res.plot();
 
 
 
 .. image:: _static/examples-nb_35_0.png
-    :class: pynb
+   :class: pynb
+   :width: 884px
+   :height: 302px
+
+
+.. code:: ipython3
+
+    res.plot_weights();
+
+
+
+.. image:: _static/examples-nb_36_0.png
+   :class: pynb
+   :width: 882px
+   :height: 287px
 
 
 
 So there you have it. Simpler, and more complete. 
+

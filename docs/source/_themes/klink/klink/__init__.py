@@ -9,7 +9,7 @@ def convert_notebooks():
     Converts IPython Notebooks to proper .rst files and moves static
     content to the _static directory.
     """
-    convert_status = call(['ipython', 'nbconvert', '--to', 'rst', '*.ipynb'])
+    convert_status = call(['jupyter', 'nbconvert', '--to', 'rst', '*.ipynb'])
     if convert_status != 0:
         raise SystemError('Conversion failed! Status was %s' % convert_status)
 
@@ -32,14 +32,17 @@ def convert_notebooks():
 
         # rename static dir in rst file
         rst_file = '%s.rst' % name
-        print('REsT file is %s' % rst_file)
+        print('RST file is %s' % rst_file)
         data = None
         with open(rst_file, 'r') as f:
             data = f.read()
 
         if data is not None:
             with open(rst_file, 'w') as f:
-                data = re.sub('%s' % sdir, '_static', data)
+                # On Windows, bad escape character sequences are included (%5C) in static references
+                # We remove these here and replace with forward slashes as appropriate
+                # While converting the static directory name.
+                data = re.sub('%s(%%5C|/)' % sdir, '_static/', data)
                 f.write(data)
 
         # add special tags
@@ -56,10 +59,10 @@ def convert_notebooks():
                 line = lines[i]
                 # add class tags to images for css formatting
                 if 'image::' in line:
-                    lines.insert(i + 1, '    :class: pynb\n')
+                    lines.insert(i + 1, '   :class: pynb\n')
                     n += 1
                 elif 'parsed-literal::' in line:
-                    lines.insert(i + 1, '    :class: pynb-result\n')
+                    lines.insert(i + 1, '   :class: pynb-result\n')
                     n += 1
                 elif 'raw:: html' in line:
                     rawWatch = True

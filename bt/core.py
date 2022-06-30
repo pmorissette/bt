@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from future.utils import iteritems
 
+
 PAR = 100.0
 TOL = 1e-16
 
@@ -590,7 +591,9 @@ class StrategyBase(Node):
             self._paper = paper
 
         # setup universe
-        funiverse = universe
+        # TODO: a copy is made here to avoid polluting the universes
+        # of substrategies. is this desired?
+        funiverse = universe.copy()
 
         if self._universe_tickers:
             # if we have universe_tickers defined, limit universe to
@@ -719,6 +722,7 @@ class StrategyBase(Node):
                 # avoid useless update call
                 if c._issec and not c._needupdate:
                     continue
+
                 c.update(date, data, inow)
                 val += c.value
                 # Strategies always have positive notional value
@@ -1007,6 +1011,7 @@ class StrategyBase(Node):
         # allocate to child
         # figure out weight delta
         c = self.children[child]
+
         if self.fixed_income:
             # In fixed income strategies, the provided "base" value can be used
             # to upscale/downscale the notional_value of the strategy, whereas

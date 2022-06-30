@@ -1798,6 +1798,7 @@ class Rebalance(Algo):
                 v = c.notional_value
             else:
                 v = c.value
+
             # if non-zero and non-null, we need to close it out
             if v != 0.0 and not np.isnan(v):
                 target.close(cname, update=False)
