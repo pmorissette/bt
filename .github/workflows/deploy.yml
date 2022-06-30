@@ -24,16 +24,16 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install -e .[dev]
+        make develop
         python -m pip install -U wheel twine setuptools
 
     - name: Lint
       run: |
-        python -m flake8 bt setup.py
+        make lint
 
     - name: Test
       run: |
-        python -m nose --with-coverage --cover-package bt
+        make test
 
     - name: Package and check
       run: |
