@@ -381,6 +381,7 @@ class StrategyBase(Node):
     _last_fee = cy.declare(cy.double)
     _paper_trade = cy.declare(cy.bint)
     bankrupt = cy.declare(cy.bint)
+    _last_chk = cy.declare(cy.bint)
 
     def __init__(self, name, children=None, parent=None):
         Node.__init__(self, name, children=children, parent=parent)
@@ -395,6 +396,8 @@ class StrategyBase(Node):
         self._last_notl_value = 0
         self._last_price = PAR
         self._last_fee = 0
+
+        self._last_chk = 0
 
         # default commission function
         self.commission_fn = self._dflt_comm_fn
@@ -595,8 +598,6 @@ class StrategyBase(Node):
             self._paper = paper
 
         # setup universe
-        # TODO: a copy is made here to avoid polluting the universes
-        # of substrategies. is this desired?
         funiverse = universe.copy()
 
         # filter only if the node has any children specified as input,
