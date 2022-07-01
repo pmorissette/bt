@@ -1,17 +1,11 @@
 from __future__ import division
 from datetime import datetime
+from unittest import mock
 
-import sys
-if sys.version_info < (3, 3):
-    import mock
-else:
-    from unittest import mock
-
-
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 import random
-from nose.tools import assert_almost_equal as aae
 
 import bt
 import bt.algos as algos
@@ -1284,8 +1278,8 @@ def test_weigh_inv_vol():
     weights = s.temp['weights']
     assert len(weights) == 2
     assert weights['c2'] > weights['c1']
-    aae(weights['c1'], 0.020, 3)
-    aae(weights['c2'], 0.980, 3)
+    assert weights['c1'] == pytest.approx(0.020, 3)
+    assert weights['c2'] == pytest.approx(0.980, 3)
 
 
 @mock.patch('ffn.calc_mean_var_weights')
@@ -1330,7 +1324,7 @@ def test_weigh_randomly():
     assert algo(s)
     weights = s.temp['weights']
     assert len( weights ) == 3
-    aae( sum( weights.values() ), 0.95 )
+    assert sum( weights.values()) == pytest.approx(0.95)
     for c in s.temp['selected']:
         assert weights[c] <= 0.5
         assert weights[c] >= 0.3
@@ -2187,11 +2181,11 @@ def test_hedge_risk():
 
     # Check that risk is hedged!
     assert s.risk['Risk1'] == 0
-    aae( s.risk['Risk2'], 0, 13)
+    assert s.risk['Risk2'] == pytest.approx(0, 13)
     # Check that positions are nonzero (trivial solution)
     assert c1.position == 100
     assert c2.position == -10
-    aae( c3.position, -(100*2 - 10*5)/10., 13)
+    assert c3.position == pytest.approx(-(100*2 - 10*5)/10., 13)
     
   
 def test_hedge_risk_nan():

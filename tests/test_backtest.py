@@ -1,14 +1,13 @@
 from __future__ import division
-import bt
-import pandas as pd
+
 import numpy as np
-from nose.tools import assert_almost_equal as aae
+import pandas as pd
+import pytest
 import random
-import sys
-if sys.version_info < (3, 3):
-    import mock
-else:
-    from unittest import mock
+
+from unittest import mock
+
+import bt
 
 
 def test_backtest_copies_strategy():
@@ -325,7 +324,7 @@ def test_RenomalizedFixedIncomeResult():
     
     # Renormalizing results to a constant size "fixes" this
     norm_res = bt.backtest.RenormalizedFixedIncomeResult( 1e6, *res.backtest_list )    
-    aae( norm_res.stats['s'].total_return, t.strategy.value / 1e6, 16 )
+    assert norm_res.stats['s'].total_return == pytest.approx(t.strategy.value / 1e6, 16)
     
     # Check that using the lagged notional value series leads to the same results
     # as the original calculation. This proves that we can re-derive the price
