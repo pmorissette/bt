@@ -1,3 +1,6 @@
+Equally Weighted Risk Contributions Portfolio
+---------------------------------------------
+
 .. code:: ipython3
 
     import numpy as np
@@ -57,23 +60,14 @@ Create Fake Index Data
     rdf['rf'] = 0.02/252
     
     pdf = 100*np.cumprod(1+rdf)
-    pdf.plot()
+    pdf.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/ERC_3_1.png
+.. image:: _static/ERC_4_0.png
    :class: pynb
-   :width: 375px
-   :height: 259px
+   :width: 377px
+   :height: 262px
 
 
 Build and run ERC Strategy
@@ -123,44 +117,26 @@ http://thierry-roncalli.com/download/erc.pdf
 
 .. code:: ipython3
 
-    res_target.get_security_weights().plot()
+    res_target.get_security_weights().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/ERC_6_1.png
+.. image:: _static/ERC_7_0.png
    :class: pynb
-   :width: 372px
-   :height: 259px
+   :width: 373px
+   :height: 262px
 
 
 .. code:: ipython3
 
-    res_target.prices.plot()
+    res_target.prices.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/ERC_7_1.png
+.. image:: _static/ERC_8_0.png
    :class: pynb
-   :width: 375px
-   :height: 260px
+   :width: 376px
+   :height: 264px
 
 
 .. code:: ipython3
@@ -182,25 +158,17 @@ http://thierry-roncalli.com/download/erc.pdf
     fig, ax = plt.subplots(nrows=1,ncols=1)
     trc_target.plot(ax=ax)
     ax.set_title('Total Risk Contribution')
-    ax.plot()
+    ax.plot();
 
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/ERC_8_1.png
+.. image:: _static/ERC_9_0.png
    :class: pynb
-   :width: 385px
-   :height: 274px
+   :width: 386px
+   :height: 277px
 
 
 You can see the Total Risk Contribution is roughly equal from both
 assets.
+

@@ -1,3 +1,6 @@
+Trend Example 2
+---------------
+
 .. code:: ipython3
 
     import numpy as np
@@ -18,23 +21,14 @@
         columns=['foo']
     )
     
-    pdf.plot()
+    pdf.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Trend_2_1_1.png
+.. image:: _static/Trend_2_2_0.png
    :class: pynb
-   :width: 372px
-   :height: 248px
+   :width: 373px
+   :height: 251px
 
 
 .. code:: ipython3
@@ -143,14 +137,14 @@
 
 .. code:: ipython3
 
-    res.plot_security_weights()
+    res.plot_security_weights();
 
 
 
-.. image:: _static/Trend_2_4_0.png
+.. image:: _static/Trend_2_5_0.png
    :class: pynb
-   :width: 874px
-   :height: 287px
+   :width: 876px
+   :height: 289px
 
 
 .. code:: ipython3

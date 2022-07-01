@@ -1,17 +1,26 @@
 SMA Strategy
 ------------
 
-Let's start off with a Simple Moving Average (SMA) strategy. We will start with a simple version of the strategy, namely:
+Let’s start off with a Simple Moving Average (SMA) strategy. We will
+start with a simple version of the strategy, namely:
 
-* **Select** the securities that are currently above their 50 day moving average
-* **Weigh** each selected security equally
-* **Rebalance** the portfolio to reflect the target weights
+-  **Select** the securities that are currently above their 50 day
+   moving average
+-  **Weigh** each selected security equally
+-  **Rebalance** the portfolio to reflect the target weights
 
-This should be pretty simple to build. The only thing missing above is the calculation of the simple moving average. When should this take place? 
+This should be pretty simple to build. The only thing missing above is
+the calculation of the simple moving average. When should this take
+place?
 
-Given the flexibility of **bt**, there is no strict rule. The average calculation could be performed in an Algo, but that would be pretty inefficient. A better way would be to calculate the moving average at the beginning - before starting the backtest. After all, all the data is known in advance. 
+Given the flexibility of **bt**, there is no strict rule. The average
+calculation could be performed in an Algo, but that would be pretty
+inefficient. A better way would be to calculate the moving average at
+the beginning - before starting the backtest. After all, all the data is
+known in advance.
 
-Now that we know what we have to do, let's get started. First we will download some data and calculate the simple moving average.
+Now that we know what we have to do, let’s get started. First we will
+download some data and calculate the simple moving average.
 
 .. code:: ipython3
 
@@ -31,8 +40,8 @@ Now that we know what we have to do, let's get started. First we will download s
     # a rolling mean is a moving average, right?
     sma = data.rolling(50).mean()
 
-
-It's always a good idea to plot your data to make sure it looks ok. So let's see how the data + sma plot looks like.
+It’s always a good idea to plot your data to make sure it looks ok. So
+let’s see how the data + sma plot looks like.
 
 .. code:: ipython3
 
@@ -41,22 +50,36 @@ It's always a good idea to plot your data to make sure it looks ok. So let's see
 
 
 
-.. image:: _static/examples-nb_5_0.png
+.. image:: _static/examples-nb_6_0.png
    :class: pynb
-   :width: 877px
-   :height: 300px
-
+   :width: 879px
+   :height: 305px
 
 
 Looks legit.
 
-Now that we have our data, we will need to create our security selection logic. Let's create a basic Algo that will select the securities that are above their moving average.
+Now that we have our data, we will need to create our security selection
+logic. Let’s create a basic Algo that will select the securities that
+are above their moving average.
 
-Before we do that, let's think about how we will code it. We could pass the SMA data and then extract the row (from the sma DataFrame) on the current date, compare the values to the current prices, and then keep a list of those securities where the price is above the SMA. This is the most straightforward approach. However, this is not very re-usable because the logic within the Algo will be quite specific to the task at hand and if we wish to change the logic, we will have to write a new algo. 
+Before we do that, let’s think about how we will code it. We could pass
+the SMA data and then extract the row (from the sma DataFrame) on the
+current date, compare the values to the current prices, and then keep a
+list of those securities where the price is above the SMA. This is the
+most straightforward approach. However, this is not very re-usable
+because the logic within the Algo will be quite specific to the task at
+hand and if we wish to change the logic, we will have to write a new
+algo.
 
-For example, what if we wanted to select securities that were below their sma? Or what if we only wanted securities that were 5% above their sma?
+For example, what if we wanted to select securities that were below
+their sma? Or what if we only wanted securities that were 5% above their
+sma?
 
-What we could do instead is pre-calculate the selection logic DataFrame (a fast, vectorized operation) and write a generic Algo that takes in this boolean DataFrame and returns the securities where the value is True on a given date. This will be must faster and much more reusable. Let's see how the implementation looks like.
+What we could do instead is pre-calculate the selection logic DataFrame
+(a fast, vectorized operation) and write a generic Algo that takes in
+this boolean DataFrame and returns the securities where the value is
+True on a given date. This will be must faster and much more reusable.
+Let’s see how the implementation looks like.
 
 .. code:: ipython3
 
@@ -128,10 +151,10 @@ So just to recap, we created the strategy, created the backtest by joining Strat
 
 
 
-.. image:: _static/examples-nb_11_0.png
+.. image:: _static/examples-nb_12_0.png
    :class: pynb
-   :width: 877px
-   :height: 302px
+   :width: 879px
+   :height: 304px
 
 
 .. code:: ipython3
@@ -146,7 +169,7 @@ So just to recap, we created the strategy, created the backtest by joining Strat
     Stat                 above50sma
     -------------------  ------------
     Start                2010-01-03
-    End                  2022-06-30
+    End                  2022-07-01
     Risk-free rate       0.00%
     
     Total Return         116.08%
@@ -156,19 +179,19 @@ So just to recap, we created the strategy, created the backtest by joining Strat
     Max Drawdown         -39.43%
     Calmar Ratio         0.16
     
-    MTD                  -7.41%
-    3m                   -20.85%
-    6m                   -26.49%
+    MTD                  0.00%
+    3m                   -19.50%
+    6m                   -26.03%
     YTD                  -26.03%
-    1Y                   -22.21%
-    3Y (ann.)            10.35%
-    5Y (ann.)            2.34%
-    10Y (ann.)           8.71%
+    1Y                   -22.10%
+    3Y (ann.)            10.34%
+    5Y (ann.)            1.89%
+    10Y (ann.)           8.70%
     Since Incep. (ann.)  6.36%
     
     Daily Sharpe         0.42
     Daily Sortino        0.63
-    Daily Mean (ann.)    8.08%
+    Daily Mean (ann.)    8.07%
     Daily Vol (ann.)     19.45%
     Daily Skew           -0.65
     Daily Kurt           4.74
@@ -177,10 +200,10 @@ So just to recap, we created the strategy, created the backtest by joining Strat
     
     Monthly Sharpe       0.39
     Monthly Sortino      0.65
-    Monthly Mean (ann.)  8.65%
-    Monthly Vol (ann.)   21.93%
+    Monthly Mean (ann.)  8.59%
+    Monthly Vol (ann.)   21.86%
     Monthly Skew         -0.37
-    Monthly Kurt         0.70
+    Monthly Kurt         0.73
     Best Month           21.65%
     Worst Month          -17.26%
     
@@ -194,17 +217,20 @@ So just to recap, we created the strategy, created the backtest by joining Strat
     Worst Year           -34.38%
     
     Avg. Drawdown        -3.56%
-    Avg. Drawdown Days   47.26
+    Avg. Drawdown Days   47.27
     Avg. Up Month        4.76%
-    Avg. Down Month      -5.44%
+    Avg. Down Month      -5.35%
     Win Year %           66.67%
-    Win 12m %            67.63%
+    Win 12m %            67.14%
 
 
+Nothing stellar but at least you learnt something along the way (I
+hope).
 
-Nothing stellar but at least you learnt something along the way (I hope). 
-
-Oh, and one more thing. If you were to write your own "library" of backtests, you might want to write yourself a helper function that would allow you to test different parameters and securities. That function might look something like this:
+Oh, and one more thing. If you were to write your own “library” of
+backtests, you might want to write yourself a helper function that would
+allow you to test different parameters and securities. That function
+might look something like this:
 
 .. code:: ipython3
 
@@ -226,8 +252,9 @@ Oh, and one more thing. If you were to write your own "library" of backtests, yo
         # now we create the backtest
         return bt.Backtest(s, data)
 
-
-This function allows us to easily generate backtests. We could easily compare a few different SMA periods. Also, let's see if we can beat a long-only allocation to the SPY.
+This function allows us to easily generate backtests. We could easily
+compare a few different SMA periods. Also, let’s see if we can beat a
+long-only allocation to the SPY.
 
 .. code:: ipython3
 
@@ -256,10 +283,10 @@ This function allows us to easily generate backtests. We could easily compare a 
 
 
 
-.. image:: _static/examples-nb_17_0.png
+.. image:: _static/examples-nb_18_0.png
    :class: pynb
-   :width: 877px
-   :height: 318px
+   :width: 879px
+   :height: 320px
 
 
 .. code:: ipython3
@@ -273,73 +300,78 @@ This function allows us to easily generate backtests. We could easily compare a 
     Stat                 sma10       sma20       sma40       spy
     -------------------  ----------  ----------  ----------  ----------
     Start                2010-01-03  2010-01-03  2010-01-03  2010-01-03
-    End                  2022-06-30  2022-06-30  2022-06-30  2022-06-30
+    End                  2022-07-01  2022-07-01  2022-07-01  2022-07-01
     Risk-free rate       0.00%       0.00%       0.00%       0.00%
     
-    Total Return         280.43%     230.04%     145.62%     325.28%
-    Daily Sharpe         0.63        0.58        0.47        0.76
+    Total Return         284.16%     229.80%     145.62%     321.22%
+    Daily Sharpe         0.63        0.58        0.47        0.75
     Daily Sortino        0.99        0.91        0.73        1.15
-    CAGR                 11.29%      10.03%      7.46%       12.29%
+    CAGR                 11.38%      10.03%      7.46%       12.20%
     Max Drawdown         -31.77%     -40.72%     -34.93%     -33.72%
     Calmar Ratio         0.36        0.25        0.21        0.36
     
-    MTD                  -2.19%      -13.50%     -9.98%      -7.71%
-    3m                   -11.31%     -23.39%     -20.18%     -16.92%
-    6m                   -9.89%      -32.10%     -30.74%     -19.71%
-    YTD                  -9.47%      -31.76%     -30.31%     -19.51%
-    1Y                   -12.46%     -24.34%     -27.30%     -10.09%
-    3Y (ann.)            28.73%      14.82%      3.73%       10.46%
-    5Y (ann.)            16.58%      8.86%       2.41%       11.35%
-    10Y (ann.)           13.92%      10.97%      9.68%       12.89%
-    Since Incep. (ann.)  11.29%      10.03%      7.46%       12.29%
+    MTD                  -0.76%      0.00%       0.00%       -0.37%
+    3m                   -10.58%     -22.25%     -18.82%     -16.66%
+    6m                   -10.71%     -32.14%     -30.31%     -20.28%
+    YTD                  -10.71%     -32.14%     -30.31%     -20.28%
+    1Y                   -13.63%     -24.65%     -27.20%     -11.44%
+    3Y (ann.)            28.10%      14.77%      3.73%       10.10%
+    5Y (ann.)            15.80%      8.37%       1.96%       11.11%
+    10Y (ann.)           13.76%      10.96%      9.67%       12.78%
+    Since Incep. (ann.)  11.38%      10.03%      7.46%       12.20%
     
-    Daily Sharpe         0.63        0.58        0.47        0.76
+    Daily Sharpe         0.63        0.58        0.47        0.75
     Daily Sortino        0.99        0.91        0.73        1.15
-    Daily Mean (ann.)    12.81%      11.53%      9.01%       13.11%
-    Daily Vol (ann.)     20.48%      19.79%      18.98%      17.35%
-    Daily Skew           -0.12       -0.29       -0.45       -0.60
-    Daily Kurt           6.60        6.24        4.32        11.75
+    Daily Mean (ann.)    12.88%      11.52%      9.01%       13.03%
+    Daily Vol (ann.)     20.48%      19.79%      18.97%      17.34%
+    Daily Skew           -0.11       -0.29       -0.45       -0.59
+    Daily Kurt           6.61        6.23        4.32        11.75
     Best Day             10.47%      10.47%      6.20%       9.06%
     Worst Day            -8.26%      -8.26%      -8.26%      -10.94%
     
-    Monthly Sharpe       0.64        0.55        0.43        0.93
-    Monthly Sortino      1.16        1.03        0.75        1.64
-    Monthly Mean (ann.)  13.58%      12.02%      9.78%       13.16%
-    Monthly Vol (ann.)   21.08%      21.97%      22.49%      14.21%
-    Monthly Skew         -0.05       0.22        -0.10       -0.40
-    Monthly Kurt         1.01        1.08        0.64        0.87
+    Monthly Sharpe       0.65        0.54        0.43        0.92
+    Monthly Sortino      1.18        1.02        0.75        1.62
+    Monthly Mean (ann.)  13.56%      11.95%      9.71%       13.00%
+    Monthly Vol (ann.)   20.96%      21.94%      22.42%      14.20%
+    Monthly Skew         -0.02       0.22        -0.10       -0.40
+    Monthly Kurt         1.01        1.11        0.67        0.89
     Best Month           22.75%      24.73%      21.97%      12.70%
     Worst Month          -16.94%     -14.34%     -15.86%     -12.49%
     
-    Yearly Sharpe        0.55        0.43        0.40        0.81
-    Yearly Sortino       2.05        1.04        0.77        2.25
-    Yearly Mean          13.49%      13.92%      9.76%       12.73%
-    Yearly Vol           24.53%      32.71%      24.22%      15.65%
-    Yearly Skew          0.41        -0.14       -0.87       -0.64
-    Yearly Kurt          -0.40       -0.95       -0.59       0.01
+    Yearly Sharpe        0.54        0.43        0.40        0.80
+    Yearly Sortino       2.01        1.03        0.77        2.15
+    Yearly Mean          13.38%      13.94%      9.76%       12.67%
+    Yearly Vol           24.64%      32.80%      24.22%      15.79%
+    Yearly Skew          0.41        -0.15       -0.87       -0.68
+    Yearly Kurt          -0.43       -0.96       -0.59       0.12
     Best Year            62.47%      66.99%      39.35%      32.31%
-    Worst Year           -18.59%     -37.01%     -32.06%     -19.51%
+    Worst Year           -18.59%     -37.01%     -32.06%     -20.28%
     
-    Avg. Drawdown        -4.00%      -3.52%      -3.68%      -1.68%
-    Avg. Drawdown Days   40.84       35.41       48.78       15.84
-    Avg. Up Month        4.67%       4.99%       4.69%       3.20%
-    Avg. Down Month      -5.09%      -4.92%      -5.80%      -3.62%
+    Avg. Drawdown        -3.95%      -3.49%      -3.68%      -1.69%
+    Avg. Drawdown Days   40.43       35.12       48.79       15.92
+    Avg. Up Month        4.68%       5.00%       4.69%       3.20%
+    Avg. Down Month      -5.00%      -4.85%      -5.70%      -3.56%
     Win Year %           58.33%      66.67%      75.00%      83.33%
-    Win 12m %            68.35%      66.91%      69.78%      92.09%
+    Win 12m %            68.57%      66.43%      69.29%      91.43%
 
 
-
-And there you have it. Beating the market ain't that easy!
-
+And there you have it. Beating the market ain’t that easy!
 
 SMA Crossover Strategy
 ----------------------
 
-Let's build on the last section to test a moving average crossover strategy. The easiest way to achieve this is to build an Algo similar to SelectWhere, but for the purpose of setting target weights. Let's call this algo WeighTarget. This algo will take a DataFrame of target weights that we will pre-calculate. 
+Let’s build on the last section to test a moving average crossover
+strategy. The easiest way to achieve this is to build an Algo similar to
+SelectWhere, but for the purpose of setting target weights. Let’s call
+this algo WeighTarget. This algo will take a DataFrame of target weights
+that we will pre-calculate.
 
-Basically, when the 50 day moving average will be above the 200-day moving average, we will be long (+1 target weight). Conversely, when the 50 is below the 200, we will be short (-1 target weight). 
+Basically, when the 50 day moving average will be above the 200-day
+moving average, we will be long (+1 target weight). Conversely, when the
+50 is below the 200, we will be short (-1 target weight).
 
-Here's the WeighTarget implementation (this Algo also already exists in the algos module):
+Here’s the WeighTarget implementation (this Algo also already exists in
+the algos module):
 
 .. code:: ipython3
 
@@ -370,8 +402,8 @@ Here's the WeighTarget implementation (this Algo also already exists in the algo
             # return True because we want to keep on moving down the stack
             return True
 
-
-So let's start with a simple 50-200 day sma crossover for a single security.
+So let’s start with a simple 50-200 day sma crossover for a single
+security.
 
 .. code:: ipython3
 
@@ -390,8 +422,9 @@ So let's start with a simple 50-200 day sma crossover for a single security.
     # calculating its first point. Therefore, it will start with a bunch of nulls (NaNs).
     tw[sma200.isnull()] = 0.0
 
-
-Ok so we downloaded our data, calculated the simple moving averages, and then we setup our target weight (tw) DataFrame. Let's take a look at our target weights to see if they make any sense.
+Ok so we downloaded our data, calculated the simple moving averages, and
+then we setup our target weight (tw) DataFrame. Let’s take a look at our
+target weights to see if they make any sense.
 
 .. code:: ipython3
 
@@ -402,16 +435,17 @@ Ok so we downloaded our data, calculated the simple moving averages, and then we
 
 
 
-.. image:: _static/examples-nb_25_0.png
+.. image:: _static/examples-nb_26_0.png
    :class: pynb
-   :width: 915px
-   :height: 300px
+   :width: 916px
+   :height: 305px
 
 
+As mentioned earlier, it’s always a good idea to plot your strategy
+data. It is usually easier to spot logic/programming errors this way,
+especially when dealing with lots of data.
 
-As mentioned earlier, it's always a good idea to plot your strategy data. It is usually easier to spot logic/programming errors this way, especially when dealing with lots of data. 
-
-Now let's move on with the Strategy & Backtest. 
+Now let’s move on with the Strategy & Backtest.
 
 .. code:: ipython3
 
@@ -427,23 +461,27 @@ Now let's move on with the Strategy & Backtest.
 
 
 
-.. image:: _static/examples-nb_28_0.png
+.. image:: _static/examples-nb_29_0.png
    :class: pynb
-   :width: 877px
-   :height: 302px
+   :width: 879px
+   :height: 304px
 
 
-
-Ok great so there we have our basic moving average crossover strategy. 
+Ok great so there we have our basic moving average crossover strategy.
 
 Exploring the Tree Structure
 ----------------------------
 
-So far, we have explored strategies that allocate capital to securities. But what if we wanted to test a strategy that allocated capital to sub-strategies?
+So far, we have explored strategies that allocate capital to securities.
+But what if we wanted to test a strategy that allocated capital to
+sub-strategies?
 
-The most straightforward way would be to test the different sub-strategies, extract their equity curves and create "synthetic securities" that would basically just represent the returns achieved from allocating capital to the different sub-strategies.
+The most straightforward way would be to test the different
+sub-strategies, extract their equity curves and create “synthetic
+securities” that would basically just represent the returns achieved
+from allocating capital to the different sub-strategies.
 
-Let's see how this looks:
+Let’s see how this looks:
 
 .. code:: ipython3
 
@@ -496,10 +534,10 @@ Let's see how this looks:
 
 
 
-.. image:: _static/examples-nb_31_0.png
+.. image:: _static/examples-nb_32_0.png
    :class: pynb
-   :width: 877px
-   :height: 302px
+   :width: 879px
+   :height: 304px
 
 
 .. code:: ipython3
@@ -508,18 +546,27 @@ Let's see how this looks:
 
 
 
-.. image:: _static/examples-nb_32_0.png
+.. image:: _static/examples-nb_33_0.png
    :class: pynb
-   :width: 874px
-   :height: 287px
+   :width: 876px
+   :height: 289px
 
 
+As we can see above, the process is a bit more involved, but it works.
+It is not very elegant though, and obtaining security-level allocation
+information is problematic.
 
-As we can see above, the process is a bit more involved, but it works. It is not very elegant though, and obtaining security-level allocation information is problematic. 
+Luckily, bt has built-in functionality for dealing with strategies of
+strategies. It uses the same general principal as demonstrated above but
+does it seamlessly. Basically, when a strategy is a child of another
+strategy, it will create a “paper trade” version of itself internally.
+As we run our strategy, it will run its internal “paper version” and use
+the returns from that strategy to populate the **price** property.
 
-Luckily, bt has built-in functionality for dealing with strategies of strategies. It uses the same general principal as demonstrated above but does it seamlessly. Basically, when a strategy is a child of another strategy, it will create a "paper trade" version of itself internally. As we run our strategy, it will run its internal "paper version" and use the returns from that strategy to populate the **price** property.
-
-This means that the parent strategy can use the price information (which reflects the returns of the strategy had it been employed) to determine the appropriate allocation. Again, this is basically the same process as above, just packed into 1 step.
+This means that the parent strategy can use the price information (which
+reflects the returns of the strategy had it been employed) to determine
+the appropriate allocation. Again, this is basically the same process as
+above, just packed into 1 step.
 
 Perhaps some code will help:
 
@@ -551,10 +598,10 @@ Perhaps some code will help:
 
 
 
-.. image:: _static/examples-nb_35_0.png
+.. image:: _static/examples-nb_36_0.png
    :class: pynb
-   :width: 884px
-   :height: 302px
+   :width: 879px
+   :height: 304px
 
 
 .. code:: ipython3
@@ -563,12 +610,10 @@ Perhaps some code will help:
 
 
 
-.. image:: _static/examples-nb_36_0.png
+.. image:: _static/examples-nb_37_0.png
    :class: pynb
-   :width: 882px
-   :height: 287px
+   :width: 888px
+   :height: 289px
 
 
-
-So there you have it. Simpler, and more complete. 
-
+So there you have it. Simpler, and more complete.
