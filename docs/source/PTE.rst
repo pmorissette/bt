@@ -1,3 +1,6 @@
+Predicted Tracking Error Rebalance Portfolio
+--------------------------------------------
+
 .. code:: ipython3
 
     import numpy as np
@@ -29,23 +32,14 @@ Create Fake Index Data
     rdf['rf'] = 0.
     
     pdf = 100*np.cumprod(1+rdf)
-    pdf.plot()
+    pdf.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/PTE_2_1.png
+.. image:: _static/PTE_3_0.png
    :class: pynb
-   :width: 375px
-   :height: 259px
+   :width: 377px
+   :height: 262px
 
 
 Build and run Target Strategy
@@ -91,23 +85,14 @@ is too high.
 
 .. code:: ipython3
 
-    res_target.get_security_weights().plot()
+    res_target.get_security_weights().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/PTE_5_1.png
+.. image:: _static/PTE_6_0.png
    :class: pynb
-   :width: 372px
-   :height: 259px
+   :width: 373px
+   :height: 262px
 
 
 Now use the PTE rebalance algo to trigger a rebalance whenever predicted
@@ -169,23 +154,14 @@ tracking error is greater than 1%.
     realized_weights_df.plot(ax=ax)
     
     ax.set_title('Target Weights vs PTE Weights')
-    ax.plot()
+    ax.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/PTE_8_1.png
+.. image:: _static/PTE_9_0.png
    :class: pynb
-   :width: 372px
-   :height: 274px
+   :width: 373px
+   :height: 277px
 
 
 .. code:: ipython3
@@ -225,23 +201,14 @@ tracking error is greater than 1%.
     fig, ax = plt.subplots(nrows=1,ncols=1)
     trans_df.cumsum().plot(ax=ax)
     ax.set_title('Cumulative sum of notional traded')
-    ax.plot()
+    ax.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/PTE_12_1.png
+.. image:: _static/PTE_13_0.png
    :class: pynb
-   :width: 372px
-   :height: 274px
+   :width: 373px
+   :height: 277px
 
 
 If we plot the total risk contribution of each asset class and divide by
@@ -278,23 +245,14 @@ roughly similar amounts of volatility from both of the securities.
     trc_target.plot(ax=ax)
     trc_PTE.plot(ax=ax)
     ax.set_title('Total Risk Contribution')
-    ax.plot()
+    ax.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/PTE_14_1.png
+.. image:: _static/PTE_15_0.png
    :class: pynb
-   :width: 385px
-   :height: 274px
+   :width: 386px
+   :height: 277px
 
 
 Looking at the Target strategy’s and PTE strategy’s Total Risk they are
@@ -307,23 +265,14 @@ very similar.
     trc_PTE.sum(axis=1).plot(ax=ax,label='PTE')
     ax.legend()
     ax.set_title('Total Risk')
-    ax.plot()
+    ax.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/PTE_16_1.png
+.. image:: _static/PTE_17_0.png
    :class: pynb
-   :width: 378px
-   :height: 274px
+   :width: 380px
+   :height: 277px
 
 
 .. code:: ipython3
@@ -375,24 +324,15 @@ very similar.
         else:
             ax.axvline(x=dt,color='red')
     
-    ax.legend()
+    ax.legend();
 
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <matplotlib.legend.Legend at 0x16abfa160>
-
-
-
-
-.. image:: _static/PTE_18_1.png
+.. image:: _static/PTE_19_0.png
    :class: pynb
    :width: 397px
-   :height: 263px
+   :height: 266px
 
 
 We can see the Predicted Tracking Error of the PTE Strategy with each

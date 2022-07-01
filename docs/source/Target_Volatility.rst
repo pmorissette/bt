@@ -1,3 +1,6 @@
+Target Volatility
+-----------------
+
 .. code:: ipython3
 
     import numpy as np
@@ -29,23 +32,14 @@ Create Fake Index Data
     rdf['rf'] = 0.
     
     pdf = 100*np.cumprod(1+rdf)
-    pdf.plot()
+    pdf.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Target_Volatility_2_1.png
+.. image:: _static/Target_Volatility_3_0.png
    :class: pynb
-   :width: 375px
-   :height: 259px
+   :width: 377px
+   :height: 262px
 
 
 Build Strategy
@@ -116,23 +110,14 @@ volatility.
     fig, ax = plt.subplots(nrows=1,ncols=1)
     (res.prices.pct_change().rolling(window=12*20).std()*np.sqrt(252)).plot(ax = ax)
     ax.set_title('Rolling Volatility')
-    ax.plot()
+    ax.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/Target_Volatility_8_1.png
+.. image:: _static/Target_Volatility_9_0.png
    :class: pynb
-   :width: 385px
-   :height: 274px
+   :width: 386px
+   :height: 277px
 
 
 Because we are using a 1/vol allocation bar, the less risky security,
@@ -143,23 +128,14 @@ has a much smaller weight.
     fig, ax = plt.subplots(nrows=1,ncols=1)
     res.get_security_weights().plot(ax = ax)
     ax.set_title('Weights')
-    ax.plot()
+    ax.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/Target_Volatility_10_1.png
+.. image:: _static/Target_Volatility_11_0.png
    :class: pynb
-   :width: 372px
-   :height: 274px
+   :width: 374px
+   :height: 277px
 
 
 If we plot the total risk contribution of each asset class and divide by
@@ -184,22 +160,13 @@ roughly similar amounts of volatility.
     fig, ax = plt.subplots(nrows=1,ncols=1)
     trc.plot(ax=ax)
     ax.set_title('% Total Risk Contribution')
-    ax.plot()
+    ax.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    []
-
-
-
-
-.. image:: _static/Target_Volatility_12_1.png
+.. image:: _static/Target_Volatility_13_0.png
    :class: pynb
-   :width: 378px
-   :height: 274px
+   :width: 380px
+   :height: 277px
 
 

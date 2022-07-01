@@ -1,3 +1,6 @@
+Buy and Hold Strategy
+---------------------
+
 .. code:: ipython3
 
     import numpy as np
@@ -29,23 +32,14 @@ Create Fake Index Data
     rdf['rf'] = 0.
     
     pdf = 100*np.cumprod(1+rdf)
-    pdf.plot()
+    pdf.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Buy_and_hold_2_1.png
+.. image:: _static/Buy_and_hold_3_0.png
    :class: pynb
-   :width: 375px
-   :height: 259px
+   :width: 377px
+   :height: 262px
 
 
 Build Strategy
@@ -379,10 +373,10 @@ backtest.
 
 
 
-.. image:: _static/Buy_and_hold_9_0.png
+.. image:: _static/Buy_and_hold_10_0.png
    :class: pynb
-   :width: 874px
-   :height: 295px
+   :width: 876px
+   :height: 297px
 
 
 Strategy value over time
@@ -391,23 +385,14 @@ Strategy value over time
 
     performanceStats = res['static']
     #performance stats is an ffn object
-    res.backtest_list[0].strategy.values.plot()
+    res.backtest_list[0].strategy.values.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Buy_and_hold_11_1.png
+.. image:: _static/Buy_and_hold_12_0.png
    :class: pynb
-   :width: 378px
-   :height: 256px
+   :width: 380px
+   :height: 259px
 
 
 Strategy Outlays
@@ -417,23 +402,14 @@ securities.
 
 .. code:: ipython3
 
-    res.backtest_list[0].strategy.outlays.plot()
+    res.backtest_list[0].strategy.outlays.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Buy_and_hold_13_1.png
+.. image:: _static/Buy_and_hold_14_0.png
    :class: pynb
-   :width: 394px
-   :height: 246px
+   :width: 395px
+   :height: 248px
 
 
 You can get the change in number of shares purchased a

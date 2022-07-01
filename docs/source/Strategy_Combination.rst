@@ -1,3 +1,6 @@
+Strategy Combination
+--------------------
+
 This notebook creates a parent strategy(combined) with 2 child
 strategies(Equal Weight, Inv Vol).
 
@@ -50,23 +53,14 @@ Create fake data
     pdf = np.cumprod(1+rdf)*100
     pdf.iloc[0,:] = 100
     
-    pdf.plot()
+    pdf.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Strategy_Combination_3_1.png
+.. image:: _static/Strategy_Combination_3_0.png
    :class: pynb
-   :width: 375px
-   :height: 248px
+   :width: 376px
+   :height: 251px
 
 
 .. code:: ipython3
@@ -137,44 +131,26 @@ Create fake data
 
 .. code:: ipython3
 
-    res.prices.plot()
+    res.prices.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Strategy_Combination_6_1.png
+.. image:: _static/Strategy_Combination_6_0.png
    :class: pynb
-   :width: 375px
-   :height: 248px
+   :width: 376px
+   :height: 251px
 
 
 .. code:: ipython3
 
-    res.get_security_weights().plot()
+    res.get_security_weights().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Strategy_Combination_7_1.png
+.. image:: _static/Strategy_Combination_7_0.png
    :class: pynb
-   :width: 378px
-   :height: 248px
+   :width: 380px
+   :height: 253px
 
 
 In order to get the weights of each strategy, you can run each strategy,
@@ -240,6 +216,8 @@ run the combined strategy on the new data set.
 
 .. image:: _static/Strategy_Combination_10_0.png
    :class: pynb
+   :width: 879px
+   :height: 320px
 
 
 .. code:: ipython3
@@ -265,50 +243,27 @@ run the combined strategy on the new data set.
     
     res = bt.run(combined_test)
 
+.. code:: ipython3
 
-.. parsed-literal::
-   :class: pynb-result
+    res.plot();
 
-    C:\ProgramData\Anaconda3\lib\site-packages\ffn\core.py:2054: RuntimeWarning: invalid value encountered in minimum
-      negative_returns = np.minimum(returns, 0.)
-    C:\ProgramData\Anaconda3\lib\site-packages\ffn\core.py:2056: RuntimeWarning: divide by zero encountered in true_divide
-      res = np.divide(er.mean(), std)
+
+
+.. image:: _static/Strategy_Combination_12_0.png
+   :class: pynb
+   :width: 879px
+   :height: 320px
 
 
 .. code:: ipython3
 
-    res.plot()
+    res.get_security_weights().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <matplotlib.axes._subplots.AxesSubplot at 0x1d62f7d0748>
-
-
-
-
-.. image:: _static/Strategy_Combination_12_1.png
+.. image:: _static/Strategy_Combination_13_0.png
    :class: pynb
+   :width: 373px
+   :height: 251px
 
-
-.. code:: ipython3
-
-    res.get_security_weights().plot()
-
-
-
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <matplotlib.axes._subplots.AxesSubplot at 0x1d62f9fb0f0>
-
-
-
-
-.. image:: _static/Strategy_Combination_13_1.png
-   :class: pynb
 

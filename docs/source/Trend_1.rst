@@ -1,3 +1,6 @@
+Trend Example 1
+---------------
+
 .. code:: ipython3
 
     import matplotlib.pyplot as plt
@@ -42,23 +45,14 @@ Create fake data
         )
     pdf = np.cumprod(1+rdf)*100
     
-    pdf.plot()
+    pdf.plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Trend_1_2_1.png
+.. image:: _static/Trend_1_3_0.png
    :class: pynb
-   :width: 375px
-   :height: 248px
+   :width: 376px
+   :height: 251px
 
 
 Create Trend signal over the last 12 months
@@ -73,10 +67,10 @@ Create Trend signal over the last 12 months
 
 
 
-.. image:: _static/Trend_1_4_0.png
+.. image:: _static/Trend_1_5_0.png
    :class: pynb
-   :width: 383px
-   :height: 248px
+   :width: 384px
+   :height: 251px
 
 
 .. code:: ipython3
@@ -405,10 +399,10 @@ limited to 40%.
 
 
 
-.. image:: _static/Trend_1_11_0.png
+.. image:: _static/Trend_1_12_0.png
    :class: pynb
-   :width: 375px
-   :height: 238px
+   :width: 376px
+   :height: 240px
 
 
 .. code:: ipython3

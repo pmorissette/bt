@@ -1,5 +1,5 @@
 Fixed Income Examples
-=====================
+---------------------
 
 This example notebook illustrates some of the more sophisticated
 functionality of the package, especially related to fixed income
@@ -55,7 +55,7 @@ The notebook contains the following parts:
       government bond
 
 Setup
------
+~~~~~
 
 .. code:: ipython3
 
@@ -92,7 +92,7 @@ Setup
     timeline = pd.date_range( start_date, end_date, freq='B')
 
 Market Data Generation
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -212,7 +212,7 @@ Market Data Generation
 
 
 Example 1: Basic Strategies
----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -499,23 +499,14 @@ Example 1: Basic Strategies
 .. code:: ipython3
 
     # Total PNL time series values
-    pd.DataFrame( {'base':base_test.strategy.values, 'hedged':hedge_test.strategy.values} ).plot()
+    pd.DataFrame( {'base':base_test.strategy.values, 'hedged':hedge_test.strategy.values} ).plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Fixed_Income_13_1.png
+.. image:: _static/Fixed_Income_13_0.png
    :class: pynb
-   :width: 396px
-   :height: 259px
+   :width: 395px
+   :height: 262px
 
 
 .. code:: ipython3
@@ -523,50 +514,32 @@ Example 1: Basic Strategies
     # Total risk time series values
     pd.DataFrame( {'base_pvbp':base_test.strategy.risks['pvbp'], 
                    'hedged_pvbp':hedge_test.strategy.risks['pvbp'],
-                   'beta':hedge_test.strategy.risks['beta']} ).dropna().plot()
+                   'beta':hedge_test.strategy.risks['beta']} ).dropna().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Fixed_Income_14_1.png
+.. image:: _static/Fixed_Income_14_0.png
    :class: pynb
    :width: 383px
-   :height: 246px
+   :height: 248px
 
 
 .. code:: ipython3
 
     # Total bid/offer paid (same for both strategies)
     pd.DataFrame( {'base_pvbp':base_test.strategy.bidoffers_paid, 
-                   'hedged_pvbp':hedge_test.strategy.bidoffers_paid }).cumsum().dropna().plot()
+                   'hedged_pvbp':hedge_test.strategy.bidoffers_paid }).cumsum().dropna().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Fixed_Income_15_1.png
+.. image:: _static/Fixed_Income_15_0.png
    :class: pynb
-   :width: 381px
-   :height: 259px
+   :width: 383px
+   :height: 262px
 
 
 Example 2: Nested Strategies
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: ipython3
 
@@ -780,23 +753,14 @@ Example 2: Nested Strategies
                    'hedged':hedge_test.strategy.values,
                    'top':base_test.strategy['TopStrategy'].values,
                    'bottom':base_test.strategy['BottomStrategy'].values}
-                ).plot()
+                ).plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Fixed_Income_18_1.png
+.. image:: _static/Fixed_Income_18_0.png
    :class: pynb
-   :width: 396px
-   :height: 263px
+   :width: 395px
+   :height: 266px
 
 
 .. code:: ipython3
@@ -806,23 +770,14 @@ Example 2: Nested Strategies
                    'hedged':hedge_test.strategy.risks['pvbp'],
                    'top':base_test.strategy['TopStrategy'].risks['pvbp'],
                    'bottom':base_test.strategy['BottomStrategy'].risks['pvbp']} 
-                ).dropna().plot()
+                ).dropna().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Fixed_Income_19_1.png
+.. image:: _static/Fixed_Income_19_0.png
    :class: pynb
    :width: 383px
-   :height: 246px
+   :height: 248px
 
 
 .. code:: ipython3
@@ -832,23 +787,14 @@ Example 2: Nested Strategies
                    'hedged':hedge_test.strategy.risks['beta'],
                    'top':base_test.strategy['TopStrategy'].risks['beta'],
                    'bottom':base_test.strategy['BottomStrategy'].risks['beta']} 
-                ).dropna().plot()
+                ).dropna().plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Fixed_Income_20_1.png
+.. image:: _static/Fixed_Income_20_0.png
    :class: pynb
    :width: 383px
-   :height: 246px
+   :height: 248px
 
 
 .. code:: ipython3
@@ -858,23 +804,14 @@ Example 2: Nested Strategies
                    'hedged':hedge_test.strategy.prices,
                    'top':base_test.strategy['TopStrategy'].prices,
                    'bottom':base_test.strategy['BottomStrategy'].prices}
-                ).plot()
+                ).plot();
 
 
 
-
-.. parsed-literal::
-   :class: pynb-result
-
-    <AxesSubplot:>
-
-
-
-
-.. image:: _static/Fixed_Income_21_1.png
+.. image:: _static/Fixed_Income_21_0.png
    :class: pynb
-   :width: 375px
-   :height: 259px
+   :width: 377px
+   :height: 262px
 
 
 .. code:: ipython3

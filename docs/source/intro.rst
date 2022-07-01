@@ -26,11 +26,11 @@ First, we will download some data. By default, :func:`bt.get (alias for ffn.get)
 
                       spy        agg
     Date                            
-    2010-01-04  89.225433  74.942795
-    2010-01-05  89.461586  75.283775
-    2010-01-06  89.524582  75.240242
-    2010-01-07  89.902512  75.153168
-    2010-01-08  90.201645  75.196709
+    2010-01-04  89.225410  74.942825
+    2010-01-05  89.461586  75.283791
+    2010-01-06  89.524574  75.240227
+    2010-01-07  89.902473  75.153221
+    2010-01-08  90.201691  75.196724
 
 
 
@@ -67,8 +67,8 @@ Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.
 
 .. image:: _static/intro_9_0.png
    :class: pynb
-   :width: 877px
-   :height: 302px
+   :width: 879px
+   :height: 304px
 
 
 .. code:: ipython3
@@ -83,59 +83,59 @@ Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.
     Stat                 s1
     -------------------  ----------
     Start                2010-01-03
-    End                  2022-06-30
+    End                  2022-07-01
     Risk-free rate       0.00%
     
-    Total Return         151.12%
+    Total Return         150.73%
     Daily Sharpe         0.90
-    Daily Sortino        1.36
-    CAGR                 7.65%
+    Daily Sortino        1.35
+    CAGR                 7.64%
     Max Drawdown         -18.42%
-    Calmar Ratio         0.42
+    Calmar Ratio         0.41
     
-    MTD                  -4.58%
-    3m                   -10.89%
-    6m                   -14.83%
-    YTD                  -14.71%
-    1Y                   -9.78%
-    3Y (ann.)            5.18%
-    5Y (ann.)            6.47%
-    10Y (ann.)           7.38%
-    Since Incep. (ann.)  7.65%
+    MTD                  0.18%
+    3m                   -10.33%
+    6m                   -14.84%
+    YTD                  -14.84%
+    1Y                   -10.15%
+    3Y (ann.)            5.12%
+    5Y (ann.)            6.44%
+    10Y (ann.)           7.36%
+    Since Incep. (ann.)  7.64%
     
     Daily Sharpe         0.90
-    Daily Sortino        1.36
-    Daily Mean (ann.)    7.75%
+    Daily Sortino        1.35
+    Daily Mean (ann.)    7.74%
     Daily Vol (ann.)     8.62%
     Daily Skew           -0.98
     Daily Kurt           16.56
     Best Day             4.77%
     Worst Day            -6.63%
     
-    Monthly Sharpe       1.07
-    Monthly Sortino      1.93
-    Monthly Mean (ann.)  7.87%
-    Monthly Vol (ann.)   7.37%
-    Monthly Skew         -0.37
-    Monthly Kurt         1.54
+    Monthly Sharpe       1.06
+    Monthly Sortino      1.91
+    Monthly Mean (ann.)  7.81%
+    Monthly Vol (ann.)   7.36%
+    Monthly Skew         -0.39
+    Monthly Kurt         1.59
     Best Month           7.57%
     Worst Month          -6.44%
     
-    Yearly Sharpe        0.82
-    Yearly Sortino       1.77
-    Yearly Mean          7.49%
-    Yearly Vol           9.15%
-    Yearly Skew          -1.33
-    Yearly Kurt          2.24
+    Yearly Sharpe        0.81
+    Yearly Sortino       1.75
+    Yearly Mean          7.48%
+    Yearly Vol           9.17%
+    Yearly Skew          -1.34
+    Yearly Kurt          2.28
     Best Year            19.64%
-    Worst Year           -14.71%
+    Worst Year           -14.84%
     
     Avg. Drawdown        -0.84%
     Avg. Drawdown Days   13.23
-    Avg. Up Month        1.71%
-    Avg. Down Month      -1.79%
+    Avg. Up Month        1.70%
+    Avg. Down Month      -1.80%
     Win Year %           83.33%
-    Win 12m %            94.24%
+    Win 12m %            93.57%
 
 
 .. code:: ipython3
@@ -147,8 +147,8 @@ Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.
 
 .. image:: _static/intro_11_0.png
    :class: pynb
-   :width: 891px
-   :height: 318px
+   :width: 894px
+   :height: 320px
 
 
 .. code:: ipython3
@@ -160,8 +160,8 @@ Now we can analyze the results of our backtest. The :class:`Result <bt.backtest.
 
 .. image:: _static/intro_12_0.png
    :class: pynb
-   :width: 874px
-   :height: 290px
+   :width: 876px
+   :height: 293px
 
 
 
@@ -189,8 +189,8 @@ Now what if we ran this strategy weekly and also used some risk parity style app
 
 .. image:: _static/intro_14_0.png
    :class: pynb
-   :width: 877px
-   :height: 302px
+   :width: 879px
+   :height: 304px
 
 
 .. code:: ipython3
@@ -204,57 +204,57 @@ Now what if we ran this strategy weekly and also used some risk parity style app
     Stat                 s1          s2
     -------------------  ----------  ----------
     Start                2010-01-03  2010-01-03
-    End                  2022-06-30  2022-06-30
+    End                  2022-07-01  2022-07-01
     Risk-free rate       0.00%       0.00%
     
-    Total Return         151.12%     69.32%
+    Total Return         150.73%     69.58%
     Daily Sharpe         0.90        0.96
-    Daily Sortino        1.36        1.41
-    CAGR                 7.65%       4.31%
+    Daily Sortino        1.35        1.41
+    CAGR                 7.64%       4.32%
     Max Drawdown         -18.42%     -14.62%
-    Calmar Ratio         0.42        0.29
+    Calmar Ratio         0.41        0.30
     
-    MTD                  -4.58%      -2.76%
-    3m                   -10.89%     -7.46%
-    6m                   -14.83%     -12.20%
-    YTD                  -14.71%     -12.13%
-    1Y                   -9.78%      -10.10%
-    3Y (ann.)            5.18%       1.79%
-    5Y (ann.)            6.47%       3.30%
-    10Y (ann.)           7.38%       3.75%
-    Since Incep. (ann.)  7.65%       4.31%
+    MTD                  0.18%       0.38%
+    3m                   -10.33%     -6.88%
+    6m                   -14.84%     -12.00%
+    YTD                  -14.84%     -12.00%
+    1Y                   -10.15%     -10.03%
+    3Y (ann.)            5.12%       1.84%
+    5Y (ann.)            6.44%       3.35%
+    10Y (ann.)           7.36%       3.76%
+    Since Incep. (ann.)  7.64%       4.32%
     
     Daily Sharpe         0.90        0.96
-    Daily Sortino        1.36        1.41
-    Daily Mean (ann.)    7.75%       4.32%
+    Daily Sortino        1.35        1.41
+    Daily Mean (ann.)    7.74%       4.33%
     Daily Vol (ann.)     8.62%       4.50%
     Daily Skew           -0.98       -2.21
-    Daily Kurt           16.56       46.11
+    Daily Kurt           16.56       46.12
     Best Day             4.77%       2.84%
     Worst Day            -6.63%      -4.66%
     
-    Monthly Sharpe       1.07        1.14
-    Monthly Sortino      1.93        1.89
-    Monthly Mean (ann.)  7.87%       4.41%
-    Monthly Vol (ann.)   7.37%       3.89%
-    Monthly Skew         -0.37       -1.03
-    Monthly Kurt         1.54        3.86
+    Monthly Sharpe       1.06        1.13
+    Monthly Sortino      1.91        1.87
+    Monthly Mean (ann.)  7.81%       4.40%
+    Monthly Vol (ann.)   7.36%       3.89%
+    Monthly Skew         -0.39       -1.06
+    Monthly Kurt         1.59        3.92
     Best Month           7.57%       4.05%
     Worst Month          -6.44%      -5.04%
     
-    Yearly Sharpe        0.82        0.65
-    Yearly Sortino       1.77        1.18
-    Yearly Mean          7.49%       4.12%
-    Yearly Vol           9.15%       6.34%
-    Yearly Skew          -1.33       -1.50
-    Yearly Kurt          2.24        3.43
+    Yearly Sharpe        0.81        0.65
+    Yearly Sortino       1.75        1.19
+    Yearly Mean          7.48%       4.13%
+    Yearly Vol           9.17%       6.31%
+    Yearly Skew          -1.34       -1.48
+    Yearly Kurt          2.28        3.37
     Best Year            19.64%      11.71%
-    Worst Year           -14.71%     -12.13%
+    Worst Year           -14.84%     -12.00%
     
     Avg. Drawdown        -0.84%      -0.48%
-    Avg. Drawdown Days   13.23       13.67
-    Avg. Up Month        1.71%       0.91%
-    Avg. Down Month      -1.79%      -0.92%
+    Avg. Drawdown Days   13.23       13.68
+    Avg. Up Month        1.70%       0.90%
+    Avg. Down Month      -1.80%      -0.93%
     Win Year %           83.33%      83.33%
-    Win 12m %            94.24%      92.09%
+    Win 12m %            93.57%      91.43%
 
