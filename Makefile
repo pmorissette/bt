@@ -31,9 +31,9 @@ pages:
 	git clone -b gh-pages git@github.com:pmorissette/bt.git $(TMPREPO)
 	rm -rf $(TMPREPO)/*
 	cp -r docs/build/html/* $(TMPREPO)
-	cd $(TMPREPO); \
-	git add -A ; \
-	git commit -a -m 'auto-updating docs' ; \
+	cd $(TMPREPO);\
+	git add -A ;\
+	git commit -a -m 'auto-updating docs' ;\
 	git push
 
 serve:

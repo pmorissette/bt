@@ -10,7 +10,6 @@ from bt.core import is_zero
 import pandas as pd
 import numpy as np
 from nose.tools import assert_almost_equal as aae
-import sys
 from unittest import mock
 
 
@@ -3803,8 +3802,8 @@ def test_fi_strategy_bidoffer():
     
 
 def test_strategy_combined_universe_regression():
-    c1 = SecurityBase('c1')
-    c2 = SecurityBase('c2')
+    '''This test checks for regressions with children strategies of a parent strategy,
+    and how those related to underlying securities'''
     child_strategy1 = Strategy("child_strategy1", [bt.algos.RunOnce(),  
                                             bt.algos.SelectAll(),
                                             bt.algos.WeighEqually(),
@@ -3818,9 +3817,66 @@ def test_strategy_combined_universe_regression():
     dts = pd.date_range('2010-01-01', periods=3)
     data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
 
-    parent_strategy = bt.Strategy("parent_strategy", [bt.algos.RunOnce(),  
-                                                    bt.algos.SelectAll(),
-                                                    bt.algos.WeighEqually(),
-                                                    bt.algos.Rebalance()], [child_strategy1, child_strategy2])
+    tests = [
+        bt.Backtest(child_strategy1, data),
+        bt.Backtest(child_strategy2, data),
+    ]
+
+    parent_strategy = bt.Strategy("parent_strategy",
+                                  [
+                                    bt.algos.RunOnce(),  
+                                    bt.algos.SelectAll(),
+                                    bt.algos.WeighEqually(),
+                                    bt.algos.Rebalance()
+                                  ],
+                                  children=[x.strategy for x in tests])
     test = bt.Backtest(parent_strategy, data)
     result = bt.run(test)
+    weights = result.get_security_weights()
+
+    assert result["parent_strategy"]
+    assert list(parent_strategy.children.keys()) == ["child_strategy1", "child_strategy2"]
+
+def test_strategy_combined_universe_regression_backtest_run_first():
+    '''This test checks for regressions with children strategies of a parent strategy,
+    and how those related to underlying securities'''
+    child_strategy1 = Strategy("child_strategy1", [bt.algos.RunOnce(),  
+                                            bt.algos.SelectAll(),
+                                            bt.algos.WeighEqually(),
+                                            bt.algos.Rebalance()])
+
+    child_strategy2 = Strategy("child_strategy2", [bt.algos.RunOnce(),  
+                                            bt.algos.SelectAll(),
+                                            bt.algos.WeighEqually(),
+                                            bt.algos.Rebalance()])
+
+    dts = pd.date_range('2010-01-01', periods=3)
+    data = pd.DataFrame(index=dts, columns=['c1', 'c2'], data=100)
+
+    tests = [
+        bt.Backtest(child_strategy1, data),
+        bt.Backtest(child_strategy2, data),
+    ]
+
+    results = []
+    for test in tests:
+        results.append(bt.run(test))
+
+    merged_prices_df = bt.merge(results[0].prices,results[1].prices)
+
+    parent_strategy = bt.Strategy("parent_strategy",
+                                  [
+                                    bt.algos.RunOnce(),  
+                                    bt.algos.SelectAll(),
+                                    bt.algos.WeighEqually(),
+                                    bt.algos.Rebalance()
+                                  ],
+                                  children=[x.strategy for x in tests])
+    test = bt.Backtest(parent_strategy, merged_prices_df)
+    result = bt.run(test)
+    weights = result.get_security_weights()
+
+    assert result["parent_strategy"]
+    assert list(parent_strategy.children.keys()) == ["child_strategy1", "child_strategy2"]
+    result_obj = result["parent_strategy"]
+    assert len(weights.columns) == 2
