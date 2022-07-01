@@ -17,9 +17,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.7, 3.9]
+        python-version: [3.9]
         os: [ubuntu-latest, macos-latest, windows-latest]
-        event-name: [push]
 
     steps:
     - uses: actions/checkout@v2
@@ -32,21 +31,19 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install -e .[dev]
+        make develop
         python -m pip install -U wheel twine setuptools
 
     - name: Lint
       run: |
-        python -m flake8 bt setup.py
+        make lint
 
     - name: Test
       run: |
-        python -m nose --with-coverage --cover-package bt
-      if: ${{ github.event_name == matrix.event-name }}
+        make test
 
     - name: Coverage
       uses: codecov/codecov-action@v2
-      if: ${{ github.event_name == matrix.event-name }}
 
     - name: Package and check
       run: |

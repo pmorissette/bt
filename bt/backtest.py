@@ -148,7 +148,6 @@ class Backtest(object):
         progress_bar=False,
         additional_data=None,
     ):
-
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
             raise Exception(

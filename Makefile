@@ -2,17 +2,19 @@ TMPREPO=/tmp/docs/bt
 
 default: build_dev
 
-.PHONY: dist upload docs pages serve klink notebooks test lint fix
+.PHONY: dist upload docs pages serve klink notebooks test lint fix develop
+
+develop:
+	python -m pip install -e .[dev]
 
 test:
-	python -m nose --with-coverage --cover-package bt
+	python -m pytest -vvv tests --cov=bt --junitxml=python_junit.xml --cov-report=xml --cov-branch --cov-report term
 
 lint:
-	python -m flake8 bt setup.py
+	python -m flake8 bt setup.py docs/source/conf.py
 
 fix:
-	python -m black bt setup.py
-
+	python -m black bt setup.py docs/source/conf.py
 
 dist:
 	python setup.py sdist
@@ -25,32 +27,32 @@ docs:
 	$(MAKE) -C docs/ html
 
 pages: 
-	- rm -rf $(TMPREPO)
+	rm -rf $(TMPREPO)
 	git clone -b gh-pages git@github.com:pmorissette/bt.git $(TMPREPO)
 	rm -rf $(TMPREPO)/*
 	cp -r docs/build/html/* $(TMPREPO)
-	cd $(TMPREPO); \
-	git add -A ; \
-	git commit -a -m 'auto-updating docs' ; \
+	cd $(TMPREPO);\
+	git add -A ;\
+	git commit -a -m 'auto-updating docs' ;\
 	git push
 
 serve:
 	cd docs/build/html; \
-	python -m SimpleHTTPServer 9087
+	python -m http.server 9087
 
 build_dev:
-	- python setup.py build_ext --inplace
+	python setup.py build_ext --inplace
 
 clean:
-	- rm -rf build
-	- rm -rf dist
-	- rm -rf bt.egg-info
-	- find . -name '*.so' -delete
-	- find . -name '*.c' -delete
+	rm -rf build
+	rm -rf dist
+	rm -rf bt.egg-info
+	find . -name '*.so' -delete
+	find . -name '*.c' -delete
 
 klink:
 	git subtree pull --prefix=docs/source/_themes/klink --squash klink master
 
 notebooks:
 	cd docs/source; \
-	ipython notebook --no-browser --ip=*
+	jupyter notebook --no-browser --ip=*
