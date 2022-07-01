@@ -9,7 +9,6 @@ from copy import deepcopy
 import cython as cy
 import numpy as np
 import pandas as pd
-from future.utils import iteritems
 
 
 PAR = 100.0
@@ -147,7 +146,7 @@ class Node(object):
             if isinstance(children, dict):
                 # Preserve the names from the dictionary by renaming the nodes
                 tmp = []
-                for name, c in iteritems(children):
+                for name, c in children.items():
                     if isinstance(c, str):
                         tmp.append(name)
                     else:

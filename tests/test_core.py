@@ -1,16 +1,18 @@
 from __future__ import division
 
 import copy
+import numpy as np
+import pandas as pd
+import pytest
+
+from unittest import mock
 
 import bt
 from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 from bt.core import FixedIncomeStrategy, HedgeSecurity, FixedIncomeSecurity
 from bt.core import CouponPayingSecurity, CouponPayingHedgeSecurity
 from bt.core import is_zero
-import pandas as pd
-import numpy as np
-from nose.tools import assert_almost_equal as aae
-from unittest import mock
+
 
 
 def test_node_tree1():
@@ -1470,7 +1472,7 @@ def test_strategybase_prices():
     assert s.capital == 0
     assert s.value == 1355.50
     assert len(s.children) == 1
-    aae(s.price, 99.92628, 5)
+    assert s.price == pytest.approx(99.92628, 5)
 
     a = s['a']
     assert a.position == 100
@@ -1481,21 +1483,21 @@ def test_strategybase_prices():
 
     # update through all dates and make sure price is ok
     s.update(dts[1])
-    aae(s.price, 101.3638, 4)
+    assert s.price == pytest.approx(101.3638, 4)
 
     s.update(dts[2])
-    aae(s.price, 104.3863, 4)
+    assert s.price == pytest.approx(104.3863, 4)
 
     s.update(dts[3])
-    aae(s.price, 102.5802, 4)
+    assert s.price == pytest.approx(102.5802, 4)
 
     # finish updates and make sure ok at end
     for i in range(4, 21):
         s.update(dts[i])
 
     assert len(s.prices) == 21
-    aae(s.prices[-1], 95.02396, 5)
-    aae(s.prices[-2], 98.67306, 5)
+    assert s.prices[-1] == pytest.approx(95.02396, 5)
+    assert s.prices[-2] == pytest.approx(98.67306, 5)
 
 
 def test_fail_if_root_value_negative():
@@ -1622,9 +1624,9 @@ def test_strategybase_tree_decimal_position_rebalance():
     s.rebalance(0.42, 'c1')
     s.rebalance(0.58, 'c2')
 
-    aae(c1.value, 420.084)
-    aae(c2.value, 580.116)
-    aae(c1.value + c2.value, 1000.2)
+    assert c1.value == pytest.approx(420.084)
+    assert c2.value == pytest.approx(580.116)
+    assert c1.value + c2.value == pytest.approx(1000.2)
 
 
 def test_rebalance_child_not_in_tree():
@@ -1761,7 +1763,7 @@ def test_strategybase_tree_rebalance_level2():
     # increase
     m.rebalance(0.8, 's1')
     assert s1.value == 800
-    aae(m.capital, 200, 1)
+    assert m.capital == pytest.approx(200, 1)
     assert m.value == 1000
     assert s1.weight == 800 / 1000
     assert s2.weight == 0
@@ -2188,19 +2190,19 @@ def test_dynamic_strategy2():
     trade = parent[ trade.name ]    
     assert trade.value == 1e5 + 10 * 1e3     
     assert parent.value == 1e6 + 10 * 1e3
-    aae( trade.price, 110.)
+    assert trade.price == pytest.approx(110.)
     
     # Next we close the trade by flattening positions
     trade.flatten()
     trade.update( trade.now ) # Need to update after flattening (for now)
-    aae( trade.price, 110.) 
+    assert trade.price == pytest.approx(110.) 
     
     # Finally we allocate capital back to the parent to be re-deployed
     parent.allocate( -trade.capital, trade.name )
     assert trade.value == 0    
     assert trade.capital == 0
 
-    aae( trade.price, 110.) # Price stays the same even after capital de-allocated
+    assert trade.price == pytest.approx(110.) # Price stays the same even after capital de-allocated
     assert parent.value == 1e6 + 10 * 1e3
     assert parent.capital == parent.value
     assert parent.positions['c1'][ dts[i] ] == 0.
@@ -2222,8 +2224,8 @@ def test_dynamic_strategy2():
     # keeps updating. Note that if the flattening of the position was part
     # of the definition of trade_c1_vs_c2, then the paper trading price 
     # would be fixed after flattening, as it would apply to both real and paper. 
-    aae( trade.price, 102.) 
-    aae( parent.universe[ trade.name ][ dts[i] ], 102. )
+    assert trade.price == pytest.approx(102.) 
+    assert parent.universe[ trade.name ][ dts[i] ] == pytest.approx(102.)
     
     
 def test_outlays():
@@ -2653,9 +2655,9 @@ def test_strategybase_precision():
     s.rebalance(0.1, 'c3')
     s.adjust(-0.7)
 
-    aae( s.capital, 0. )
-    aae( s.value, 0.3 )
-    aae( s.price, 100. )
+    assert s.capital == pytest.approx(0.)
+    assert s.value == pytest.approx(0.3)
+    assert s.price == pytest.approx(100.)
 
     assert s.capital != 0 # Due to numerical precision
     assert s.value != 0.3 # Created non-zero value out of numerical precision errors
@@ -2666,8 +2668,8 @@ def test_strategybase_precision():
     i=1
     s.update(dts[i])
 
-    aae( s.price, 100. )
-    aae( s.value, 0.3 )
+    assert s.price == pytest.approx(100.)
+    assert s.value == pytest.approx(0.3)
 
     assert s.price != 100.
     assert s.value != 0.3
@@ -3714,7 +3716,7 @@ def test_fi_strategy_precision():
         c.transact(0.1)
 
     # Even within tolerance, value is nonzero
-    aae( s.value, 0, 14)
+    assert s.value == pytest.approx(0, 14)
     assert not is_zero( s.value )
     # Notional value not quite equal to N * 0.1
     assert s.notional_value == sum( 0.1 for _ in range(N) )
@@ -3734,7 +3736,7 @@ def test_fi_strategy_precision():
 
 
     # The weights also have numerical precision issues
-    aae( children[0].weight, 1/float(N), 16)
+    assert children[0].weight == pytest.approx(1/float(N), 16)
     assert children[0].weight != 1/float(N)
 
     # Now rebalance "out" of an asset with the almost zero weight
