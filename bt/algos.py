@@ -10,7 +10,6 @@ import re
 import numpy as np
 import pandas as pd
 import sklearn.covariance
-from future.utils import iteritems
 
 import bt
 from bt.core import Algo, AlgoStack, SecurityBase, is_zero
@@ -1060,7 +1059,7 @@ class ScaleWeights(Algo):
 
     def __call__(self, target):
         target.temp["weights"] = {
-            k: self.scale * w for k, w in iteritems(target.temp["weights"])
+            k: self.scale * w for k, w in target.temp["weights"].items()
         }
         return True
 
@@ -1798,6 +1797,7 @@ class Rebalance(Algo):
                 v = c.notional_value
             else:
                 v = c.value
+
             # if non-zero and non-null, we need to close it out
             if v != 0.0 and not np.isnan(v):
                 target.close(cname, update=False)
@@ -1808,7 +1808,7 @@ class Rebalance(Algo):
             base = base * (1 - target.temp["cash"])
 
         # Turn off updating while we rebalance each child
-        for item in iteritems(targets):
+        for item in targets.items():
             target.rebalance(item[1], child=item[0], base=base, update=False)
 
         # Now update
@@ -2053,7 +2053,7 @@ class ClosePositionsAfterDates(Algo):
         # Find securities that are candidate for closing
         sec_names = [
             sec_name
-            for sec_name, sec in iteritems(target.children)
+            for sec_name, sec in target.children.items()
             if isinstance(sec, SecurityBase)
             and sec_name in close_dates.index
             and sec_name not in target.perm["closed"]
@@ -2107,7 +2107,7 @@ class RollPositionsAfterDates(Algo):
         # Find securities that are candidate for roll
         sec_names = [
             sec_name
-            for sec_name, sec in iteritems(target.children)
+            for sec_name, sec in target.children.items()
             if isinstance(sec, SecurityBase)
             and sec_name in roll_data.index
             and sec_name not in target.perm["rolled"]
@@ -2126,7 +2126,7 @@ class RollPositionsAfterDates(Algo):
                 target.close(sec_name, update=False)
 
         # Do all the new transactions at the end, to do any necessary aggregations first
-        for new_sec, quantity in iteritems(transactions):
+        for new_sec, quantity in transactions.items():
             target.transact(quantity, new_sec, update=False)
 
         # Now update

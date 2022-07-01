@@ -35,6 +35,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+python_junit.xml
 
 # Translations
 *.mo
@@ -70,3 +71,5 @@ docs/source/.ipynb_checkpoints/
 # macOS
 .DS_Store
 
+# jupyter
+.ipynb_checkpoints
