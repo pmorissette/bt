@@ -1,0 +1,547 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trend Example 2 &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/klink.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="trend-example-2">
+<h1>Trend Example 2<a class="headerlink" href="#trend-example-2" title="Permalink to this heading">¶</a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">import</span> <span class="nn">bt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">returns</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.08</span><span class="o">/</span><span class="mi">12</span><span class="p">,</span><span class="mf">0.2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span><span class="mi">12</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">pdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">returns</span><span class="p">),</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s2">&quot;2008-01-01&quot;</span><span class="p">,</span><span class="n">periods</span><span class="o">=</span><span class="mi">12</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span><span class="n">freq</span><span class="o">=</span><span class="s2">&quot;m&quot;</span><span class="p">),</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">pdf</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/Trend_2_2_0.png"><img alt="_images/Trend_2_2_0.png" class="pynb" src="_images/Trend_2_2_0.png" style="width: 373px; height: 251px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">runMonthlyAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">()</span>
+<span class="n">rebalAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Signal</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Mostly copied from StatTotalReturn</span>
+
+<span class="sd">    Sets temp[&#39;Signal&#39;] with total returns over a given period.</span>
+
+<span class="sd">    Sets the &#39;Signal&#39; based on the total return of each</span>
+<span class="sd">    over a given lookback period.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * lookback (DateOffset): lookback period.</span>
+<span class="sd">        * lag (DateOffset): Lag interval. Total return is calculated in</span>
+<span class="sd">            the inteval [now - lookback - lag, now - lag]</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * stat</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                 <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">)):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Signal</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lag</span> <span class="o">=</span> <span class="n">lag</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="s1">&#39;foo&#39;</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lag</span>
+
+        <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">:</span><span class="n">t0</span><span class="p">]</span>
+
+
+        <span class="n">trend</span> <span class="o">=</span> <span class="n">prc</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">prc</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">trend</span> <span class="o">&gt;</span> <span class="mf">0.</span>
+
+        <span class="k">if</span> <span class="n">signal</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;Signal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;Signal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+<span class="n">signalAlgo</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">WeighFromSignal</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets temp[&#39;weights&#39;] from the signal.</span>
+<span class="sd">    Sets:</span>
+<span class="sd">        * weights</span>
+
+<span class="sd">    Requires:</span>
+<span class="sd">        * selected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeighFromSignal</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="s1">&#39;foo&#39;</span>
+        <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;Signal&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span><span class="p">(</span><span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No Signal!&#39;</span><span class="p">))</span>
+
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">selected</span> <span class="p">:</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s1">&#39;Signal&#39;</span><span class="p">]}</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<span class="n">weighFromSignalAlgo</span> <span class="o">=</span> <span class="n">WeighFromSignal</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+    <span class="s1">&#39;example1&#39;</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="n">runMonthlyAlgo</span><span class="p">,</span>
+        <span class="n">signalAlgo</span><span class="p">,</span>
+        <span class="n">weighFromSignalAlgo</span><span class="p">,</span>
+        <span class="n">rebalAlgo</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">pdf</span><span class="p">,</span> <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">example1</span>
+ <span class="mi">0</span><span class="o">%</span> <span class="p">[</span><span class="c1">############################# ] 100% | ETA: 00:00:00</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_security_weights</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/Trend_2_5_0.png"><img alt="_images/Trend_2_5_0.png" class="pynb" src="_images/Trend_2_5_0.png" style="width: 876px; height: 289px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t</span><span class="o">.</span><span class="n">positions</span>
+</pre></div>
+</div>
+<div class="pynb-result">
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>foo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2008-01-30</th>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>2008-01-31</th>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>2008-02-29</th>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>2008-03-31</th>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>2008-04-30</th>
+      <td>0.000000</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2017-08-31</th>
+      <td>631321.251898</td>
+    </tr>
+    <tr>
+      <th>2017-09-30</th>
+      <td>631321.251898</td>
+    </tr>
+    <tr>
+      <th>2017-10-31</th>
+      <td>631321.251898</td>
+    </tr>
+    <tr>
+      <th>2017-11-30</th>
+      <td>631321.251898</td>
+    </tr>
+    <tr>
+      <th>2017-12-31</th>
+      <td>631321.251898</td>
+    </tr>
+  </tbody>
+</table>
+<p>121 rows × 1 columns</p>
+</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result">
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>example1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2017-08-31</th>
+      <td>240.302579</td>
+    </tr>
+    <tr>
+      <th>2017-09-30</th>
+      <td>255.046653</td>
+    </tr>
+    <tr>
+      <th>2017-10-31</th>
+      <td>254.464421</td>
+    </tr>
+    <tr>
+      <th>2017-11-30</th>
+      <td>265.182603</td>
+    </tr>
+    <tr>
+      <th>2017-12-31</th>
+      <td>281.069771</td>
+    </tr>
+  </tbody>
+</table>
+</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">stats</span>
+</pre></div>
+</div>
+<div class="pynb-result">
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>example1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>start</th>
+      <td>2008-01-30 00:00:00</td>
+    </tr>
+    <tr>
+      <th>end</th>
+      <td>2017-12-31 00:00:00</td>
+    </tr>
+    <tr>
+      <th>rf</th>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>total_return</th>
+      <td>1.810698</td>
+    </tr>
+    <tr>
+      <th>cagr</th>
+      <td>0.109805</td>
+    </tr>
+    <tr>
+      <th>max_drawdown</th>
+      <td>-0.267046</td>
+    </tr>
+    <tr>
+      <th>calmar</th>
+      <td>0.411186</td>
+    </tr>
+    <tr>
+      <th>mtd</th>
+      <td>0.05991</td>
+    </tr>
+    <tr>
+      <th>three_month</th>
+      <td>0.102033</td>
+    </tr>
+    <tr>
+      <th>six_month</th>
+      <td>0.22079</td>
+    </tr>
+    <tr>
+      <th>ytd</th>
+      <td>0.879847</td>
+    </tr>
+    <tr>
+      <th>one_year</th>
+      <td>0.879847</td>
+    </tr>
+    <tr>
+      <th>three_year</th>
+      <td>0.406395</td>
+    </tr>
+    <tr>
+      <th>five_year</th>
+      <td>0.227148</td>
+    </tr>
+    <tr>
+      <th>ten_year</th>
+      <td>0.109805</td>
+    </tr>
+    <tr>
+      <th>incep</th>
+      <td>0.109805</td>
+    </tr>
+    <tr>
+      <th>daily_sharpe</th>
+      <td>3.299555</td>
+    </tr>
+    <tr>
+      <th>daily_sortino</th>
+      <td>6.352869</td>
+    </tr>
+    <tr>
+      <th>daily_mean</th>
+      <td>2.448589</td>
+    </tr>
+    <tr>
+      <th>daily_vol</th>
+      <td>0.742097</td>
+    </tr>
+    <tr>
+      <th>daily_skew</th>
+      <td>0.307861</td>
+    </tr>
+    <tr>
+      <th>daily_kurt</th>
+      <td>1.414455</td>
+    </tr>
+    <tr>
+      <th>best_day</th>
+      <td>0.137711</td>
+    </tr>
+    <tr>
+      <th>worst_day</th>
+      <td>-0.14073</td>
+    </tr>
+    <tr>
+      <th>monthly_sharpe</th>
+      <td>0.723148</td>
+    </tr>
+    <tr>
+      <th>monthly_sortino</th>
+      <td>1.392893</td>
+    </tr>
+    <tr>
+      <th>monthly_mean</th>
+      <td>0.117579</td>
+    </tr>
+    <tr>
+      <th>monthly_vol</th>
+      <td>0.162594</td>
+    </tr>
+    <tr>
+      <th>monthly_skew</th>
+      <td>0.301545</td>
+    </tr>
+    <tr>
+      <th>monthly_kurt</th>
+      <td>1.379006</td>
+    </tr>
+    <tr>
+      <th>best_month</th>
+      <td>0.137711</td>
+    </tr>
+    <tr>
+      <th>worst_month</th>
+      <td>-0.14073</td>
+    </tr>
+    <tr>
+      <th>yearly_sharpe</th>
+      <td>0.503939</td>
+    </tr>
+    <tr>
+      <th>yearly_sortino</th>
+      <td>5.019272</td>
+    </tr>
+    <tr>
+      <th>yearly_mean</th>
+      <td>0.14814</td>
+    </tr>
+    <tr>
+      <th>yearly_vol</th>
+      <td>0.293964</td>
+    </tr>
+    <tr>
+      <th>yearly_skew</th>
+      <td>2.317496</td>
+    </tr>
+    <tr>
+      <th>yearly_kurt</th>
+      <td>5.894955</td>
+    </tr>
+    <tr>
+      <th>best_year</th>
+      <td>0.879847</td>
+    </tr>
+    <tr>
+      <th>worst_year</th>
+      <td>-0.088543</td>
+    </tr>
+    <tr>
+      <th>avg_drawdown</th>
+      <td>-0.091255</td>
+    </tr>
+    <tr>
+      <th>avg_drawdown_days</th>
+      <td>369.714286</td>
+    </tr>
+    <tr>
+      <th>avg_up_month</th>
+      <td>0.064341</td>
+    </tr>
+    <tr>
+      <th>avg_down_month</th>
+      <td>-0.012928</td>
+    </tr>
+    <tr>
+      <th>win_year_perc</th>
+      <td>0.555556</td>
+    </tr>
+    <tr>
+      <th>twelve_month_win_perc</th>
+      <td>0.46789</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="index.html" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>

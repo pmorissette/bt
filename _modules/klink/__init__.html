@@ -1,16 +1,17 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>klink.__init__ &#8212; bt 0.2.9 documentation</title>
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/css/klink.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <title>klink.__init__ &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -39,7 +40,7 @@
 <span class="sd">    Converts IPython Notebooks to proper .rst files and moves static</span>
 <span class="sd">    content to the _static directory.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">convert_status</span> <span class="o">=</span> <span class="n">call</span><span class="p">([</span><span class="s1">&#39;ipython&#39;</span><span class="p">,</span> <span class="s1">&#39;nbconvert&#39;</span><span class="p">,</span> <span class="s1">&#39;--to&#39;</span><span class="p">,</span> <span class="s1">&#39;rst&#39;</span><span class="p">,</span> <span class="s1">&#39;*.ipynb&#39;</span><span class="p">])</span>
+    <span class="n">convert_status</span> <span class="o">=</span> <span class="n">call</span><span class="p">([</span><span class="s1">&#39;jupyter&#39;</span><span class="p">,</span> <span class="s1">&#39;nbconvert&#39;</span><span class="p">,</span> <span class="s1">&#39;--to&#39;</span><span class="p">,</span> <span class="s1">&#39;rst&#39;</span><span class="p">,</span> <span class="s1">&#39;*.ipynb&#39;</span><span class="p">])</span>
     <span class="k">if</span> <span class="n">convert_status</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">SystemError</span><span class="p">(</span><span class="s1">&#39;Conversion failed! Status was </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">convert_status</span><span class="p">)</span>
 
@@ -62,14 +63,17 @@
 
         <span class="c1"># rename static dir in rst file</span>
         <span class="n">rst_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.rst&#39;</span> <span class="o">%</span> <span class="n">name</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;REsT file is </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">rst_file</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RST file is </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">rst_file</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">rst_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">rst_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sdir</span><span class="p">,</span> <span class="s1">&#39;_static&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                <span class="c1"># On Windows, bad escape character sequences are included (%5C) in static references</span>
+                <span class="c1"># We remove these here and replace with forward slashes as appropriate</span>
+                <span class="c1"># While converting the static directory name.</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="si">%%</span><span class="s1">5C|/)&#39;</span> <span class="o">%</span> <span class="n">sdir</span><span class="p">,</span> <span class="s1">&#39;_static/&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
                 <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
         <span class="c1"># add special tags</span>
@@ -86,10 +90,10 @@
                 <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="c1"># add class tags to images for css formatting</span>
                 <span class="k">if</span> <span class="s1">&#39;image::&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                    <span class="n">lines</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;    :class: pynb</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="n">lines</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;   :class: pynb</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
                     <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">elif</span> <span class="s1">&#39;parsed-literal::&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                    <span class="n">lines</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;    :class: pynb-result</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="n">lines</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;   :class: pynb-result</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
                     <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">elif</span> <span class="s1">&#39;raw:: html&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
                     <span class="n">rawWatch</span> <span class="o">=</span> <span class="kc">True</span>
@@ -146,18 +150,20 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
         </div>
 
         

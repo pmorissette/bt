@@ -1,16 +1,17 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>bt - Flexible Backtesting for Python &#8212; bt 0.2.9 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/css/klink.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <title>bt - Flexible Backtesting for Python &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/klink.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -29,9 +30,9 @@
           <div class="body" role="main">
             
   <div class="section" id="bt-flexible-backtesting-for-python">
-<h1>bt - Flexible Backtesting for Python<a class="headerlink" href="#bt-flexible-backtesting-for-python" title="Permalink to this headline">¶</a></h1>
+<h1>bt - Flexible Backtesting for Python<a class="headerlink" href="#bt-flexible-backtesting-for-python" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="what-is-bt">
-<h2>What is bt?<a class="headerlink" href="#what-is-bt" title="Permalink to this headline">¶</a></h2>
+<h2>What is bt?<a class="headerlink" href="#what-is-bt" title="Permalink to this heading">¶</a></h2>
 <p><strong>bt</strong> is a flexible backtesting framework for Python used to test quantitative
 trading strategies. <strong>Backtesting</strong> is the process of testing a strategy over a given
 data set. This framework allows you to easily create strategies that mix and match
@@ -47,31 +48,34 @@ languages that don’t have the same wealth of high-quality, open-source project
 <p>bt is built atop <a class="reference external" href="https://github.com/pmorissette/ffn">ffn</a> - a financial function library for Python. Check it out!</p>
 </div>
 <div class="section" id="a-quick-example">
-<h2>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h2>
+<h2>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this heading">¶</a></h2>
 <p>Here is a quick taste of bt:</p>
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
 </pre></div>
 </div>
 <div class="section" id="a-simple-strategy-backtest">
-<h3>A Simple Strategy Backtest<a class="headerlink" href="#a-simple-strategy-backtest" title="Permalink to this headline">¶</a></h3>
+<h3>A Simple Strategy Backtest<a class="headerlink" href="#a-simple-strategy-backtest" title="Permalink to this heading">¶</a></h3>
 <p>Let’s create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.</p>
-<p>First, we will download some data. By default, <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.data.get" title="(in ffn v0.3.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></code></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fetch some data</span>
+<p>First, we will download some data. By default, <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.data.get" title="(in ffn v0.3.6)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></code></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fetch some data</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spy,agg&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">)</span>
-<span class="nb">print</span> <span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span>                  <span class="n">spy</span>        <span class="n">agg</span>
-<span class="n">Date</span>
-<span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">04</span>  <span class="mf">98.214371</span>  <span class="mf">84.963075</span>
-<span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">05</span>  <span class="mf">98.474354</span>  <span class="mf">85.349609</span>
-<span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">06</span>  <span class="mf">98.543685</span>  <span class="mf">85.300266</span>
-<span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">07</span>  <span class="mf">98.959667</span>  <span class="mf">85.201575</span>
-<span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">08</span>  <span class="mf">99.288981</span>  <span class="mf">85.250923</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span>                   <span class="n">spy</span>        <span class="n">agg</span>
+ <span class="n">Date</span>
+ <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">04</span>  <span class="mf">89.225410</span>  <span class="mf">74.942825</span>
+ <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">05</span>  <span class="mf">89.461586</span>  <span class="mf">75.283791</span>
+ <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">06</span>  <span class="mf">89.524574</span>  <span class="mf">75.240227</span>
+ <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">07</span>  <span class="mf">89.902473</span>  <span class="mf">75.153221</span>
+ <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">08</span>  <span class="mf">90.201691</span>  <span class="mf">75.196724</span>
 </pre></div>
 </div>
 <p>Once we have our data, we will create our strategy. The <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a> object contains the strategy logic by combining various <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p>
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create the strategy</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create the strategy</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s1&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
@@ -80,99 +84,94 @@ languages that don’t have the same wealth of high-quality, open-source project
 </div>
 <p>Finally, we will create a <a class="reference internal" href="bt.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backtest</span></code></a>, which is the logical combination of a strategy with a data set.</p>
 <p>Once this is done, we can run the backtest and analyze the results.</p>
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a backtest and run it</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a backtest and run it</span>
 <span class="n">test</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">s1</span>
-<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
-<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
-</pre></div>
-</div>
 <p>Now we can analyze the results of our backtest. The <a class="reference internal" href="bt.html#bt.backtest.Result" title="bt.backtest.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object is a thin wrapper around <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats">ffn.GroupStats</a> that adds some helper methods.</p>
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s see an equity curve</span>
-<span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s see an equity curve</span>
+<span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
-<img alt="_images/intro_8_0.png" class="pynb" src="_images/intro_8_0.png" />
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and what about some stats?</span>
+<a class="pynb reference internal image-reference" href="_images/intro_9_0.png"><img alt="_images/intro_9_0.png" class="pynb" src="_images/intro_9_0.png" style="width: 879px; height: 304px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and what about some stats?</span>
 <span class="n">res</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">s1</span>
-<span class="o">-------------------</span>  <span class="o">----------</span>
-<span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
-<span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
-<span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">Stat</span>                 <span class="n">s1</span>
+ <span class="o">-------------------</span>  <span class="o">----------</span>
+ <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
+ <span class="n">End</span>                  <span class="mi">2022</span><span class="o">-</span><span class="mi">07</span><span class="o">-</span><span class="mi">01</span>
+ <span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>
 
-<span class="n">Total</span> <span class="n">Return</span>         <span class="mf">81.30</span><span class="o">%</span>
-<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">1.19</span>
-<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.57</span>
-<span class="n">CAGR</span>                 <span class="mf">8.69</span><span class="o">%</span>
-<span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">7.83</span><span class="o">%</span>
-<span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">1.11</span>
+ <span class="n">Total</span> <span class="n">Return</span>         <span class="mf">150.73</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>
+ <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>
+ <span class="n">CAGR</span>                 <span class="mf">7.64</span><span class="o">%</span>
+ <span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">18.42</span><span class="o">%</span>
+ <span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">0.41</span>
 
-<span class="n">MTD</span>                  <span class="mf">2.08</span><span class="o">%</span>
-<span class="mi">3</span><span class="n">m</span>                   <span class="mf">4.08</span><span class="o">%</span>
-<span class="mi">6</span><span class="n">m</span>                   <span class="mf">3.26</span><span class="o">%</span>
-<span class="n">YTD</span>                  <span class="mf">3.11</span><span class="o">%</span>
-<span class="mi">1</span><span class="n">Y</span>                   <span class="mf">12.04</span><span class="o">%</span>
-<span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">6.82</span><span class="o">%</span>
-<span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">8.12</span><span class="o">%</span>
-<span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">8.69</span><span class="o">%</span>
-<span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">8.69</span><span class="o">%</span>
+ <span class="n">MTD</span>                  <span class="mf">0.18</span><span class="o">%</span>
+ <span class="mi">3</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">10.33</span><span class="o">%</span>
+ <span class="mi">6</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>
+ <span class="n">YTD</span>                  <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>
+ <span class="mi">1</span><span class="n">Y</span>                   <span class="o">-</span><span class="mf">10.15</span><span class="o">%</span>
+ <span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">5.12</span><span class="o">%</span>
+ <span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">6.44</span><span class="o">%</span>
+ <span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">7.36</span><span class="o">%</span>
+ <span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.64</span><span class="o">%</span>
 
-<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">1.19</span>
-<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.57</span>
-<span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">8.61</span><span class="o">%</span>
-<span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">7.23</span><span class="o">%</span>
-<span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.35</span>
-<span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">3.80</span>
-<span class="n">Best</span> <span class="n">Day</span>             <span class="mf">2.48</span><span class="o">%</span>
-<span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">3.11</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>
+ <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>
+ <span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">7.74</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">8.62</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.98</span>
+ <span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">16.56</span>
+ <span class="n">Best</span> <span class="n">Day</span>             <span class="mf">4.77</span><span class="o">%</span>
+ <span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">6.63</span><span class="o">%</span>
 
-<span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">1.41</span>
-<span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">2.61</span>
-<span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">8.61</span><span class="o">%</span>
-<span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">6.10</span><span class="o">%</span>
-<span class="n">Monthly</span> <span class="n">Skew</span>         <span class="mf">0.01</span>
-<span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">0.18</span>
-<span class="n">Best</span> <span class="n">Month</span>           <span class="mf">5.69</span><span class="o">%</span>
-<span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">3.39</span><span class="o">%</span>
+ <span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">1.06</span>
+ <span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">1.91</span>
+ <span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.81</span><span class="o">%</span>
+ <span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">7.36</span><span class="o">%</span>
+ <span class="n">Monthly</span> <span class="n">Skew</span>         <span class="o">-</span><span class="mf">0.39</span>
+ <span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">1.59</span>
+ <span class="n">Best</span> <span class="n">Month</span>           <span class="mf">7.57</span><span class="o">%</span>
+ <span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">6.44</span><span class="o">%</span>
 
-<span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">1.62</span>
-<span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="o">-</span>
-<span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">7.25</span><span class="o">%</span>
-<span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">4.46</span><span class="o">%</span>
-<span class="n">Yearly</span> <span class="n">Skew</span>          <span class="mf">0.15</span>
-<span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="o">-</span><span class="mf">0.71</span>
-<span class="n">Best</span> <span class="n">Year</span>            <span class="mf">14.10</span><span class="o">%</span>
-<span class="n">Worst</span> <span class="n">Year</span>           <span class="mf">1.17</span><span class="o">%</span>
+ <span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">0.81</span>
+ <span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="mf">1.75</span>
+ <span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">7.48</span><span class="o">%</span>
+ <span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">9.17</span><span class="o">%</span>
+ <span class="n">Yearly</span> <span class="n">Skew</span>          <span class="o">-</span><span class="mf">1.34</span>
+ <span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="mf">2.28</span>
+ <span class="n">Best</span> <span class="n">Year</span>            <span class="mf">19.64</span><span class="o">%</span>
+ <span class="n">Worst</span> <span class="n">Year</span>           <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>
 
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">0.79</span><span class="o">%</span>
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">13.31</span>
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">1.64</span><span class="o">%</span>
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">1.27</span><span class="o">%</span>
-<span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">100.00</span><span class="o">%</span>
-<span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">96.00</span><span class="o">%</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">0.84</span><span class="o">%</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">13.23</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">1.70</span><span class="o">%</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">1.80</span><span class="o">%</span>
+ <span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">83.33</span><span class="o">%</span>
+ <span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">93.57</span><span class="o">%</span>
 </pre></div>
 </div>
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and how does the return distribution look like?</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and how does the return distribution look like?</span>
 <span class="n">res</span><span class="o">.</span><span class="n">plot_histogram</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="_images/intro_10_0.png" class="pynb" src="_images/intro_10_0.png" />
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># and just to make sure everything went along as planned, let&#39;s plot the security weights over time</span>
+<a class="pynb reference internal image-reference" href="_images/intro_11_0.png"><img alt="_images/intro_11_0.png" class="pynb" src="_images/intro_11_0.png" style="width: 894px; height: 320px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># and just to make sure everything went along as planned, let&#39;s plot the security weights over time</span>
 <span class="n">res</span><span class="o">.</span><span class="n">plot_security_weights</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="_images/intro_11_0.png" class="pynb" src="_images/intro_11_0.png" />
+<a class="pynb reference internal image-reference" href="_images/intro_12_0.png"><img alt="_images/intro_12_0.png" class="pynb" src="_images/intro_12_0.png" style="width: 876px; height: 293px;" /></a>
 </div>
 <div class="section" id="modifying-a-strategy">
-<h3>Modifying a Strategy<a class="headerlink" href="#modifying-a-strategy" title="Permalink to this headline">¶</a></h3>
+<h3>Modifying a Strategy<a class="headerlink" href="#modifying-a-strategy" title="Permalink to this heading">¶</a></h3>
 <p>Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset’s volatility? Well, all we have to do is plug in some different algos. See below:</p>
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create our new strategy</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create our new strategy</span>
 <span class="n">s2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s2&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunWeekly</span><span class="p">(),</span>
                         <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
                         <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
@@ -183,74 +182,69 @@ languages that don’t have the same wealth of high-quality, open-source project
 <span class="c1"># we include test here to see the results side-by-side</span>
 <span class="n">res2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">test2</span><span class="p">)</span>
 
-<span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">s2</span>
-<span class="mi">0</span><span class="o">%</span>                          <span class="mi">100</span><span class="o">%</span>
-<span class="p">[</span><span class="c1">############################# ] | ETA: 00:00:00</span>
+<a class="pynb reference internal image-reference" href="_images/intro_14_0.png"><img alt="_images/intro_14_0.png" class="pynb" src="_images/intro_14_0.png" style="width: 879px; height: 304px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="_images/intro_13_1.png" class="pynb" src="_images/intro_13_1.png" />
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">s1</span>          <span class="n">s2</span>
-<span class="o">-------------------</span>  <span class="o">----------</span>  <span class="o">----------</span>
-<span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
-<span class="n">End</span>                  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">22</span>
-<span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>       <span class="mf">0.00</span><span class="o">%</span>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">Stat</span>                 <span class="n">s1</span>          <span class="n">s2</span>
+ <span class="o">-------------------</span>  <span class="o">----------</span>  <span class="o">----------</span>
+ <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
+ <span class="n">End</span>                  <span class="mi">2022</span><span class="o">-</span><span class="mi">07</span><span class="o">-</span><span class="mi">01</span>  <span class="mi">2022</span><span class="o">-</span><span class="mi">07</span><span class="o">-</span><span class="mi">01</span>
+ <span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>       <span class="mf">0.00</span><span class="o">%</span>
 
-<span class="n">Total</span> <span class="n">Return</span>         <span class="mf">81.30</span><span class="o">%</span>      <span class="mf">40.79</span><span class="o">%</span>
-<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">1.19</span>        <span class="mf">1.45</span>
-<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.57</span>        <span class="mf">2.00</span>
-<span class="n">CAGR</span>                 <span class="mf">8.69</span><span class="o">%</span>       <span class="mf">4.91</span><span class="o">%</span>
-<span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">7.83</span><span class="o">%</span>      <span class="o">-</span><span class="mf">4.07</span><span class="o">%</span>
-<span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">1.11</span>        <span class="mf">1.21</span>
+ <span class="n">Total</span> <span class="n">Return</span>         <span class="mf">150.73</span><span class="o">%</span>     <span class="mf">69.58</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>        <span class="mf">0.96</span>
+ <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>        <span class="mf">1.41</span>
+ <span class="n">CAGR</span>                 <span class="mf">7.64</span><span class="o">%</span>       <span class="mf">4.32</span><span class="o">%</span>
+ <span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">18.42</span><span class="o">%</span>     <span class="o">-</span><span class="mf">14.62</span><span class="o">%</span>
+ <span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">0.41</span>        <span class="mf">0.30</span>
 
-<span class="n">MTD</span>                  <span class="mf">2.08</span><span class="o">%</span>       <span class="mf">1.56</span><span class="o">%</span>
-<span class="mi">3</span><span class="n">m</span>                   <span class="mf">4.08</span><span class="o">%</span>       <span class="mf">2.66</span><span class="o">%</span>
-<span class="mi">6</span><span class="n">m</span>                   <span class="mf">3.26</span><span class="o">%</span>       <span class="mf">0.47</span><span class="o">%</span>
-<span class="n">YTD</span>                  <span class="mf">3.11</span><span class="o">%</span>       <span class="mf">2.27</span><span class="o">%</span>
-<span class="mi">1</span><span class="n">Y</span>                   <span class="mf">12.04</span><span class="o">%</span>      <span class="mf">5.49</span><span class="o">%</span>
-<span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">6.82</span><span class="o">%</span>       <span class="mf">3.97</span><span class="o">%</span>
-<span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">8.12</span><span class="o">%</span>       <span class="mf">4.02</span><span class="o">%</span>
-<span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">8.69</span><span class="o">%</span>       <span class="mf">4.91</span><span class="o">%</span>
-<span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">8.69</span><span class="o">%</span>       <span class="mf">4.91</span><span class="o">%</span>
+ <span class="n">MTD</span>                  <span class="mf">0.18</span><span class="o">%</span>       <span class="mf">0.38</span><span class="o">%</span>
+ <span class="mi">3</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">10.33</span><span class="o">%</span>     <span class="o">-</span><span class="mf">6.88</span><span class="o">%</span>
+ <span class="mi">6</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>     <span class="o">-</span><span class="mf">12.00</span><span class="o">%</span>
+ <span class="n">YTD</span>                  <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>     <span class="o">-</span><span class="mf">12.00</span><span class="o">%</span>
+ <span class="mi">1</span><span class="n">Y</span>                   <span class="o">-</span><span class="mf">10.15</span><span class="o">%</span>     <span class="o">-</span><span class="mf">10.03</span><span class="o">%</span>
+ <span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">5.12</span><span class="o">%</span>       <span class="mf">1.84</span><span class="o">%</span>
+ <span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">6.44</span><span class="o">%</span>       <span class="mf">3.35</span><span class="o">%</span>
+ <span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">7.36</span><span class="o">%</span>       <span class="mf">3.76</span><span class="o">%</span>
+ <span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.64</span><span class="o">%</span>       <span class="mf">4.32</span><span class="o">%</span>
 
-<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">1.19</span>        <span class="mf">1.45</span>
-<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.57</span>        <span class="mf">2.00</span>
-<span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">8.61</span><span class="o">%</span>       <span class="mf">4.85</span><span class="o">%</span>
-<span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">7.23</span><span class="o">%</span>       <span class="mf">3.34</span><span class="o">%</span>
-<span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.35</span>       <span class="o">-</span><span class="mf">0.29</span>
-<span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">3.80</span>        <span class="mf">2.87</span>
-<span class="n">Best</span> <span class="n">Day</span>             <span class="mf">2.48</span><span class="o">%</span>       <span class="mf">1.20</span><span class="o">%</span>
-<span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">3.11</span><span class="o">%</span>      <span class="o">-</span><span class="mf">1.13</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>        <span class="mf">0.96</span>
+ <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>        <span class="mf">1.41</span>
+ <span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">7.74</span><span class="o">%</span>       <span class="mf">4.33</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">8.62</span><span class="o">%</span>       <span class="mf">4.50</span><span class="o">%</span>
+ <span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.98</span>       <span class="o">-</span><span class="mf">2.21</span>
+ <span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">16.56</span>       <span class="mf">46.12</span>
+ <span class="n">Best</span> <span class="n">Day</span>             <span class="mf">4.77</span><span class="o">%</span>       <span class="mf">2.84</span><span class="o">%</span>
+ <span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">6.63</span><span class="o">%</span>      <span class="o">-</span><span class="mf">4.66</span><span class="o">%</span>
 
-<span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">1.41</span>        <span class="mf">1.68</span>
-<span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">2.61</span>        <span class="mf">2.61</span>
-<span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">8.61</span><span class="o">%</span>       <span class="mf">5.04</span><span class="o">%</span>
-<span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">6.10</span><span class="o">%</span>       <span class="mf">3.00</span><span class="o">%</span>
-<span class="n">Monthly</span> <span class="n">Skew</span>         <span class="mf">0.01</span>        <span class="o">-</span><span class="mf">0.59</span>
-<span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">0.18</span>        <span class="mf">0.03</span>
-<span class="n">Best</span> <span class="n">Month</span>           <span class="mf">5.69</span><span class="o">%</span>       <span class="mf">1.91</span><span class="o">%</span>
-<span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">3.39</span><span class="o">%</span>      <span class="o">-</span><span class="mf">2.09</span><span class="o">%</span>
+ <span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">1.06</span>        <span class="mf">1.13</span>
+ <span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">1.91</span>        <span class="mf">1.87</span>
+ <span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.81</span><span class="o">%</span>       <span class="mf">4.40</span><span class="o">%</span>
+ <span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">7.36</span><span class="o">%</span>       <span class="mf">3.89</span><span class="o">%</span>
+ <span class="n">Monthly</span> <span class="n">Skew</span>         <span class="o">-</span><span class="mf">0.39</span>       <span class="o">-</span><span class="mf">1.06</span>
+ <span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">1.59</span>        <span class="mf">3.92</span>
+ <span class="n">Best</span> <span class="n">Month</span>           <span class="mf">7.57</span><span class="o">%</span>       <span class="mf">4.05</span><span class="o">%</span>
+ <span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">6.44</span><span class="o">%</span>      <span class="o">-</span><span class="mf">5.04</span><span class="o">%</span>
 
-<span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">1.62</span>        <span class="mf">1.61</span>
-<span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="o">-</span>           <span class="o">-</span>
-<span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">7.25</span><span class="o">%</span>       <span class="mf">4.08</span><span class="o">%</span>
-<span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">4.46</span><span class="o">%</span>       <span class="mf">2.53</span><span class="o">%</span>
-<span class="n">Yearly</span> <span class="n">Skew</span>          <span class="mf">0.15</span>        <span class="o">-</span><span class="mf">0.45</span>
-<span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="o">-</span><span class="mf">0.71</span>       <span class="o">-</span><span class="mf">0.03</span>
-<span class="n">Best</span> <span class="n">Year</span>            <span class="mf">14.10</span><span class="o">%</span>      <span class="mf">7.02</span><span class="o">%</span>
-<span class="n">Worst</span> <span class="n">Year</span>           <span class="mf">1.17</span><span class="o">%</span>       <span class="o">-</span><span class="mf">0.13</span><span class="o">%</span>
+ <span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">0.81</span>        <span class="mf">0.65</span>
+ <span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="mf">1.75</span>        <span class="mf">1.19</span>
+ <span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">7.48</span><span class="o">%</span>       <span class="mf">4.13</span><span class="o">%</span>
+ <span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">9.17</span><span class="o">%</span>       <span class="mf">6.31</span><span class="o">%</span>
+ <span class="n">Yearly</span> <span class="n">Skew</span>          <span class="o">-</span><span class="mf">1.34</span>       <span class="o">-</span><span class="mf">1.48</span>
+ <span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="mf">2.28</span>        <span class="mf">3.37</span>
+ <span class="n">Best</span> <span class="n">Year</span>            <span class="mf">19.64</span><span class="o">%</span>      <span class="mf">11.71</span><span class="o">%</span>
+ <span class="n">Worst</span> <span class="n">Year</span>           <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>     <span class="o">-</span><span class="mf">12.00</span><span class="o">%</span>
 
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">0.79</span><span class="o">%</span>      <span class="o">-</span><span class="mf">0.40</span><span class="o">%</span>
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">13.31</span>       <span class="mf">13.28</span>
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">1.64</span><span class="o">%</span>       <span class="mf">0.83</span><span class="o">%</span>
-<span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">1.27</span><span class="o">%</span>      <span class="o">-</span><span class="mf">0.69</span><span class="o">%</span>
-<span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">100.00</span><span class="o">%</span>     <span class="mf">85.71</span><span class="o">%</span>
-<span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">96.00</span><span class="o">%</span>      <span class="mf">94.67</span><span class="o">%</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">0.84</span><span class="o">%</span>      <span class="o">-</span><span class="mf">0.48</span><span class="o">%</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">13.23</span>       <span class="mf">13.68</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">1.70</span><span class="o">%</span>       <span class="mf">0.90</span><span class="o">%</span>
+ <span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">1.80</span><span class="o">%</span>      <span class="o">-</span><span class="mf">0.93</span><span class="o">%</span>
+ <span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">83.33</span><span class="o">%</span>      <span class="mf">83.33</span><span class="o">%</span>
+ <span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">93.57</span><span class="o">%</span>      <span class="mf">91.43</span><span class="o">%</span>
 </pre></div>
 </div>
 <p>As you can see, the strategy logic is easy to understand and more importantly,
@@ -259,7 +253,7 @@ core building blocks of bt.</p>
 </div>
 </div>
 <div class="section" id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><dl class="simple">
 <dt><strong>Tree Structure</strong></dt><dd><p><a class="reference internal" href="tree.html"><span class="doc">The tree structure</span></a> facilitates the construction and composition of complex algorithmic trading
@@ -307,7 +301,7 @@ these various statistics across many different backtests via <code class="xref p
 </ul>
 </div>
 <div class="section" id="roadmap">
-<h2>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this headline">¶</a></h2>
+<h2>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this heading">¶</a></h2>
 <p>Future development efforts will focus on:</p>
 <ul class="simple">
 <li><dl class="simple">
@@ -361,6 +355,13 @@ facilitate finding bugs in strategy logic.</p>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#sma-strategy">SMA Strategy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#sma-crossover-strategy">SMA Crossover Strategy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#exploring-the-tree-structure">Exploring the Tree Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#buy-and-hold-strategy">Buy and Hold Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#trend-example-1">Trend Example 1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#trend-example-2">Trend Example 2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#strategy-combination">Strategy Combination</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#equally-weighted-risk-contributions-portfolio">Equally Weighted Risk Contributions Portfolio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#predicted-tracking-error-rebalance-portfolio">Predicted Tracking Error Rebalance Portfolio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#fixed-income-examples">Fixed Income Examples</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a><ul>
@@ -411,18 +412,20 @@ facilitate finding bugs in strategy logic.</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
         </div>
 
         

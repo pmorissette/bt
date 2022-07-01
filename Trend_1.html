@@ -1,0 +1,644 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trend Example 1 &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/klink.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="trend-example-1">
+<h1>Trend Example 1<a class="headerlink" href="#trend-example-1" title="Permalink to this heading">¶</a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">import</span> <span class="nn">ffn</span>
+<span class="kn">import</span> <span class="nn">bt</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+<div class="section" id="create-fake-data">
+<h2>Create fake data<a class="headerlink" href="#create-fake-data" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rf</span> <span class="o">=</span> <span class="mf">0.04</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">mus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="n">rf</span>
+<span class="n">sigmas</span> <span class="o">=</span> <span class="p">(</span><span class="n">mus</span> <span class="o">-</span> <span class="n">rf</span><span class="p">)</span><span class="o">/</span><span class="mf">0.3</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">num_years</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">num_months_per_year</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">num_days_per_month</span> <span class="o">=</span> <span class="mi">21</span>
+<span class="n">num_days_per_year</span> <span class="o">=</span> <span class="n">num_months_per_year</span><span class="o">*</span><span class="n">num_days_per_month</span>
+
+<span class="n">rdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span>
+        <span class="n">start</span><span class="o">=</span><span class="s2">&quot;2008-01-02&quot;</span><span class="p">,</span>
+        <span class="n">periods</span><span class="o">=</span><span class="n">num_years</span><span class="o">*</span><span class="n">num_months_per_year</span><span class="o">*</span><span class="n">num_days_per_month</span><span class="p">,</span>
+        <span class="n">freq</span><span class="o">=</span><span class="s2">&quot;B&quot;</span>
+    <span class="p">),</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span><span class="s1">&#39;baz&#39;</span><span class="p">,</span><span class="s1">&#39;fake1&#39;</span><span class="p">,</span><span class="s1">&#39;fake2&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">mu</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mus</span><span class="p">):</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">sigmas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">rdf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
+        <span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="o">/</span><span class="n">num_days_per_year</span><span class="p">,</span>
+        <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">num_days_per_year</span><span class="p">),</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">rdf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">)</span>
+<span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">rdf</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span>
+
+<span class="n">pdf</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/Trend_1_3_0.png"><img alt="_images/Trend_1_3_0.png" class="pynb" src="_images/Trend_1_3_0.png" style="width: 376px; height: 251px;" /></a>
+</div>
+<div class="section" id="create-trend-signal-over-the-last-12-months">
+<h2>Create Trend signal over the last 12 months<a class="headerlink" href="#create-trend-signal-over-the-last-12-months" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sma</span>  <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">num_days_per_month</span><span class="o">*</span><span class="mi">12</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pdf</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="n">pdf</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sma</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="n">sma</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/Trend_1_5_0.png"><img alt="_images/Trend_1_5_0.png" class="pynb" src="_images/Trend_1_5_0.png" style="width: 384px; height: 251px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#sma with 1 day lag</span>
+<span class="n">sma</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result">
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>foo</th>
+      <th>bar</th>
+      <th>baz</th>
+      <th>fake1</th>
+      <th>fake2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2017-08-23</th>
+      <td>623.241267</td>
+      <td>340.774506</td>
+      <td>99.764885</td>
+      <td>263.491447</td>
+      <td>619.963986</td>
+    </tr>
+    <tr>
+      <th>2017-08-24</th>
+      <td>623.167989</td>
+      <td>341.096742</td>
+      <td>99.764885</td>
+      <td>263.502145</td>
+      <td>620.979948</td>
+    </tr>
+    <tr>
+      <th>2017-08-25</th>
+      <td>622.749149</td>
+      <td>341.316672</td>
+      <td>99.764885</td>
+      <td>263.502145</td>
+      <td>622.421401</td>
+    </tr>
+    <tr>
+      <th>2017-08-28</th>
+      <td>622.353039</td>
+      <td>341.494307</td>
+      <td>99.807732</td>
+      <td>263.517071</td>
+      <td>622.962579</td>
+    </tr>
+    <tr>
+      <th>2017-08-29</th>
+      <td>622.153294</td>
+      <td>341.662442</td>
+      <td>99.807732</td>
+      <td>263.517071</td>
+      <td>622.992416</td>
+    </tr>
+  </tbody>
+</table>
+</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#sma with 0 day lag</span>
+<span class="n">pdf</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">num_days_per_month</span><span class="o">*</span><span class="mi">12</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result">
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>foo</th>
+      <th>bar</th>
+      <th>baz</th>
+      <th>fake1</th>
+      <th>fake2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2017-08-23</th>
+      <td>623.167989</td>
+      <td>341.096742</td>
+      <td>99.764885</td>
+      <td>263.502145</td>
+      <td>620.979948</td>
+    </tr>
+    <tr>
+      <th>2017-08-24</th>
+      <td>622.749149</td>
+      <td>341.316672</td>
+      <td>99.764885</td>
+      <td>263.502145</td>
+      <td>622.421401</td>
+    </tr>
+    <tr>
+      <th>2017-08-25</th>
+      <td>622.353039</td>
+      <td>341.494307</td>
+      <td>99.807732</td>
+      <td>263.517071</td>
+      <td>622.962579</td>
+    </tr>
+    <tr>
+      <th>2017-08-28</th>
+      <td>622.153294</td>
+      <td>341.662442</td>
+      <td>99.807732</td>
+      <td>263.517071</td>
+      <td>622.992416</td>
+    </tr>
+    <tr>
+      <th>2017-08-29</th>
+      <td>621.907867</td>
+      <td>341.948212</td>
+      <td>99.807732</td>
+      <td>263.634283</td>
+      <td>624.310473</td>
+    </tr>
+  </tbody>
+</table>
+</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># target weights</span>
+<span class="n">trend</span> <span class="o">=</span> <span class="n">sma</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">trend</span><span class="p">[</span><span class="n">pdf</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">trend</span><span class="p">[</span><span class="n">pdf</span> <span class="o">&lt;=</span> <span class="n">sma</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">trend</span><span class="p">[</span><span class="n">sma</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">trend</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="pynb-result">
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>foo</th>
+      <th>bar</th>
+      <th>baz</th>
+      <th>fake1</th>
+      <th>fake2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2017-08-23</th>
+      <td>False</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>2017-08-24</th>
+      <td>False</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>2017-08-25</th>
+      <td>False</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>2017-08-28</th>
+      <td>False</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>2017-08-29</th>
+      <td>False</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+</div><p>Compare EW and 1/vol</p>
+<p>Both strategies rebalance daily using trend with 1 day lag and weights
+limited to 40%.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsmom_invvol_strat</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+    <span class="s1">&#39;tsmom_invvol&#39;</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunDaily</span><span class="p">(),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">trend</span><span class="p">),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">LimitWeights</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mf">0.4</span><span class="p">),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">tsmom_ew_strat</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+    <span class="s1">&#39;tsmom_ew&#39;</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunDaily</span><span class="p">(),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectWhere</span><span class="p">(</span><span class="n">trend</span><span class="p">),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">LimitWeights</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mf">0.4</span><span class="p">),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create and run</span>
+<span class="n">tsmom_invvol_bt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+    <span class="n">tsmom_invvol_strat</span><span class="p">,</span>
+    <span class="n">pdf</span><span class="p">,</span>
+    <span class="n">initial_capital</span><span class="o">=</span><span class="mf">50000000.0</span><span class="p">,</span>
+    <span class="n">commissions</span><span class="o">=</span><span class="k">lambda</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.0021</span><span class="p">),</span>
+    <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">tsmom_invvol_res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tsmom_invvol_bt</span><span class="p">)</span>
+
+<span class="n">tsmom_ew_bt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+    <span class="n">tsmom_ew_strat</span><span class="p">,</span>
+    <span class="n">pdf</span><span class="p">,</span>
+
+    <span class="n">initial_capital</span><span class="o">=</span><span class="mf">50000000.0</span><span class="p">,</span>
+    <span class="n">commissions</span><span class="o">=</span><span class="k">lambda</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.0021</span><span class="p">),</span>
+    <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">tsmom_ew_res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tsmom_ew_bt</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">tsmom_invvol</span>
+ <span class="mi">0</span><span class="o">%</span> <span class="p">[</span><span class="c1">############################# ] 100% | ETA: 00:00:00tsmom_ew</span>
+ <span class="mi">0</span><span class="o">%</span> <span class="p">[</span><span class="c1">############################# ] 100% | ETA: 00:00:00</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tsmom_ew_res</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="n">tsmom_ew_res</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;EW&#39;</span><span class="p">)</span>
+<span class="n">pdf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/Trend_1_12_0.png"><img alt="_images/Trend_1_12_0.png" class="pynb" src="_images/Trend_1_12_0.png" style="width: 376px; height: 240px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsmom_ew_res</span><span class="o">.</span><span class="n">stats</span>
+</pre></div>
+</div>
+<div class="pynb-result">
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>tsmom_ew</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>start</th>
+      <td>2008-01-01 00:00:00</td>
+    </tr>
+    <tr>
+      <th>end</th>
+      <td>2017-08-29 00:00:00</td>
+    </tr>
+    <tr>
+      <th>rf</th>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>total_return</th>
+      <td>1.982933</td>
+    </tr>
+    <tr>
+      <th>cagr</th>
+      <td>0.119797</td>
+    </tr>
+    <tr>
+      <th>max_drawdown</th>
+      <td>-0.103421</td>
+    </tr>
+    <tr>
+      <th>calmar</th>
+      <td>1.158343</td>
+    </tr>
+    <tr>
+      <th>mtd</th>
+      <td>0.017544</td>
+    </tr>
+    <tr>
+      <th>three_month</th>
+      <td>0.040722</td>
+    </tr>
+    <tr>
+      <th>six_month</th>
+      <td>0.079362</td>
+    </tr>
+    <tr>
+      <th>ytd</th>
+      <td>0.08107</td>
+    </tr>
+    <tr>
+      <th>one_year</th>
+      <td>0.100432</td>
+    </tr>
+    <tr>
+      <th>three_year</th>
+      <td>0.159895</td>
+    </tr>
+    <tr>
+      <th>five_year</th>
+      <td>0.172284</td>
+    </tr>
+    <tr>
+      <th>ten_year</th>
+      <td>0.119797</td>
+    </tr>
+    <tr>
+      <th>incep</th>
+      <td>0.119797</td>
+    </tr>
+    <tr>
+      <th>daily_sharpe</th>
+      <td>1.356727</td>
+    </tr>
+    <tr>
+      <th>daily_sortino</th>
+      <td>2.332895</td>
+    </tr>
+    <tr>
+      <th>daily_mean</th>
+      <td>0.112765</td>
+    </tr>
+    <tr>
+      <th>daily_vol</th>
+      <td>0.083116</td>
+    </tr>
+    <tr>
+      <th>daily_skew</th>
+      <td>0.029851</td>
+    </tr>
+    <tr>
+      <th>daily_kurt</th>
+      <td>0.96973</td>
+    </tr>
+    <tr>
+      <th>best_day</th>
+      <td>0.02107</td>
+    </tr>
+    <tr>
+      <th>worst_day</th>
+      <td>-0.021109</td>
+    </tr>
+    <tr>
+      <th>monthly_sharpe</th>
+      <td>1.373241</td>
+    </tr>
+    <tr>
+      <th>monthly_sortino</th>
+      <td>2.966223</td>
+    </tr>
+    <tr>
+      <th>monthly_mean</th>
+      <td>0.118231</td>
+    </tr>
+    <tr>
+      <th>monthly_vol</th>
+      <td>0.086096</td>
+    </tr>
+    <tr>
+      <th>monthly_skew</th>
+      <td>-0.059867</td>
+    </tr>
+    <tr>
+      <th>monthly_kurt</th>
+      <td>0.571064</td>
+    </tr>
+    <tr>
+      <th>best_month</th>
+      <td>0.070108</td>
+    </tr>
+    <tr>
+      <th>worst_month</th>
+      <td>-0.064743</td>
+    </tr>
+    <tr>
+      <th>yearly_sharpe</th>
+      <td>1.741129</td>
+    </tr>
+    <tr>
+      <th>yearly_sortino</th>
+      <td>inf</td>
+    </tr>
+    <tr>
+      <th>yearly_mean</th>
+      <td>0.129033</td>
+    </tr>
+    <tr>
+      <th>yearly_vol</th>
+      <td>0.074109</td>
+    </tr>
+    <tr>
+      <th>yearly_skew</th>
+      <td>0.990397</td>
+    </tr>
+    <tr>
+      <th>yearly_kurt</th>
+      <td>1.973883</td>
+    </tr>
+    <tr>
+      <th>best_year</th>
+      <td>0.285249</td>
+    </tr>
+    <tr>
+      <th>worst_year</th>
+      <td>0.024152</td>
+    </tr>
+    <tr>
+      <th>avg_drawdown</th>
+      <td>-0.015516</td>
+    </tr>
+    <tr>
+      <th>avg_drawdown_days</th>
+      <td>25.223214</td>
+    </tr>
+    <tr>
+      <th>avg_up_month</th>
+      <td>0.024988</td>
+    </tr>
+    <tr>
+      <th>avg_down_month</th>
+      <td>-0.012046</td>
+    </tr>
+    <tr>
+      <th>win_year_perc</th>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>twelve_month_win_perc</th>
+      <td>0.971429</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="index.html" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>

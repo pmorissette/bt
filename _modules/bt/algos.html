@@ -1,16 +1,17 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>bt.algos &#8212; bt 0.2.9 documentation</title>
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/css/klink.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <title>bt.algos &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -40,7 +41,6 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">sklearn.covariance</span>
-<span class="kn">from</span> <span class="nn">future.utils</span> <span class="kn">import</span> <span class="n">iteritems</span>
 
 <span class="kn">import</span> <span class="nn">bt</span>
 <span class="kn">from</span> <span class="nn">bt.core</span> <span class="kn">import</span> <span class="n">Algo</span><span class="p">,</span> <span class="n">AlgoStack</span><span class="p">,</span> <span class="n">SecurityBase</span><span class="p">,</span> <span class="n">is_zero</span>
@@ -1090,7 +1090,7 @@
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">*</span> <span class="n">w</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">iteritems</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
+            <span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">*</span> <span class="n">w</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
@@ -1569,17 +1569,16 @@
             <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">annualization_factor</span>
         <span class="p">)</span>
 
-        <span class="c1"># vol is too high</span>
-        <span class="k">if</span> <span class="n">vol</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span><span class="p">:</span>
-            <span class="n">mult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span> <span class="o">/</span> <span class="n">vol</span>
-        <span class="c1"># vol is too low</span>
-        <span class="k">elif</span> <span class="n">vol</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span><span class="p">:</span>
-            <span class="n">mult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span> <span class="o">/</span> <span class="n">vol</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">mult</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="p">}</span>
 
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">mult</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="n">vol</span>
+                <span class="p">)</span>
 
         <span class="k">return</span> <span class="kc">True</span></div>
 
@@ -1829,6 +1828,7 @@
                 <span class="n">v</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">notional_value</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">v</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+
             <span class="c1"># if non-zero and non-null, we need to close it out</span>
             <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -1839,7 +1839,7 @@
             <span class="n">base</span> <span class="o">=</span> <span class="n">base</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;cash&quot;</span><span class="p">])</span>
 
         <span class="c1"># Turn off updating while we rebalance each child</span>
-        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iteritems</span><span class="p">(</span><span class="n">targets</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">target</span><span class="o">.</span><span class="n">rebalance</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">child</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Now update</span>
@@ -1895,14 +1895,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
 
         <span class="c1"># if _weights are not None, we have some work to do</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c1"># scale delta relative to # of periods left and set that as the new</span>
             <span class="c1"># target</span>
-            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">:</span>
-                <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
-                <span class="n">dlt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">curr</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>
-                <span class="n">tgt</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr</span> <span class="o">+</span> <span class="n">dlt</span>
+            <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">curr</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
+                <span class="p">)</span>
+                <span class="n">dlt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span> <span class="o">-</span> <span class="n">curr</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>
+                <span class="n">tgt</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr</span> <span class="o">+</span> <span class="n">dlt</span>
 
             <span class="c1"># mock weights and call real Rebalance</span>
             <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tgt</span>
@@ -2082,7 +2084,7 @@
         <span class="c1"># Find securities that are candidate for closing</span>
         <span class="n">sec_names</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">sec_name</span>
-            <span class="k">for</span> <span class="n">sec_name</span><span class="p">,</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">iteritems</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">sec_name</span><span class="p">,</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">SecurityBase</span><span class="p">)</span>
             <span class="ow">and</span> <span class="n">sec_name</span> <span class="ow">in</span> <span class="n">close_dates</span><span class="o">.</span><span class="n">index</span>
             <span class="ow">and</span> <span class="n">sec_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">perm</span><span class="p">[</span><span class="s2">&quot;closed&quot;</span><span class="p">]</span>
@@ -2136,7 +2138,7 @@
         <span class="c1"># Find securities that are candidate for roll</span>
         <span class="n">sec_names</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">sec_name</span>
-            <span class="k">for</span> <span class="n">sec_name</span><span class="p">,</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">iteritems</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">sec_name</span><span class="p">,</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">SecurityBase</span><span class="p">)</span>
             <span class="ow">and</span> <span class="n">sec_name</span> <span class="ow">in</span> <span class="n">roll_data</span><span class="o">.</span><span class="n">index</span>
             <span class="ow">and</span> <span class="n">sec_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">perm</span><span class="p">[</span><span class="s2">&quot;rolled&quot;</span><span class="p">]</span>
@@ -2155,7 +2157,7 @@
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">sec_name</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Do all the new transactions at the end, to do any necessary aggregations first</span>
-        <span class="k">for</span> <span class="n">new_sec</span><span class="p">,</span> <span class="n">quantity</span> <span class="ow">in</span> <span class="n">iteritems</span><span class="p">(</span><span class="n">transactions</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">new_sec</span><span class="p">,</span> <span class="n">quantity</span> <span class="ow">in</span> <span class="n">transactions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">target</span><span class="o">.</span><span class="n">transact</span><span class="p">(</span><span class="n">quantity</span><span class="p">,</span> <span class="n">new_sec</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Now update</span>
@@ -2327,13 +2329,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">history</span>
 
     <span class="k">def</span> <span class="nf">_setup_risk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">set_history</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Setup risk attributes on the node in question &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Setup risk attributes on the node in question&quot;&quot;&quot;</span>
         <span class="n">target</span><span class="o">.</span><span class="n">risk</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">set_history</span><span class="p">:</span>
             <span class="n">target</span><span class="o">.</span><span class="n">risks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_setup_measure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">set_history</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Setup a risk measure within the risk attributes on the node in question &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Setup a risk measure within the risk attributes on the node in question&quot;&quot;&quot;</span>
         <span class="n">target</span><span class="o">.</span><span class="n">risk</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
         <span class="k">if</span> <span class="n">set_history</span><span class="p">:</span>
             <span class="n">target</span><span class="o">.</span><span class="n">risks</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
@@ -2514,18 +2516,20 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
         </div>
 
         

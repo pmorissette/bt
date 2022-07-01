@@ -1,16 +1,17 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>A Quick Example &#8212; bt 0.2.9 documentation</title>
-    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../../../_static/css/klink.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <title>A Quick Example &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/klink.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
     <script src="../../../../_static/jquery.js"></script>
     <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
@@ -28,7 +29,7 @@
           <div class="body" role="main">
             
   <div class="section" id="a-quick-example">
-<h1>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this headline">¶</a></h1>
+<h1>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this heading">¶</a></h1>
 <p>Here is a quick example of what it looks like. I am writing this in my
 notebook file by the way (using a Mardown cell).</p>
 <p>Here is some code + output:</p>
@@ -55,7 +56,7 @@ notebook file by the way (using a Mardown cell).</p>
 </div>
 <img alt="../../../../_images/intro_3_1.png" class="pynb" src="../../../../_images/intro_3_1.png" />
 <div class="section" id="raw-nbconvert-cells">
-<h2>Raw NBConvert Cells<a class="headerlink" href="#raw-nbconvert-cells" title="Permalink to this headline">¶</a></h2>
+<h2>Raw NBConvert Cells<a class="headerlink" href="#raw-nbconvert-cells" title="Permalink to this heading">¶</a></h2>
 <p>In addition to markdown cells, you may also use <strong>Raw NBConvert</strong> cells. This allows you to input reST directly in your notebook. It won’t look as pretty in the notebook itself, but will work great for your docs. Special reST and Sphinx markup will work within a Raw NBConvert (link, code markup, etc.).</p>
 <p>By the way, <a class="reference internal" href="klink.html#klink.__init__.convert_notebooks" title="klink.__init__.convert_notebooks"><code class="xref py py-func docutils literal notranslate"><span class="pre">convert_notebooks</span></code></a> basically calls:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ipython</span> <span class="n">nbconvert</span> <span class="o">--</span><span class="n">to</span> <span class="n">rst</span>
@@ -95,18 +96,20 @@ notebook file by the way (using a Mardown cell).</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
         </div>
 
         

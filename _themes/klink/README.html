@@ -1,16 +1,17 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>klink - A Simple &amp; Clean Sphinx Theme &#8212; bt 0.2.9 documentation</title>
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/css/klink.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <title>klink - A Simple &amp; Clean Sphinx Theme &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -29,12 +30,12 @@
             
   <img alt="http://pmorissette.github.io/klink/_static/logo.png" src="http://pmorissette.github.io/klink/_static/logo.png" />
 <div class="section" id="klink-a-simple-clean-sphinx-theme">
-<h1>klink - A Simple &amp; Clean Sphinx Theme<a class="headerlink" href="#klink-a-simple-clean-sphinx-theme" title="Permalink to this headline">¶</a></h1>
+<h1>klink - A Simple &amp; Clean Sphinx Theme<a class="headerlink" href="#klink-a-simple-clean-sphinx-theme" title="Permalink to this heading">¶</a></h1>
 <p>Klink is a <strong>simple</strong> and <strong>clean</strong> theme for creating <a class="reference external" href="http://sphinx-doc.org/">Sphinx docs</a>. It is heavily inspired by the beautiful <a class="reference external" href="https://github.com/maebert/jrnl">jrnl theme</a>. It also supports embedding <a class="reference external" href="http://ipython.org/notebook.html">IPython
 Notebooks</a> which can be mighty useful.</p>
 <p>For a live demo, please visit <a class="reference external" href="http://pmorissette.github.io/klink/">our docs</a>.</p>
 <div class="section" id="options">
-<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <p>Here are the theme options. They should be added to the html_theme_options in
 your <strong>conf.py</strong> file.</p>
 <ul class="simple">
@@ -58,7 +59,7 @@ should be 150x150.</p>
 </ul>
 </div>
 <div class="section" id="ipython-notebook-integration">
-<h2>IPython Notebook Integration<a class="headerlink" href="#ipython-notebook-integration" title="Permalink to this headline">¶</a></h2>
+<h2>IPython Notebook Integration<a class="headerlink" href="#ipython-notebook-integration" title="Permalink to this heading">¶</a></h2>
 <p>With the klink helper function <strong>convert_notebooks()</strong>, all notebooks will be
 converted to .rst so that they can be included in your docs. This includes all
 output including images. It’s a very convenient way to create Python docs!</p>
@@ -73,7 +74,7 @@ blank line, you may run into some issues.</p>
 want to have links to other parts of your Sphinx docs.</p>
 </div>
 <div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
 <p>Assuming you have pip installed:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ pip install klink
 </pre></div>
@@ -81,7 +82,7 @@ want to have links to other parts of your Sphinx docs.</p>
 <p>That’s it.</p>
 </div>
 <div class="section" id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading">¶</a></h2>
 <p>In your docs’ <strong>conf.py</strong> file, add the following:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">klink</span>
 
@@ -109,7 +110,7 @@ each one of your notebooks.</p>
 docs.</p>
 </div>
 <div class="section" id="customization">
-<h2>Customization<a class="headerlink" href="#customization" title="Permalink to this headline">¶</a></h2>
+<h2>Customization<a class="headerlink" href="#customization" title="Permalink to this heading">¶</a></h2>
 <p>Obviously, some of you will want to customize the theme. The easiest way to
 achieve this is to clone the repo into your _themes folder (create it if it does
 not exist in your docs’ source dir). To change the style, I recommend editing
@@ -130,7 +131,7 @@ work:</p>
 </div>
 </div>
 <div class="section" id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h2>
 <p>MIT</p>
 </div>
 </div>
@@ -165,18 +166,20 @@ work:</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette. If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
         </div>
 
         

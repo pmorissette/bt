@@ -1,0 +1,352 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Predicted Tracking Error Rebalance Portfolio &#8212; bt 0.2.10 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/klink.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="predicted-tracking-error-rebalance-portfolio">
+<h1>Predicted Tracking Error Rebalance Portfolio<a class="headerlink" href="#predicted-tracking-error-rebalance-portfolio" title="Permalink to this heading">¶</a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">import</span> <span class="nn">ffn</span>
+<span class="kn">import</span> <span class="nn">bt</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+<div class="section" id="create-fake-index-data">
+<h2>Create Fake Index Data<a class="headerlink" href="#create-fake-index-data" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span><span class="s1">&#39;rf&#39;</span><span class="p">]</span>
+<span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2015-01-01&#39;</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s1">&#39;2018-12-31&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">BDay</span><span class="p">())</span>
+<span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span>
+<span class="n">rdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">))),</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">dates</span><span class="p">,</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="n">names</span>
+<span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">rdf</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="mf">0.1</span><span class="o">/</span><span class="mi">252</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">252</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="n">rdf</span><span class="p">[</span><span class="s1">&#39;bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="mf">0.04</span><span class="o">/</span><span class="mi">252</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.05</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">252</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+<span class="n">rdf</span><span class="p">[</span><span class="s1">&#39;rf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+<span class="n">pdf</span> <span class="o">=</span> <span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">rdf</span><span class="p">)</span>
+<span class="n">pdf</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/PTE_3_0.png"><img alt="_images/PTE_3_0.png" class="pynb" src="_images/PTE_3_0.png" style="width: 377px; height: 262px;" /></a>
+</div>
+<div class="section" id="build-and-run-target-strategy">
+<h2>Build and run Target Strategy<a class="headerlink" href="#build-and-run-target-strategy" title="Permalink to this heading">¶</a></h2>
+<p>I will first run a strategy that rebalances everyday.</p>
+<p>Then I will use those weights as target to rebalance to whenever the PTE
+is too high.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">selectTheseAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectThese</span><span class="p">([</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span><span class="s1">&#39;bar&#39;</span><span class="p">])</span>
+
+<span class="c1"># algo to set the weights to 1/vol contributions from each asset</span>
+<span class="c1">#  with data over the last 3 months excluding yesterday</span>
+<span class="n">weighInvVolAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+    <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># algo to rebalance the current weights to weights set in target.temp</span>
+<span class="n">rebalAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()</span>
+
+<span class="c1"># a strategy that rebalances daily to 1/vol weights</span>
+<span class="n">strat</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+    <span class="s1">&#39;Target&#39;</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="n">selectTheseAlgo</span><span class="p">,</span>
+        <span class="n">weighInvVolAlgo</span><span class="p">,</span>
+        <span class="n">rebalAlgo</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># set integer_positions=False when positions are not required to be integers(round numbers)</span>
+<span class="n">backtest</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+    <span class="n">strat</span><span class="p">,</span>
+    <span class="n">pdf</span><span class="p">,</span>
+    <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="n">res_target</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/PTE_6_0.png"><img alt="_images/PTE_6_0.png" class="pynb" src="_images/PTE_6_0.png" style="width: 373px; height: 262px;" /></a>
+<p>Now use the PTE rebalance algo to trigger a rebalance whenever predicted
+tracking error is greater than 1%.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># algo to fire whenever predicted tracking error is greater than 1%</span>
+<span class="n">wdf</span> <span class="o">=</span> <span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span>
+
+<span class="n">PTE_rebalance_Algo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">PTE_Rebalance</span><span class="p">(</span>
+    <span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">wdf</span><span class="p">,</span>
+    <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+    <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">covar_method</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">,</span>
+    <span class="n">annualization_factor</span><span class="o">=</span><span class="mi">252</span>
+<span class="p">)</span>
+
+<span class="n">selectTheseAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectThese</span><span class="p">([</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span><span class="s1">&#39;bar&#39;</span><span class="p">])</span>
+
+<span class="c1"># algo to set the weights to 1/vol contributions from each asset</span>
+<span class="c1">#  with data over the last 12 months excluding yesterday</span>
+<span class="n">weighTargetAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighTarget</span><span class="p">(</span>
+    <span class="n">wdf</span>
+<span class="p">)</span>
+
+<span class="n">rebalAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()</span>
+
+<span class="c1"># a strategy that rebalances monthly to specified weights</span>
+<span class="n">strat</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+    <span class="s1">&#39;PTE&#39;</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="n">PTE_rebalance_Algo</span><span class="p">,</span>
+        <span class="n">selectTheseAlgo</span><span class="p">,</span>
+        <span class="n">weighTargetAlgo</span><span class="p">,</span>
+        <span class="n">rebalAlgo</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># set integer_positions=False when positions are not required to be integers(round numbers)</span>
+<span class="n">backtest</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+    <span class="n">strat</span><span class="p">,</span>
+    <span class="n">pdf</span><span class="p">,</span>
+    <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="n">res_PTE</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+
+<span class="n">realized_weights_df</span> <span class="o">=</span> <span class="n">res_PTE</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span>
+<span class="n">realized_weights_df</span><span class="p">[</span><span class="s1">&#39;PTE foo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">realized_weights_df</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">]</span>
+<span class="n">realized_weights_df</span><span class="p">[</span><span class="s1">&#39;PTE bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">realized_weights_df</span><span class="p">[</span><span class="s1">&#39;bar&#39;</span><span class="p">]</span>
+<span class="n">realized_weights_df</span> <span class="o">=</span> <span class="n">realized_weights_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,[</span><span class="s1">&#39;PTE foo&#39;</span><span class="p">,</span> <span class="s1">&#39;PTE bar&#39;</span><span class="p">]]</span>
+<span class="n">realized_weights_df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Target Weights vs PTE Weights&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/PTE_9_0.png"><img alt="_images/PTE_9_0.png" class="pynb" src="_images/PTE_9_0.png" style="width: 373px; height: 277px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">trans_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="n">res_target</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Target&#39;</span><span class="p">,</span><span class="s1">&#39;PTE&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">transactions</span> <span class="o">=</span> <span class="n">res_target</span><span class="o">.</span><span class="n">get_transactions</span><span class="p">()</span>
+<span class="n">transactions</span> <span class="o">=</span> <span class="p">(</span><span class="n">transactions</span><span class="p">[</span><span class="s1">&#39;quantity&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">transactions</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">bar_mask</span> <span class="o">=</span> <span class="n">transactions</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="s1">&#39;Security&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bar&#39;</span>
+<span class="n">foo_mask</span> <span class="o">=</span> <span class="n">transactions</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="s1">&#39;Security&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;foo&#39;</span>
+
+<span class="n">trans_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">trans_df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">4</span><span class="p">:],</span><span class="s1">&#39;Target&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">transactions</span><span class="p">[</span><span class="n">bar_mask</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">transactions</span><span class="p">[</span><span class="n">foo_mask</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transactions</span> <span class="o">=</span> <span class="n">res_PTE</span><span class="o">.</span><span class="n">get_transactions</span><span class="p">()</span>
+<span class="n">transactions</span> <span class="o">=</span> <span class="p">(</span><span class="n">transactions</span><span class="p">[</span><span class="s1">&#39;quantity&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">transactions</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">bar_mask</span> <span class="o">=</span> <span class="n">transactions</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="s1">&#39;Security&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bar&#39;</span>
+<span class="n">foo_mask</span> <span class="o">=</span> <span class="n">transactions</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="s1">&#39;Security&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;foo&#39;</span>
+
+<span class="n">trans_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">transactions</span><span class="p">[</span><span class="n">bar_mask</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;PTE&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">transactions</span><span class="p">[</span><span class="n">bar_mask</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">trans_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">transactions</span><span class="p">[</span><span class="n">foo_mask</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;PTE&#39;</span><span class="p">]</span> <span class="o">+=</span>  <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">transactions</span><span class="p">[</span><span class="n">foo_mask</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">trans_df</span> <span class="o">=</span> <span class="n">trans_df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">trans_df</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Cumulative sum of notional traded&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/PTE_13_0.png"><img alt="_images/PTE_13_0.png" class="pynb" src="_images/PTE_13_0.png" style="width: 373px; height: 277px;" /></a>
+<p>If we plot the total risk contribution of each asset class and divide by
+the total volatility, then we can see that both strategy’s contribute
+roughly similar amounts of volatility from both of the securities.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">weights_target</span> <span class="o">=</span> <span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span>
+<span class="n">rolling_cov_target</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="n">weights_target</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">pct_change</span><span class="p">()</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">3</span><span class="o">*</span><span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">cov</span><span class="p">()</span><span class="o">*</span><span class="mi">252</span>
+
+<span class="n">weights_PTE</span> <span class="o">=</span> <span class="n">res_PTE</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="n">weights_target</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">rolling_cov_PTE</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="n">weights_target</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">pct_change</span><span class="p">()</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">3</span><span class="o">*</span><span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">cov</span><span class="p">()</span><span class="o">*</span><span class="mi">252</span>
+
+
+<span class="n">trc_target</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">weights_target</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="n">weights_target</span><span class="o">.</span><span class="n">columns</span>
+<span class="p">)</span>
+
+<span class="n">trc_PTE</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">weights_PTE</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="s2">&quot; PTE&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">weights_PTE</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">pdf</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+    <span class="n">trc_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="p">(</span><span class="n">rolling_cov_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="nd">@weights_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weights_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="nd">@rolling_cov_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="nd">@weights_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">trc_PTE</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights_PTE</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="p">(</span><span class="n">rolling_cov_PTE</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="nd">@weights_PTE</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weights_PTE</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="nd">@rolling_cov_PTE</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="nd">@weights_PTE</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dt</span><span class="p">,:]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">trc_target</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">trc_PTE</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Total Risk Contribution&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/PTE_15_0.png"><img alt="_images/PTE_15_0.png" class="pynb" src="_images/PTE_15_0.png" style="width: 386px; height: 277px;" /></a>
+<p>Looking at the Target strategy’s and PTE strategy’s Total Risk they are
+very similar.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">trc_target</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Target&#39;</span><span class="p">)</span>
+<span class="n">trc_PTE</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;PTE&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Total Risk&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/PTE_17_0.png"><img alt="_images/PTE_17_0.png" class="pynb" src="_images/PTE_17_0.png" style="width: 380px; height: 277px;" /></a>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transactions</span> <span class="o">=</span> <span class="n">res_PTE</span><span class="o">.</span><span class="n">get_transactions</span><span class="p">()</span>
+<span class="n">transactions</span> <span class="o">=</span> <span class="p">(</span><span class="n">transactions</span><span class="p">[</span><span class="s1">&#39;quantity&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">transactions</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">bar_mask</span> <span class="o">=</span> <span class="n">transactions</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="s1">&#39;Security&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bar&#39;</span>
+<span class="n">dates_of_PTE_transactions</span> <span class="o">=</span> <span class="n">transactions</span><span class="p">[</span><span class="n">bar_mask</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">dates_of_PTE_transactions</span>
+</pre></div>
+</div>
+<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="mi">0</span>    <span class="mi">2015</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">06</span>
+ <span class="mi">2</span>    <span class="mi">2015</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">07</span>
+ <span class="mi">4</span>    <span class="mi">2015</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">08</span>
+ <span class="mi">6</span>    <span class="mi">2015</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">09</span>
+ <span class="mi">8</span>    <span class="mi">2015</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">12</span>
+ <span class="mi">10</span>   <span class="mi">2015</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">20</span>
+ <span class="mi">12</span>   <span class="mi">2015</span><span class="o">-</span><span class="mi">04</span><span class="o">-</span><span class="mi">07</span>
+ <span class="mi">14</span>   <span class="mi">2015</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">01</span>
+ <span class="mi">16</span>   <span class="mi">2017</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">23</span>
+ <span class="mi">18</span>   <span class="mi">2017</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">23</span>
+ <span class="mi">20</span>   <span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span>
+ <span class="n">Name</span><span class="p">:</span> <span class="n">Date</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">datetime64</span><span class="p">[</span><span class="n">ns</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trc_target</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">trc_PTE</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+    <span class="c1">#.abs().sum(axis=1).plot()</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Total Risk&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">trc_target</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trc_target</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">trc_PTE</span><span class="o">.</span><span class="n">values</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PTE&#39;</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">dt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dates_of_PTE_transactions</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;PTE Transaction&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
+</pre></div>
+</div>
+<a class="pynb reference internal image-reference" href="_images/PTE_19_0.png"><img alt="_images/PTE_19_0.png" class="pynb" src="_images/PTE_19_0.png" style="width: 397px; height: 266px;" /></a>
+<p>We can see the Predicted Tracking Error of the PTE Strategy with each
+transaction marked.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="index.html" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
+</ul>
+
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            bt was created by Philippe Morissette.
+If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
+
+        </div>
+
+        
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-52308448-3', 'auto');
+            ga('require', 'displayfeatures');
+            ga('send', 'pageview');
+        </script>
+        
+  </body>
+</html>
