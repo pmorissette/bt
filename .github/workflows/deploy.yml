@@ -72,7 +72,9 @@ jobs:
             cibuildwheel: "cp311"
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -122,3 +124,40 @@ jobs:
     #     TWINE_USERNAME: ${{ secrets.PYPI_UN }}
     #     TWINE_PASSWORD: ${{ secrets.PYPI_PW }}
     #   run: make upload
+  build_sdist:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-22.04
+        python-version:
+          - 3.9
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          make develop
+          python -m pip install -U wheel twine setuptools
+
+      - name: Python SDist Steps
+        run: python setup.py sdist
+
+      - name: Check sdist
+        run: twine check dist/*.tar.gz
+
+      - name: Upload SDist
+        uses: actions/upload-artifact@v4
+        with:
+            name: sdist
+            path: dist/*.tar.gz

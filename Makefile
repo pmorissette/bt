@@ -17,7 +17,7 @@ fix:
 	python -m ruff format bt setup.py docs/source/conf.py
 
 dist:
-	python setup.py sdist bdist_wheel
+	python setup.py sdist
 	python -m twine check dist/*
 
 upload: dist
