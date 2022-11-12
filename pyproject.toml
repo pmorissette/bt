@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel", "cython>0.25"]
+requires = ["setuptools", "wheel", "cython>=0.29.25"]
 
 [tool.ruff]
 line-length = 180
