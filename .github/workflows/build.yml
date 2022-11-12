@@ -53,7 +53,7 @@ jobs:
     - name: Build wheels
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
-        CIBW_BUILD: "cp39-* cp311-*"
+        CIBW_BUILD: "cp310-*"
         CIBW_SKIP: "*-musllinux_i686"
 
     - uses: actions/upload-artifact@v3
