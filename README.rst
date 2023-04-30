@@ -91,7 +91,7 @@ Installing bt
 -------------
 
 The easiest way to install ``bt`` is from the `Python Package Index <https://pypi.python.org/pypi/bt/>`_
-using ``pip`` or ``easy_insatll``:
+using ``pip`` or ``easy_install``:
 
 .. code-block:: bash
 
