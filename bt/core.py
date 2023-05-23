@@ -77,7 +77,6 @@ class Node(object):
     _bidoffer_paid = cy.declare(cy.double)
 
     def __init__(self, name, parent=None, children=None):
-
         self.name = name
 
         # children helpers
@@ -157,7 +156,6 @@ class Node(object):
                 children = tmp
 
             for c in children:
-
                 if dc:  # deepcopy object for possible later reuse
                     c = deepcopy(c)
 
@@ -1597,7 +1595,6 @@ class SecurityBase(Node):
             last_q = q
             last_amount_short = full_outlay - amount
             while not np.isclose(full_outlay, amount, rtol=0.0) and q != 0:
-
                 dq_wout_considering_tx_costs = (full_outlay - amount) / (
                     self._price * self.multiplier
                 )
@@ -1613,7 +1610,6 @@ class SecurityBase(Node):
                 # the outlay of q + 1 < amount. i.e. if we bought one more
                 # position then we wouldn't have enough cash
                 if self.integer_positions:
-
                     full_outlay_of_1_more, _, _, _ = self.outlay(q + 1)
 
                     if full_outlay < amount and full_outlay_of_1_more > amount:
