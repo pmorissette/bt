@@ -174,7 +174,6 @@ class RunPeriod(Algo):
             if self._run_on_last_date:
                 result = True
         else:
-
             # create pandas.Timestamp for useful .week,.quarter properties
             now = pd.Timestamp(now)
 
@@ -1212,7 +1211,6 @@ class WeighERC(Algo):
         tolerance=1e-8,
         lag=pd.DateOffset(days=0),
     ):
-
         super(WeighERC, self).__init__()
         self.lookback = lookback
         self.initial_weights = initial_weights
@@ -1500,7 +1498,6 @@ class TargetVol(Algo):
         covar_method="standard",
         annualization_factor=252,
     ):
-
         super(TargetVol, self).__init__()
         self.target_volatility = target_volatility
         self.lookback = lookback
@@ -1509,7 +1506,6 @@ class TargetVol(Algo):
         self.annualization_factor = annualization_factor
 
     def __call__(self, target):
-
         current_weights = target.temp["weights"]
         selected = current_weights.keys()
 
@@ -1576,7 +1572,6 @@ class PTE_Rebalance(Algo):
         covar_method="standard",
         annualization_factor=252,
     ):
-
         super(PTE_Rebalance, self).__init__()
         self.PTE_volatility_cap = PTE_volatility_cap
         self.target_weights = target_weights
@@ -1586,7 +1581,6 @@ class PTE_Rebalance(Algo):
         self.annualization_factor = annualization_factor
 
     def __call__(self, target):
-
         if target.now is None:
             return False
 
