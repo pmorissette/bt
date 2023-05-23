@@ -39,7 +39,7 @@ setup(
     keywords="python finance quant backtesting strategies",
     url="https://github.com/pmorissette/bt",
     license="MIT",
-    install_requires=["ffn>=0.3.5", "pyprind>=2.11"],
+    install_requires=["ffn>=0.3.7", "pyprind>=2.11"],
     extras_require={
         "dev": [
             "black>=20.8b1",
