@@ -489,7 +489,7 @@ class Result(ffn.GroupStats):
 
     def _get_backtest(self, backtest):
         # based on input order
-        if type(backtest) == int:
+        if isinstance(backtest, int):
             return self.backtest_list[backtest].name
 
         # default case assume ok
