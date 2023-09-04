@@ -159,7 +159,7 @@ class Node(object):
                 if dc:  # deepcopy object for possible later reuse
                     c = deepcopy(c)
 
-                if type(c) == str:
+                if isinstance(c, str):
                     if c in self._universe_tickers:
                         raise ValueError("Child %s already exists" % c)
 
