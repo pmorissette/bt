@@ -42,7 +42,7 @@ setup(
     install_requires=[
         "ffn>=0.3.7",
         "pyprind>=2.11",
-        "tqdm==4.65.0"  # <-- Added this line
+        "tqdm>=4.65.0"
     ],
     extras_require={
         "dev": [
