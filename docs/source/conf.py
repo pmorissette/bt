@@ -64,7 +64,7 @@ If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new"
 # built documents.
 #
 # The short X.Y version.
-version = ".".join([str(x) for x in bt.__version__])
+version = bt.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 

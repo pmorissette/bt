@@ -137,9 +137,7 @@ class RunOnce(Algo):
 
 
 class RunPeriod(Algo):
-    def __init__(
-        self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False
-    ):
+    def __init__(self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False):
         super(RunPeriod, self).__init__()
         self._run_on_first_date = run_on_first_date
         self._run_on_end_of_period = run_on_end_of_period
@@ -427,9 +425,7 @@ class RunIfOutOfBounds(Algo):
                     return True
 
         if "cash" in target.temp:
-            cash_deviation = abs(
-                (target.capital - targets.value) / targets.value - target.temp["cash"]
-            )
+            cash_deviation = abs((target.capital - targets.value) / targets.value - target.temp["cash"])
             if cash_deviation > self.tolerance:
                 return True
 
@@ -641,9 +637,7 @@ class SelectN(Algo):
 
     """
 
-    def __init__(
-        self, n, sort_descending=True, all_or_none=False, filter_selected=False
-    ):
+    def __init__(self, n, sort_descending=True, all_or_none=False, filter_selected=False):
         super(SelectN, self).__init__()
         if n < 0:
             raise ValueError("n cannot be negative")
@@ -906,9 +900,7 @@ class ResolveOnTheRun(Algo):
                 resolved = list(universe.index)
             else:
                 resolved = list(universe[universe > 0].index)
-        target.temp["selected"] = resolved + [
-            s for s in selected if s not in on_the_run.columns
-        ]
+        target.temp["selected"] = resolved + [s for s in selected if s not in on_the_run.columns]
         return True
 
 
@@ -972,6 +964,8 @@ class StatTotalReturn(Algo):
     def __call__(self, target):
         selected = target.temp["selected"]
         t0 = target.now - self.lag
+        if target.universe[selected].index[0] > t0:
+            return False
         prc = target.universe.loc[t0 - self.lookback : t0, selected]
         target.temp["stat"] = prc.calc_total_return()
         return True
@@ -1057,9 +1051,7 @@ class ScaleWeights(Algo):
         self.scale = scale
 
     def __call__(self, target):
-        target.temp["weights"] = {
-            k: self.scale * w for k, w in target.temp["weights"].items()
-        }
+        target.temp["weights"] = {k: self.scale * w for k, w in target.temp["weights"].items()}
         return True
 
 
@@ -1525,25 +1517,16 @@ class TargetVol(Algo):
         else:
             raise NotImplementedError("covar_method not implemented")
 
-        weights = pd.Series(
-            [current_weights[x] for x in covar.columns], index=covar.columns
-        )
+        weights = pd.Series([current_weights[x] for x in covar.columns], index=covar.columns)
 
-        vol = np.sqrt(
-            np.matmul(weights.values.T, np.matmul(covar.values, weights.values))
-            * self.annualization_factor
-        )
+        vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
 
         if isinstance(self.target_volatility, (float, int)):
-            self.target_volatility = {
-                k: self.target_volatility for k in target.temp["weights"].keys()
-            }
+            self.target_volatility = {k: self.target_volatility for k in target.temp["weights"].keys()}
 
         for k in target.temp["weights"].keys():
             if k in self.target_volatility.keys():
-                target.temp["weights"][k] = (
-                    target.temp["weights"][k] * self.target_volatility[k] / vol
-                )
+                target.temp["weights"][k] = target.temp["weights"][k] * self.target_volatility[k] / vol
 
         return True
 
@@ -1622,10 +1605,7 @@ class PTE_Rebalance(Algo):
         else:
             raise NotImplementedError("covar_method not implemented")
 
-        PTE_vol = np.sqrt(
-            np.matmul(weights.values.T, np.matmul(covar.values, weights.values))
-            * self.annualization_factor
-        )
+        PTE_vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
 
         if pd.isnull(PTE_vol):
             return False
@@ -1863,9 +1843,7 @@ class RebalanceOverTime(Algo):
             # scale delta relative to # of periods left and set that as the new
             # target
             for cname in self._weights.keys():
-                curr = (
-                    target.children[cname].weight if cname in target.children else 0.0
-                )
+                curr = target.children[cname].weight if cname in target.children else 0.0
                 dlt = (self._weights[cname] - curr) / self._days_left
                 tgt[cname] = curr + dlt
 
@@ -1998,12 +1976,7 @@ class SelectTypes(Algo):
         self.exclude_types = exclude_types or (type(None),)
 
     def __call__(self, target):
-        selected = [
-            sec_name
-            for sec_name, sec in target.children.items()
-            if isinstance(sec, self.include_types)
-            and not isinstance(sec, self.exclude_types)
-        ]
+        selected = [sec_name for sec_name, sec in target.children.items() if isinstance(sec, self.include_types) and not isinstance(sec, self.exclude_types)]
         if "selected" in target.temp:
             selected = [s for s in selected if s in target.temp["selected"]]
         target.temp["selected"] = selected
@@ -2046,11 +2019,7 @@ class ClosePositionsAfterDates(Algo):
         close_dates = target.get_data(self.close_dates)["date"]
         # Find securities that are candidate for closing
         sec_names = [
-            sec_name
-            for sec_name, sec in target.children.items()
-            if isinstance(sec, SecurityBase)
-            and sec_name in close_dates.index
-            and sec_name not in target.perm["closed"]
+            sec_name for sec_name, sec in target.children.items() if isinstance(sec, SecurityBase) and sec_name in close_dates.index and sec_name not in target.perm["closed"]
         ]
 
         # Check whether closed
@@ -2100,11 +2069,7 @@ class RollPositionsAfterDates(Algo):
         transactions = {}
         # Find securities that are candidate for roll
         sec_names = [
-            sec_name
-            for sec_name, sec in target.children.items()
-            if isinstance(sec, SecurityBase)
-            and sec_name in roll_data.index
-            and sec_name not in target.perm["rolled"]
+            sec_name for sec_name, sec in target.children.items() if isinstance(sec, SecurityBase) and sec_name in roll_data.index and sec_name not in target.perm["rolled"]
         ]
 
         # Calculate new transaction and close old position
@@ -2195,9 +2160,7 @@ class ReplayTransactions(Algo):
         transactions = all_transactions[(timestamps > start) & (timestamps <= end)]
         for (_, security), transaction in transactions.iterrows():
             c = target[security]
-            c.transact(
-                transaction["quantity"], price=transaction["price"], update=False
-            )
+            c.transact(transaction["quantity"], price=transaction["price"], update=False)
 
         # Now update
         target.root.update(target.now)
@@ -2245,9 +2208,7 @@ class SimulateRFQTransactions(Algo):
 
         for (_, security), transaction in transactions.iterrows():
             c = target[security]
-            c.transact(
-                transaction["quantity"], price=transaction["price"], update=False
-            )
+            c.transact(transaction["quantity"], price=transaction["price"], update=False)
 
         # Now update
         target.root.update(target.now)
@@ -2407,15 +2368,11 @@ class HedgeRisks(Algo):
         securities = target.temp["selected"]
 
         # Get target risk
-        target_risk = np.array(
-            [self._get_target_risk(target, m) for m in self.measures]
-        )
+        target_risk = np.array([self._get_target_risk(target, m) for m in self.measures])
         if self.strategy is not None:
             # Add the target risk of the strategy to the risk of the target
             # (which contains existing hedges)
-            target_risk += np.array(
-                [self._get_target_risk(self.strategy, m) for m in self.measures]
-            )
+            target_risk += np.array([self._get_target_risk(self.strategy, m) for m in self.measures])
         # Turn target_risk into a column array
         target_risk = target_risk.reshape(len(self.measures), 1)
 
@@ -2424,16 +2381,11 @@ class HedgeRisks(Algo):
         for m in self.measures:
             d = target.get_data("unit_risk").get(m)
             if d is None:
-                raise ValueError(
-                    "unit_risk for %s not present in temp on %s"
-                    % (self.measure, target.name)
-                )
+                raise ValueError("unit_risk for %s not present in temp on %s" % (self.measure, target.name))
             i = d.index.get_loc(target.now)
             data.append((i, d))
 
-        hedge_risk = np.array(
-            [[_get_unit_risk(s, d, i) for (i, d) in data] for s in securities]
-        )
+        hedge_risk = np.array([[_get_unit_risk(s, d, i) for (i, d) in data] for s in securities])
 
         # Get hedge ratios
         if self.pseudo:

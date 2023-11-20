@@ -151,10 +151,7 @@ class Backtest(object):
     ):
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
-            raise Exception(
-                "data provided has some duplicate column names: \n%s \n"
-                "Please remove duplicates!" % cols
-            )
+            raise Exception("data provided has some duplicate column names: \n%s \n" "Please remove duplicates!" % cols)
 
         # we want to reuse strategy logic - copy it!
         # basically strategy is a template
@@ -213,9 +210,7 @@ class Backtest(object):
                 new = pd.concat([empty_row, old])
                 self.additional_data[k] = new
             elif isinstance(old, pd.Series) and old.index.equals(data.index):
-                empty_row = pd.Series(
-                    np.nan, index=[old.index[0] - pd.DateOffset(days=1)]
-                )
+                empty_row = pd.Series(np.nan, index=[old.index[0] - pd.DateOffset(days=1)])
                 new = pd.concat([empty_row, old])
                 self.additional_data[k] = new
 
@@ -273,14 +268,10 @@ class Backtest(object):
             return self._weights
         else:
             if self.strategy.fixed_income:
-                vals = pd.DataFrame(
-                    {x.full_name: x.notional_values for x in self.strategy.members}
-                )
+                vals = pd.DataFrame({x.full_name: x.notional_values for x in self.strategy.members})
                 vals = vals.div(self.strategy.notional_values, axis=0)
             else:
-                vals = pd.DataFrame(
-                    {x.full_name: x.values for x in self.strategy.members}
-                )
+                vals = pd.DataFrame({x.full_name: x.values for x in self.strategy.members})
                 vals = vals.div(self.strategy.values, axis=0)
             self._weights = vals
             return vals
@@ -539,9 +530,7 @@ class RandomBenchmarkResult(Result):
         self.r_stats = self.stats.drop(self.base_name, axis=1)
         self.b_stats = self.stats[self.base_name]
 
-    def plot_histogram(
-        self, statistic="monthly_sharpe", figsize=(15, 5), title=None, bins=20, **kwargs
-    ):
+    def plot_histogram(self, statistic="monthly_sharpe", figsize=(15, 5), title=None, bins=20, **kwargs):
         """
         Plots the distribution of a given statistic. The histogram
         represents the distribution of the random strategies' statistic
@@ -561,9 +550,7 @@ class RandomBenchmarkResult(Result):
 
         """
         if statistic not in self.r_stats.index:
-            raise ValueError(
-                "Invalid statistic. Valid statistics" "are the statistics in self.stats"
-            )
+            raise ValueError("Invalid statistic. Valid statistics" "are the statistics in self.stats")
 
         if title is None:
             title = "%s histogram" % statistic
@@ -602,17 +589,10 @@ class RenormalizedFixedIncomeResult(Result):
     def __init__(self, normalizing_value, *backtests):
         for backtest in backtests:
             if not backtest.strategy.fixed_income:
-                raise ValueError(
-                    "Cannot apply RenormalizedFixedIncomeResult "
-                    "because backtest %s is not on a fixed income "
-                    "strategy" % backtest.name
-                )
+                raise ValueError("Cannot apply RenormalizedFixedIncomeResult " "because backtest %s is not on a fixed income " "strategy" % backtest.name)
         if not isinstance(normalizing_value, dict):
             normalizing_value = {x.name: normalizing_value for x in backtests}
-        tmp = [
-            pd.DataFrame({x.name: self._price(x.strategy, normalizing_value[x.name])})
-            for x in backtests
-        ]
+        tmp = [pd.DataFrame({x.name: self._price(x.strategy, normalizing_value[x.name])}) for x in backtests]
         super(Result, self).__init__(*tmp)
         self.backtest_list = backtests
         self.backtests = {x.name: x for x in backtests}
