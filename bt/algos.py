@@ -972,6 +972,8 @@ class StatTotalReturn(Algo):
     def __call__(self, target):
         selected = target.temp["selected"]
         t0 = target.now - self.lag
+        if target.universe[selected].index[0] > t0:
+            return False
         prc = target.universe.loc[t0 - self.lookback : t0, selected]
         target.temp["stat"] = prc.calc_total_return()
         return True
