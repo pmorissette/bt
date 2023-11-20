@@ -18,8 +18,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.9]
         os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.8, 3.9, '3.10', 3.11]
 
     steps:
     - uses: actions/checkout@v4
@@ -36,17 +36,13 @@ jobs:
         python -m pip install -U wheel twine setuptools
 
     - name: Lint
-      run: |
-        make lint
+      run: make lint
 
     - name: Test
-      run: |
-        make test
+      run: make test
 
     - name: Coverage
       uses: codecov/codecov-action@v3
 
     - name: Package and check
-      run: |
-        python setup.py sdist bdist_wheel
-        python -m twine check dist/*
+      run: make dist

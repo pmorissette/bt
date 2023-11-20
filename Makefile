@@ -11,22 +11,23 @@ test:
 	python -m pytest -vvv tests --cov=bt --junitxml=python_junit.xml --cov-report=xml --cov-branch --cov-report term
 
 lint:
-	python -m flake8 bt setup.py docs/source/conf.py
+	python -m ruff bt setup.py docs/source/conf.py
 
 fix:
-	python -m black bt setup.py docs/source/conf.py
+	python -m ruff format bt setup.py docs/source/conf.py
 
 dist:
-	python setup.py sdist
+	python setup.py sdist bdist_wheel
+	python -m twine check dist/*
 
 upload: clean dist
-	twine upload dist/*
+	python -m twine upload dist/* --skip-existing
 
-docs: 
+docs:
 	$(MAKE) -C docs/ clean
 	$(MAKE) -C docs/ html
 
-pages: 
+pages:
 	rm -rf $(TMPREPO)
 	git clone -b gh-pages git@github.com:pmorissette/bt.git $(TMPREPO)
 	rm -rf $(TMPREPO)/*
