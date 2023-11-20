@@ -20,7 +20,7 @@ dist:
 	python setup.py sdist bdist_wheel
 	python -m twine check dist/*
 
-upload: clean dist
+upload: dist
 	python -m twine upload dist/* --skip-existing
 
 docs:
