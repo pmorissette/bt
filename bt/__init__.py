@@ -10,4 +10,4 @@ from .core import HedgeSecurity, CouponPayingHedgeSecurity
 import ffn
 from ffn import utils, data, get, merge
 
-__version__ = (0, 2, 10)
+__version__ = "1.0.0"

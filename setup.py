@@ -1,6 +1,5 @@
 import codecs
 import os
-import re
 
 from setuptools import setup
 from setuptools.extension import Extension
@@ -9,12 +8,6 @@ from setuptools.extension import Extension
 def local_file(filename):
     return codecs.open(os.path.join(os.path.dirname(__file__), filename), "r", "utf-8")
 
-
-version = re.search(
-    "^__version__ = \\((\\d+), (\\d+), (\\d+)\\)",
-    local_file(os.path.join("bt", "__init__.py")).read(),
-    re.MULTILINE,
-).groups()
 
 try:
     from Cython.Build import cythonize
@@ -32,36 +25,41 @@ else:
 
 setup(
     name="bt",
-    version=".".join(version),
+    version="1.0.0",
     author="Philippe Morissette",
     author_email="morissette.philippe@gmail.com",
     description="A flexible backtesting framework for Python",
-    keywords="python finance quant backtesting strategies",
+    keywords="python finance quant backtesting strategies algotrading algorithmic trading",
     url="https://github.com/pmorissette/bt",
     license="MIT",
-    install_requires=["ffn>=0.3.7", "pyprind>=2.11"],
+    install_requires=["ffn>=1.0.0", "pyprind>=2.11"],
     extras_require={
         "dev": [
-            "black>=20.8b1",
-            "codecov",
             "cython>=0.25",
-            "ffn>=0.3.5",
-            "flake8",
-            "flake8-black",
+            "ffn>=1.0.0",
             "matplotlib>=2",
             "numpy>=1",
             "pandas>=0.19",
             "pyprind>=2.11",
             "pytest",
             "pytest-cov",
+            "ruff",
         ],
     },
     packages=["bt"],
-    long_description=local_file("README.rst").read().replace("\r\n", "\n"),
+    long_description=local_file("README.md").read().replace("\r\n", "\n"),
+    long_description_content_type="text/markdown",
     classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Topic :: Software Development :: Libraries",
+        "Development Status :: 4 - Beta",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Software Development :: Libraries",
+        "License :: OSI Approved :: MIT License",
     ],
     ext_modules=ext_modules,
     python_requires=">=3.7",
