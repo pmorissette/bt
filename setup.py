@@ -62,5 +62,5 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     ext_modules=ext_modules,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )
