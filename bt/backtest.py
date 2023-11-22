@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 import pyprind
+from tqdm import tqdm
 
 
 def run(*backtests):
@@ -24,7 +25,7 @@ def run(*backtests):
 
     """
     # run each backtest
-    for bkt in backtests:
+    for bkt in tqdm(backtests):
         bkt.run()
 
     return Result(*backtests)
@@ -66,7 +67,7 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     data = backtest.data.dropna()
 
     # create and run random backtests
-    for i in range(nsim):
+    for i in tqdm(range(nsim)):
         random_strategy.name = "random_%s" % i
         rbt = bt.Backtest(random_strategy, data)
         rbt.run()
