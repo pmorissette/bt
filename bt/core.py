@@ -1540,7 +1540,7 @@ class SecurityBase(Node):
             i = 0
             last_q = q
             last_amount_short = full_outlay - amount
-            while not np.isclose(full_outlay, amount, rtol=0.0) and q != 0:
+            while not np.isclose(full_outlay, amount, rtol=TOL) and q != 0:
                 dq_wout_considering_tx_costs = (full_outlay - amount) / (self._price * self.multiplier)
                 q = q - dq_wout_considering_tx_costs
 
