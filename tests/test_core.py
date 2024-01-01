@@ -769,12 +769,7 @@ def test_strategybase_multiple_calls():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
 
-    data.c2[dts[0]] = 95
-    data.c1[dts[1]] = 95
-    data.c2[dts[2]] = 95
-    data.c2[dts[3]] = 95
-    data.c2[dts[4]] = 95
-    data.c1[dts[4]] = 105
+    data.c2[dts[0]] = data.c1[dts[1]] = data.c2[dts[2]] = data.c2[dts[3]] = data.c2[dts[4]] = data.c1[dts[4]] = 95
 
     s.setup(data)
 
