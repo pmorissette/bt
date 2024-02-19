@@ -18,7 +18,7 @@ def run(*backtests):
     object containing the results of the backtests.
 
     Args:
-        * backtest (*list): List of backtests.
+        * backtests (*list): List of backtests.
 
     Returns:
         Result
@@ -62,8 +62,7 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     if not backtest.has_run:
         backtest.run()
 
-    bts = []
-    bts.append(backtest)
+    bts = [backtest]
     data = backtest.data.dropna()
 
     # create and run random backtests
@@ -135,6 +134,8 @@ class Backtest(object):
         * security_weights (DataFrame): Weights of each security as a
           percentage of the whole portfolio over time
         * additional_data (dict): Additional data passed at construction
+        * risk_free_rate (float): Risk free rate for performance stats
+        * annualization_factor (int): Annualization factor for performance stats
 
     """
 
@@ -148,6 +149,8 @@ class Backtest(object):
         integer_positions=True,
         progress_bar=False,
         additional_data=None,
+        risk_free_rate=0.0,
+        annualization_factor=252,
     ):
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
@@ -172,6 +175,9 @@ class Backtest(object):
         self._weights = None
         self._sweights = None
         self.has_run = False
+
+        self.risk_free_rate = risk_free_rate
+        self.annualization_factor = annualization_factor
 
     def _process_data(self, data, additional_data):
         # add virtual row at t0-1day with NaNs
@@ -256,7 +262,10 @@ class Backtest(object):
                 if self.progress_bar:
                     bar.stop()
 
-        self.stats = self.strategy.prices.calc_perf_stats()
+        self.stats = self.strategy.prices.calc_perf_stats(
+            risk_free_rate=self.risk_free_rate,
+            annualization=self.annualization_factor
+        )
         self._original_prices = self.strategy.prices
 
     @property
