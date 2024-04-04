@@ -1249,7 +1249,7 @@ class SecurityBase(Node):
         TimeSeries of positions.
         """
         # if accessing and stale - update first
-        if self._needupdate:
+        if self._needupdate or self.now != self.parent.now:
             self.update(self.root.now)
         if self.root.stale:
             self.root.update(self.root.now, None)
