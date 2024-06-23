@@ -1,0 +1,48 @@
+name: Regression and Version Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+   cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    environment: dev
+
+    strategy:
+      matrix:
+        python-version: [3.9]
+        os: [ubuntu-latest]
+        pandas_version:
+          - '>=2.2'
+          - '<2'
+        numpy_version:
+          - '<2'
+          - '>=2'
+        exclude:
+          - numpy_version: '>=2'
+            pandas_version: '<2'
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'setup.py'
+
+    - name: Install dependencies
+      run: |
+        make develop
+        python -m pip install -U wheel twine setuptools "numpy${{ matrix.numpy_version }}" "pandas${{ matrix.pandas_version}}"
+
+    - name: Test
+      run: make test
