@@ -3786,7 +3786,7 @@ def test_fi_strategy_precision():
     assert s.value == pytest.approx(0, 14)
     assert not is_zero(s.value)
     # Notional value not quite equal to N * 0.1
-    assert s.notional_value == sum(0.1 for _ in range(N))
+    assert s.notional_value == pytest.approx(sum(0.1 for _ in range(N)))
     assert s.notional_value != N * 0.1
     assert s.price == 100.0
 
