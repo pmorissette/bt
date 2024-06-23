@@ -1,4 +1,4 @@
-name: Build Status
+name: Regression and Version Tests
 
 on:
   push:
@@ -18,8 +18,17 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.9, 3.12]
+        python-version: [3.9]
+        os: [ubuntu-latest]
+        pandas_version:
+          - '>=2.2'
+          - '<2'
+        numpy_version:
+          - '<2'
+          - '>=2'
+        exclude:
+          - numpy_version: '>=2'
+            pandas_version: '<2'
 
     steps:
     - uses: actions/checkout@v4
@@ -33,16 +42,7 @@ jobs:
     - name: Install dependencies
       run: |
         make develop
-        python -m pip install -U wheel twine setuptools
-
-    - name: Lint
-      run: make lint
+        python -m pip install -U wheel twine setuptools "numpy${{ matrix.numpy_version }}" "pandas${{ matrix.pandas_version}}"
 
     - name: Test
       run: make test
-
-    - name: Coverage
-      uses: codecov/codecov-action@v4
-
-    - name: Package and check
-      run: make dist
