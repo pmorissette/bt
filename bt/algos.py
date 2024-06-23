@@ -2260,9 +2260,9 @@ class UpdateRisk(Algo):
 
     def _setup_measure(self, target, set_history):
         """Setup a risk measure within the risk attributes on the node in question"""
-        target.risk[self.measure] = np.NaN
+        target.risk[self.measure] = np.nan
         if set_history:
-            target.risks[self.measure] = np.NaN
+            target.risks[self.measure] = np.nan
 
     def _set_risk_recursive(self, target, depth, unit_risk_frame):
         set_history = depth < self.history
