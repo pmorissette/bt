@@ -1,7 +1,6 @@
 ![](http://pmorissette.github.io/bt/_static/logo.png)
 
 [![Build Status](https://github.com/pmorissette/bt/workflows/Build%20Status/badge.svg)](https://github.com/pmorissette/bt/actions/)
-[![Codecov](https://codecov.io/gh/pmorissette/bt/branch/master/graph/badge.svg)](https://codecov.io/pmorissette/bt)
 [![PyPI Version](https://img.shields.io/pypi/v/bt)](https://pypi.org/project/bt/)
 [![PyPI License](https://img.shields.io/pypi/l/bt)](https://pypi.org/project/bt/)
 

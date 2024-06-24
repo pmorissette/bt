@@ -39,9 +39,6 @@ jobs:
     - name: Test
       run: make test
 
-    - name: Coverage
-      uses: codecov/codecov-action@v4
-
     - name: Package and check
       run: make dist
 
