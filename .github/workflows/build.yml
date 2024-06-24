@@ -22,7 +22,9 @@ jobs:
         python-version: [3.11]
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -31,9 +33,7 @@ jobs:
         cache-dependency-path: 'setup.py'
 
     - name: Install dependencies
-      run: |
-        make develop
-        python -m pip install -U wheel twine setuptools
+      run: make develop
 
     - name: Lint
       run: make lint
