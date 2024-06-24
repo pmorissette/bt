@@ -1,6 +1,7 @@
 """
 Contains backtesting logic and objects.
 """
+
 from __future__ import division
 from copy import deepcopy
 import bt
@@ -81,7 +82,6 @@ def benchmark_random(backtest, random_strategy, nsim=100):
 
 
 class Backtest(object):
-
     """
     A Backtest combines a Strategy with data to
     produce a Result.
@@ -359,7 +359,6 @@ class Backtest(object):
 
 
 class Result(ffn.GroupStats):
-
     """
     Based on ffn's GroupStats with a few extra helper methods.
 
@@ -508,7 +507,6 @@ class Result(ffn.GroupStats):
 
 
 class RandomBenchmarkResult(Result):
-
     """
     RandomBenchmarkResult expands on Result to add methods specific
     to random strategy benchmarking.

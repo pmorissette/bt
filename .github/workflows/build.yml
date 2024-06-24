@@ -31,9 +31,7 @@ jobs:
         cache-dependency-path: 'setup.py'
 
     - name: Install dependencies
-      run: |
-        make develop
-        python -m pip install -U wheel twine setuptools
+      run: make develop
 
     - name: Lint
       run: make lint

@@ -1,6 +1,7 @@
 """
 Contains the core building blocks of the framework.
 """
+
 from __future__ import division
 
 import math
@@ -24,7 +25,6 @@ def is_zero(x):
 
 
 class Node(object):
-
     """
     The Node is the main building block in bt's tree structure design.
     Both StrategyBase and SecurityBase inherit Node. It contains the
@@ -321,7 +321,6 @@ class Node(object):
 
 
 class StrategyBase(Node):
-
     """
     Strategy Node. Used to define strategy logic within a tree.
     A Strategy's role is to allocate capital to it's children
@@ -1127,7 +1126,6 @@ class StrategyBase(Node):
 
 
 class SecurityBase(Node):
-
     """
     Security Node. Used to define a security within a tree.
     A Security's has no children. It simply models an asset that can be bought
@@ -1945,7 +1943,6 @@ class CouponPayingHedgeSecurity(CouponPayingSecurity):
 
 
 class Algo(object):
-
     """
     Algos are used to modularize strategy logic so that strategy logic becomes
     modular, composable, more testable and less error prone. Basically, the
@@ -1981,7 +1978,6 @@ class Algo(object):
 
 
 class AlgoStack(Algo):
-
     """
     An AlgoStack derives from Algo runs multiple Algos until a
     failure is encountered.
@@ -2022,7 +2018,6 @@ class AlgoStack(Algo):
 
 
 class Strategy(StrategyBase):
-
     """
     Strategy expands on the StrategyBase and incorporates Algos.
 

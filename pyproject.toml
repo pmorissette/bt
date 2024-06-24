@@ -4,5 +4,5 @@ requires = ["setuptools", "wheel", "cython>=0.29.25"]
 [tool.ruff]
 line-length = 180
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
