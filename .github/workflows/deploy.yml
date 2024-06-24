@@ -144,9 +144,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          make develop
-          python -m pip install -U wheel twine setuptools
+        run: make develop
 
       - name: Python SDist Steps
         run: python setup.py sdist
