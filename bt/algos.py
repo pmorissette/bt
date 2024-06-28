@@ -889,11 +889,14 @@ class SetStat(Algo):
         * stat (str|DataFrame): A dataframe of the same dimension as target.universe
           If a string is passed, frame is accessed using target.get_data
           This is the preferred way of using the algo.
+        * lag (DateOffset): Lag interval. The stat used today is the one calculated
+          at today - lag
     Sets:
         * stat
     """
 
-    def __init__(self, stat):
+    def __init__(self, stat, lag=pd.DateOffset(days=0)):
+        self.lag = lag
         if isinstance(stat, pd.DataFrame):
             self.stat_name = None
             self.stat = stat
@@ -906,7 +909,12 @@ class SetStat(Algo):
             stat = self.stat
         else:
             stat = target.get_data(self.stat_name)
-        target.temp["stat"] = stat.loc[target.now]
+
+        t0 = target.now - self.lag
+        if t0 not in stat.index:
+            return False
+
+        target.temp["stat"] = stat.loc[t0]
         return True
 
 
