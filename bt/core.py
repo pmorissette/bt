@@ -547,7 +547,7 @@ class StrategyBase(Node):
                     vals[x.name] += x.positions
                 else:
                     vals[x.name] = x.positions
-        self._positions = vals
+        self._positions = vals.fillna(0.0)
         return vals
 
     def setup(self, universe, **kwargs):
