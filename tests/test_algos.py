@@ -2076,17 +2076,17 @@ def test_update_risk_history_1():
 
     s.update(dts[0])
     assert algo(s)
-    assert s.risks["Test"][0] == 0
+    assert s.risks["Test"].iloc[0] == 0
 
     s.transact(1, "c1")
     s.transact(5, "c2")
     assert algo(s)
-    assert s.risks["Test"][0] == 600
+    assert s.risks["Test"].iloc[0] == 600
 
     s.update(dts[1])
     assert algo(s)
-    assert s.risks["Test"][0] == 600
-    assert s.risks["Test"][1] == 105 + 5 * 95
+    assert s.risks["Test"].iloc[0] == 600
+    assert s.risks["Test"].iloc[1] == 105 + 5 * 95
 
     assert not hasattr(c1, "risks")
     assert not hasattr(c2, "risks")
@@ -2110,25 +2110,25 @@ def test_update_risk_history_2():
 
     s.update(dts[0])
     assert algo(s)
-    assert s.risks["Test"][0] == 0
-    assert c1.risks["Test"][0] == 0
-    assert c2.risks["Test"][0] == 0
+    assert s.risks["Test"].iloc[0] == 0
+    assert c1.risks["Test"].iloc[0] == 0
+    assert c2.risks["Test"].iloc[0] == 0
 
     s.transact(1, "c1")
     s.transact(5, "c2")
     assert algo(s)
-    assert s.risks["Test"][0] == 600
-    assert c1.risks["Test"][0] == 100
-    assert c2.risks["Test"][0] == 500
+    assert s.risks["Test"].iloc[0] == 600
+    assert c1.risks["Test"].iloc[0] == 100
+    assert c2.risks["Test"].iloc[0] == 500
 
     s.update(dts[1])
     assert algo(s)
-    assert s.risks["Test"][0] == 600
-    assert c1.risks["Test"][0] == 100
-    assert c2.risks["Test"][0] == 500
-    assert s.risks["Test"][1] == 105 + 5 * 95
-    assert c1.risks["Test"][1] == 105
-    assert c2.risks["Test"][1] == 5 * 95
+    assert s.risks["Test"].iloc[0] == 600
+    assert c1.risks["Test"].iloc[0] == 100
+    assert c2.risks["Test"].iloc[0] == 500
+    assert s.risks["Test"].iloc[1] == 105 + 5 * 95
+    assert c1.risks["Test"].iloc[1] == 105
+    assert c2.risks["Test"].iloc[1] == 5 * 95
 
 
 def test_hedge_risk():
