@@ -25,18 +25,18 @@ else:
 
 setup(
     name="bt",
-    version="1.0.1",
+    version="1.1.0",
     author="Philippe Morissette",
     author_email="morissette.philippe@gmail.com",
     description="A flexible backtesting framework for Python",
     keywords="python finance quant backtesting strategies algotrading algorithmic trading",
     url="https://github.com/pmorissette/bt",
     license="MIT",
-    install_requires=["ffn>=1.0.0", "pyprind>=2.11", "tqdm>=4"],
+    install_requires=["ffn>=1.1.0", "pyprind>=2.11", "tqdm>=4"],
     extras_require={
         "dev": [
             "cython>=0.29.25",
-            "ffn>=1.0.0",
+            "ffn>=1.1.0",
             "matplotlib>=2",
             "numpy>=1",
             "pandas>=0.19",
