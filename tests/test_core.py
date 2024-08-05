@@ -225,8 +225,8 @@ def test_security_setup_prices():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -250,8 +250,8 @@ def test_security_setup_prices():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -277,8 +277,8 @@ def test_strategybase_tree_setup():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -302,8 +302,8 @@ def test_strategybase_tree_adjust():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -329,8 +329,8 @@ def test_strategybase_tree_update():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -358,7 +358,7 @@ def test_update_fails_if_price_is_nan_and_position_open():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1"], data=100)
-    data["c1"][dts[1]] = np.nan
+    data.loc[dts[1], "c1"] = np.nan
 
     c1.setup(data)
 
@@ -396,8 +396,8 @@ def test_strategybase_tree_allocate():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -433,8 +433,8 @@ def test_strategybase_tree_allocate_child_from_strategy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -480,8 +480,8 @@ def test_strategybase_tree_allocate_level2():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     m.setup(data)
 
@@ -535,8 +535,8 @@ def test_strategybase_tree_allocate_long_short():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -588,8 +588,8 @@ def test_strategybase_tree_allocate_update():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -628,8 +628,8 @@ def test_strategybase_universe():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -651,8 +651,8 @@ def test_strategybase_allocate():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 100
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 100
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -681,8 +681,8 @@ def test_strategybase_lazy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -769,12 +769,12 @@ def test_strategybase_multiple_calls():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
 
-    data.c2[dts[0]] = 95
-    data.c1[dts[1]] = 95
-    data.c2[dts[2]] = 95
-    data.c2[dts[3]] = 95
-    data.c2[dts[4]] = 95
-    data.c1[dts[4]] = 105
+    data.loc[dts[0], 'c2'] = 95
+    data.loc[dts[1], 'c1'] = 95
+    data.loc[dts[2], 'c2'] = 95
+    data.loc[dts[3], 'c2'] = 95
+    data.loc[dts[4], 'c2'] = 95
+    data.loc[dts[4], 'c1'] = 105
 
     s.setup(data)
 
@@ -1027,12 +1027,12 @@ def test_strategybase_multiple_calls_preset_secs():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
 
-    data.c2[dts[0]] = 95
-    data.c1[dts[1]] = 95
-    data.c2[dts[2]] = 95
-    data.c2[dts[3]] = 95
-    data.c2[dts[4]] = 95
-    data.c1[dts[4]] = 105
+    data.loc[dts[0], 'c2'] = 95
+    data.loc[dts[1], 'c1'] = 95
+    data.loc[dts[2], 'c2'] = 95
+    data.loc[dts[3], 'c2'] = 95
+    data.loc[dts[4], 'c2'] = 95
+    data.loc[dts[4], 'c1'] = 105
 
     s.setup(data)
 
@@ -1275,12 +1275,12 @@ def test_strategybase_multiple_calls_no_post_update():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
 
-    data.c2[dts[0]] = 95
-    data.c1[dts[1]] = 95
-    data.c2[dts[2]] = 95
-    data.c2[dts[3]] = 95
-    data.c2[dts[4]] = 95
-    data.c1[dts[4]] = 105
+    data.loc[dts[0], 'c2'] = 95
+    data.loc[dts[1], 'c1'] = 95
+    data.loc[dts[2], 'c2'] = 95
+    data.loc[dts[3], 'c2'] = 95
+    data.loc[dts[4], 'c2'] = 95
+    data.loc[dts[4], 'c1'] = 105
 
     s.setup(data)
 
@@ -1525,8 +1525,8 @@ def test_fail_if_root_value_negative():
     s = StrategyBase("s")
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 100
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 100
+    data.loc[dts[0], "c2"] = 95
     s.setup(data)
 
     s.adjust(-100)
@@ -1557,8 +1557,8 @@ def test_fail_if_root_value_negative():
 def test_fail_if_0_base_in_return_calc():
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 100
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 100
+    data.loc[dts[0], "c2"] = 95
 
     # must setup tree because if not negative root error pops up first
     c1 = StrategyBase("c1")
@@ -1593,8 +1593,8 @@ def test_strategybase_tree_rebalance():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -1656,8 +1656,8 @@ def test_rebalance_child_not_in_tree():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -1683,8 +1683,8 @@ def test_strategybase_tree_rebalance_to_0():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -1739,8 +1739,8 @@ def test_strategybase_tree_rebalance_level2():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     m.setup(data)
 
@@ -1815,8 +1815,8 @@ def test_strategybase_tree_rebalance_base():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -2056,8 +2056,8 @@ def test_strategy_tree_proper_universes():
 def test_strategy_tree_paper():
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["a"], data=100.0)
-    data["a"].loc[dts[1]] = 101
-    data["a"].loc[dts[2]] = 102
+    data.loc[dts[1], "a"] = 101
+    data.loc[dts[2], "a"] = 102
 
     s = Strategy(
         "s",
@@ -2105,8 +2105,8 @@ def test_dynamic_strategy():
     parent = Strategy("p", [do_nothing], [])
     dts = pd.date_range("2010-01-01", periods=4)
     data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100.0)
-    data["c1"][dts[2]] = 105.0
-    data["c2"][dts[2]] = 95.0
+    data.loc[dts[2], "c1"] = 105.0
+    data.loc[dts[2], "c2"] = 95.0
 
     parent.setup(data)
 
@@ -2176,10 +2176,10 @@ def test_dynamic_strategy2():
 
     dts = pd.date_range("2010-01-01", periods=4)
     data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100.0)
-    data["c1"][dts[2]] = 105.0
-    data["c2"][dts[2]] = 95.0
-    data["c1"][dts[3]] = 101.0
-    data["c2"][dts[3]] = 99.0
+    data.loc[dts[2], "c1"] = 105.0
+    data.loc[dts[2], "c2"] = 95.0
+    data.loc[dts[3], "c1"] = 101.0
+    data.loc[dts[3], "c2"] = 99.0
     parent.setup(data)
 
     i = 0
@@ -2271,8 +2271,8 @@ def test_outlays():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -2437,7 +2437,7 @@ def test_securitybase_allocate():
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1"], data=100.0)
     # set the price
-    data["c1"][dts[0]] = 91.40246706608193
+    data.loc[dts[0], "c1"] = 91.40246706608193
     s.setup(data)
 
     i = 0
@@ -2727,7 +2727,7 @@ def test_securitybase_transact():
     data = pd.DataFrame(index=dts, columns=["c1"], data=100.0)
     # set the price
     price = 91.40246706608193
-    data["c1"][dts[0]] = 91.40246706608193
+    data.loc[dts[0], "c1"] = 91.40246706608193
     s.setup(data)
 
     i = 0
@@ -2802,8 +2802,8 @@ def test_couponpayingsecurity_setup():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.1)
 
@@ -2841,8 +2841,8 @@ def test_couponpayingsecurity_setup_costs():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
     cost_long = pd.DataFrame(index=dts, columns=["c1"], data=0.01)
@@ -2882,9 +2882,9 @@ def test_couponpayingsecurity_carry():
     data = pd.DataFrame(index=dts, columns=["c1"], data=1.0)
 
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
-    coupons["c1"][dts[0]] = 0.1
+    coupons.loc[dts[0], "c1"] = 0.1
     cost_long = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
-    cost_long["c1"][dts[0]] = 0.01
+    cost_long.loc[dts[0], "c1"] = 0.01
     cost_short = pd.DataFrame(index=dts, columns=["c1"], data=0.05)
 
     s.setup(data, coupons=coupons, cost_long=cost_long, cost_short=cost_short)
@@ -2942,12 +2942,12 @@ def test_couponpayingsecurity_transact():
     data = pd.DataFrame(index=dts, columns=["c1"], data=100.0)
     # set the price
     price = 91.40246706608193
-    data["c1"][dts[0]] = 91.40246706608193
-    data["c1"][dts[1]] = 91.40246706608193
+    data.loc[dts[0], "c1"] = 91.40246706608193
+    data.loc[dts[1], "c1"] = 91.40246706608193
 
     coupon = 0.1
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
-    coupons["c1"][dts[0]] = coupon
+    coupons.loc[dts[0], "c1"] = coupon
 
     s.setup(data, coupons=coupons)
 
@@ -3030,12 +3030,12 @@ def test_bidoffer():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     bidoffer = pd.DataFrame(index=dts, columns=["c1", "c2"], data=1.0)
-    bidoffer["c1"][dts[0]] = 2
-    bidoffer["c2"][dts[0]] = 1.5
+    bidoffer.loc[dts[0], "c1"] = 2
+    bidoffer.loc[dts[0], "c2"] = 1.5
 
     s.setup(data, bidoffer=bidoffer)
     s.adjust(100000)
@@ -3114,7 +3114,7 @@ def test_outlay_custom():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
+    data.loc[dts[0], "c1"] = 105
 
     s.setup(data)
     s.adjust(100000)
@@ -3147,7 +3147,7 @@ def test_bidoffer_custom():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
+    data.loc[dts[0], "c1"] = 105
 
     # Note: In order to access bidoffer_paid,
     # need to pass bidoffer kwarg during setup
@@ -3265,8 +3265,8 @@ def test_fi_strategy_no_bankruptcy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3290,8 +3290,8 @@ def test_fi_strategy_tree_adjust():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3323,9 +3323,9 @@ def test_fi_strategy_tree_update():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = -5  # Test negative prices
-    data["c2"][dts[2]] = 0  # Test zero price
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = -5  # Test negative prices
+    data.loc[dts[2], "c2"] = 0  # Test zero price
 
     s.setup(data)
 
@@ -3358,8 +3358,8 @@ def test_fi_strategy_tree_allocate():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3397,8 +3397,8 @@ def test_fi_strategy_tree_allocate_child_from_strategy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3823,12 +3823,12 @@ def test_fi_strategy_bidoffer():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     bidoffer = pd.DataFrame(index=dts, columns=["c1", "c2"], data=1.0)
-    bidoffer["c1"][dts[0]] = 2
-    bidoffer["c2"][dts[0]] = 1.5
+    bidoffer.loc[dts[0], "c1"] = 2
+    bidoffer.loc[dts[0], "c2"] = 1.5
 
     s.setup(data, bidoffer=bidoffer)
     i = 0
