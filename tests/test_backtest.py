@@ -83,14 +83,14 @@ def test_turnover():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["a", "b"], data=100)
 
-    data["a"][dts[1]] = 105
-    data["b"][dts[1]] = 95
+    data.loc[dts[1], "a"] = 105
+    data.loc[dts[1], "b"] = 95
 
-    data["a"][dts[2]] = 110
-    data["b"][dts[2]] = 90
+    data.loc[dts[2], "a"] = 110
+    data.loc[dts[2], "b"] = 90
 
-    data["a"][dts[3]] = 115
-    data["b"][dts[3]] = 85
+    data.loc[dts[3], "a"] = 115
+    data.loc[dts[3], "b"] = 85
 
     s = bt.Strategy(
         "s", [bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()]
@@ -265,18 +265,18 @@ def test_30_min_data():
 def test_RenomalizedFixedIncomeResult():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["a"], data=1.0)
-    data["a"][dts[0]] = 0.99
-    data["a"][dts[1]] = 1.01
-    data["a"][dts[2]] = 0.99
-    data["a"][dts[3]] = 1.01
-    data["a"][dts[4]] = 0.99
+    data.loc[dts[0], "a"] = 0.99
+    data.loc[dts[1], "a"] = 1.01
+    data.loc[dts[2], "a"] = 0.99
+    data.loc[dts[3], "a"] = 1.01
+    data.loc[dts[4], "a"] = 0.99
 
     weights = pd.DataFrame(index=dts, columns=["a"], data=1.0)
-    weights["a"][dts[0]] = 1.0
-    weights["a"][dts[1]] = 2.0
-    weights["a"][dts[2]] = 1.0
-    weights["a"][dts[3]] = 2.0
-    weights["a"][dts[4]] = 1.0
+    weights.loc[dts[0], "a"] = 1.0
+    weights.loc[dts[1], "a"] = 2.0
+    weights.loc[dts[2], "a"] = 1.0
+    weights.loc[dts[3], "a"] = 2.0
+    weights.loc[dts[4], "a"] = 1.0
 
     coupons = pd.DataFrame(index=dts, columns=["a"], data=0.0)
 
