@@ -2,15 +2,12 @@
 Contains the core building blocks of the framework.
 """
 
-from __future__ import division
-
 import math
 from copy import deepcopy
 
 import cython as cy
 import numpy as np
 import pandas as pd
-
 
 PAR = 100.0
 TOL = 1e-16
