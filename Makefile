@@ -15,6 +15,7 @@ lint:
 	python -m ruff format --check bt setup.py docs/source/conf.py
 
 fix:
+	python -m ruff check --fix bt setup.py docs/source/conf.py
 	python -m ruff format bt setup.py docs/source/conf.py
 
 dist:

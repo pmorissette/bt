@@ -2,8 +2,6 @@
 A collection of Algos used to create Strategy logic.
 """
 
-from __future__ import division
-
 import abc
 import random
 import re
