@@ -1622,7 +1622,6 @@ class CapitalFlow(Algo):
 
 
 class CorporateActions(Algo):
-
     """
     Used to model dividends and share splits.
 
