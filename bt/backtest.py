@@ -2,15 +2,16 @@
 Contains backtesting logic and objects.
 """
 
-from __future__ import division
 from copy import deepcopy
-import bt
+
 import ffn
-import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
+import pandas as pd
 import pyprind
+from matplotlib import pyplot as plt
 from tqdm import tqdm
+
+import bt
 
 
 def run(*backtests):

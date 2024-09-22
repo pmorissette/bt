@@ -651,9 +651,9 @@ def test_select_all():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"][dts[1]] = np.nan
-    data["c2"][dts[1]] = 95
-    data["c1"][dts[2]] = -5
+    data.loc[dts[1], "c1"] = np.nan
+    data.loc[dts[1], "c2"] = 95
+    data.loc[dts[2], "c1"] = -5
 
     s.setup(data)
     s.update(dts[0])
@@ -705,9 +705,9 @@ def test_select_randomly_n_none():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"][dts[1]] = np.nan
-    data["c2"][dts[1]] = 95
-    data["c1"][dts[2]] = -5
+    data.loc[dts[1], "c1"] = np.nan
+    data.loc[dts[1], "c2"] = 95
+    data.loc[dts[2], "c1"] = -5
 
     s.setup(data)
     s.update(dts[0])
@@ -758,9 +758,9 @@ def test_select_randomly():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100.0)
-    data["c1"][dts[0]] = np.nan
-    data["c2"][dts[0]] = 95
-    data["c3"][dts[0]] = -5
+    data.loc[dts[0], "c1"] = np.nan
+    data.loc[dts[0], "c2"] = 95
+    data.loc[dts[0], "c3"] = -5
 
     s.setup(data)
     s.update(dts[0])
@@ -792,9 +792,9 @@ def test_select_these():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"][dts[1]] = np.nan
-    data["c2"][dts[1]] = 95
-    data["c1"][dts[2]] = -5
+    data.loc[dts[1], "c1"] = np.nan
+    data.loc[dts[1], "c2"] = 95
+    data.loc[dts[2], "c1"] = -5
 
     s.setup(data)
     s.update(dts[0])
@@ -852,9 +852,9 @@ def test_select_where_all():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"][dts[1]] = np.nan
-    data["c2"][dts[1]] = 95
-    data["c1"][dts[2]] = -5
+    data.loc[dts[1], "c1"] = np.nan
+    data.loc[dts[1], "c2"] = 95
+    data.loc[dts[2], "c1"] = -5
 
     where = pd.DataFrame(index=dts, columns=["c1", "c2"], data=True)
 
@@ -911,7 +911,7 @@ def test_select_where():
 
     where = pd.DataFrame(index=dts, columns=["c1", "c2"], data=True)
     where.loc[dts[1]] = False
-    where["c1"].loc[dts[2]] = False
+    where.loc[dts[2], "c1"] = False
 
     algo = algos.SelectWhere("where")
 
@@ -941,7 +941,7 @@ def test_select_where_legacy():
 
     where = pd.DataFrame(index=dts, columns=["c1", "c2"], data=True)
     where.loc[dts[1]] = False
-    where["c1"].loc[dts[2]] = False
+    where.loc[dts[2], "c1"] = False
 
     algo = algos.SelectWhere(where)
 
@@ -980,9 +980,9 @@ def test_resolve_on_the_run():
     s = bt.Strategy("s")
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2", "b1"], data=100.0)
-    data["c1"][dts[1]] = np.nan
-    data["c2"][dts[1]] = 95
-    data["c2"][dts[2]] = -5
+    data.loc[dts[1], "c1"] = np.nan
+    data.loc[dts[1], "c2"] = 95
+    data.loc[dts[2], "c2"] = -5
 
     on_the_run = pd.DataFrame(index=dts, columns=["c"], data="c1")
     on_the_run.loc[dts[2], "c"] = "c2"
@@ -1097,8 +1097,8 @@ def test_weight_specified():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
     s.update(dts[0])
@@ -1128,8 +1128,8 @@ def test_select_has_data():
 
     dts = pd.date_range("2010-01-01", periods=10)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[0]] = np.nan
-    data["c1"].loc[dts[1]] = np.nan
+    data.loc[dts[0], "c1"] = np.nan
+    data.loc[dts[1], "c1"] = np.nan
 
     s.setup(data)
     s.update(dts[2])
@@ -1147,8 +1147,8 @@ def test_select_has_data_preselected():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[0]] = np.nan
-    data["c1"].loc[dts[1]] = np.nan
+    data.loc[dts[0], "c1"] = np.nan
+    data.loc[dts[1], "c1"] = np.nan
 
     s.setup(data)
     s.update(dts[2])
@@ -1195,8 +1195,8 @@ def test_weigh_target():
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
     target = pd.DataFrame(index=dts[:2], columns=["c1", "c2"], data=0.5)
-    target["c1"].loc[dts[1]] = 1.0
-    target["c2"].loc[dts[1]] = 0.0
+    target.loc[dts[1], "c1"] = 1.0
+    target.loc[dts[1], "c2"] = 0.0
 
     s.setup(data, target=target)
 
@@ -1227,16 +1227,16 @@ def test_weigh_inv_vol():
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
 
     # high vol c1
-    data["c1"].loc[dts[1]] = 105
-    data["c1"].loc[dts[2]] = 95
-    data["c1"].loc[dts[3]] = 105
-    data["c1"].loc[dts[4]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[2], "c1"] = 95
+    data.loc[dts[3], "c1"] = 105
+    data.loc[dts[4], "c1"] = 95
 
     # low vol c2
-    data["c2"].loc[dts[1]] = 100.1
-    data["c2"].loc[dts[2]] = 99.9
-    data["c2"].loc[dts[3]] = 100.1
-    data["c2"].loc[dts[4]] = 99.9
+    data.loc[dts[1], "c2"] = 100.1
+    data.loc[dts[2], "c2"] = 99.9
+    data.loc[dts[3], "c2"] = 100.1
+    data.loc[dts[4], "c2"] = 99.9
 
     s.setup(data)
     s.update(dts[4])
@@ -1303,12 +1303,12 @@ def test_set_stat():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[1]] = 105
-    data["c2"].loc[dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     stat = pd.DataFrame(index=dts, columns=["c1", "c2"], data=4.0)
-    stat["c1"].loc[dts[1]] = 5.0
-    stat["c2"].loc[dts[1]] = 6.0
+    stat.loc[dts[1], "c1"] = 5.0
+    stat.loc[dts[1], "c2"] = 6.0
 
     algo = algos.SetStat("test_stat")
 
@@ -1333,12 +1333,12 @@ def test_set_stat_legacy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[1]] = 105
-    data["c2"].loc[dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     stat = pd.DataFrame(index=dts, columns=["c1", "c2"], data=4.0)
-    stat["c1"].loc[dts[1]] = 5.0
-    stat["c2"].loc[dts[1]] = 6.0
+    stat.loc[dts[1], "c1"] = 5.0
+    stat.loc[dts[1], "c2"] = 6.0
 
     algo = algos.SetStat(stat)
 
@@ -1363,8 +1363,8 @@ def test_stat_total_return():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[2]] = 105
-    data["c2"].loc[dts[2]] = 95
+    data.loc[dts[2], "c1"] = 105
+    data.loc[dts[2], "c2"] = 95
 
     s.setup(data)
     s.update(dts[2])
@@ -1384,8 +1384,8 @@ def test_select_n():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[2]] = 105
-    data["c2"].loc[dts[2]] = 95
+    data.loc[dts[2], "c1"] = 105
+    data.loc[dts[2], "c2"] = 95
 
     s.setup(data)
     s.update(dts[2])
@@ -1424,8 +1424,8 @@ def test_select_n_perc():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[2]] = 105
-    data["c2"].loc[dts[2]] = 95
+    data.loc[dts[2], "c1"] = 105
+    data.loc[dts[2], "c2"] = 95
 
     s.setup(data)
     s.update(dts[2])
@@ -1444,8 +1444,8 @@ def test_select_momentum():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-    data["c1"].loc[dts[2]] = 105
-    data["c2"].loc[dts[2]] = 95
+    data.loc[dts[2], "c1"] = 105
+    data.loc[dts[2], "c2"] = 95
 
     s.setup(data)
     s.update(dts[2])
@@ -2024,8 +2024,8 @@ def test_update_risk():
     s = bt.Strategy("s", children=[c1, c2])
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"].loc[dts[1]] = 105
-    data["c2"].loc[dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
     c1 = s["c1"]
     c2 = s["c2"]
 
@@ -2064,8 +2064,8 @@ def test_update_risk_history_1():
     s = bt.Strategy("s", children=[c1, c2])
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"].loc[dts[1]] = 105
-    data["c2"].loc[dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
     c1 = s["c1"]
     c2 = s["c2"]
 
@@ -2076,17 +2076,17 @@ def test_update_risk_history_1():
 
     s.update(dts[0])
     assert algo(s)
-    assert s.risks["Test"][0] == 0
+    assert s.risks["Test"].iloc[0] == 0
 
     s.transact(1, "c1")
     s.transact(5, "c2")
     assert algo(s)
-    assert s.risks["Test"][0] == 600
+    assert s.risks["Test"].iloc[0] == 600
 
     s.update(dts[1])
     assert algo(s)
-    assert s.risks["Test"][0] == 600
-    assert s.risks["Test"][1] == 105 + 5 * 95
+    assert s.risks["Test"].iloc[0] == 600
+    assert s.risks["Test"].iloc[1] == 105 + 5 * 95
 
     assert not hasattr(c1, "risks")
     assert not hasattr(c2, "risks")
@@ -2098,8 +2098,8 @@ def test_update_risk_history_2():
     s = bt.Strategy("s", children=[c1, c2])
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"].loc[dts[1]] = 105
-    data["c2"].loc[dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
     c1 = s["c1"]
     c2 = s["c2"]
 
@@ -2110,25 +2110,25 @@ def test_update_risk_history_2():
 
     s.update(dts[0])
     assert algo(s)
-    assert s.risks["Test"][0] == 0
-    assert c1.risks["Test"][0] == 0
-    assert c2.risks["Test"][0] == 0
+    assert s.risks["Test"].iloc[0] == 0
+    assert c1.risks["Test"].iloc[0] == 0
+    assert c2.risks["Test"].iloc[0] == 0
 
     s.transact(1, "c1")
     s.transact(5, "c2")
     assert algo(s)
-    assert s.risks["Test"][0] == 600
-    assert c1.risks["Test"][0] == 100
-    assert c2.risks["Test"][0] == 500
+    assert s.risks["Test"].iloc[0] == 600
+    assert c1.risks["Test"].iloc[0] == 100
+    assert c2.risks["Test"].iloc[0] == 500
 
     s.update(dts[1])
     assert algo(s)
-    assert s.risks["Test"][0] == 600
-    assert c1.risks["Test"][0] == 100
-    assert c2.risks["Test"][0] == 500
-    assert s.risks["Test"][1] == 105 + 5 * 95
-    assert c1.risks["Test"][1] == 105
-    assert c2.risks["Test"][1] == 5 * 95
+    assert s.risks["Test"].iloc[0] == 600
+    assert c1.risks["Test"].iloc[0] == 100
+    assert c2.risks["Test"].iloc[0] == 500
+    assert s.risks["Test"].iloc[1] == 105 + 5 * 95
+    assert c1.risks["Test"].iloc[1] == 105
+    assert c2.risks["Test"].iloc[1] == 5 * 95
 
 
 def test_hedge_risk():

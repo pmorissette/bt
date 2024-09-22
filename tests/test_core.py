@@ -225,8 +225,8 @@ def test_security_setup_prices():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -235,11 +235,11 @@ def test_security_setup_prices():
 
     assert c1.price == 105
     assert len(c1.prices) == 1
-    assert c1.prices[0] == 105
+    assert c1.prices.iloc[0] == 105
 
     assert c2.price == 95
     assert len(c2.prices) == 1
-    assert c2.prices[0] == 95
+    assert c2.prices.iloc[0] == 95
 
     # now with setup
     c1 = SecurityBase("c1")
@@ -250,8 +250,8 @@ def test_security_setup_prices():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -260,11 +260,11 @@ def test_security_setup_prices():
 
     assert c1.price == 105
     assert len(c1.prices) == 1
-    assert c1.prices[0] == 105
+    assert c1.prices.iloc[0] == 105
 
     assert c2.price == 95
     assert len(c2.prices) == 1
-    assert c2.prices[0] == 95
+    assert c2.prices.iloc[0] == 95
 
 
 def test_strategybase_tree_setup():
@@ -277,8 +277,8 @@ def test_strategybase_tree_setup():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -302,8 +302,8 @@ def test_strategybase_tree_adjust():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -329,8 +329,8 @@ def test_strategybase_tree_update():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -358,7 +358,7 @@ def test_update_fails_if_price_is_nan_and_position_open():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1"], data=100)
-    data["c1"][dts[1]] = np.nan
+    data.loc[dts[1], "c1"] = np.nan
 
     c1.setup(data)
 
@@ -396,8 +396,8 @@ def test_strategybase_tree_allocate():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -433,8 +433,8 @@ def test_strategybase_tree_allocate_child_from_strategy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -480,8 +480,8 @@ def test_strategybase_tree_allocate_level2():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     m.setup(data)
 
@@ -535,8 +535,8 @@ def test_strategybase_tree_allocate_long_short():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -588,8 +588,8 @@ def test_strategybase_tree_allocate_update():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -628,8 +628,8 @@ def test_strategybase_universe():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -651,8 +651,8 @@ def test_strategybase_allocate():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 100
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 100
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -681,8 +681,8 @@ def test_strategybase_lazy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -769,12 +769,12 @@ def test_strategybase_multiple_calls():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
 
-    data.c2[dts[0]] = 95
-    data.c1[dts[1]] = 95
-    data.c2[dts[2]] = 95
-    data.c2[dts[3]] = 95
-    data.c2[dts[4]] = 95
-    data.c1[dts[4]] = 105
+    data.loc[dts[0], 'c2'] = 95
+    data.loc[dts[1], 'c1'] = 95
+    data.loc[dts[2], 'c2'] = 95
+    data.loc[dts[3], 'c2'] = 95
+    data.loc[dts[4], 'c2'] = 95
+    data.loc[dts[4], 'c1'] = 105
 
     s.setup(data)
 
@@ -1027,12 +1027,12 @@ def test_strategybase_multiple_calls_preset_secs():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
 
-    data.c2[dts[0]] = 95
-    data.c1[dts[1]] = 95
-    data.c2[dts[2]] = 95
-    data.c2[dts[3]] = 95
-    data.c2[dts[4]] = 95
-    data.c1[dts[4]] = 105
+    data.loc[dts[0], 'c2'] = 95
+    data.loc[dts[1], 'c1'] = 95
+    data.loc[dts[2], 'c2'] = 95
+    data.loc[dts[3], 'c2'] = 95
+    data.loc[dts[4], 'c2'] = 95
+    data.loc[dts[4], 'c1'] = 105
 
     s.setup(data)
 
@@ -1275,12 +1275,12 @@ def test_strategybase_multiple_calls_no_post_update():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
 
-    data.c2[dts[0]] = 95
-    data.c1[dts[1]] = 95
-    data.c2[dts[2]] = 95
-    data.c2[dts[3]] = 95
-    data.c2[dts[4]] = 95
-    data.c1[dts[4]] = 105
+    data.loc[dts[0], 'c2'] = 95
+    data.loc[dts[1], 'c1'] = 95
+    data.loc[dts[2], 'c2'] = 95
+    data.loc[dts[3], 'c2'] = 95
+    data.loc[dts[4], 'c2'] = 95
+    data.loc[dts[4], 'c1'] = 105
 
     s.setup(data)
 
@@ -1517,16 +1517,16 @@ def test_strategybase_prices():
         s.update(dts[i])
 
     assert len(s.prices) == 21
-    assert s.prices[-1] == pytest.approx(95.02396, 5)
-    assert s.prices[-2] == pytest.approx(98.67306, 5)
+    assert s.prices.iloc[-1] == pytest.approx(95.02396, 5)
+    assert s.prices.iloc[-2] == pytest.approx(98.67306, 5)
 
 
 def test_fail_if_root_value_negative():
     s = StrategyBase("s")
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 100
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 100
+    data.loc[dts[0], "c2"] = 95
     s.setup(data)
 
     s.adjust(-100)
@@ -1557,8 +1557,8 @@ def test_fail_if_root_value_negative():
 def test_fail_if_0_base_in_return_calc():
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 100
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 100
+    data.loc[dts[0], "c2"] = 95
 
     # must setup tree because if not negative root error pops up first
     c1 = StrategyBase("c1")
@@ -1593,8 +1593,8 @@ def test_strategybase_tree_rebalance():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -1656,8 +1656,8 @@ def test_rebalance_child_not_in_tree():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -1683,8 +1683,8 @@ def test_strategybase_tree_rebalance_to_0():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -1739,8 +1739,8 @@ def test_strategybase_tree_rebalance_level2():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     m.setup(data)
 
@@ -1815,8 +1815,8 @@ def test_strategybase_tree_rebalance_base():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -2056,8 +2056,8 @@ def test_strategy_tree_proper_universes():
 def test_strategy_tree_paper():
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["a"], data=100.0)
-    data["a"].loc[dts[1]] = 101
-    data["a"].loc[dts[2]] = 102
+    data.loc[dts[1], "a"] = 101
+    data.loc[dts[2], "a"] = 102
 
     s = Strategy(
         "s",
@@ -2105,8 +2105,8 @@ def test_dynamic_strategy():
     parent = Strategy("p", [do_nothing], [])
     dts = pd.date_range("2010-01-01", periods=4)
     data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100.0)
-    data["c1"][dts[2]] = 105.0
-    data["c2"][dts[2]] = 95.0
+    data.loc[dts[2], "c1"] = 105.0
+    data.loc[dts[2], "c2"] = 95.0
 
     parent.setup(data)
 
@@ -2176,10 +2176,10 @@ def test_dynamic_strategy2():
 
     dts = pd.date_range("2010-01-01", periods=4)
     data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100.0)
-    data["c1"][dts[2]] = 105.0
-    data["c2"][dts[2]] = 95.0
-    data["c1"][dts[3]] = 101.0
-    data["c2"][dts[3]] = 99.0
+    data.loc[dts[2], "c1"] = 105.0
+    data.loc[dts[2], "c2"] = 95.0
+    data.loc[dts[3], "c1"] = 101.0
+    data.loc[dts[3], "c2"] = 99.0
     parent.setup(data)
 
     i = 0
@@ -2271,8 +2271,8 @@ def test_outlays():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     s.setup(data)
 
@@ -2437,7 +2437,7 @@ def test_securitybase_allocate():
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1"], data=100.0)
     # set the price
-    data["c1"][dts[0]] = 91.40246706608193
+    data.loc[dts[0], "c1"] = 91.40246706608193
     s.setup(data)
 
     i = 0
@@ -2727,7 +2727,7 @@ def test_securitybase_transact():
     data = pd.DataFrame(index=dts, columns=["c1"], data=100.0)
     # set the price
     price = 91.40246706608193
-    data["c1"][dts[0]] = 91.40246706608193
+    data.loc[dts[0], "c1"] = 91.40246706608193
     s.setup(data)
 
     i = 0
@@ -2747,24 +2747,24 @@ def test_securitybase_transact():
     assert np.isclose(c1.value, amount, rtol=0.0)
     assert np.isclose(c1.weight, amount / original_capital, rtol=0.0)
     assert c1.position == q
-    assert np.isclose(c1.outlays[0], amount, rtol=0.0)
+    assert np.isclose(c1.outlays.iloc[0], amount, rtol=0.0)
 
     assert np.isclose(s.capital, (original_capital - amount))
     assert s.weight == 1
     assert s.value == original_capital
-    assert np.isclose(s.outlays[c1.name][0], amount, rtol=0.0)
+    assert np.isclose(s.outlays[c1.name].iloc[0], amount, rtol=0.0)
 
     # Call again on the same step (and again) to make sure all updates are working
     c1.transact(q)
     c1.transact(q)
     assert c1.position == 3 * q
-    assert np.isclose(c1.outlays[0], 3 * amount, rtol=0.0)
+    assert np.isclose(c1.outlays.iloc[0], 3 * amount, rtol=0.0)
     assert np.isclose(c1.value, 3 * amount, rtol=0.0)
 
     assert np.isclose(s.capital, (original_capital - 3 * amount))
     assert s.weight == 1
     assert s.value == original_capital
-    assert np.isclose(s.outlays[c1.name][0], 3 * amount, rtol=0.0)
+    assert np.isclose(s.outlays[c1.name].iloc[0], 3 * amount, rtol=0.0)
 
 
 def test_security_setup_positions():
@@ -2785,11 +2785,11 @@ def test_security_setup_positions():
 
     assert c1.position == 0
     assert len(c1.positions) == 1
-    assert c1.positions[0] == 0
+    assert c1.positions.iloc[0] == 0
 
     assert c2.position == 0
     assert len(c2.positions) == 1
-    assert c2.positions[0] == 0
+    assert c2.positions.iloc[0] == 0
 
 
 def test_couponpayingsecurity_setup():
@@ -2802,8 +2802,8 @@ def test_couponpayingsecurity_setup():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.1)
 
@@ -2815,20 +2815,20 @@ def test_couponpayingsecurity_setup():
     assert "coupon" in c1.data
     assert c1.coupon == 0.0
     assert len(c1.coupons) == 1
-    assert c1.coupons[0] == 0.0
+    assert c1.coupons.iloc[0] == 0.0
 
     assert "holding_cost" in c1.data
     assert c1.holding_cost == 0.0
     assert len(c1.holding_costs) == 1
-    assert c1.holding_costs[0] == 0.0
+    assert c1.holding_costs.iloc[0] == 0.0
 
     assert c1.price == 105
     assert len(c1.prices) == 1
-    assert c1.prices[0] == 105
+    assert c1.prices.iloc[0] == 105
 
     assert c2.price == 95
     assert len(c2.prices) == 1
-    assert c2.prices[0] == 95
+    assert c2.prices.iloc[0] == 95
 
 
 def test_couponpayingsecurity_setup_costs():
@@ -2841,8 +2841,8 @@ def test_couponpayingsecurity_setup_costs():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
     cost_long = pd.DataFrame(index=dts, columns=["c1"], data=0.01)
@@ -2856,20 +2856,20 @@ def test_couponpayingsecurity_setup_costs():
     assert "coupon" in c1.data
     assert c1.coupon == 0.0
     assert len(c1.coupons) == 1
-    assert c1.coupons[0] == 0.0
+    assert c1.coupons.iloc[0] == 0.0
 
     assert "holding_cost" in c1.data
     assert c1.holding_cost == 0.0
     assert len(c1.holding_costs) == 1
-    assert c1.holding_costs[0] == 0.0
+    assert c1.holding_costs.iloc[0] == 0.0
 
     assert c1.price == 105
     assert len(c1.prices) == 1
-    assert c1.prices[0] == 105
+    assert c1.prices.iloc[0] == 105
 
     assert c2.price == 95
     assert len(c2.prices) == 1
-    assert c2.prices[0] == 95
+    assert c2.prices.iloc[0] == 95
 
 
 def test_couponpayingsecurity_carry():
@@ -2882,9 +2882,9 @@ def test_couponpayingsecurity_carry():
     data = pd.DataFrame(index=dts, columns=["c1"], data=1.0)
 
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
-    coupons["c1"][dts[0]] = 0.1
+    coupons.loc[dts[0], "c1"] = 0.1
     cost_long = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
-    cost_long["c1"][dts[0]] = 0.01
+    cost_long.loc[dts[0], "c1"] = 0.01
     cost_short = pd.DataFrame(index=dts, columns=["c1"], data=0.05)
 
     s.setup(data, coupons=coupons, cost_long=cost_long, cost_short=cost_short)
@@ -2901,13 +2901,13 @@ def test_couponpayingsecurity_carry():
 
     assert c1.coupon == 100.0
     assert len(c1.coupons) == 1
-    assert c1.coupons[0] == 100.0
+    assert c1.coupons.iloc[0] == 100.0
     assert c1.holding_cost == 10.0
     assert len(c1.holding_costs) == 1
-    assert c1.holding_costs[0] == 10.0
+    assert c1.holding_costs.iloc[0] == 10.0
 
     assert s.capital == 0.0
-    assert s.cash[0] == 0.0
+    assert s.cash.iloc[0] == 0.0
 
     # On this step, the coupon/costs will be accounted for from the last holding
     i = 1
@@ -2915,21 +2915,21 @@ def test_couponpayingsecurity_carry():
 
     assert c1.coupon == 0.0
     assert len(c1.coupons) == 2
-    assert c1.coupons[1] == 0.0
+    assert c1.coupons.iloc[1] == 0.0
     assert c1.holding_cost == 0.0
     assert len(c1.holding_costs) == 2
-    assert c1.holding_costs[1] == 0.0
+    assert c1.holding_costs.iloc[1] == 0.0
 
     assert s.capital == 100.0 - 10.0
-    assert s.cash[0] == 0.0
-    assert s.cash[1] == 100.0 - 10.0
+    assert s.cash.iloc[0] == 0.0
+    assert s.cash.iloc[1] == 100.0 - 10.0
 
     # Go short q
     c1.transact(-2 * q)
     # Note cost is positive even though we are short.
     assert c1.holding_cost == 50.0
     assert len(c1.holding_costs) == 2
-    assert c1.holding_costs[1] == 50.0
+    assert c1.holding_costs.iloc[1] == 50.0
 
 
 def test_couponpayingsecurity_transact():
@@ -2942,12 +2942,12 @@ def test_couponpayingsecurity_transact():
     data = pd.DataFrame(index=dts, columns=["c1"], data=100.0)
     # set the price
     price = 91.40246706608193
-    data["c1"][dts[0]] = 91.40246706608193
-    data["c1"][dts[1]] = 91.40246706608193
+    data.loc[dts[0], "c1"] = 91.40246706608193
+    data.loc[dts[1], "c1"] = 91.40246706608193
 
     coupon = 0.1
     coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
-    coupons["c1"][dts[0]] = coupon
+    coupons.loc[dts[0], "c1"] = coupon
 
     s.setup(data, coupons=coupons)
 
@@ -2965,14 +2965,14 @@ def test_couponpayingsecurity_transact():
     # The coupon is nonzero, but will only be counted in "value" the next day
     assert c1.coupon == coupon * q
     assert len(c1.coupons) == 1
-    assert c1.coupons[0] == coupon * q
+    assert c1.coupons.iloc[0] == coupon * q
 
     assert np.isclose(c1.value, amount, rtol=0.0)
     assert np.isclose(c1.weight, amount / original_capital, rtol=0.0)
     assert c1.position == q
 
     assert s.capital == (original_capital - amount)
-    assert s.cash[0] == (original_capital - amount)
+    assert s.cash.iloc[0] == (original_capital - amount)
     assert s.weight == 1
     assert s.value == original_capital
 
@@ -2984,8 +2984,8 @@ def test_couponpayingsecurity_transact():
     new_capital = original_capital + coupon * q
     assert c1.coupon == 0
     assert len(c1.coupons) == 2
-    assert c1.coupons[0] == coupon * q
-    assert c1.coupons[1] == 0
+    assert c1.coupons.iloc[0] == coupon * q
+    assert c1.coupons.iloc[1] == 0
 
     assert np.isclose(c1.value, amount, rtol=0.0)
     assert np.isclose(c1.weight, amount / new_capital, rtol=0.0)
@@ -2994,8 +2994,8 @@ def test_couponpayingsecurity_transact():
     assert s.capital == (new_capital - amount)
     assert s.weight == 1
     assert s.value == new_capital
-    assert s.cash[0] == (original_capital - amount)
-    assert s.cash[1] == (new_capital - amount)
+    assert s.cash.iloc[0] == (original_capital - amount)
+    assert s.cash.iloc[1] == (new_capital - amount)
 
     assert c1._capital == 0
 
@@ -3004,8 +3004,8 @@ def test_couponpayingsecurity_transact():
 
     assert c1.coupon == 0
     assert len(c1.coupons) == 2
-    assert c1.coupons[0] == coupon * q
-    assert c1.coupons[1] == 0
+    assert c1.coupons.iloc[0] == coupon * q
+    assert c1.coupons.iloc[1] == 0
 
     assert np.isclose(c1.value, 0.0, rtol=0.0)
     assert np.isclose(c1.weight, 0.0 / new_capital, rtol=0.0)
@@ -3014,8 +3014,8 @@ def test_couponpayingsecurity_transact():
     assert s.capital == new_capital
     assert s.weight == 1
     assert s.value == new_capital
-    assert s.cash[0] == (original_capital - amount)
-    assert s.cash[1] == new_capital
+    assert s.cash.iloc[0] == (original_capital - amount)
+    assert s.cash.iloc[1] == new_capital
 
     assert c1._capital == 0
 
@@ -3030,12 +3030,12 @@ def test_bidoffer():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     bidoffer = pd.DataFrame(index=dts, columns=["c1", "c2"], data=1.0)
-    bidoffer["c1"][dts[0]] = 2
-    bidoffer["c2"][dts[0]] = 1.5
+    bidoffer.loc[dts[0], "c1"] = 2
+    bidoffer.loc[dts[0], "c2"] = 1.5
 
     s.setup(data, bidoffer=bidoffer)
     s.adjust(100000)
@@ -3044,11 +3044,11 @@ def test_bidoffer():
 
     assert c1.bidoffer == 2
     assert len(c1.bidoffers) == 1
-    assert c1.bidoffers[0] == 2
+    assert c1.bidoffers.iloc[0] == 2
 
     assert c2.bidoffer == 1.5
     assert len(c2.bidoffers) == 1
-    assert c2.bidoffers[0] == 1.5
+    assert c2.bidoffers.iloc[0] == 1.5
 
     # Check the outlays are adjusted for bid/offer
     s.set_commissions(lambda q, p: 0.1)
@@ -3080,28 +3080,28 @@ def test_bidoffer():
     # Do some transactions, and check that bidoffer_paid is updated
     c1.transact(100)
     assert c1.bidoffer_paid == 100 * 1
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
     c1.transact(100)
     assert c1.bidoffer_paid == 200 * 1
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
 
     c2.transact(-100)
     assert c2.bidoffer_paid == 100 * 0.75
-    assert c2.bidoffers_paid[i] == c2.bidoffer_paid
+    assert c2.bidoffers_paid.iloc[i] == c2.bidoffer_paid
     assert s.bidoffer_paid == 100 * 0.75 + 200 * 1
-    assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
 
     assert s.fees.iloc[i] == 3 * 0.1
 
     i = 1
     s.update(dts[i])
     assert c1.bidoffer_paid == 0.0
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
     assert c2.bidoffer_paid == 0.0
-    assert c2.bidoffers_paid[i] == c2.bidoffer_paid
+    assert c2.bidoffers_paid.iloc[i] == c2.bidoffer_paid
     assert s.bidoffer_paid == 0.0
-    assert s.bidoffers_paid[i] == s.bidoffer_paid
-    assert s.fees[i] == 0.0
+    assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
+    assert s.fees.iloc[i] == 0.0
 
 
 def test_outlay_custom():
@@ -3114,7 +3114,7 @@ def test_outlay_custom():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
+    data.loc[dts[0], "c1"] = 105
 
     s.setup(data)
     s.adjust(100000)
@@ -3147,7 +3147,7 @@ def test_bidoffer_custom():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
+    data.loc[dts[0], "c1"] = 105
 
     # Note: In order to access bidoffer_paid,
     # need to pass bidoffer kwarg during setup
@@ -3160,22 +3160,22 @@ def test_bidoffer_custom():
     assert c1.bidoffer_paid == 100 * 1
     assert s.bidoffer_paid == c1.bidoffer_paid
     assert s.capital == 100000 - 100 * 106
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
-    assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
+    assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
 
     c1.transact(100, price=106)
     assert c1.bidoffer_paid == 200 * 1
     assert s.bidoffer_paid == c1.bidoffer_paid
     assert s.capital == 100000 - 100 * 106 - 100 * 106
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
-    assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
+    assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
 
     c1.transact(-100, price=107)
     assert c1.bidoffer_paid == 0
     assert s.bidoffer_paid == c1.bidoffer_paid
     assert s.capital == 100000 - 100 * 106 - 100 * 106 + 100 * 107
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
-    assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
+    assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
 
 
 def test_security_notional_value():
@@ -3265,8 +3265,8 @@ def test_fi_strategy_no_bankruptcy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3290,8 +3290,8 @@ def test_fi_strategy_tree_adjust():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3323,9 +3323,9 @@ def test_fi_strategy_tree_update():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = -5  # Test negative prices
-    data["c2"][dts[2]] = 0  # Test zero price
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = -5  # Test negative prices
+    data.loc[dts[2], "c2"] = 0  # Test zero price
 
     s.setup(data)
 
@@ -3358,8 +3358,8 @@ def test_fi_strategy_tree_allocate():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3397,8 +3397,8 @@ def test_fi_strategy_tree_allocate_child_from_strategy():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[1]] = 105
-    data["c2"][dts[1]] = 95
+    data.loc[dts[1], "c1"] = 105
+    data.loc[dts[1], "c2"] = 95
 
     s.setup(data)
 
@@ -3823,12 +3823,12 @@ def test_fi_strategy_bidoffer():
 
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
-    data["c1"][dts[0]] = 105
-    data["c2"][dts[0]] = 95
+    data.loc[dts[0], "c1"] = 105
+    data.loc[dts[0], "c2"] = 95
 
     bidoffer = pd.DataFrame(index=dts, columns=["c1", "c2"], data=1.0)
-    bidoffer["c1"][dts[0]] = 2
-    bidoffer["c2"][dts[0]] = 1.5
+    bidoffer.loc[dts[0], "c1"] = 2
+    bidoffer.loc[dts[0], "c2"] = 1.5
 
     s.setup(data, bidoffer=bidoffer)
     i = 0
@@ -3839,18 +3839,18 @@ def test_fi_strategy_bidoffer():
     # Do some transactions, and check that bidoffer_paid is updated
     c1.transact(100)
     assert c1.bidoffer_paid == 100 * 1
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
     c1.transact(100)
     assert c1.bidoffer_paid == 200 * 1
-    assert c1.bidoffers_paid[i] == c1.bidoffer_paid
+    assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
 
     c2.transact(-100)
     assert c2.bidoffer_paid == 100 * 0.75
-    assert c2.bidoffers_paid[i] == c2.bidoffer_paid
+    assert c2.bidoffers_paid.iloc[i] == c2.bidoffer_paid
 
     s.update(dts[i])
     assert s.bidoffer_paid == 275.0
-    assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
     assert s.value == -275.0
     assert s.notional_value == 105 * 200 + 95 * 100
     assert s.price == 100 * (1.0 - 275.0 / (105 * 200 + 95 * 100))
@@ -3862,7 +3862,7 @@ def test_fi_strategy_bidoffer():
     i = 1
     s.update(dts[i])
     assert s.bidoffer_paid == 0.0
-    assert s.bidoffers_paid[i] == s.bidoffer_paid
+    assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
     assert s.value == -275.0 - 200 * 5 - 100 * 5  # Bid-offer paid
     assert s.notional_value == 100 * 200 + 100 * 100
     new_value = s.value
