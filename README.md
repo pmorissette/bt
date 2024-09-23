@@ -75,6 +75,7 @@ Future development efforts will focus on:
 The easiest way to install `bt` is from the [Python Package Index](https://pypi.python.org/pypi/bt/)
 using `pip`:
 
+
 ```bash
 pip install bt
 ```
@@ -98,3 +99,52 @@ This environment allows you to plot your charts in-line and also allows you to
 easily add surrounding text with Markdown. You can easily create Notebooks that
 you can share with colleagues and you can also save them as PDFs. If you are not
 yet convinced, head over to their website.
+
+## Local development
+
+The following steps can be used to make an editable local copy of the repository in order to make changes and contribute to the `bt` framework.
+
+1. Fork the project repository by clicking on the 'Fork' button near the top right of the main repository page. This creates a copy of the code under your GitHub user account.
+
+2. Clone your fork of the `bt` repository from your GitHub account to your local disk:
+
+```bash
+git clone git@github.com:<your GitHub handle>/bt.git
+cd bt
+```
+
+3. Create a new environment (e.g. `bt-dev`) using `venv` and activate it with the appropriate script for your system:
+
+```bash
+python -m venv bt-dev
+bt-dev\Scripts\activate.ps1
+```
+
+4. Install the local copy of `bt` via `pip` in editable/development mode:
+
+```bash
+pip install -e .
+```
+
+5. Create a feature branch (e.g. `my-feature`) to hold your development changes:
+
+```bash
+git checkout -b my-feature
+```
+
+Always use a feature branch. It's good practice to never routinely work on the main branch of any repository.
+
+6. Make your changes, commit locally and add tests as required. Run the linter (`ruff`) and the tests (`pytest`) often:
+
+```bash
+ruff check bt
+pytest -vvv tests
+```
+
+7. Push the changes to your fork on GitHub:
+
+```bash
+git push
+```
+
+8. Create a Pull Request on your forked repository page, selecting your feature branch (e.g. `my-feature`) as head and pointing to the original `pmorissette/bt` repository as base.
