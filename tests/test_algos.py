@@ -2307,7 +2307,7 @@ def test_hedge_risk_pseudo_over():
 def test_corporate_actions():
     dts = pd.date_range("2010-01-01", periods=3)
 
-    data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100)
+    data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100)
     divs = pd.DataFrame(index=dts, columns=["c1", "c2"], data=0.0)
     divs.loc[dts[1], "c1"] = 2.0
     splits = pd.DataFrame(index=dts, columns=["c1", "c2"], data=1.0)
@@ -2315,18 +2315,20 @@ def test_corporate_actions():
 
     algo = algos.CorporateActions(divs, splits)
 
-    s = bt.Strategy("s", children=["c1", "c2"])
+    s = bt.Strategy("s", children=["c1", "c2", "c3"])
     s.setup(data)
-    s.adjust(20000)
+    s.adjust(30000)
 
     s.update(dts[0])
     s.allocate(10000, "c1", update=True)
     s.allocate(10000, "c2", update=True)
+    s.allocate(10000, "c3", update=True)
 
     assert algo(s)
     assert s.capital == 0
     assert s["c1"].position == 100
     assert s["c2"].position == 100
+    assert s["c3"].position == 100
 
     s.update(dts[1])
 
@@ -2334,6 +2336,7 @@ def test_corporate_actions():
     assert s.capital == 100 * 2.0
     assert s["c1"].position == 100
     assert s["c2"].position == 100
+    assert s["c3"].position == 100
 
     s.update(dts[2])
 
@@ -2341,3 +2344,4 @@ def test_corporate_actions():
     assert s.capital == 100 * 2.0
     assert s["c1"].position == 100
     assert s["c2"].position == 100 * 10.0
+    assert s["c3"].position == 100

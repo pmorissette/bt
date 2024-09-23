@@ -1642,8 +1642,7 @@ class CorporateActions(Algo):
     This Algo must run at every iteration to be able to change security
     positions as required by splits. All dates in the `dividends`and
     `splits` dataframes must exist in the price data for the calculations
-    to work correctly. All columns in the price data must exist in the
-    `dividends`and `splits` dataframes.
+    to work correctly.
 
     Args:
         * dividends (dataframe): dataframe of dividend amounts per unit of
@@ -1663,17 +1662,19 @@ class CorporateActions(Algo):
         # adjust last position if there is a split
         if target.now in self.splits.index:
             for c in target.children:
-                spl = self.splits.loc[target.now, c]
-                if spl != 1.0:
-                    target.children[c]._position *= spl
+                if c in self.splits.columns:
+                    spl = self.splits.loc[target.now, c]
+                    if spl != 1.0:
+                        target.children[c]._position *= spl
 
         # adjust capital due to dividends
         if target.now in self.dividends.index:
             div_inflow = 0.0
             for c in target.children:
-                div = self.dividends.loc[target.now, c]
-                if div != 0.0:
-                    div_inflow += div * target.children[c]._position
+                if c in self.dividends.columns:
+                    div = self.dividends.loc[target.now, c]
+                    if div != 0.0:
+                        div_inflow += div * target.children[c]._position
 
             target.adjust(div_inflow, flow=False)
 
