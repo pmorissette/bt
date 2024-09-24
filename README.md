@@ -110,4 +110,4 @@ After the usual preparation steps for [contributing to a GitHub project](https:/
 
 While making changes and adding tests, run `make lint` and `make test` often to check for mistakes.
 
-After commiting and pushing changes, create a Pull Request to discuss and get feedback on the proposed feature or fix.
+After [commiting and pushing changes](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project?tool=webui#making-and-pushing-changes), [create a Pull Request](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project?tool=webui#making-a-pull-request) to discuss and get feedback on the proposed feature or fix.
