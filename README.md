@@ -98,3 +98,16 @@ This environment allows you to plot your charts in-line and also allows you to
 easily add surrounding text with Markdown. You can easily create Notebooks that
 you can share with colleagues and you can also save them as PDFs. If you are not
 yet convinced, head over to their website.
+
+## Contributing to bt
+
+A Makefile is available to simplify local development.
+[GNU Make](https://www.gnu.org/software/make/) is required to run the `make` targets directly, and it is not often preinstalled [on Windows systems](https://gnuwin32.sourceforge.net/packages/make.htm).
+
+When developing in Python, it's advisable to [create and activate a virtual environment](https://docs.python.org/3/library/venv.html) to keep the project's dependencies isolated from the system.
+
+After the usual preparation steps for [contributing to a GitHub project](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) (forking, cloning, creating a feature branch), run `make develop` to install dependencies in the environment.
+
+While making changes and adding tests, run `make lint` and `make test` often to check for mistakes.
+
+After [commiting and pushing changes](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project?tool=webui#making-and-pushing-changes), [create a Pull Request](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project?tool=webui#making-a-pull-request) to discuss and get feedback on the proposed feature or fix.
