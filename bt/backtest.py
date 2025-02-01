@@ -152,7 +152,7 @@ class Backtest(object):
     ):
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
-            raise Exception("data provided has some duplicate column names: \n%s \n" "Please remove duplicates!" % cols)
+            raise Exception("data provided has some duplicate column names: \n%s \nPlease remove duplicates!" % cols)
 
         # we want to reuse strategy logic - copy it!
         # basically strategy is a template
@@ -549,7 +549,7 @@ class RandomBenchmarkResult(Result):
 
         """
         if statistic not in self.r_stats.index:
-            raise ValueError("Invalid statistic. Valid statistics" "are the statistics in self.stats")
+            raise ValueError("Invalid statistic. Valid statisticsare the statistics in self.stats")
 
         if title is None:
             title = "%s histogram" % statistic
@@ -588,7 +588,7 @@ class RenormalizedFixedIncomeResult(Result):
     def __init__(self, normalizing_value, *backtests):
         for backtest in backtests:
             if not backtest.strategy.fixed_income:
-                raise ValueError("Cannot apply RenormalizedFixedIncomeResult " "because backtest %s is not on a fixed income " "strategy" % backtest.name)
+                raise ValueError("Cannot apply RenormalizedFixedIncomeResult because backtest %s is not on a fixed income strategy" % backtest.name)
         if not isinstance(normalizing_value, dict):
             normalizing_value = {x.name: normalizing_value for x in backtests}
         tmp = [pd.DataFrame({x.name: self._price(x.strategy, normalizing_value[x.name])}) for x in backtests]
