@@ -43,7 +43,7 @@ setup(
             "pyprind>=2.11",
             "pytest",
             "pytest-cov",
-            "ruff>=0.5.0,<0.9",
+            "ruff>=0.5.0,<0.10",
             "setuptools",
             "twine",
             "wheel",
