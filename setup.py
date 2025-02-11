@@ -32,7 +32,7 @@ setup(
     keywords="python finance quant backtesting strategies algotrading algorithmic trading",
     url="https://github.com/pmorissette/bt",
     license="MIT",
-    install_requires=["ffn>=1.1.0", "pyprind>=2.11", "tqdm>=4"],
+    install_requires=["ffn>=1.1.2", "pyprind>=2.11", "tqdm>=4"],
     extras_require={
         "dev": [
             "cython>=0.29.25",
