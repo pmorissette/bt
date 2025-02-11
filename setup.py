@@ -36,7 +36,7 @@ setup(
     extras_require={
         "dev": [
             "cython>=0.29.25",
-            "ffn>=1.1.0",
+            "ffn>=1.1.2",
             "matplotlib>=2",
             "numpy>=1",
             "pandas>=0.19",
