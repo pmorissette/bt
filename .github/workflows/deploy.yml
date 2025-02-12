@@ -12,9 +12,9 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-22.04
-          - macos-12
-          - windows-2019
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
         python-version:
           - "3.8"
           - "3.9"
@@ -93,19 +93,19 @@ jobs:
         CIBW_BUILD_VERBOSITY: 3
       if: ${{ runner.os == 'Linux' }}
 
-    - name: Python Build Steps (Macos x86)
+    - name: Python Build Steps (Macos)
       run: python -m cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: "${{ matrix.cibuildwheel }}-macos*"
         CIBW_ARCHS_MACOS: x86_64 arm64
         CIBW_BUILD_VERBOSITY: 3
-      if: ${{ matrix.os == 'macos-12' }}
+      if: ${{ matrix.os == 'macos-latest' }}
 
-    - name: Python Build Steps (Windows 2019)
+    - name: Python Build Steps (Windows)
       run: python -m cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: "${{ matrix.cibuildwheel }}-win_amd64"
-      if: ${{ matrix.os == 'windows-2019' }}
+      if: ${{ matrix.os == 'windows-latest' }}
 
     - name: Check Wheels
       run: twine check dist/*
