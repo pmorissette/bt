@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/pmorissette/bt/workflows/Build%20Status/badge.svg)](https://github.com/pmorissette/bt/actions/)
 [![PyPI Version](https://img.shields.io/pypi/v/bt)](https://pypi.org/project/bt/)
-[![PyPI License](https://img.shields.io/pypi/l/bt)](https://pypi.org/project/bt/)
+[![PyPI License](https://img.shields.io/pypi/l/bt)](https://github.com/pmorissette/bt/blob/master/LICENSE)
 
 # bt - Flexible Backtesting for Python
 
