@@ -5,6 +5,7 @@ A collection of Algos used to create Strategy logic.
 import abc
 import random
 import re
+import math
 
 import numpy as np
 import pandas as pd
@@ -2358,4 +2359,63 @@ class HedgeRisks(Algo):
             if np.isnan(notional) and self.throw_nan:
                 raise ValueError("%s has nan hedge notional" % security)
             target.transact(notional, security)
+        return True
+
+
+class Margin(Algo):
+    """
+    Margin allows us to model margin lending using bt. It will periodically charge the strategy
+    a set interest rate and will liquidate its positions if it falls below a specified maintance
+    requirement
+
+    Args:
+        * rate (float): the margin interest rate. i.e: 0.05 -> 5%
+        * requirement (float): the maintenance requirement. The algorithm will liquidate the portfolio if the
+        equity in falls below this percentage.
+    """
+
+    def __init__(self, rate, requirement):
+        super().__init__(Margin.__name__)
+        self.rate = rate
+        self.requirement = requirement
+        self._last_date = None
+
+    def _daily_rate(self):
+        return math.pow(1 + self.rate, 1 / 365.25) - 1
+
+    def __call__(self, target):
+        if self._last_date is None:
+            self._last_date = target.now
+            return True
+
+        # how many days since we calculated interest
+        diff = target.now - self._last_date
+
+        # the margin amount is the difference
+        margin = -target.capital
+
+        if margin > 0:
+            # get the total value of this portfolio
+            port_val = 0
+            for child in target.children.values():
+                port_val += child.value
+
+            # calculate the interest on the margin
+            f = math.pow(1 + self._daily_rate(), diff.days) - 1
+            fee = margin * f
+
+            # charge it
+            target.adjust(-fee, fee=fee)
+
+            equity_ratio = target.value / port_val
+            # check and see if we are below our margin requirement
+            if equity_ratio < self.requirement:
+                max_value = target.value * (1 / self.requirement)
+
+                # liquidate
+                deficit = max_value - port_val
+                target.allocate(deficit / 2)
+
+        # update our date
+        self._last_date = target.now
         return True
