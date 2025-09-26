@@ -1,5 +1,5 @@
 from __future__ import division
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest import mock
 
 import numpy as np
@@ -2302,3 +2302,32 @@ def test_hedge_risk_pseudo_over():
     assert c1.position == 100
     assert c2.position == -5
     assert c3.position == -5
+
+
+def test_margin():
+    algo = algos.Margin(0.1, 0.66666666667)
+
+    s = bt.Strategy("s", algos=[algos.WeighSpecified(c1=2), algos.Rebalance()])
+
+    dts = pd.date_range("2010-01-01", periods=3)
+    data = pd.DataFrame(index=dts, columns=["c1"], data=1)
+
+    yesterday = dts[0] - timedelta(days=1)
+    algo._last_date = yesterday
+
+    s.setup(data)
+    s.update(dts[0])
+    s.adjust(1000)
+    s.run()
+
+    algo(s)
+
+    # checked that we charged some margin interest
+    fees = np.sum(s.fees)
+    assert pytest.approx(0.26, 0.01) == fees
+
+    # check that we've liquidated things to get us back to the maintenance requirement
+    assert pytest.approx(1499, 0.001) == sum(child.value for child in s.children.values())
+
+    assert pytest.approx(999.73, 0.001) == s.value
+
