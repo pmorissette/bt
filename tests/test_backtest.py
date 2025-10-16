@@ -109,6 +109,34 @@ def test_turnover():
     assert np.allclose(t.turnover[dts[4]], 76100.0 / 1015285)
 
 
+def test_can_disable_progress_bar_from_run():
+    from contextlib import redirect_stderr
+    from io import StringIO
+
+    # Create an in-memory buffer
+    output_capture = StringIO()
+
+    data = pd.DataFrame(
+        index=pd.date_range("2010-01-01", periods=5), columns=["a", "b"], data=100
+    )
+    s = bt.Strategy("test", [
+        bt.algos.SelectAll(),
+        bt.algos.WeighEqually(),
+        bt.algos.Rebalance()
+    ])
+
+    b = bt.Backtest(s, data)
+
+    # Redirect stderr to the buffer
+    with redirect_stderr(output_capture):
+        result = bt.run(b, progress_bar=False)
+
+    # confirm that the output is empty
+    assert output_capture.getvalue() is ""
+    # confirm that we actually ran something
+    assert  len(result.get_transactions()) > 0
+
+
 def test_Results_helper_functions():
 
     names = ["foo", "bar"]
