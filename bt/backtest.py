@@ -14,7 +14,7 @@ from tqdm import tqdm
 import bt
 
 
-def run(*backtests):
+def run(*backtests, progress_bar=True):
     """
     Runs a series of backtests and returns a Result
     object containing the results of the backtests.
@@ -27,7 +27,7 @@ def run(*backtests):
 
     """
     # run each backtest
-    for bkt in tqdm(backtests):
+    for bkt in tqdm(backtests, disable=not progress_bar):
         bkt.run()
 
     return Result(*backtests)
