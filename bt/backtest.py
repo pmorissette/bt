@@ -82,6 +82,38 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     return res
 
 
+def calmar_ratio(returns, periods=252):
+    """
+    Calculate the Calmar Ratio.
+    
+    Calmar Ratio = Annualized Return / Max Drawdown
+    
+    Args:
+        returns (pd.Series or np.ndarray): Returns data
+        periods (int): Periods per year (default 252 for daily)
+    
+    Returns:
+        float: Calmar ratio, or NaN if no drawdown or empty series
+    """
+    if len(returns) == 0:
+        return np.nan
+
+    returns = np.asarray(returns)
+    cumulative = np.cumprod(1 + returns)
+    running_max = np.maximum.accumulate(cumulative)
+    drawdown = cumulative / running_max - 1
+    max_drawdown = np.min(drawdown)
+
+    if np.isclose(max_drawdown, 0):
+        return np.nan
+
+    total_return = cumulative[-1] - 1
+    annualized_return = (1 + total_return) ** (periods / len(returns)) - 1
+    calmar = annualized_return / abs(max_drawdown)
+
+    return calmar
+
+
 class Backtest(object):
     """
     A Backtest combines a Strategy with data to

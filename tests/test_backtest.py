@@ -350,3 +350,86 @@ def test_RenomalizedFixedIncomeResult():
 
     assert norm_res.stats["s"].total_return == res.stats["s"].total_return
     assert norm_res.prices.equals(res.prices)
+
+
+def test_calmar_ratio_basic():
+    np.random.seed(42)
+    returns = np.array([0.01, -0.02, 0.015, 0.03, -0.01, 0.02, 0.025, 0.015])
+    result = bt.backtest.calmar_ratio(returns)
+    assert isinstance(result, (float, np.floating))
+    assert not np.isnan(result)
+    assert result > 0
+
+
+def test_calmar_ratio_empty_series():
+    returns = np.array([])
+    result = bt.backtest.calmar_ratio(returns)
+    assert np.isnan(result)
+
+
+def test_calmar_ratio_no_drawdown():
+    returns = np.array([0.01, 0.02, 0.01, 0.015, 0.02])
+    result = bt.backtest.calmar_ratio(returns)
+    assert np.isnan(result)
+
+
+def test_calmar_ratio_severe_drawdown():
+    returns = np.array([0.5] + [0.0] * 100 + [-0.4])
+    result = bt.backtest.calmar_ratio(returns)
+    assert isinstance(result, (float, np.floating))
+    assert not np.isnan(result)
+
+
+def test_calmar_ratio_pandas_series():
+    returns = pd.Series([0.01, -0.02, 0.015, 0.03, -0.01, 0.02])
+    result = bt.backtest.calmar_ratio(returns)
+    assert isinstance(result, (float, np.floating))
+    assert not np.isnan(result)
+
+
+def test_calmar_ratio_different_periods():
+    returns = np.array([0.01, 0.01, -0.005, 0.01, 0.01, -0.005] * 10)
+    
+    calmar_daily = bt.backtest.calmar_ratio(returns, periods=252)
+    calmar_weekly = bt.backtest.calmar_ratio(returns, periods=52)
+    
+    assert not np.isnan(calmar_daily)
+    assert not np.isnan(calmar_weekly)
+    assert calmar_daily != calmar_weekly
+
+
+def test_calmar_ratio_real_scenario():
+    dts = pd.date_range("2010-01-01", periods=252)
+    data = pd.DataFrame(index=dts, columns=["a", "b"], data=100)
+    
+    np.random.seed(1)
+    data["a"] = 100 * np.cumprod(1 + np.random.normal(0.0005, 0.01, len(dts)))
+    data["b"] = 100 * np.cumprod(1 + np.random.normal(0.0003, 0.008, len(dts)))
+    
+    s = bt.Strategy(
+        "test_strategy",
+        [bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()]
+    )
+    
+    t = bt.Backtest(s, data, progress_bar=False)
+    res = bt.run(t)
+    
+    prices = res.backtests["test_strategy"].strategy.prices
+    returns = prices.pct_change().dropna()
+    calmar = bt.backtest.calmar_ratio(returns)
+    
+    assert isinstance(calmar, (float, np.floating))
+
+
+def test_calmar_ratio_calculation():
+    returns = np.array([0.50/3, 0.50/3, 0.50/3, -0.50/3])
+    result = bt.backtest.calmar_ratio(returns, periods=252)
+    assert isinstance(result, (float, np.floating))
+    assert result > 0
+
+
+def test_calmar_ratio_monotonic():
+    returns = np.cumsum(np.random.uniform(0.001, 0.005, 100))
+    returns = np.diff(returns) / returns[:-1]
+    result = bt.backtest.calmar_ratio(returns)
+    assert np.isnan(result)
