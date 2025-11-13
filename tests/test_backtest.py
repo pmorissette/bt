@@ -350,3 +350,33 @@ def test_RenomalizedFixedIncomeResult():
 
     assert norm_res.stats["s"].total_return == res.stats["s"].total_return
     assert norm_res.prices.equals(res.prices)
+
+def test_additional_data_boolean_dtype_no_warning():
+    """Test that boolean dtype in additional_data doesn't raise FutureWarning."""
+    import warnings
+
+    dts = pd.date_range("2010-01-01", periods=5)
+    data = pd.DataFrame(index=dts, columns=["a", "b"], data=100.0)
+
+    # Create additional data with boolean dtype
+    signal = pd.DataFrame(
+        index=dts,
+        columns=["signal"],
+        data=[True, False, True, False, True]
+    )
+
+    s = bt.Strategy(
+        "test", [bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()]
+    )
+
+    # Capture warnings
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        t = bt.Backtest(s, data, additional_data={"signal": signal}, progress_bar=False)
+        t.run()
+
+        # Check no FutureWarning about bool-dtype concatenation
+        future_warnings = [warning for warning in w
+                          if issubclass(warning.category, FutureWarning)
+                          and "bool-dtype" in str(warning.message).lower()]
+        assert len(future_warnings) == 0

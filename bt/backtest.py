@@ -208,10 +208,12 @@ class Backtest(object):
                     columns=old.columns,
                     index=[old.index[0] - pd.DateOffset(days=1)],
                 )
+                # Ensure dtypes match to avoid FutureWarning
+                empty_row = empty_row.astype(old.dtypes)
                 new = pd.concat([empty_row, old])
                 self.additional_data[k] = new
             elif isinstance(old, pd.Series) and old.index.equals(data.index):
-                empty_row = pd.Series(np.nan, index=[old.index[0] - pd.DateOffset(days=1)])
+                empty_row = pd.Series(np.nan, index=[old.index[0] - pd.DateOffset(days=1)], dtype=old.dtype)
                 new = pd.concat([empty_row, old])
                 self.additional_data[k] = new
 
