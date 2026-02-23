@@ -18,17 +18,18 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.11]
         os: [ubuntu-latest]
         pandas_version:
-          - '>=2.2'
-          - '<2'
+          - '>=1,<2'
+          - '>=2,<3'
+          - '>=3,<4'
         numpy_version:
           - '<2'
           - '>=2'
         exclude:
           - numpy_version: '>=2'
-            pandas_version: '<2'
+            pandas_version: '>=1,<2'
 
     steps:
     - name: Checkout
@@ -43,6 +44,9 @@ jobs:
 
     - name: Install dependencies
       run: make develop
+
+    - name: Install specific pandas and numpy versions
+      run: pip install "pandas${{ matrix.pandas_version }}" "numpy${{ matrix.numpy_version }}"
 
     - name: Test
       run: make test

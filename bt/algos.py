@@ -1125,7 +1125,12 @@ class WeighInvVol(Algo):
 
         t0 = target.now - self.lag
         prc = target.universe.loc[t0 - self.lookback : t0, selected]
-        tw = bt.ffn.calc_inv_vol_weights(prc.to_returns().dropna())
+        returns = prc.to_returns().dropna()
+        # Workaround for ffn using np.std(DataFrame) which returns a scalar
+        # in pandas 3.0 instead of per-column Series
+        vol = 1.0 / returns.std(ddof=1)
+        vol[np.isinf(vol)] = np.nan
+        tw = vol / vol.sum()
         target.temp["weights"] = tw.dropna()
         return True
 
@@ -2181,7 +2186,7 @@ class SimulateRFQTransactions(Algo):
 def _get_unit_risk(security, data, index=None):
     try:
         unit_risks = data[security]
-        unit_risk = unit_risks.values[index]
+        unit_risk = unit_risks.iloc[index]
     except Exception:
         # No risk data, assume zero
         unit_risk = 0.0

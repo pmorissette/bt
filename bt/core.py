@@ -123,6 +123,19 @@ class Node(object):
         self._bidoffer_set = False
         self._bidoffer_paid = 0
 
+    @property
+    def data(self):
+        if getattr(self, "_data_ready", False):
+            self._sync_data()
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
+
+    def _sync_data(self):
+        pass
+
     def __getitem__(self, key):
         return self.children[key]
 
@@ -631,6 +644,8 @@ class StrategyBase(Node):
         if self.children is not None:
             [c.setup(universe, **kwargs) for c in self._childrenv]
 
+        self._data_ready = True
+
     def setup_from_parent(self, **kwargs):
         """
         Setup a strategy from the parent. Used when dynamically creating
@@ -655,6 +670,16 @@ class StrategyBase(Node):
         to be run against different data sets more easily.
         """
         return self._setup_kwargs[key]
+
+    def _sync_data(self):
+        self._data["price"] = self._prices
+        self._data["value"] = self._values
+        self._data["notional_value"] = self._notl_values
+        self._data["cash"] = self._cash
+        self._data["fees"] = self._fees
+        self._data["flows"] = self._all_flows
+        if self._bidoffer_set:
+            self._data["bidoffer_paid"] = self._bidoffers_paid
 
     @cy.locals(
         newpt=cy.bint,
@@ -690,7 +715,7 @@ class StrategyBase(Node):
             if self.now == 0:
                 inow = 0
             else:
-                inow = self.data.index.get_loc(date)
+                inow = self._data.index.get_loc(date)
 
         # update children if any and calculate value
         val = self._capital  # default if no children
@@ -731,14 +756,14 @@ class StrategyBase(Node):
         # won't change
         if newpt or not is_zero(self._value - val) or not is_zero(self._notl_value - notl_val):
             self._value = val
-            self._values.values[inow] = val
+            self._values.iloc[inow] = val
 
             self._notl_value = notl_val
-            self._notl_values.values[inow] = notl_val
+            self._notl_values.iloc[inow] = notl_val
 
             if self._bidoffer_set:
                 self._bidoffer_paid = bidoffer_paid
-                self._bidoffers_paid.values[inow] = bidoffer_paid
+                self._bidoffers_paid.iloc[inow] = bidoffer_paid
 
             if self.fixed_income:
                 # For notional weights, we compute additive return
@@ -760,7 +785,7 @@ class StrategyBase(Node):
                         )
 
                 self._price = self._last_price + ret
-                self._prices.values[inow] = self._price
+                self._prices.iloc[inow] = self._price
 
             else:
                 bottom = self._last_value + self._net_flows
@@ -786,7 +811,7 @@ class StrategyBase(Node):
                         )
 
                 self._price = self._last_price * (1 + ret)
-                self._prices.values[inow] = self._price
+                self._prices.iloc[inow] = self._price
 
         # update children weights
         if self.children:
@@ -815,9 +840,9 @@ class StrategyBase(Node):
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".
         # Same for fees and flows
-        self._cash.values[inow] = self._capital
-        self._fees.values[inow] = self._last_fee
-        self._all_flows.values[inow] = self._net_flows
+        self._cash.iloc[inow] = self._capital
+        self._fees.iloc[inow] = self._last_fee
+        self._all_flows.iloc[inow] = self._net_flows
 
         # update paper trade if necessary
         if self._paper_trade:
@@ -827,7 +852,7 @@ class StrategyBase(Node):
                 self._paper.update(date)
             # update price
             self._price = self._paper.price
-            self._prices.values[inow] = self._price
+            self._prices.iloc[inow] = self._price
 
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint, fees=cy.double)
     def adjust(self, amount, update=True, flow=True, fee=0.0):
@@ -1380,6 +1405,18 @@ class SecurityBase(Node):
             self.data["bidoffer_paid"] = 0.0
             self._bidoffers_paid = self.data["bidoffer_paid"]
 
+        self._data_ready = True
+
+    def _sync_data(self):
+        if not self._prices_set:
+            self._data["price"] = self._prices
+        self._data["value"] = self._values
+        self._data["notional_value"] = self._notl_values
+        self._data["position"] = self._positions
+        self._data["outlay"] = self._outlays
+        if self._bidoffer_set:
+            self._data["bidoffer_paid"] = self._bidoffers_paid
+
     @cy.locals(prc=cy.double)
     def update(self, date, data=None, inow=None):
         """
@@ -1397,7 +1434,7 @@ class SecurityBase(Node):
             if date == 0:
                 inow = 0
             else:
-                inow = self.data.index.get_loc(date)
+                inow = self._data.index.get_loc(date)
 
         # date change - update price
         if date != self.now:
@@ -1405,19 +1442,19 @@ class SecurityBase(Node):
             self.now = date
 
             if self._prices_set:
-                self._price = self._prices.values[inow]
+                self._price = self._prices.iloc[inow]
             # traditional data update
             elif data is not None:
                 prc = data[self.name]
                 self._price = prc
-                self._prices.values[inow] = prc
+                self._prices.iloc[inow] = prc
 
             # update bid/offer
             if self._bidoffer_set:
-                self._bidoffer = self._bidoffers.values[inow]
+                self._bidoffer = self._bidoffers.iloc[inow]
                 self._bidoffer_paid = 0.0
 
-        self._positions.values[inow] = self._position
+        self._positions.iloc[inow] = self._position
         self._last_pos = self._position
 
         if np.isnan(self._price):
@@ -1430,20 +1467,20 @@ class SecurityBase(Node):
 
         self._notl_value = self._value
 
-        self._values.values[inow] = self._value
-        self._notl_values.values[inow] = self._notl_value
+        self._values.iloc[inow] = self._value
+        self._notl_values.iloc[inow] = self._notl_value
 
         if is_zero(self._weight) and is_zero(self._position):
             self._needupdate = False
 
         # save outlay to outlays
         if self._outlay != 0:
-            self._outlays.values[inow] += self._outlay
+            self._outlays.iloc[inow] += self._outlay
             # reset outlay back to 0
             self._outlay = 0
 
         if self._bidoffer_set:
-            self._bidoffers_paid.values[inow] = self._bidoffer_paid
+            self._bidoffers_paid.iloc[inow] = self._bidoffer_paid
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double, i=cy.int)
     def allocate(self, amount, update=True):
@@ -1720,13 +1757,13 @@ class FixedIncomeSecurity(SecurityBase):
             if date == 0:
                 inow = 0
             else:
-                inow = self.data.index.get_loc(date)
+                inow = self._data.index.get_loc(date)
 
         super(FixedIncomeSecurity, self).update(date, data, inow)
 
         # For fixed income securities (bonds, swaps), notional value is position size, not value!
         self._notl_value = self._position
-        self._notl_values.values[inow] = self._notl_value
+        self._notl_values.iloc[inow] = self._notl_value
 
 
 class CouponPayingSecurity(FixedIncomeSecurity):
@@ -1815,6 +1852,12 @@ class CouponPayingSecurity(FixedIncomeSecurity):
         self._coupon_income = self.data["coupon"]
         self._holding_costs = self.data["holding_cost"]
 
+    def _sync_data(self):
+        super(CouponPayingSecurity, self)._sync_data()
+        if hasattr(self, "_holding_costs"):
+            self._data["coupon"] = self._coupon_income
+            self._data["holding_cost"] = self._holding_costs
+
     @cy.locals(coupon=cy.double, cost=cy.double)
     def update(self, date, data=None, inow=None):
         """
@@ -1825,7 +1868,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             if date == 0:
                 inow = 0
             else:
-                inow = self.data.index.get_loc(date)
+                inow = self._data.index.get_loc(date)
 
         if self._coupons is None:
             raise Exception("coupons have not been set for security %s" % self.name)
@@ -1833,7 +1876,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
         # Standard update
         super(CouponPayingSecurity, self).update(date, data, inow)
 
-        coupon = self._coupons.values[inow]
+        coupon = self._coupons.iloc[inow]
         # If we were to call self.parent.adjust, then all the child weights would
         # need to be updated. If each security pays a coupon, then this happens for
         # each child. Instead, we store the coupon on self._capital, and it gets
@@ -1848,17 +1891,17 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             self._coupon = self._position * coupon
 
         if self._position > 0 and self._cost_long is not None:
-            cost = self._cost_long.values[inow]
+            cost = self._cost_long.iloc[inow]
             self._holding_cost = self._position * cost
         elif self._position < 0 and self._cost_short is not None:
-            cost = self._cost_short.values[inow]
+            cost = self._cost_short.iloc[inow]
             self._holding_cost = -self._position * cost
         else:
             self._holding_cost = 0.0
 
         self._capital = self._coupon - self._holding_cost
-        self._coupon_income.values[inow] = self._coupon
-        self._holding_costs.values[inow] = self._holding_cost
+        self._coupon_income.iloc[inow] = self._coupon
+        self._holding_costs.iloc[inow] = self._holding_cost
 
     @property
     def coupon(self):
@@ -1915,7 +1958,7 @@ class HedgeSecurity(SecurityBase):
         """
         super(HedgeSecurity, self).update(date, data, inow)
         self._notl_value = 0.0
-        self._notl_values.values.fill(0.0)
+        self._notl_values.iloc[:] = 0.0
 
 
 class CouponPayingHedgeSecurity(CouponPayingSecurity):
@@ -1936,7 +1979,7 @@ class CouponPayingHedgeSecurity(CouponPayingSecurity):
         """
         super(CouponPayingHedgeSecurity, self).update(date, data, inow)
         self._notl_value = 0.0
-        self._notl_values.values.fill(0.0)
+        self._notl_values.iloc[:] = 0.0
 
 
 class Algo(object):
