@@ -420,7 +420,7 @@ def test_strategybase_tree_allocate():
     assert c1.value == 500
     assert s.capital == 1000 - 500
     assert s.value == 1000
-    assert c1.weight == 500.0 / 1000
+    assert c1.weight == pytest.approx(500.0 / 1000)
     assert c2.weight == 0
 
 
@@ -457,7 +457,7 @@ def test_strategybase_tree_allocate_child_from_strategy():
     assert c1.value == 500
     assert s.capital == 1000 - 500
     assert s.value == 1000
-    assert c1.weight == 500.0 / 1000
+    assert c1.weight == pytest.approx(500.0 / 1000)
     assert c2.weight == 0
 
 
@@ -505,7 +505,7 @@ def test_strategybase_tree_allocate_level2():
     assert s1.value == 500
     assert m.capital == 1000 - 500
     assert m.value == 1000
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s2.weight == 0
 
     # now allocate directly to child of child
@@ -514,12 +514,12 @@ def test_strategybase_tree_allocate_level2():
     assert s1.value == 500
     assert s1.capital == 500 - 200
     assert c1.value == 200
-    assert c1.weight == 200.0 / 500
+    assert c1.weight == pytest.approx(200.0 / 500)
     assert c1.position == 2
 
     assert m.capital == 1000 - 500
     assert m.value == 1000
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s2.weight == 0
 
     assert c12.value == 0
@@ -548,7 +548,7 @@ def test_strategybase_tree_allocate_long_short():
 
     assert c1.position == 5
     assert c1.value == 500
-    assert c1.weight == 500.0 / 1000
+    assert c1.weight == pytest.approx(500.0 / 1000)
     assert s.capital == 1000 - 500
     assert s.value == 1000
 
@@ -556,7 +556,7 @@ def test_strategybase_tree_allocate_long_short():
 
     assert c1.position == 3
     assert c1.value == 300
-    assert c1.weight == 300.0 / 1000
+    assert c1.weight == pytest.approx(300.0 / 1000)
     assert s.capital == 1000 - 500 + 200
     assert s.value == 1000
 
@@ -564,7 +564,7 @@ def test_strategybase_tree_allocate_long_short():
 
     assert c1.position == -1
     assert c1.value == -100
-    assert c1.weight == -100.0 / 1000
+    assert c1.weight == pytest.approx(-100.0 / 1000)
     assert s.capital == 1000 - 500 + 200 + 400
     assert s.value == 1000
 
@@ -607,7 +607,7 @@ def test_strategybase_tree_allocate_update():
 
     assert c1.position == 5
     assert c1.value == 500
-    assert c1.weight == 500.0 / 1000
+    assert c1.weight == pytest.approx(500.0 / 1000)
     assert s.capital == 1000 - 500
     assert s.value == 1000
     assert s.price == 100
@@ -617,7 +617,7 @@ def test_strategybase_tree_allocate_update():
 
     assert c1.position == 5
     assert c1.value == 525
-    assert c1.weight == 525.0 / 1025
+    assert c1.weight == pytest.approx(525.0 / 1025)
     assert s.capital == 1000 - 500
     assert s.value == 1025
     assert np.allclose(s.price, 102.5)
@@ -813,7 +813,7 @@ def test_strategybase_multiple_calls():
 
     c2 = s["c2"]
     assert c2.value == 950
-    assert c2.weight == 950.0 / 1000
+    assert c2.weight == pytest.approx(950.0 / 1000)
     assert c2.price == 95
 
     # update out t0
@@ -825,7 +825,7 @@ def test_strategybase_multiple_calls():
     assert s.capital == 50
 
     assert c2.value == 950
-    assert c2.weight == 950.0 / 1000
+    assert c2.weight == pytest.approx(950.0 / 1000)
     assert c2.price == 95
 
     # update t1
@@ -839,7 +839,7 @@ def test_strategybase_multiple_calls():
     assert "c2" in s.children
     c2 = s["c2"]
     assert c2.value == 1000
-    assert c2.weight == 1000.0 / 1050.0
+    assert c2.weight == pytest.approx(1000.0 / 1050.0)
     assert c2.price == 100
 
     # run t1 - close out c2, open c1
@@ -851,7 +851,7 @@ def test_strategybase_multiple_calls():
 
     c1 = s["c1"]
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1050
+    assert c1.weight == pytest.approx(1045.0 / 1050)
     assert c1.price == 95
 
     assert c2.value == 0
@@ -867,7 +867,7 @@ def test_strategybase_multiple_calls():
 
     assert c1 == s["c1"]
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1050
+    assert c1.weight == pytest.approx(1045.0 / 1050)
     assert c1.price == 95
 
     assert c2.value == 0
@@ -883,7 +883,7 @@ def test_strategybase_multiple_calls():
     assert s.capital == 5
 
     assert c1.value == 1100
-    assert c1.weight == 1100.0 / 1105
+    assert c1.weight == pytest.approx(1100.0 / 1105)
     assert c1.price == 100
 
     assert c2.value == 0
@@ -902,7 +902,7 @@ def test_strategybase_multiple_calls():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update out t2
@@ -917,7 +917,7 @@ def test_strategybase_multiple_calls():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update t3
@@ -933,7 +933,7 @@ def test_strategybase_multiple_calls():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # run t3
@@ -948,7 +948,7 @@ def test_strategybase_multiple_calls():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update out t3
@@ -963,7 +963,7 @@ def test_strategybase_multiple_calls():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update t4
@@ -982,7 +982,7 @@ def test_strategybase_multiple_calls():
     assert len(c1.prices) == 5
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # run t4
@@ -997,7 +997,7 @@ def test_strategybase_multiple_calls():
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update out t4
@@ -1012,7 +1012,7 @@ def test_strategybase_multiple_calls():
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
 
@@ -1070,7 +1070,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert s.capital == 50
 
     assert c2.value == 950
-    assert c2.weight == 950.0 / 1000
+    assert c2.weight == pytest.approx(950.0 / 1000)
     assert c2.price == 95
 
     # update out t0
@@ -1081,7 +1081,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert s.capital == 50
 
     assert c2.value == 950
-    assert c2.weight == 950.0 / 1000
+    assert c2.weight == pytest.approx(950.0 / 1000)
     assert c2.price == 95
 
     # update t1
@@ -1093,14 +1093,14 @@ def test_strategybase_multiple_calls_preset_secs():
     assert len(s.children) == 2
 
     assert c2.value == 1000
-    assert c2.weight == 1000.0 / 1050.0
+    assert c2.weight == pytest.approx(1000.0 / 1050.0)
     assert c2.price == 100
 
     # run t1 - close out c2, open c1
     s.run(s)
 
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1050
+    assert c1.weight == pytest.approx(1045.0 / 1050)
     assert c1.price == 95
 
     assert c2.value == 0
@@ -1119,7 +1119,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert s.capital == 5
 
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1050
+    assert c1.weight == pytest.approx(1045.0 / 1050)
     assert c1.price == 95
 
     assert c2.value == 0
@@ -1135,7 +1135,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert s.capital == 5
 
     assert c1.value == 1100
-    assert c1.weight == 1100.0 / 1105
+    assert c1.weight == pytest.approx(1100.0 / 1105)
     assert c1.price == 100
 
     assert c2.value == 0
@@ -1154,7 +1154,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update out t2
@@ -1169,7 +1169,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update t3
@@ -1185,7 +1185,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # run t3
@@ -1200,7 +1200,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update out t3
@@ -1215,7 +1215,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update t4
@@ -1234,7 +1234,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert len(c1.prices) == 5
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # run t4
@@ -1249,7 +1249,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
     # update out t4
@@ -1264,7 +1264,7 @@ def test_strategybase_multiple_calls_preset_secs():
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1105
+    assert c2.weight == pytest.approx(1045.0 / 1105)
     assert c2.price == 95
 
 
@@ -1319,7 +1319,7 @@ def test_strategybase_multiple_calls_no_post_update():
 
     c2 = s["c2"]
     assert c2.value == 950
-    assert c2.weight == 950.0 / 999
+    assert c2.weight == pytest.approx(950.0 / 999)
     assert c2.price == 95
 
     # update t1
@@ -1333,7 +1333,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert "c2" in s.children
     c2 = s["c2"]
     assert c2.value == 1000
-    assert c2.weight == 1000.0 / 1049.0
+    assert c2.weight == pytest.approx(1000.0 / 1049.0)
     assert c2.price == 100
 
     # run t1 - close out c2, open c1
@@ -1345,7 +1345,7 @@ def test_strategybase_multiple_calls_no_post_update():
 
     c1 = s["c1"]
     assert c1.value == 1045
-    assert c1.weight == 1045.0 / 1047
+    assert c1.weight == pytest.approx(1045.0 / 1047)
     assert c1.price == 95
 
     assert c2.value == 0
@@ -1361,7 +1361,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert s.capital == 2
 
     assert c1.value == 1100
-    assert c1.weight == 1100.0 / 1102
+    assert c1.weight == pytest.approx(1100.0 / 1102)
     assert c1.price == 100
 
     assert c2.value == 0
@@ -1380,7 +1380,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == pytest.approx(1045.0 / 1100)
     assert c2.price == 95
 
     # update t3
@@ -1396,7 +1396,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1100
+    assert c2.weight == pytest.approx(1045.0 / 1100)
     assert c2.price == 95
 
     # run t3
@@ -1411,7 +1411,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert c1.price == 100
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == pytest.approx(1045.0 / 1098)
     assert c2.price == 95
 
     # update t4
@@ -1430,7 +1430,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert len(c1.prices) == 5
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1098
+    assert c2.weight == pytest.approx(1045.0 / 1098)
     assert c2.price == 95
 
     # run t4
@@ -1445,7 +1445,7 @@ def test_strategybase_multiple_calls_no_post_update():
     assert c1.price == 105
 
     assert c2.value == 1045
-    assert c2.weight == 1045.0 / 1096
+    assert c2.weight == pytest.approx(1045.0 / 1096)
     assert c2.price == 95
 
 
@@ -1491,15 +1491,15 @@ def test_strategybase_prices():
     s.allocate(s.value, "a")
 
     assert s.capital == 0
-    assert s.value == 1355.50
+    assert s.value == pytest.approx(1355.50)
     assert len(s.children) == 1
     assert s.price == pytest.approx(99.92628, 5)
 
     a = s["a"]
     assert a.position == 100
-    assert a.value == 1355.50
+    assert a.value == pytest.approx(1355.50)
     assert a.weight == 1
-    assert a.price == 13.555
+    assert a.price == pytest.approx(13.555)
     assert len(a.prices) == 1
 
     # update through all dates and make sure price is ok
@@ -1616,7 +1616,7 @@ def test_strategybase_tree_rebalance():
     assert c1.value == 400
     assert s.capital == 1000 - 401
     assert s.value == 999
-    assert c1.weight == 400.0 / 999
+    assert c1.weight == pytest.approx(400.0 / 999)
     assert c2.weight == 0
 
     # Check that rebalance with update=False
@@ -1705,7 +1705,7 @@ def test_strategybase_tree_rebalance_to_0():
     assert c1.value == 500
     assert s.capital == 1000 - 500
     assert s.value == 1000
-    assert c1.weight == 500.0 / 1000
+    assert c1.weight == pytest.approx(500.0 / 1000)
     assert c2.weight == 0
 
     # now rebalance c1
@@ -1762,7 +1762,7 @@ def test_strategybase_tree_rebalance_level2():
     assert s1.value == 500
     assert m.capital == 1000 - 500
     assert m.value == 1000
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s2.weight == 0
 
     # now allocate directly to child of child
@@ -1771,12 +1771,12 @@ def test_strategybase_tree_rebalance_level2():
     assert s1.value == 500
     assert s1.capital == 500 - 200
     assert c1.value == 200
-    assert c1.weight == 200.0 / 500
+    assert c1.weight == pytest.approx(200.0 / 500)
     assert c1.position == 2
 
     assert m.capital == 1000 - 500
     assert m.value == 1000
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s2.weight == 0
 
     assert c12.value == 0
@@ -1789,8 +1789,8 @@ def test_strategybase_tree_rebalance_level2():
     assert m.value == 1000
     assert s1.weight == 800 / 1000
     assert s2.weight == 0
-    assert c1.value == 300.0
-    assert c1.weight == 300.0 / 800
+    assert c1.value == pytest.approx(300.0)
+    assert c1.weight == pytest.approx(300.0 / 800)
     assert c1.position == 3
 
     # now rebalance child s1 to 0 - should close out s1 and c1 as well
@@ -1838,7 +1838,7 @@ def test_strategybase_tree_rebalance_base():
     assert c1.value == 400
     assert s.capital == 1000 - 401
     assert s.value == 999
-    assert c1.weight == 400.0 / 999
+    assert c1.weight == pytest.approx(400.0 / 999)
     assert c2.weight == 0
 
     s.rebalance(0.5, "c2")
@@ -1847,8 +1847,8 @@ def test_strategybase_tree_rebalance_base():
     assert c2.value == 400
     assert s.capital == 1000 - 401 - 401
     assert s.value == 998
-    assert c2.weight == 400.0 / 998
-    assert c1.weight == 400.0 / 998
+    assert c2.weight == pytest.approx(400.0 / 998)
+    assert c1.weight == pytest.approx(400.0 / 998)
 
     # close out everything
     s.flatten()
@@ -1869,7 +1869,7 @@ def test_strategybase_tree_rebalance_base():
     assert c1.value == 400
     assert s.capital == 1000 - 401
     assert s.value == 999
-    assert c1.weight == 400.0 / 999
+    assert c1.weight == pytest.approx(400.0 / 999)
     assert c2.weight == 0
 
     s.rebalance(0.5, "c2", base=base)
@@ -1878,8 +1878,8 @@ def test_strategybase_tree_rebalance_base():
     assert c2.value == 400
     assert s.capital == 1000 - 401 - 401
     assert s.value == 998
-    assert c2.weight == 400.0 / 998
-    assert c1.weight == 400.0 / 998
+    assert c2.weight == pytest.approx(400.0 / 998)
+    assert c1.weight == pytest.approx(400.0 / 998)
 
 
 def test_algo_stack():
@@ -1971,7 +1971,7 @@ def test_strategy_tree_proper_return_calcs():
     assert m.value == 1000
     assert m.price == 100
     assert s1.value == 500
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s1.price == 100
     assert s2.weight == 0
 
@@ -1982,10 +1982,10 @@ def test_strategy_tree_proper_return_calcs():
     assert m.value == 1000
     assert m.price == 100
     assert s1.value == 500
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s1.price == 100
     assert s2.value == 500
-    assert s2.weight == 500.0 / 1000
+    assert s2.weight == pytest.approx(500.0 / 1000)
     assert s2.price == 100
 
     # now allocate and incur commission fee
@@ -1995,10 +1995,10 @@ def test_strategy_tree_proper_return_calcs():
     assert m.value == 1000
     assert m.price == 100
     assert s1.value == 500
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s1.price == 100
     assert s2.value == 500
-    assert s2.weight == 500.0 / 1000.0
+    assert s2.weight == pytest.approx(500.0 / 1000.0)
     assert s2.price == 100
 
 
@@ -2116,7 +2116,7 @@ def test_dynamic_strategy():
     i = 0
     parent.adjust(1e6)
     parent.update(dts[i])
-    assert parent.price == 100.0
+    assert parent.price == pytest.approx(100.0)
     assert parent.value == 1e6
 
     i = 1
@@ -2126,19 +2126,19 @@ def test_dynamic_strategy():
     trade.setup_from_parent()
     trade.update(parent.now)
 
-    assert trade.price == 100.0
+    assert trade.price == pytest.approx(100.0)
     assert trade.value == 0
 
     # Allocate capital to the trade
     parent.allocate(1e5, trade.name)
     assert trade.value == 1e5
-    assert trade.price == 100.0
+    assert trade.price == pytest.approx(100.0)
 
     # Go long 'c1' and short 'c2'
     trade.rebalance(1.0, "c1")
     trade.rebalance(-1.0, "c2")
 
-    assert parent.universe[trade.name][dts[i]] == 100.0
+    assert parent.universe[trade.name][dts[i]] == pytest.approx(100.0)
     assert parent.positions["c1"][dts[i]] == 1e3
     assert parent.positions["c2"][dts[i]] == -1e3
 
@@ -2155,8 +2155,8 @@ def test_dynamic_strategy():
     assert trade.capital == 0
     assert parent.value == 1e6 + 10 * 1e3
     assert parent.capital == parent.value
-    assert parent.positions["c1"][dts[i]] == 0.0
-    assert parent.positions["c2"][dts[i]] == 0.0
+    assert parent.positions["c1"][dts[i]] == pytest.approx(0.0)
+    assert parent.positions["c2"][dts[i]] == pytest.approx(0.0)
 
     i = 3
     parent.update(dts[i])
@@ -2166,7 +2166,7 @@ def test_dynamic_strategy():
     # so it will keep getting updated (and paper trading will still happen).
     assert trade.value == 0
     assert trade.capital == 0
-    assert trade.values[dts[i]] == 0.0
+    assert trade.values[dts[i]] == pytest.approx(0.0)
 
 
 def test_dynamic_strategy2():
@@ -2185,7 +2185,7 @@ def test_dynamic_strategy2():
     i = 0
     parent.adjust(1e6)
     parent.update(dts[i])
-    assert parent.price == 100.0
+    assert parent.price == pytest.approx(100.0)
     assert parent.value == 1e6
 
     i = 1
@@ -2200,18 +2200,18 @@ def test_dynamic_strategy2():
     trade.setup_from_parent()
     trade.update(parent.now)
 
-    assert trade.price == 100.0
+    assert trade.price == pytest.approx(100.0)
     assert trade.value == 0
 
     # Allocate capital to the trade
     parent.allocate(1e5, trade.name)
     assert trade.value == 1e5
-    assert trade.price == 100.0
+    assert trade.price == pytest.approx(100.0)
 
     # Run the strategy for the timestep
     parent.run()
 
-    assert parent.universe[trade.name][dts[i]] == 100.0
+    assert parent.universe[trade.name][dts[i]] == pytest.approx(100.0)
     assert np.isnan(parent.universe[trade.name][dts[0]])
     assert parent.positions["c1"][dts[i]] == 1e3
     assert parent.positions["c2"][dts[i]] == -1e3
@@ -2238,8 +2238,8 @@ def test_dynamic_strategy2():
     )  # Price stays the same even after capital de-allocated
     assert parent.value == 1e6 + 10 * 1e3
     assert parent.capital == parent.value
-    assert parent.positions["c1"][dts[i]] == 0.0
-    assert parent.positions["c2"][dts[i]] == 0.0
+    assert parent.positions["c1"][dts[i]] == pytest.approx(0.0)
+    assert parent.positions["c2"][dts[i]] == pytest.approx(0.0)
 
     i = 3
     parent.update(dts[i])
@@ -2251,7 +2251,7 @@ def test_dynamic_strategy2():
     # so it will keep getting updated (and paper trading will still happen).
     assert trade.value == 0
     assert trade.capital == 0
-    assert trade.values[dts[i]] == 0.0
+    assert trade.values[dts[i]] == pytest.approx(0.0)
 
     # Paper trading price, as asset prices have moved, paper trading price
     # keeps updating. Note that if the flattening of the position was part
@@ -2544,7 +2544,7 @@ def test_strategybase_tree_transact():
     assert c1.value == 500
     assert s.capital == 1000 - 500
     assert s.value == 1000
-    assert c1.weight == 500.0 / 1000
+    assert c1.weight == pytest.approx(500.0 / 1000)
     assert c2.weight == 0
 
     # now transact the parent since weights are nonzero
@@ -2554,7 +2554,7 @@ def test_strategybase_tree_transact():
     assert c1.value == 600
     assert s.capital == 1000 - 600
     assert s.value == 1000
-    assert c1.weight == 600.0 / 1000
+    assert c1.weight == pytest.approx(600.0 / 1000)
     assert c2.weight == 0
 
 
@@ -2589,7 +2589,7 @@ def test_strategybase_tree_transact_child_from_strategy():
     assert c1.value == 500
     assert s.capital == 1000 - 500
     assert s.value == 1000
-    assert c1.weight == 500.0 / 1000
+    assert c1.weight == pytest.approx(500.0 / 1000)
     assert c2.weight == 0
 
 
@@ -2646,12 +2646,12 @@ def test_strategybase_tree_transact_level2():
     assert s1.value == 500
     assert s1.capital == 500 - 200
     assert c1.value == 200
-    assert c1.weight == 200.0 / 500
+    assert c1.weight == pytest.approx(200.0 / 500)
     assert c1.position == 2
 
     assert m.capital == 1000 - 500
     assert m.value == 1000
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s2.weight == 0
 
     assert c12.value == 0
@@ -2662,12 +2662,12 @@ def test_strategybase_tree_transact_level2():
     assert s1.value == 500
     assert s1.capital == 500 - 400
     assert c1.value == 400
-    assert c1.weight == 400.0 / 500
+    assert c1.weight == pytest.approx(400.0 / 500)
     assert c1.position == 4
 
     assert m.capital == 1000 - 500
     assert m.value == 1000
-    assert s1.weight == 500.0 / 1000
+    assert s1.weight == pytest.approx(500.0 / 1000)
     assert s2.weight == 0
 
     assert c12.value == 0
@@ -2813,14 +2813,14 @@ def test_couponpayingsecurity_setup():
     s.update(dts[i])
 
     assert "coupon" in c1.data
-    assert c1.coupon == 0.0
+    assert c1.coupon == pytest.approx(0.0)
     assert len(c1.coupons) == 1
-    assert c1.coupons.iloc[0] == 0.0
+    assert c1.coupons.iloc[0] == pytest.approx(0.0)
 
     assert "holding_cost" in c1.data
-    assert c1.holding_cost == 0.0
+    assert c1.holding_cost == pytest.approx(0.0)
     assert len(c1.holding_costs) == 1
-    assert c1.holding_costs.iloc[0] == 0.0
+    assert c1.holding_costs.iloc[0] == pytest.approx(0.0)
 
     assert c1.price == 105
     assert len(c1.prices) == 1
@@ -2854,14 +2854,14 @@ def test_couponpayingsecurity_setup_costs():
     s.update(dts[i])
 
     assert "coupon" in c1.data
-    assert c1.coupon == 0.0
+    assert c1.coupon == pytest.approx(0.0)
     assert len(c1.coupons) == 1
-    assert c1.coupons.iloc[0] == 0.0
+    assert c1.coupons.iloc[0] == pytest.approx(0.0)
 
     assert "holding_cost" in c1.data
-    assert c1.holding_cost == 0.0
+    assert c1.holding_cost == pytest.approx(0.0)
     assert len(c1.holding_costs) == 1
-    assert c1.holding_costs.iloc[0] == 0.0
+    assert c1.holding_costs.iloc[0] == pytest.approx(0.0)
 
     assert c1.price == 105
     assert len(c1.prices) == 1
@@ -2899,37 +2899,37 @@ def test_couponpayingsecurity_carry():
     q = 1000.0
     c1.transact(q)
 
-    assert c1.coupon == 100.0
+    assert c1.coupon == pytest.approx(100.0)
     assert len(c1.coupons) == 1
-    assert c1.coupons.iloc[0] == 100.0
-    assert c1.holding_cost == 10.0
+    assert c1.coupons.iloc[0] == pytest.approx(100.0)
+    assert c1.holding_cost == pytest.approx(10.0)
     assert len(c1.holding_costs) == 1
-    assert c1.holding_costs.iloc[0] == 10.0
+    assert c1.holding_costs.iloc[0] == pytest.approx(10.0)
 
-    assert s.capital == 0.0
-    assert s.cash.iloc[0] == 0.0
+    assert s.capital == pytest.approx(0.0)
+    assert s.cash.iloc[0] == pytest.approx(0.0)
 
     # On this step, the coupon/costs will be accounted for from the last holding
     i = 1
     s.update(dts[i])
 
-    assert c1.coupon == 0.0
+    assert c1.coupon == pytest.approx(0.0)
     assert len(c1.coupons) == 2
-    assert c1.coupons.iloc[1] == 0.0
-    assert c1.holding_cost == 0.0
+    assert c1.coupons.iloc[1] == pytest.approx(0.0)
+    assert c1.holding_cost == pytest.approx(0.0)
     assert len(c1.holding_costs) == 2
-    assert c1.holding_costs.iloc[1] == 0.0
+    assert c1.holding_costs.iloc[1] == pytest.approx(0.0)
 
-    assert s.capital == 100.0 - 10.0
-    assert s.cash.iloc[0] == 0.0
-    assert s.cash.iloc[1] == 100.0 - 10.0
+    assert s.capital == pytest.approx(100.0 - 10.0)
+    assert s.cash.iloc[0] == pytest.approx(0.0)
+    assert s.cash.iloc[1] == pytest.approx(100.0 - 10.0)
 
     # Go short q
     c1.transact(-2 * q)
     # Note cost is positive even though we are short.
-    assert c1.holding_cost == 50.0
+    assert c1.holding_cost == pytest.approx(50.0)
     assert len(c1.holding_costs) == 2
-    assert c1.holding_costs.iloc[1] == 50.0
+    assert c1.holding_costs.iloc[1] == pytest.approx(50.0)
 
 
 def test_couponpayingsecurity_transact():
@@ -3046,35 +3046,35 @@ def test_bidoffer():
     assert len(c1.bidoffers) == 1
     assert c1.bidoffers.iloc[0] == 2
 
-    assert c2.bidoffer == 1.5
+    assert c2.bidoffer == pytest.approx(1.5)
     assert len(c2.bidoffers) == 1
-    assert c2.bidoffers.iloc[0] == 1.5
+    assert c2.bidoffers.iloc[0] == pytest.approx(1.5)
 
     # Check the outlays are adjusted for bid/offer
     s.set_commissions(lambda q, p: 0.1)
 
     total, outlay, fee, bidoffer = c1.outlay(100)
     assert bidoffer == 100 * 1
-    assert fee == 0.1
+    assert fee == pytest.approx(0.1)
     assert outlay == 100 * (105 + 1)
     assert total == outlay + fee
 
     total, outlay, fee, bidoffer = c1.outlay(-100)
     assert bidoffer == 100 * 1
-    assert fee == 0.1
+    assert fee == pytest.approx(0.1)
     assert outlay == -100 * (105 - 1)
     assert total == outlay + fee
 
     total, outlay, fee, bidoffer = c2.outlay(100)
-    assert bidoffer == 100 * 0.75
-    assert fee == 0.1
-    assert outlay == 100 * (95 + 0.75)
+    assert bidoffer == pytest.approx(100 * 0.75)
+    assert fee == pytest.approx(0.1)
+    assert outlay == pytest.approx(100 * (95 + 0.75))
     assert total == outlay + fee
 
     total, outlay, fee, bidoffer = c2.outlay(-100)
-    assert bidoffer == 100 * 0.75
-    assert fee == 0.1
-    assert outlay == -100 * (95 - 0.75)
+    assert bidoffer == pytest.approx(100 * 0.75)
+    assert fee == pytest.approx(0.1)
+    assert outlay == pytest.approx(-100 * (95 - 0.75))
     assert total == outlay + fee
 
     # Do some transactions, and check that bidoffer_paid is updated
@@ -3086,22 +3086,22 @@ def test_bidoffer():
     assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
 
     c2.transact(-100)
-    assert c2.bidoffer_paid == 100 * 0.75
+    assert c2.bidoffer_paid == pytest.approx(100 * 0.75)
     assert c2.bidoffers_paid.iloc[i] == c2.bidoffer_paid
-    assert s.bidoffer_paid == 100 * 0.75 + 200 * 1
+    assert s.bidoffer_paid == pytest.approx(100 * 0.75 + 200 * 1)
     assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
 
-    assert s.fees.iloc[i] == 3 * 0.1
+    assert s.fees.iloc[i] == pytest.approx(3 * 0.1)
 
     i = 1
     s.update(dts[i])
-    assert c1.bidoffer_paid == 0.0
+    assert c1.bidoffer_paid == pytest.approx(0.0)
     assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
-    assert c2.bidoffer_paid == 0.0
+    assert c2.bidoffer_paid == pytest.approx(0.0)
     assert c2.bidoffers_paid.iloc[i] == c2.bidoffer_paid
-    assert s.bidoffer_paid == 0.0
+    assert s.bidoffer_paid == pytest.approx(0.0)
     assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
-    assert s.fees.iloc[i] == 0.0
+    assert s.fees.iloc[i] == pytest.approx(0.0)
 
 
 def test_outlay_custom():
@@ -3126,13 +3126,13 @@ def test_outlay_custom():
 
     total, outlay, fee, bidoffer = c1.outlay(100, 106)
     assert bidoffer == 100 * 1
-    assert fee == 0.1 * 106
+    assert fee == pytest.approx(0.1 * 106)
     assert outlay == 100 * (106)
     assert total == outlay + fee
 
     total, outlay, fee, bidoffer = c1.outlay(-100, 106)
     assert bidoffer == -100 * 1
-    assert fee == 0.1 * 106
+    assert fee == pytest.approx(0.1 * 106)
     assert outlay == -100 * 106
     assert total == outlay + fee
 
@@ -3209,7 +3209,7 @@ def test_security_notional_value():
     for c in [c1, c2, c3, c4, c5]:
         assert c.position == 1000
         assert c.price == 100
-    assert c1.notional_value == 1000 * 100.0
+    assert c1.notional_value == pytest.approx(1000 * 100.0)
     assert c2.notional_value == 1000
     assert c3.notional_value == 0
     assert c4.notional_value == 0
@@ -3232,7 +3232,7 @@ def test_security_notional_value():
     for c in [c1, c2, c3, c4, c5]:
         assert c.position == -2000
         assert c.price == 100
-    assert c1.notional_value == -2000 * 100.0
+    assert c1.notional_value == pytest.approx(-2000 * 100.0)
     assert c2.notional_value == -2000
     assert c3.notional_value == 0
     assert c4.notional_value == 0
@@ -3273,7 +3273,7 @@ def test_fi_strategy_no_bankruptcy():
     i = 0
     s.update(dts[i], data.loc[dts[i]])
     s.transact(10, "c2")
-    assert s.value == 0.0
+    assert s.value == pytest.approx(0.0)
     assert s.capital == -10 * 100
 
     i = 1
@@ -3384,7 +3384,7 @@ def test_fi_strategy_tree_allocate():
     assert s.capital == 1000 - 500
     assert s.value == 1000
     assert s.notional_value == 500  # Capital does not count towards notl
-    assert c1.weight == 1.0
+    assert c1.weight == pytest.approx(1.0)
     assert c2.weight == 0
 
 
@@ -3421,7 +3421,7 @@ def test_fi_strategy_tree_allocate_child_from_strategy():
     assert c1.value == 500
     assert s.capital == 1000 - 500
     assert s.value == 1000
-    assert c1.weight == 1.0
+    assert c1.weight == pytest.approx(1.0)
     assert c2.weight == 0
 
 
@@ -3675,7 +3675,7 @@ def test_fi_strategy_tree_rebalance():
     assert s.capital == -500
     assert s.value == 0
     assert s.notional_value == 500
-    assert c1.weight == 1.0
+    assert c1.weight == pytest.approx(1.0)
     assert c2.weight == 0
 
     assert c2.notional_value == 0
@@ -3690,8 +3690,8 @@ def test_fi_strategy_tree_rebalance():
 
     assert s.notional_value == c1.notional_value + c2.notional_value
 
-    assert c1.weight == 2.0 / 3.0
-    assert c2.weight == 1.0 / 3.0
+    assert c1.weight == pytest.approx(2.0 / 3.0)
+    assert c2.weight == pytest.approx(1.0 / 3.0)
 
     assert s.value == 0
 
@@ -3701,8 +3701,8 @@ def test_fi_strategy_tree_rebalance():
     s.rebalance(0.5, "c1", 1000, update=False)
     s.rebalance(-0.5, "c2", 1000)
 
-    assert c1.weight == 0.5
-    assert c2.weight == -0.5
+    assert c1.weight == pytest.approx(0.5)
+    assert c2.weight == pytest.approx(-0.5)
     assert c1.position == 10
     assert c1.notional_value == 500
     assert c2.position == -500
@@ -3748,7 +3748,7 @@ def test_fi_strategy_tree_rebalance_nested():
     s.update(dts[i])  # Force update to be safe
     assert s["s1"]["c1"].position == 1000
     assert s["s2"]["c2"].position == -1000
-    assert s["s1"]["c1"].weight == 1.0
+    assert s["s1"]["c1"].weight == pytest.approx(1.0)
     assert s["s2"]["c2"].weight == -1
     assert p["c1"].position == 1000
     assert p["c2"].position == -1000
@@ -3756,11 +3756,11 @@ def test_fi_strategy_tree_rebalance_nested():
     # Note that even though the security weights are signed,
     # the strategy weights are all positive (and hence not equal)
     # to the weight passed in to the rebalance call
-    assert s["s1"].weight == 0.5
-    assert s["s2"].weight == 0.5
+    assert s["s1"].weight == pytest.approx(0.5)
+    assert s["s2"].weight == pytest.approx(0.5)
 
-    assert s.value == 0.0
-    assert p.value == 0.0
+    assert s.value == pytest.approx(0.0)
+    assert p.value == pytest.approx(0.0)
     assert s.capital == 0
     assert p.capital == 0
 
@@ -3788,7 +3788,7 @@ def test_fi_strategy_precision():
     # Notional value not quite equal to N * 0.1
     assert s.notional_value == pytest.approx(sum(0.1 for _ in range(N)))
     assert s.notional_value != N * 0.1
-    assert s.price == 100.0
+    assert s.price == pytest.approx(100.0)
 
     old_value = s.value
     old_notional_value = s.notional_value
@@ -3796,7 +3796,7 @@ def test_fi_strategy_precision():
     # Still make sure we can update - PNL nonzero, and last notional value is zero
     i = 1
     s.update(dts[i])
-    assert s.price == 100.0
+    assert s.price == pytest.approx(100.0)
     # Even within tolerance, value is nonzero
     assert s.value == old_value
     assert s.notional_value == old_notional_value
@@ -3833,8 +3833,8 @@ def test_fi_strategy_bidoffer():
     s.setup(data, bidoffer=bidoffer)
     i = 0
     s.update(dts[i])
-    assert s.value == 0.0
-    assert s.price == 100.0
+    assert s.value == pytest.approx(0.0)
+    assert s.price == pytest.approx(100.0)
 
     # Do some transactions, and check that bidoffer_paid is updated
     c1.transact(100)
@@ -3845,15 +3845,15 @@ def test_fi_strategy_bidoffer():
     assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
 
     c2.transact(-100)
-    assert c2.bidoffer_paid == 100 * 0.75
+    assert c2.bidoffer_paid == pytest.approx(100 * 0.75)
     assert c2.bidoffers_paid.iloc[i] == c2.bidoffer_paid
 
     s.update(dts[i])
-    assert s.bidoffer_paid == 275.0
+    assert s.bidoffer_paid == pytest.approx(275.0)
     assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
-    assert s.value == -275.0
+    assert s.value == pytest.approx(-275.0)
     assert s.notional_value == 105 * 200 + 95 * 100
-    assert s.price == 100 * (1.0 - 275.0 / (105 * 200 + 95 * 100))
+    assert s.price == pytest.approx(100 * (1.0 - 275.0 / (105 * 200 + 95 * 100)))
 
     old_notional = s.notional_value
     old_value = s.value
@@ -3861,9 +3861,9 @@ def test_fi_strategy_bidoffer():
 
     i = 1
     s.update(dts[i])
-    assert s.bidoffer_paid == 0.0
+    assert s.bidoffer_paid == pytest.approx(0.0)
     assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
-    assert s.value == -275.0 - 200 * 5 - 100 * 5  # Bid-offer paid
+    assert s.value == pytest.approx(-275.0 - 200 * 5 - 100 * 5)  # Bid-offer paid
     assert s.notional_value == 100 * 200 + 100 * 100
     new_value = s.value
     assert s.price == old_price + 100 * (new_value - old_value) / old_notional

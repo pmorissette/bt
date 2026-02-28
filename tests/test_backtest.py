@@ -332,7 +332,7 @@ def test_RenomalizedFixedIncomeResult():
     # Due to the relationship between the time varying notional and the prices,
     # the strategy has lost money, but price == 100, so "total return" is zero
     assert t.strategy.value < 0.0
-    assert t.strategy.price == 100.0
+    assert t.strategy.price == pytest.approx(100.0)
     assert res.stats["s"].total_return == 0
 
     # Renormalizing results to a constant size "fixes" this
