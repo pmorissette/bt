@@ -442,7 +442,7 @@ def test_rebalance():
     c1 = s["c1"]
     assert c1.value == 1000
     assert c1.position == 10
-    assert c1.weight == 1.0
+    assert c1.weight == pytest.approx(1.0)
 
     s.temp["weights"] = {"c2": 1}
 
@@ -455,7 +455,7 @@ def test_rebalance():
     assert c1.weight == 0
     assert c2.value == 1000
     assert c2.position == 10
-    assert c2.weight == 1.0
+    assert c2.weight == pytest.approx(1.0)
 
 
 def test_rebalance_with_commissions():
@@ -479,7 +479,7 @@ def test_rebalance_with_commissions():
     c1 = s["c1"]
     assert c1.value == 900
     assert c1.position == 9
-    assert c1.weight == 900 / 999.0
+    assert c1.weight == pytest.approx(900 / 999.0)
 
     s.temp["weights"] = {"c2": 1}
 
@@ -492,7 +492,7 @@ def test_rebalance_with_commissions():
     assert c1.weight == 0
     assert c2.value == 900
     assert c2.position == 9
-    assert c2.weight == 900.0 / 997
+    assert c2.weight == pytest.approx(900.0 / 997)
 
 
 def test_rebalance_with_cash():
@@ -518,7 +518,7 @@ def test_rebalance_with_cash():
     c1 = s["c1"]
     assert c1.value == 400
     assert c1.position == 4
-    assert c1.weight == 400.0 / 999
+    assert c1.weight == pytest.approx(400.0 / 999)
 
     s.temp["weights"] = {"c2": 1}
     # change cash amount
@@ -533,7 +533,7 @@ def test_rebalance_with_cash():
     assert c1.weight == 0
     assert c2.value == 700
     assert c2.position == 7
-    assert c2.weight == 700.0 / 997
+    assert c2.weight == pytest.approx(700.0 / 997)
 
 
 def test_rebalance_updatecount():
@@ -618,19 +618,19 @@ def test_rebalance_fixedincome():
     s.temp["notional_value"] = 1000
     s.temp["weights"] = {"c1": 1}
     assert algo(s)
-    assert s.value == 0.0
+    assert s.value == pytest.approx(0.0)
     assert s.notional_value == 1000
     assert s.capital == -1000
     c1 = s["c1"]
     assert c1.value == 1000
     assert c1.notional_value == 1000
     assert c1.position == 10
-    assert c1.weight == 1.0
+    assert c1.weight == pytest.approx(1.0)
 
     s.temp["weights"] = {"c2": 1}
 
     assert algo(s)
-    assert s.value == 0.0
+    assert s.value == pytest.approx(0.0)
     assert s.notional_value == 1000
     assert s.capital == -1000 * 100
     c2 = s["c2"]
@@ -641,7 +641,7 @@ def test_rebalance_fixedincome():
     assert c2.value == 1000 * 100
     assert c2.notional_value == 1000
     assert c2.position == 1000
-    assert c2.weight == 1.0
+    assert c2.weight == pytest.approx(1.0)
 
 
 def test_select_all():
@@ -1085,9 +1085,9 @@ def test_weight_equally():
     weights = s.temp["weights"]
     assert len(weights) == 2
     assert "c1" in weights
-    assert weights["c1"] == 0.5
+    assert weights["c1"] == pytest.approx(0.5)
     assert "c2" in weights
-    assert weights["c2"] == 0.5
+    assert weights["c2"] == pytest.approx(0.5)
 
 
 def test_weight_specified():
@@ -1107,9 +1107,9 @@ def test_weight_specified():
     weights = s.temp["weights"]
     assert len(weights) == 2
     assert "c1" in weights
-    assert weights["c1"] == 0.6
+    assert weights["c1"] == pytest.approx(0.6)
     assert "c2" in weights
-    assert weights["c2"] == 0.4
+    assert weights["c2"] == pytest.approx(0.4)
 
 
 def test_scale_weights():
@@ -1118,7 +1118,7 @@ def test_scale_weights():
 
     s.temp["weights"] = {"c1": 0.5, "c2": -0.4, "c3": 0}
     assert algo(s)
-    assert s.temp["weights"] == {"c1": -0.25, "c2": 0.2, "c3": 0}
+    assert s.temp["weights"] == pytest.approx({"c1": -0.25, "c2": 0.2, "c3": 0})
 
 
 def test_select_has_data():
@@ -1183,8 +1183,8 @@ def test_weigh_erc(mock_erc):
 
     weights = s.temp["weights"]
     assert len(weights) == 2
-    assert weights["c1"] == 0.3
-    assert weights["c2"] == 0.7
+    assert weights["c1"] == pytest.approx(0.3)
+    assert weights["c2"] == pytest.approx(0.7)
 
 
 def test_weigh_target():
@@ -1204,15 +1204,15 @@ def test_weigh_target():
     assert algo(s)
     weights = s.temp["weights"]
     assert len(weights) == 2
-    assert weights["c1"] == 0.5
-    assert weights["c2"] == 0.5
+    assert weights["c1"] == pytest.approx(0.5)
+    assert weights["c2"] == pytest.approx(0.5)
 
     s.update(dts[1])
     assert algo(s)
     weights = s.temp["weights"]
     assert len(weights) == 2
-    assert weights["c1"] == 1.0
-    assert weights["c2"] == 0.0
+    assert weights["c1"] == pytest.approx(1.0)
+    assert weights["c2"] == pytest.approx(0.0)
 
     s.update(dts[2])
     assert not algo(s)
@@ -1274,8 +1274,8 @@ def test_weigh_mean_var(mock_mv):
 
     weights = s.temp["weights"]
     assert len(weights) == 2
-    assert weights["c1"] == 0.3
-    assert weights["c2"] == 0.7
+    assert weights["c1"] == pytest.approx(0.3)
+    assert weights["c2"] == pytest.approx(0.7)
 
 
 def test_weigh_randomly():
@@ -1286,7 +1286,7 @@ def test_weigh_randomly():
     assert algo(s)
     weights = s.temp["weights"]
     assert len(weights) == 3
-    assert sum(weights.values()) == 1.0
+    assert sum(weights.values()) == pytest.approx(1.0)
 
     algo = algos.WeighRandomly((0.3, 0.5), 0.95)
     assert algo(s)
@@ -1318,14 +1318,14 @@ def test_set_stat():
     print(s.get_data("test_stat"))
     assert algo(s)
     stat = s.temp["stat"]
-    assert stat["c1"] == 4.0
-    assert stat["c2"] == 4.0
+    assert stat["c1"] == pytest.approx(4.0)
+    assert stat["c2"] == pytest.approx(4.0)
 
     s.update(dts[1])
     assert algo(s)
     stat = s.temp["stat"]
-    assert stat["c1"] == 5.0
-    assert stat["c2"] == 6.0
+    assert stat["c1"] == pytest.approx(5.0)
+    assert stat["c2"] == pytest.approx(6.0)
 
 
 def test_set_stat_legacy():
@@ -1346,14 +1346,14 @@ def test_set_stat_legacy():
     s.update(dts[0])
     assert algo(s)
     stat = s.temp["stat"]
-    assert stat["c1"] == 4.0
-    assert stat["c2"] == 4.0
+    assert stat["c1"] == pytest.approx(4.0)
+    assert stat["c2"] == pytest.approx(4.0)
 
     s.update(dts[1])
     assert algo(s)
     stat = s.temp["stat"]
-    assert stat["c1"] == 5.0
-    assert stat["c2"] == 6.0
+    assert stat["c1"] == pytest.approx(5.0)
+    assert stat["c2"] == pytest.approx(6.0)
 
 
 def test_stat_total_return():
@@ -1373,8 +1373,8 @@ def test_stat_total_return():
     assert algo(s)
     stat = s.temp["stat"]
     assert len(stat) == 2
-    assert stat["c1"] == 105.0 / 100 - 1
-    assert stat["c2"] == 95.0 / 100 - 1
+    assert stat["c1"] == pytest.approx(105.0 / 100 - 1)
+    assert stat["c2"] == pytest.approx(95.0 / 100 - 1)
 
 
 def test_select_n():
@@ -1469,9 +1469,9 @@ def test_limit_weights():
     algo = algos.LimitWeights(0.5)
     assert algo(s)
     w = s.temp["weights"]
-    assert w["c1"] == 0.5
-    assert w["c2"] == 0.25
-    assert w["c3"] == 0.25
+    assert w["c1"] == pytest.approx(0.5)
+    assert w["c2"] == pytest.approx(0.25)
+    assert w["c3"] == pytest.approx(0.25)
 
     algo = algos.LimitWeights(0.3)
     assert algo(s)
@@ -1482,9 +1482,9 @@ def test_limit_weights():
     algo = algos.LimitWeights(0.5)
     assert algo(s)
     w = s.temp["weights"]
-    assert w["c1"] == 0.4
-    assert w["c2"] == 0.3
-    assert w["c3"] == 0.3
+    assert w["c1"] == pytest.approx(0.4)
+    assert w["c2"] == pytest.approx(0.3)
+    assert w["c3"] == pytest.approx(0.3)
 
 
 def test_limit_deltas():
@@ -1498,45 +1498,45 @@ def test_limit_deltas():
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
     w = s.temp["weights"]
-    assert w["c1"] == 0.1
+    assert w["c1"] == pytest.approx(0.1)
 
     s.temp["weights"] = {"c1": 0.05}
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
     w = s.temp["weights"]
-    assert w["c1"] == 0.05
+    assert w["c1"] == pytest.approx(0.05)
 
     s.temp["weights"] = {"c1": 0.5, "c2": 0.5}
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
     w = s.temp["weights"]
     assert len(w) == 2
-    assert w["c1"] == 0.1
-    assert w["c2"] == 0.1
+    assert w["c1"] == pytest.approx(0.1)
+    assert w["c2"] == pytest.approx(0.1)
 
     s.temp["weights"] = {"c1": 0.5, "c2": -0.5}
     algo = algos.LimitDeltas(0.1)
     assert algo(s)
     w = s.temp["weights"]
     assert len(w) == 2
-    assert w["c1"] == 0.1
-    assert w["c2"] == -0.1
+    assert w["c1"] == pytest.approx(0.1)
+    assert w["c2"] == pytest.approx(-0.1)
 
     s.temp["weights"] = {"c1": 0.5, "c2": -0.5}
     algo = algos.LimitDeltas({"c1": 0.1})
     assert algo(s)
     w = s.temp["weights"]
     assert len(w) == 2
-    assert w["c1"] == 0.1
-    assert w["c2"] == -0.5
+    assert w["c1"] == pytest.approx(0.1)
+    assert w["c2"] == pytest.approx(-0.5)
 
     s.temp["weights"] = {"c1": 0.5, "c2": -0.5}
     algo = algos.LimitDeltas({"c1": 0.1, "c2": 0.3})
     assert algo(s)
     w = s.temp["weights"]
     assert len(w) == 2
-    assert w["c1"] == 0.1
-    assert w["c2"] == -0.3
+    assert w["c1"] == pytest.approx(0.1)
+    assert w["c2"] == pytest.approx(-0.3)
 
     # set exisitng weight
     s.children["c1"] = bt.core.SecurityBase("c1")
@@ -1549,8 +1549,8 @@ def test_limit_deltas():
     assert algo(s)
     w = s.temp["weights"]
     assert len(w) == 2
-    assert w["c1"] == 0.4
-    assert w["c2"] == -0.6
+    assert w["c1"] == pytest.approx(0.4)
+    assert w["c2"] == pytest.approx(-0.6)
 
 
 def test_rebalance_over_time():
@@ -1573,15 +1573,15 @@ def test_rebalance_over_time():
     assert algo(target)
     w = target.temp["weights"]
     assert len(w) == 2
-    assert w["a"] == 0.5
-    assert w["b"] == 0.5
+    assert w["a"] == pytest.approx(0.5)
+    assert w["b"] == pytest.approx(0.5)
 
     assert rb.called
     called_tgt = rb.call_args[0][0]
     called_tgt_w = called_tgt.temp["weights"]
     assert len(called_tgt_w) == 2
-    assert called_tgt_w["a"] == 0.5
-    assert called_tgt_w["b"] == 0.5
+    assert called_tgt_w["a"] == pytest.approx(0.5)
+    assert called_tgt_w["b"] == pytest.approx(0.5)
 
     # update weights for next call
     a.weight = 0.5
@@ -1593,8 +1593,8 @@ def test_rebalance_over_time():
     assert algo(target)
     w = target.temp["weights"]
     assert len(w) == 2
-    assert w["a"] == 1.0
-    assert w["b"] == 0.0
+    assert w["a"] == pytest.approx(1.0)
+    assert w["b"] == pytest.approx(0.0)
 
     assert rb.call_count == 2
 
