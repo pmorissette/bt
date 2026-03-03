@@ -1126,9 +1126,9 @@ class WeighInvVol(Algo):
         t0 = target.now - self.lag
         prc = target.universe.loc[t0 - self.lookback : t0, selected]
         returns = prc.to_returns().dropna()
-        # Workaround for ffn using np.std(DataFrame) which returns a scalar
-        # in pandas 3.0 instead of per-column Series
-        vol = 1.0 / returns.std(ddof=1)
+        # Explicit axis=0 to compute per-column std and avoid FutureWarning
+        # from pandas (axis=None will reduce over both axes in a future version)
+        vol = 1.0 / returns.std(axis=0, ddof=1)
         vol[np.isinf(vol)] = np.nan
         tw = vol / vol.sum()
         target.temp["weights"] = tw.dropna()
