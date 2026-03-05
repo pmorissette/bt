@@ -18,8 +18,10 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.11]
-        os: [ubuntu-latest]
+        python-version:
+          - 3.11
+        os:
+          - ubuntu-latest
         pandas_version:
           - '>=1,<2'
           - '>=2,<3'
