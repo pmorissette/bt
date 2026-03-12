@@ -137,6 +137,31 @@ def test_can_disable_progress_bar_from_run():
     assert  len(result.get_transactions()) > 0
 
 
+def test_run_respects_backtest_progress_bar_setting():
+    from contextlib import redirect_stderr
+    from io import StringIO
+
+    output_capture = StringIO()
+
+    data = pd.DataFrame(
+        index=pd.date_range("2010-01-01", periods=5), columns=["a", "b"], data=100
+    )
+    s = bt.Strategy("test", [
+        bt.algos.SelectAll(),
+        bt.algos.WeighEqually(),
+        bt.algos.Rebalance()
+    ])
+
+    # progress_bar=False on backtest should suppress run()'s bar too
+    b = bt.Backtest(s, data, progress_bar=False)
+
+    with redirect_stderr(output_capture):
+        result = bt.run(b)
+
+    assert output_capture.getvalue() == ""
+    assert len(result.get_transactions()) > 0
+
+
 def test_Results_helper_functions():
 
     names = ["foo", "bar"]
