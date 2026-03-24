@@ -44,6 +44,12 @@ jobs:
     - name: Install cibuildwheel
       run: python -m pip install cibuildwheel
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: all
+      if: runner.os == 'Linux'
+
     - name: Python Wheel Steps (Linux - cibuildwheel)
       run: python -m cibuildwheel --output-dir dist
       env:
