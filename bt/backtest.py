@@ -14,20 +14,26 @@ from tqdm import tqdm
 import bt
 
 
-def run(*backtests):
+def run(*backtests, progress_bar=None):
     """
     Runs a series of backtests and returns a Result
     object containing the results of the backtests.
 
     Args:
         * backtest (*list): List of backtests.
+        * progress_bar (bool): Show progress bar. Defaults to True unless
+          all backtests have progress_bar=False.
 
     Returns:
         Result
 
     """
+    # If progress_bar not explicitly set, derive from backtests' settings
+    if progress_bar is None:
+        progress_bar = any(getattr(bkt, "progress_bar", True) for bkt in backtests)
+
     # run each backtest
-    for bkt in tqdm(backtests):
+    for bkt in tqdm(backtests, disable=not progress_bar):
         bkt.run()
 
     return Result(*backtests)
@@ -152,7 +158,7 @@ class Backtest(object):
     ):
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
-            raise Exception("data provided has some duplicate column names: \n%s \n" "Please remove duplicates!" % cols)
+            raise Exception("data provided has some duplicate column names: \n%s \nPlease remove duplicates!" % cols)
 
         # we want to reuse strategy logic - copy it!
         # basically strategy is a template
@@ -208,10 +214,12 @@ class Backtest(object):
                     columns=old.columns,
                     index=[old.index[0] - pd.DateOffset(days=1)],
                 )
+                # Ensure dtypes match to avoid FutureWarning
+                empty_row = empty_row.astype(old.dtypes)
                 new = pd.concat([empty_row, old])
                 self.additional_data[k] = new
             elif isinstance(old, pd.Series) and old.index.equals(data.index):
-                empty_row = pd.Series(np.nan, index=[old.index[0] - pd.DateOffset(days=1)])
+                empty_row = pd.Series(np.nan, index=[old.index[0] - pd.DateOffset(days=1)], dtype=old.dtype)
                 new = pd.concat([empty_row, old])
                 self.additional_data[k] = new
 
@@ -549,7 +557,7 @@ class RandomBenchmarkResult(Result):
 
         """
         if statistic not in self.r_stats.index:
-            raise ValueError("Invalid statistic. Valid statistics" "are the statistics in self.stats")
+            raise ValueError("Invalid statistic. Valid statisticsare the statistics in self.stats")
 
         if title is None:
             title = "%s histogram" % statistic
@@ -588,7 +596,7 @@ class RenormalizedFixedIncomeResult(Result):
     def __init__(self, normalizing_value, *backtests):
         for backtest in backtests:
             if not backtest.strategy.fixed_income:
-                raise ValueError("Cannot apply RenormalizedFixedIncomeResult " "because backtest %s is not on a fixed income " "strategy" % backtest.name)
+                raise ValueError("Cannot apply RenormalizedFixedIncomeResult because backtest %s is not on a fixed income strategy" % backtest.name)
         if not isinstance(normalizing_value, dict):
             normalizing_value = {x.name: normalizing_value for x in backtests}
         tmp = [pd.DataFrame({x.name: self._price(x.strategy, normalizing_value[x.name])}) for x in backtests]

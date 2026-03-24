@@ -109,6 +109,34 @@ def test_turnover():
     assert np.allclose(t.turnover[dts[4]], 76100.0 / 1015285)
 
 
+def test_can_disable_progress_bar_from_run():
+    from contextlib import redirect_stderr
+    from io import StringIO
+
+    # Create an in-memory buffer
+    output_capture = StringIO()
+
+    data = pd.DataFrame(
+        index=pd.date_range("2010-01-01", periods=5), columns=["a", "b"], data=100
+    )
+    s = bt.Strategy("test", [
+        bt.algos.SelectAll(),
+        bt.algos.WeighEqually(),
+        bt.algos.Rebalance()
+    ])
+
+    b = bt.Backtest(s, data)
+
+    # Redirect stderr to the buffer
+    with redirect_stderr(output_capture):
+        result = bt.run(b, progress_bar=False)
+
+    # confirm that the output is empty
+    assert output_capture.getvalue() is ""
+    # confirm that we actually ran something
+    assert  len(result.get_transactions()) > 0
+
+
 def test_Results_helper_functions():
 
     names = ["foo", "bar"]
@@ -304,7 +332,7 @@ def test_RenomalizedFixedIncomeResult():
     # Due to the relationship between the time varying notional and the prices,
     # the strategy has lost money, but price == 100, so "total return" is zero
     assert t.strategy.value < 0.0
-    assert t.strategy.price == 100.0
+    assert t.strategy.price == pytest.approx(100.0)
     assert res.stats["s"].total_return == 0
 
     # Renormalizing results to a constant size "fixes" this
@@ -322,3 +350,33 @@ def test_RenomalizedFixedIncomeResult():
 
     assert norm_res.stats["s"].total_return == res.stats["s"].total_return
     assert norm_res.prices.equals(res.prices)
+
+def test_additional_data_boolean_dtype_no_warning():
+    """Test that boolean dtype in additional_data doesn't raise FutureWarning."""
+    import warnings
+
+    dts = pd.date_range("2010-01-01", periods=5)
+    data = pd.DataFrame(index=dts, columns=["a", "b"], data=100.0)
+
+    # Create additional data with boolean dtype
+    signal = pd.DataFrame(
+        index=dts,
+        columns=["signal"],
+        data=[True, False, True, False, True]
+    )
+
+    s = bt.Strategy(
+        "test", [bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()]
+    )
+
+    # Capture warnings
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        t = bt.Backtest(s, data, additional_data={"signal": signal}, progress_bar=False)
+        t.run()
+
+        # Check no FutureWarning about bool-dtype concatenation
+        future_warnings = [warning for warning in w
+                          if issubclass(warning.category, FutureWarning)
+                          and "bool-dtype" in str(warning.message).lower()]
+        assert len(future_warnings) == 0

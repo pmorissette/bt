@@ -18,24 +18,27 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.9]
-        os: [ubuntu-latest]
+        python-version:
+          - 3.11
+        os:
+          - ubuntu-latest
         pandas_version:
-          - '>=2.2'
-          - '<2'
+          - '>=1,<2'
+          - '>=2,<3'
+          - '>=3,<4'
         numpy_version:
           - '<2'
           - '>=2'
         exclude:
           - numpy_version: '>=2'
-            pandas_version: '<2'
+            pandas_version: '>=1,<2'
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -43,6 +46,9 @@ jobs:
 
     - name: Install dependencies
       run: make develop
+
+    - name: Install specific pandas and numpy versions
+      run: pip install "pandas${{ matrix.pandas_version }}" "numpy${{ matrix.numpy_version }}"
 
     - name: Test
       run: make test
