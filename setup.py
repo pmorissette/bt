@@ -25,7 +25,7 @@ else:
 
 setup(
     name="bt",
-    version="1.1.5",
+    version="1.2.0",
     author="Philippe Morissette",
     author_email="morissette.philippe@gmail.com",
     description="A flexible backtesting framework for Python",
