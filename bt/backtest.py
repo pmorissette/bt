@@ -107,8 +107,16 @@ class Backtest(object):
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
           Strategy.
-        * commissions (fn(quantity, price)): The commission function
-          to be used. Ex: commissions=lambda q, p: max(1, abs(q) * 0.01)
+        * commissions: The transaction cost model. Either:
+
+          - a callable ``fn(quantity, price) -> float`` (the original flat hook,
+            e.g. ``commissions=lambda q, p: max(1, abs(q) * 0.01)``), or
+          - an instance of :class:`bt.core.CostModel` (e.g.
+            :class:`bt.core.SqrtCostModel`,
+            :class:`bt.core.AlmgrenChrissCostModel`) for nonlinear,
+            size-aware costs that depend on bar volume and volatility.
+            When a ``CostModel`` is passed, ``volume`` and ``volatility``
+            must also be supplied.
         * integer_positions (bool): Whether to use integer positions for securities
           in the backtest. This can have unintended consequences when prices are
           high relative to the amount of capital (i.e. though split-adjusted prices,
@@ -127,6 +135,12 @@ class Backtest(object):
               will by used
               by :class:`CouponPayingSecurity <bt.core.CouponPayingSecurity>`
               to calculate asymmetric holding cost of long (or short) positions.
+        * volume (DataFrame): per-security bar volume, same index and columns
+          as ``data``. Required when ``commissions`` is a ``CostModel``,
+          ignored otherwise.
+        * volatility (DataFrame): per-security bar volatility, same index and
+          columns as ``data``. Required when ``commissions`` is a
+          ``CostModel``, ignored otherwise.
 
 
     Attributes:
@@ -155,6 +169,8 @@ class Backtest(object):
         integer_positions=True,
         progress_bar=False,
         additional_data=None,
+        volume=None,
+        volatility=None,
     ):
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
@@ -171,7 +187,17 @@ class Backtest(object):
         self.name = name if name is not None else strategy.name
         self.progress_bar = progress_bar
 
-        if commissions is not None:
+        self.cost_model = None
+        self.volume = None
+        self.volatility = None
+
+        if isinstance(commissions, bt.core.CostModel):
+            self._validate_cost_model(volume, volatility, data)
+            self.cost_model = commissions
+            self.volume = self._align_impact_frame(volume)
+            self.volatility = self._align_impact_frame(volatility)
+            self._install_cost_model_hook()
+        elif commissions is not None:
             self.strategy.set_commissions(commissions)
 
         self.stats = {}
@@ -179,6 +205,68 @@ class Backtest(object):
         self._weights = None
         self._sweights = None
         self.has_run = False
+
+    def _validate_cost_model(self, volume, volatility, data):
+        if volume is None or volatility is None:
+            raise ValueError("`volume` and `volatility` are required when `commissions` is a CostModel.")
+        if not volume.index.equals(data.index):
+            raise ValueError("`volume` index must match `data` index.")
+        if not volatility.index.equals(data.index):
+            raise ValueError("`volatility` index must match `data` index.")
+        if not volume.columns.equals(data.columns):
+            raise ValueError("`volume` columns must match `data` columns.")
+        if not volatility.columns.equals(data.columns):
+            raise ValueError("`volatility` columns must match `data` columns.")
+
+    def _align_impact_frame(self, df):
+        """Prepend the t0-1 NaN row that ``_process_data`` adds to ``data``,
+        so per-bar lookups by ``security.now`` always resolve.
+        """
+        empty_row = pd.DataFrame(
+            np.nan,
+            columns=df.columns,
+            index=[df.index[0] - pd.DateOffset(days=1)],
+        ).astype(df.dtypes)
+        return pd.concat([empty_row, df])
+
+    def _install_cost_model_hook(self):
+        """Wire per-security ``commission`` after strategy setup. Also covers
+        lazily-created child securities by hooking ``_create_child_if_needed``.
+        """
+        original_setup = self.strategy.setup
+        original_create = self.strategy._create_child_if_needed
+
+        def hooked_setup(*args, **kwargs):
+            result = original_setup(*args, **kwargs)
+            for member in self.strategy.members:
+                if isinstance(member, bt.core.SecurityBase):
+                    self._wire_security(member)
+            return result
+
+        def hooked_create(child):
+            result = original_create(child)
+            sec = self.strategy.children.get(child)
+            if isinstance(sec, bt.core.SecurityBase):
+                self._wire_security(sec)
+            return result
+
+        self.strategy.setup = hooked_setup
+        self.strategy._create_child_if_needed = hooked_create
+
+    def _wire_security(self, security):
+        if getattr(security, "_cost_model_wired", False):
+            return
+        cost_model = self.cost_model
+        V_df = self.volume
+        S_df = self.volatility
+
+        def commission(q, p):
+            dt = security.now
+            name = security.name
+            return cost_model.cost(q, p, V_df.at[dt, name], S_df.at[dt, name])
+
+        security.commission = commission
+        security._cost_model_wired = True
 
     def _process_data(self, data, additional_data):
         # add virtual row at t0-1day with NaNs
