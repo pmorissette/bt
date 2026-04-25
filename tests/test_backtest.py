@@ -380,3 +380,215 @@ def test_additional_data_boolean_dtype_no_warning():
                           if issubclass(warning.category, FutureWarning)
                           and "bool-dtype" in str(warning.message).lower()]
         assert len(future_warnings) == 0
+
+
+def _impact_universe(n_periods=60, n_securities=3, seed=0):
+    np.random.seed(seed)
+    dates = pd.date_range("2020-01-01", periods=n_periods, freq="B")
+    cols = [chr(ord("A") + i) for i in range(n_securities)]
+    prices = pd.DataFrame(
+        100 + np.random.randn(n_periods, n_securities).cumsum(axis=0),
+        index=dates,
+        columns=cols,
+    )
+    volume = pd.DataFrame(1_000_000.0, index=dates, columns=cols)
+    volatility = pd.DataFrame(0.02, index=dates, columns=cols)
+    return prices, volume, volatility
+
+
+def _ew_strategy(name="ew"):
+    return bt.Strategy(
+        name,
+        [
+            bt.algos.RunQuarterly(),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+    )
+
+
+def test_backtest_cost_model_runs_and_charges_fees():
+    prices, volume, volatility = _impact_universe()
+    bkt = bt.Backtest(
+        _ew_strategy(),
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+
+    bt.run(bkt)
+
+    assert bkt.has_run
+    assert bkt.strategy.fees.sum() > 0.0
+    assert len(bkt.strategy.prices) == len(bkt.dates)
+
+
+def test_backtest_cost_model_ac_zero_alpha_beta_matches_flat_commission():
+    prices, volume, volatility = _impact_universe()
+    eps = 0.0005
+
+    cost_model = bt.Backtest(
+        _ew_strategy("cost_model"),
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=eps),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+    legacy = bt.Backtest(
+        _ew_strategy("legacy"),
+        prices,
+        commissions=lambda q, p: abs(q) * p * eps,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+
+    bt.run(cost_model, legacy)
+
+    np.testing.assert_allclose(
+        cost_model.strategy.prices.values, legacy.strategy.prices.values
+    )
+    np.testing.assert_allclose(
+        cost_model.strategy.fees.sum(), legacy.strategy.fees.sum()
+    )
+
+
+def test_backtest_cost_model_active_ac_costs_higher_than_flat_path():
+    prices, volume, volatility = _impact_universe()
+    eps = 0.0005
+
+    flat = bt.Backtest(
+        _ew_strategy("flat"),
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=eps),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+    active = bt.Backtest(
+        _ew_strategy("active"),
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=1, beta=1, epsilon=eps),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+
+    bt.run(flat, active)
+
+    assert active.strategy.fees.sum() > flat.strategy.fees.sum()
+
+
+def test_backtest_sqrt_cost_model_runs():
+    prices, volume, volatility = _impact_universe()
+    bkt = bt.Backtest(
+        _ew_strategy(),
+        prices,
+        commissions=bt.SqrtCostModel(Y=0.6),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+
+    bt.run(bkt)
+    assert bkt.strategy.fees.sum() > 0.0
+
+
+def test_backtest_cost_model_validates_index_alignment():
+    prices, volume, volatility = _impact_universe()
+    misaligned = volume.iloc[1:].copy()
+    with pytest.raises(ValueError, match="index"):
+        bt.Backtest(
+            _ew_strategy(),
+            prices,
+            commissions=bt.AlmgrenChrissCostModel(),
+            volume=misaligned,
+            volatility=volatility,
+            progress_bar=False,
+        )
+
+
+def test_backtest_cost_model_validates_columns_alignment():
+    prices, volume, volatility = _impact_universe()
+    misaligned = volume.rename(columns={volume.columns[0]: "Z"})
+    with pytest.raises(ValueError, match="columns"):
+        bt.Backtest(
+            _ew_strategy(),
+            prices,
+            commissions=bt.AlmgrenChrissCostModel(),
+            volume=misaligned,
+            volatility=volatility,
+            progress_bar=False,
+        )
+
+
+def test_backtest_cost_model_requires_volume_and_volatility():
+    prices, volume, volatility = _impact_universe()
+    with pytest.raises(ValueError, match="required"):
+        bt.Backtest(
+            _ew_strategy(),
+            prices,
+            commissions=bt.AlmgrenChrissCostModel(),
+            progress_bar=False,
+        )
+
+
+def test_backtest_cost_model_does_not_pollute_legacy_path():
+    """Running a Backtest with a CostModel must not perturb the unmodified path."""
+    prices, volume, volatility = _impact_universe()
+
+    bt.run(
+        bt.Backtest(
+            _ew_strategy(),
+            prices,
+            commissions=bt.AlmgrenChrissCostModel(),
+            volume=volume,
+            volatility=volatility,
+            progress_bar=False,
+        )
+    )
+    legacy = bt.Backtest(_ew_strategy(), prices, progress_bar=False)
+    bt.run(legacy)
+
+    assert legacy.strategy.fees.sum() == 0.0
+
+
+def test_backtest_cost_model_cost_scales_with_qty_via_volume():
+    """Halving available volume (raising participation 10x) should raise AC depth/perm
+    cost roughly proportionally."""
+    prices, volume, volatility = _impact_universe()
+
+    base_vol = volume.copy()
+    thin_vol = volume / 10.0  # same trades execute at 10x participation
+
+    base = bt.Backtest(
+        _ew_strategy("base"),
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=1, beta=1, epsilon=0.0),
+        volume=base_vol,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+    thin = bt.Backtest(
+        _ew_strategy("thin"),
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=1, beta=1, epsilon=0.0),
+        volume=thin_vol,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+
+    bt.run(base, thin)
+
+    # AC depth + perm scale linearly in (|q|/V) -> 10x participation -> ~10x cost
+    assert thin.strategy.fees.sum() > 5 * base.strategy.fees.sum()

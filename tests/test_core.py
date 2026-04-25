@@ -12,6 +12,7 @@ from bt.core import Node, StrategyBase, SecurityBase, AlgoStack, Strategy
 from bt.core import FixedIncomeStrategy, HedgeSecurity, FixedIncomeSecurity
 from bt.core import CouponPayingSecurity, CouponPayingHedgeSecurity
 from bt.core import is_zero
+from bt.core import CostModel, SqrtCostModel, AlmgrenChrissCostModel
 
 
 def test_node_tree1():
@@ -3979,3 +3980,74 @@ def test_strategy_combined_universe_regression_backtest_run_first():
     ]
     result_obj = result["parent_strategy"]
     assert len(weights.columns) == 2
+
+
+def test_cost_model_base_class_raises_not_implemented():
+    cm = CostModel()
+    with pytest.raises(NotImplementedError):
+        cm.cost(100.0, 50.0, 1_000_000.0, 0.02)
+
+
+def test_sqrt_cost_model_matches_closed_form():
+    """cost = (2/3) * Y * sigma * |q| * sqrt(|q|/V) * p"""
+    cm = SqrtCostModel(Y=0.6)
+    q, p, V, sigma = 1000.0, 100.0, 1_000_000.0, 0.02
+    assert cm.cost(q, p, V, sigma) == pytest.approx(25.29822128134704)
+
+
+def test_sqrt_cost_model_zero_volume_returns_zero():
+    cm = SqrtCostModel()
+    assert cm.cost(100.0, 50.0, 0.0, 0.02) == 0.0
+    assert cm.cost(100.0, 50.0, -1.0, 0.02) == 0.0
+
+
+def test_sqrt_cost_model_zero_quantity_returns_zero():
+    cm = SqrtCostModel()
+    assert cm.cost(0.0, 50.0, 1_000_000.0, 0.02) == 0.0
+
+
+def test_sqrt_cost_model_sign_invariance():
+    """Cost depends on |q|, so buying and selling N shares cost the same."""
+    cm = SqrtCostModel()
+    args = (50.0, 1_000_000.0, 0.02)
+    assert cm.cost(1000.0, *args) == cm.cost(-1000.0, *args)
+
+
+def test_almgren_chriss_cost_model_three_components():
+    """Verify the documented decomposition for a known input."""
+    cm = AlmgrenChrissCostModel(alpha=1.0, beta=1.0, epsilon=0.0005)
+    q, p, V, sigma = 1000.0, 100.0, 1_000_000.0, 0.02
+    assert cm.cost(q, p, V, sigma) == pytest.approx(53.0)
+
+
+def test_almgren_chriss_cost_model_flat_bps_degenerate_case():
+    """AC(0, 0, eps) reduces to a pure linear bps fee: cost = eps * |q| * p."""
+    cm = AlmgrenChrissCostModel(alpha=0.0, beta=0.0, epsilon=0.0005)
+    q, p, V, sigma = 1234.0, 87.5, 1_000_000.0, 0.05
+    assert cm.cost(q, p, V, sigma) == pytest.approx(53.9875)
+
+
+def test_almgren_chriss_cost_model_zero_volume_returns_zero():
+    cm = AlmgrenChrissCostModel()
+    assert cm.cost(100.0, 50.0, 0.0, 0.02) == 0.0
+
+
+def test_almgren_chriss_cost_model_zero_quantity_returns_zero():
+    cm = AlmgrenChrissCostModel()
+    assert cm.cost(0.0, 50.0, 1_000_000.0, 0.02) == 0.0
+
+
+def test_almgren_chriss_cost_model_sign_invariance():
+    cm = AlmgrenChrissCostModel()
+    args = (100.0, 1_000_000.0, 0.02)
+    assert cm.cost(500.0, *args) == cm.cost(-500.0, *args)
+
+
+def test_almgren_chriss_cost_model_quadratic_in_participation():
+    """Doubling |q| at fixed V doubles participation; combined depth+perm cost
+    grows roughly as |q|^2 because both terms scale with |q|/V."""
+    cm = AlmgrenChrissCostModel(alpha=1.0, beta=1.0, epsilon=0.0)
+    p, V, sigma = 100.0, 1_000_000.0, 0.02
+    c1 = cm.cost(1000.0, p, V, sigma)
+    c2 = cm.cost(2000.0, p, V, sigma)
+    assert c2 == pytest.approx(4.0 * c1)
