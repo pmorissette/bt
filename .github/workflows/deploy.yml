@@ -15,9 +15,15 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
         include:
           - python-version: "3.10"
-            cibuildwheel: "cp10"
+            cibuildwheel: "cp310"
           - python-version: "3.11"
             cibuildwheel: "cp311"
           - python-version: "3.12"
