@@ -24,15 +24,11 @@ jobs:
           - 3.11
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v6
+    - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+    - uses: actions-ext/python/setup@main
       with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-        cache-dependency-path: 'setup.py'
+        version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: make develop
