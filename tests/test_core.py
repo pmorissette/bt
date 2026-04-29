@@ -287,13 +287,13 @@ def test_strategybase_tree_setup():
     assert len(c1.data) == 3
     assert len(c2.data) == 3
 
-    assert len(s._prices) == 3
-    assert len(c1._prices) == 3
-    assert len(c2._prices) == 3
+    assert len(s._prices_arr) == 3
+    assert len(c1._prices_arr) == 3
+    assert len(c2._prices_arr) == 3
 
-    assert len(s._values) == 3
-    assert len(c1._values) == 3
-    assert len(c2._values) == 3
+    assert len(s._values_arr) == 3
+    assert len(c1._values_arr) == 3
+    assert len(c2._values_arr) == 3
 
 
 def test_strategybase_tree_adjust():
