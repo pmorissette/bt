@@ -37,6 +37,9 @@ nosetests.xml
 coverage.xml
 python_junit.xml
 
+# Typing
+.mypy_cache/
+
 # Translations
 *.mo
 
