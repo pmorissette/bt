@@ -24,7 +24,7 @@ jobs:
           - 3.11
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - uses: actions-ext/python/setup@main
       with:
@@ -55,6 +55,7 @@ jobs:
       run: python -m cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: "cp311-*"
+        CIBW_BEFORE_BUILD: "python -c \"from pathlib import Path; [p.unlink() for pattern in ('*.pyd', '*.so', '*.dylib') for p in Path('bt').glob(pattern)]\""
 
     - name: Check Wheels
       run: twine check dist/*
