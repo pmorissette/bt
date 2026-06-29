@@ -202,6 +202,7 @@ class Backtest(object):
 
         self.stats = {}
         self._original_prices = None
+        self._stat_prices = None
         self._weights = None
         self._sweights = None
         self.has_run = False
@@ -353,8 +354,19 @@ class Backtest(object):
                 if self.progress_bar:
                     bar.stop()
 
-        self.stats = self.strategy.prices.calc_perf_stats()
         self._original_prices = self.strategy.prices
+        self._stat_prices = self._compute_stat_prices()
+        self.stats = self._stat_prices.calc_perf_stats()
+
+    def _compute_stat_prices(self):
+        prices = self.strategy.prices
+        transactions = self.strategy.get_transactions()
+
+        if not transactions.empty:
+            first_transaction_date = transactions.index.get_level_values(0)[0]
+            return prices.loc[first_transaction_date:]
+
+        return prices
 
     @property
     def weights(self):
@@ -469,7 +481,7 @@ class Result(ffn.GroupStats):
     """
 
     def __init__(self, *backtests):
-        tmp = [pd.DataFrame({x.name: x.strategy.prices}) for x in backtests]
+        tmp = [pd.DataFrame({x.name: x._stat_prices if x._stat_prices is not None else x.strategy.prices}) for x in backtests]
         super(Result, self).__init__(*tmp)
         self.backtest_list = backtests
         self.backtests = {x.name: x for x in backtests}
