@@ -264,6 +264,58 @@ def test_Results_helper_functions_fi():
     ).abs().sum() == 0
 
 
+def test_nested_strategy_backtest_handles_initial_paper_trade_value():
+    names = ["foo", "bar", "rf"]
+    dates = pd.date_range("2017-01-01", "2017-12-31", freq=pd.tseries.offsets.BDay())
+    n = len(dates)
+    returns = pd.DataFrame(np.zeros((n, len(names))), index=dates, columns=names)
+
+    np.random.seed(1)
+    returns["foo"] = np.random.normal(loc=0.1 / n, scale=0.2 / np.sqrt(n), size=n)
+    returns["bar"] = np.random.normal(loc=0.04 / n, scale=0.05 / np.sqrt(n), size=n)
+    returns["rf"] = 0.0
+
+    prices = 100 * np.cumprod(1 + returns)
+
+    weights = pd.Series([0.6, 0.2, 0.1], index=returns.columns)
+    leaf = bt.Strategy(
+        "leaf",
+        [
+            bt.algos.RunMonthly(run_on_first_date=True),
+            bt.algos.WeighSpecified(**weights),
+            bt.algos.Rebalance(),
+        ],
+    )
+    middle = bt.Strategy(
+        "middle",
+        [
+            bt.algos.RunMonthly(run_on_first_date=True),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+        children=[leaf, "foo"],
+    )
+    root = bt.Strategy(
+        "root",
+        [
+            bt.algos.RunMonthly(run_on_first_date=True),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+        children=[middle, "bar"],
+    )
+
+    backtest = bt.Backtest(root, prices, integer_positions=False, progress_bar=False)
+
+    result = bt.run(backtest)
+
+    assert isinstance(result.prices, pd.DataFrame)
+    assert np.isfinite(result.prices["root"]).all()
+    assert result.prices["root"].iloc[0] == 100
+
+
 def test_30_min_data():
     names = ["foo"]
     dates = pd.date_range(start="2017-01-01", end="2017-12-31", freq="30min")
