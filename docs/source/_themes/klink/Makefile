@@ -13,7 +13,7 @@ css:
 
 docs: css
 	$(MAKE) -C docs/ clean
-	$(MAKE) -C docs/ html 
+	$(MAKE) -C docs/ html
 
 serve:
 	cd docs/build/html; \
@@ -30,4 +30,6 @@ pages:
 	git push
 
 dist:
-	python setup.py sdist upload
+	python -m build -s
+	twine check dist/*.tar.gz
+	twine upload dist/*.tar.gz
