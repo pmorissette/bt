@@ -794,12 +794,7 @@ class StrategyBase(Node):
                 else:
                     if is_zero(self._value):
                         ret = 0
-                    elif (
-                        self.parent == self
-                        and is_zero(self._capital)
-                        and is_zero(self._last_value)
-                        and is_zero(self._net_flows)
-                    ):
+                    elif self.parent == self and is_zero(self._capital) and is_zero(self._last_value) and is_zero(self._net_flows):
                         # Paper-trade root strategies can open their initial
                         # positions before their synthetic return series has a
                         # non-zero base. Treat that bootstrap step as a flat
