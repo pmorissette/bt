@@ -13,3 +13,4 @@ Here are a few examples to give you a better idea of what **bt** is all about.
 .. include:: PTE.rst
 .. include:: Fixed_Income.rst
 .. include:: Cost_Models.rst
+.. include:: FXMacroData.rst
