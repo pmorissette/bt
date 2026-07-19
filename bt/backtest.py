@@ -699,7 +699,12 @@ class RenormalizedFixedIncomeResult(Result):
                 raise ValueError(f"Cannot apply RenormalizedFixedIncomeResult because backtest {backtest.name} is not on a fixed income strategy")
         if not isinstance(normalizing_value, dict):
             normalizing_value = {x.name: normalizing_value for x in backtests}
-        tmp = [pd.DataFrame({x.name: self._price(x.strategy, normalizing_value[x.name])}) for x in backtests]
+        tmp = []
+        for backtest in backtests:
+            prices = self._price(backtest.strategy, normalizing_value[backtest.name])
+            if backtest._stat_prices is not None:
+                prices = prices.reindex(backtest._stat_prices.index)
+            tmp.append(pd.DataFrame({backtest.name: prices}))
         super(Result, self).__init__(*tmp)
         self.backtest_list = backtests
         self.backtests = {x.name: x for x in backtests}
