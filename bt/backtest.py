@@ -76,7 +76,7 @@ def benchmark_random(backtest, random_strategy, nsim=100):
 
     # create and run random backtests
     for i in tqdm(range(nsim)):
-        random_strategy.name = "random_%s" % i
+        random_strategy.name = f"random_{i}"
         rbt = bt.Backtest(random_strategy, data)
         rbt.run()
 
@@ -88,7 +88,7 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     return res
 
 
-class Backtest(object):
+class Backtest:
     """
     A Backtest combines a Strategy with data to
     produce a Result.
@@ -174,7 +174,7 @@ class Backtest(object):
     ):
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
-            raise Exception("data provided has some duplicate column names: \n%s \nPlease remove duplicates!" % cols)
+            raise ValueError(f"data provided has some duplicate column names: \n{cols} \nPlease remove duplicates!")
 
         # we want to reuse strategy logic - copy it!
         # basically strategy is a template
@@ -470,7 +470,7 @@ class Result(ffn.GroupStats):
 
     def __init__(self, *backtests):
         tmp = [pd.DataFrame({x.name: x.strategy.prices}) for x in backtests]
-        super(Result, self).__init__(*tmp)
+        super().__init__(*tmp)
         self.backtest_list = backtests
         self.backtests = {x.name: x for x in backtests}
 
@@ -619,7 +619,7 @@ class RandomBenchmarkResult(Result):
     """
 
     def __init__(self, *backtests):
-        super(RandomBenchmarkResult, self).__init__(*backtests)
+        super().__init__(*backtests)
         self.base_name = backtests[0].name
         # seperate stats to make
         self.r_stats = self.stats.drop(self.base_name, axis=1)
@@ -648,7 +648,7 @@ class RandomBenchmarkResult(Result):
             raise ValueError("Invalid statistic. Valid statisticsare the statistics in self.stats")
 
         if title is None:
-            title = "%s histogram" % statistic
+            title = f"{statistic} histogram"
 
         plt.figure(figsize=figsize)
 
@@ -684,7 +684,7 @@ class RenormalizedFixedIncomeResult(Result):
     def __init__(self, normalizing_value, *backtests):
         for backtest in backtests:
             if not backtest.strategy.fixed_income:
-                raise ValueError("Cannot apply RenormalizedFixedIncomeResult because backtest %s is not on a fixed income strategy" % backtest.name)
+                raise ValueError(f"Cannot apply RenormalizedFixedIncomeResult because backtest {backtest.name} is not on a fixed income strategy")
         if not isinstance(normalizing_value, dict):
             normalizing_value = {x.name: normalizing_value for x in backtests}
         tmp = [pd.DataFrame({x.name: self._price(x.strategy, normalizing_value[x.name])}) for x in backtests]
