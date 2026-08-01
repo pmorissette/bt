@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # bt documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun 27 11:34:24 2014.
@@ -11,8 +10,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
+import sys
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -21,8 +20,9 @@ sys.path.insert(0, os.path.abspath("../../"))
 sys.path.insert(0, os.path.abspath("../../bt"))
 sys.path.insert(0, os.path.abspath("_themes/klink"))
 
-import bt  # noqa: E402
-import klink  # noqa: E402
+import klink
+
+import bt
 
 klink.convert_notebooks()
 
