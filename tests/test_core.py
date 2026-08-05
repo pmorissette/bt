@@ -2401,6 +2401,32 @@ def test_fixed_commissions():
     assert s.capital == 198 + 199 - 101 + 499 + 199
 
 
+def test_integer_positions_with_nonlinear_commissions():
+    c = SecurityBase("c")
+    s = StrategyBase("s", [c])
+
+    def commissions(q, p):
+        return max(0.35, min(abs(q) * 0.0035, abs(q) * p * 0.01))
+
+    s.set_commissions(commissions)
+    c = s["c"]
+
+    dts = pd.date_range("2010-01-01", periods=1)
+    data = pd.DataFrame(index=dts, columns=["c"], data=1.0)
+    s.setup(data)
+    s.update(dts[0], data.loc[dts[0]])
+    s.adjust(1000)
+
+    # Rebalancing from a short position used to skip the affordable quantity
+    # of 285 and raise a "commission fn is not smooth" RuntimeError.
+    c._position = -100
+    c.update(dts[0], data.loc[dts[0]])
+    c.allocate(286)
+
+    assert c.position == 185
+    assert s.capital == pytest.approx(1000 - 285.9975)
+
+
 def test_degenerate_shorting():
     # can have situation where you short infinitely if commission/share > share
     # price
