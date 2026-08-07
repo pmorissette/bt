@@ -2,13 +2,16 @@ TMPREPO=/tmp/docs/bt
 
 default: build_dev
 
-.PHONY: dist upload docs pages serve klink notebooks test lint fix develop
+.PHONY: dist upload docs pages serve klink notebooks test benchmark lint fix develop
 
 develop:
 	python -m pip install -e .[dev]
 
 test:
 	python -m pytest -vvv tests --cov=bt --junitxml=python_junit.xml --cov-report=xml --cov-branch --cov-report term
+
+benchmark:
+	python -m pytest -vv benchmarks --benchmark-only
 
 lint:
 	python -m ruff check bt docs/source/conf.py

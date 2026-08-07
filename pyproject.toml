@@ -49,6 +49,7 @@ dev = [
     "pandas>=0.19",
     "pyprind>=2.11",
     "pytest",
+    "pytest-benchmark",
     "pytest-cov",
     "packaging>=24.2",
     "ruff",
