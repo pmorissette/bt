@@ -374,6 +374,20 @@ def test_run_if_out_of_bounds():
     s.children["c2"]._weight = 0.24
     assert algo(s)
 
+    s.temp["weights"] = {"c1": 0.0, "c2": 0.5}
+    s.children["c1"]._weight = 0.0
+    s.children["c2"]._weight = 0.5
+    assert not algo(s)
+
+    s.children["c1"]._weight = 0.2
+    assert algo(s)
+    s.children["c1"]._weight = -0.2
+    assert algo(s)
+
+    s.children["c1"]._weight = 0.0
+    s.children["c2"]._weight = 0.9
+    assert algo(s)
+
 
 def test_run_after_date():
     target = mock.MagicMock()
