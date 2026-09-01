@@ -404,7 +404,8 @@ def test_RenomalizedFixedIncomeResult():
     assert norm_res.prices.equals(res.prices)
 
 
-def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning():
+@pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
+def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series):
     """Test that the bootstrap row stays missing without a bool concat warning."""
     import warnings
 
@@ -412,11 +413,9 @@ def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning():
     data = pd.DataFrame(index=dts, columns=["a", "b"], data=100.0)
 
     # Exercise NumPy bool while retaining the warning regression covered by this test.
-    signal = pd.DataFrame(
-        index=dts,
-        columns=["signal"],
-        data=[True, False, True, False, True]
-    )
+    signal = pd.Series([True, False, True, False, True], index=dts, name="signal")
+    if not as_series:
+        signal = signal.to_frame()
 
     s = bt.Strategy(
         "test", [bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()]
@@ -428,13 +427,12 @@ def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning():
         t = bt.Backtest(s, data, additional_data={"signal": signal}, progress_bar=False)
         t.run()
 
-        assert pd.isna(t.additional_data["signal"].iloc[0, 0])
-        pd.testing.assert_frame_equal(
-            t.additional_data["signal"].iloc[1:],
-            signal,
-            check_dtype=False,
-            check_freq=False,
-        )
+        processed = t.additional_data["signal"]
+        assert np.asarray(pd.isna(processed.iloc[0])).all()
+        if as_series:
+            pd.testing.assert_series_equal(processed.iloc[1:], signal, check_dtype=False, check_freq=False)
+        else:
+            pd.testing.assert_frame_equal(processed.iloc[1:], signal, check_dtype=False, check_freq=False)
 
         future_warnings = [warning for warning in w
                           if issubclass(warning.category, FutureWarning)
