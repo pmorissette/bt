@@ -316,6 +316,38 @@ def test_nested_strategy_backtest_handles_initial_paper_trade_value():
     assert result.prices["root"].iloc[0] == 100
 
 
+def test_run_after_date_stats_include_first_transaction():
+    dates = pd.date_range("2000-01-01", "2002-12-31", freq=pd.tseries.offsets.BDay())
+    prices = pd.DataFrame(index=dates, data={"a": 100.0})
+    prices.loc[dates[260]:, "a"] = np.linspace(100, 150, len(dates[260:]))
+
+    strategy = bt.Strategy(
+        "delayed",
+        [
+            bt.algos.RunAfterDate("2001-01-01"),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+    )
+
+    result = bt.run(
+        bt.Backtest(
+            strategy,
+            prices,
+            commissions=lambda q, p: 100.0,
+            progress_bar=False,
+        )
+    )
+
+    first_transaction_date = result.get_transactions().index.get_level_values(0)[0]
+    first_transaction_position = result.backtests["delayed"].strategy.prices.index.get_loc(first_transaction_date)
+    stats_start = result.backtests["delayed"].strategy.prices.index[first_transaction_position - 1]
+    assert result.stats["delayed"].start == stats_start
+    assert result.prices.index[0] == stats_start
+    assert result.prices.loc[first_transaction_date, "delayed"] < result.prices.loc[stats_start, "delayed"]
+
+
 def test_30_min_data():
     names = ["foo"]
     dates = pd.date_range(start="2017-01-01", end="2017-12-31", freq="30min")

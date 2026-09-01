@@ -202,6 +202,7 @@ class Backtest:
 
         self.stats = {}
         self._original_prices = None
+        self._stat_prices = None
         self._weights = None
         self._sweights = None
         self.has_run = False
@@ -345,8 +346,26 @@ class Backtest:
                 if self.progress_bar:
                     bar.stop()
 
-        self.stats = self.strategy.prices.calc_perf_stats()
         self._original_prices = self.strategy.prices
+        self._stat_prices = self._compute_stat_prices()
+        self.stats = self._stat_prices.calc_perf_stats()
+
+    def _compute_stat_prices(self):
+        prices = self.strategy.prices
+        first_transaction_date = None
+        for security in self.strategy.securities:
+            positions = security.positions
+            position_changed = positions.ne(positions.shift(fill_value=0))
+            if position_changed.any():
+                transaction_date = positions.index[position_changed][0]
+                if first_transaction_date is None or transaction_date < first_transaction_date:
+                    first_transaction_date = transaction_date
+
+        if first_transaction_date is not None:
+            first_transaction_position = prices.index.get_indexer_for([first_transaction_date])[0]
+            return prices.iloc[max(first_transaction_position - 1, 0) :]
+
+        return prices
 
     @property
     def weights(self):
@@ -461,7 +480,7 @@ class Result(ffn.GroupStats):
     """
 
     def __init__(self, *backtests):
-        tmp = [pd.DataFrame({x.name: x.strategy.prices}) for x in backtests]
+        tmp = [pd.DataFrame({x.name: x._stat_prices if x._stat_prices is not None else x.strategy.prices}) for x in backtests]
         super().__init__(*tmp)
         self.backtest_list = backtests
         self.backtests = {x.name: x for x in backtests}
@@ -679,7 +698,12 @@ class RenormalizedFixedIncomeResult(Result):
                 raise ValueError(f"Cannot apply RenormalizedFixedIncomeResult because backtest {backtest.name} is not on a fixed income strategy")
         if not isinstance(normalizing_value, dict):
             normalizing_value = {x.name: normalizing_value for x in backtests}
-        tmp = [pd.DataFrame({x.name: self._price(x.strategy, normalizing_value[x.name])}) for x in backtests]
+        tmp = []
+        for backtest in backtests:
+            prices = self._price(backtest.strategy, normalizing_value[backtest.name])
+            if backtest._stat_prices is not None:
+                prices = prices.reindex(backtest._stat_prices.index)
+            tmp.append(pd.DataFrame({backtest.name: prices}))
         super(Result, self).__init__(*tmp)
         self.backtest_list = backtests
         self.backtests = {x.name: x for x in backtests}
