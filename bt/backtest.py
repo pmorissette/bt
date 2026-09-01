@@ -218,16 +218,20 @@ class Backtest:
         if not volatility.columns.equals(data.columns):
             raise ValueError("`volatility` columns must match `data` columns.")
 
+    @staticmethod
+    def _prepend_missing_row(data):
+        """Prepend an all-missing row, promoting non-nullable column dtypes."""
+        # Expand positionally so duplicate date labels retain their existing behavior.
+        positional = data.set_axis(pd.RangeIndex(len(data)))
+        positional = positional.reindex(pd.RangeIndex(-1, len(data)))
+        index = data.index.insert(0, data.index[0] - pd.DateOffset(days=1))
+        return positional.set_axis(index)
+
     def _align_impact_frame(self, df):
         """Prepend the t0-1 NaN row that ``_process_data`` adds to ``data``,
         so per-bar lookups by ``security.now`` always resolve.
         """
-        empty_row = pd.DataFrame(
-            np.nan,
-            columns=df.columns,
-            index=[df.index[0] - pd.DateOffset(days=1)],
-        ).astype(df.dtypes)
-        return pd.concat([empty_row, df])
+        return self._prepend_missing_row(df)
 
     def _install_cost_model_hook(self):
         """Wire per-security ``commission`` after strategy setup. Also covers
@@ -296,20 +300,8 @@ class Backtest:
         # and add in the first row as well (i.e. "bidoffer")
         for k in self.additional_data:
             old = self.additional_data[k]
-            if isinstance(old, pd.DataFrame) and old.index.equals(data.index):
-                empty_row = pd.DataFrame(
-                    np.nan,
-                    columns=old.columns,
-                    index=[old.index[0] - pd.DateOffset(days=1)],
-                )
-                # Ensure dtypes match to avoid FutureWarning
-                empty_row = empty_row.astype(old.dtypes)
-                new = pd.concat([empty_row, old])
-                self.additional_data[k] = new
-            elif isinstance(old, pd.Series) and old.index.equals(data.index):
-                empty_row = pd.Series(np.nan, index=[old.index[0] - pd.DateOffset(days=1)], dtype=old.dtype)
-                new = pd.concat([empty_row, old])
-                self.additional_data[k] = new
+            if isinstance(old, (pd.DataFrame, pd.Series)) and old.index.equals(data.index):
+                self.additional_data[k] = self._prepend_missing_row(old)
 
     def run(self):
         """

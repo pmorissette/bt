@@ -403,35 +403,72 @@ def test_RenomalizedFixedIncomeResult():
     assert norm_res.stats["s"].total_return == res.stats["s"].total_return
     assert norm_res.prices.equals(res.prices)
 
-def test_additional_data_boolean_dtype_no_warning():
-    """Test that boolean dtype in additional_data doesn't raise FutureWarning."""
+
+@pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
+def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series):
+    """Test that the bootstrap row stays missing without a bool concat warning."""
     import warnings
 
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["a", "b"], data=100.0)
 
-    # Create additional data with boolean dtype
-    signal = pd.DataFrame(
-        index=dts,
-        columns=["signal"],
-        data=[True, False, True, False, True]
-    )
+    # Exercise NumPy bool while retaining the warning regression covered by this test.
+    signal = pd.Series([True, False, True, False, True], index=dts, name="signal")
+    if not as_series:
+        signal = signal.to_frame()
 
     s = bt.Strategy(
         "test", [bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()]
     )
 
-    # Capture warnings
+    # Require both the missing-row contract and warning-free pandas concatenation.
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         t = bt.Backtest(s, data, additional_data={"signal": signal}, progress_bar=False)
         t.run()
 
-        # Check no FutureWarning about bool-dtype concatenation
+        processed = t.additional_data["signal"]
+        assert np.asarray(pd.isna(processed.iloc[0])).all()
+        if as_series:
+            pd.testing.assert_series_equal(processed.iloc[1:], signal, check_dtype=False, check_freq=False)
+        else:
+            pd.testing.assert_frame_equal(processed.iloc[1:], signal, check_dtype=False, check_freq=False)
+
         future_warnings = [warning for warning in w
                           if issubclass(warning.category, FutureWarning)
                           and "bool-dtype" in str(warning.message).lower()]
         assert len(future_warnings) == 0
+
+
+@pytest.mark.parametrize(
+    ("dtype", "values", "expected_dtype"),
+    [
+        ("int64", [1, 0, 1, 0, 1], "float64"),
+        ("Int64", [1, 0, 1, 0, 1], "Int64"),
+        ("boolean", [True, False, True, False, True], "boolean"),
+        ("float64", [1, 0, 1, 0, 1], "float64"),
+    ],
+)
+def test_additional_data_auxiliary_bootstrap_dtypes(dtype, values, expected_dtype):
+    """Preserve dated auxiliary values while making the bootstrap row missing."""
+    dates = pd.date_range("2010-01-01", periods=5)
+    data = pd.DataFrame(100.0, index=dates, columns=["a"])
+    auxiliary = pd.DataFrame({"value": pd.Series(values, index=dates, dtype=dtype)})
+    strategy = bt.Strategy("test", [])
+
+    backtest = bt.Backtest(
+        strategy,
+        data,
+        additional_data={"auxiliary": auxiliary},
+        progress_bar=False,
+    )
+    processed = backtest.additional_data["auxiliary"]
+
+    # The synthetic row may widen dtype, but it must not alter dated observations.
+    assert processed.index[0] == dates[0] - pd.DateOffset(days=1)
+    assert processed.iloc[0].isna().all()
+    assert str(processed.dtypes["value"]) == expected_dtype
+    pd.testing.assert_frame_equal(processed.iloc[1:], auxiliary, check_dtype=False, check_freq=False)
 
 
 def _impact_universe(n_periods=60, n_securities=3, seed=0):
@@ -458,6 +495,62 @@ def _ew_strategy(name="ew"):
             bt.algos.Rebalance(),
         ],
     )
+
+
+@pytest.mark.parametrize("cost_model_type", [bt.SqrtCostModel, bt.AlmgrenChrissCostModel])
+def test_backtest_integer_volume_matches_float_volume(cost_model_type):
+    """Treat integer and equivalent float volume identically in cost models."""
+    prices, float_volume, volatility = _impact_universe()
+    integer_volume = float_volume.astype("int64")
+
+    # Use float volume as the numerical reference for each nonlinear cost model.
+    float_backtest = bt.Backtest(
+        _ew_strategy(),
+        prices,
+        name="float_volume",
+        commissions=cost_model_type(),
+        volume=float_volume,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+    integer_backtest = bt.Backtest(
+        _ew_strategy(),
+        prices,
+        name="integer_volume",
+        commissions=cost_model_type(),
+        volume=integer_volume,
+        volatility=volatility,
+        initial_capital=10_000_000.0,
+        progress_bar=False,
+    )
+
+    float_backtest.run()
+    integer_backtest.run()
+
+    # Alignment changes representation only; observed volume must remain unchanged.
+    aligned_integer_volume = integer_backtest.volume
+    assert aligned_integer_volume is not None
+    assert aligned_integer_volume.iloc[0].isna().all()
+    pd.testing.assert_frame_equal(
+        aligned_integer_volume.iloc[1:],
+        integer_volume,
+        check_dtype=False,
+        check_freq=False,
+    )
+
+    # Derive trades independently from position changes rather than result helpers.
+    integer_positions = pd.DataFrame({security.name: security.positions for security in integer_backtest.strategy.securities})
+    float_positions = pd.DataFrame({security.name: security.positions for security in float_backtest.strategy.securities})
+    integer_trades = integer_positions.diff()
+    integer_trades.iloc[0] = integer_positions.iloc[0]
+    float_trades = float_positions.diff()
+    float_trades.iloc[0] = float_positions.iloc[0]
+    pd.testing.assert_frame_equal(integer_trades, float_trades)
+
+    # Cost-model accounting must match for numerically equivalent volume inputs.
+    np.testing.assert_allclose(integer_backtest.strategy.prices, float_backtest.strategy.prices)
+    np.testing.assert_allclose(integer_backtest.strategy.fees, float_backtest.strategy.fees)
 
 
 def test_backtest_cost_model_runs_and_charges_fees():
