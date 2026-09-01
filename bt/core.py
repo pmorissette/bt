@@ -1585,8 +1585,16 @@ class SecurityBase(Node):
                 if self.integer_positions:
                     full_outlay_of_1_more, _, _, _ = self.outlay(q + 1)
 
-                    if full_outlay < amount and full_outlay_of_1_more > amount:
-                        break
+                    if full_outlay < amount:
+                        if full_outlay_of_1_more > amount:
+                            break
+
+                        # The root-search step can skip an affordable integer
+                        # quantity when commissions are non-linear. Move back
+                        # one share so the search keeps the closest affordable
+                        # outlay instead of treating the larger gap as an error.
+                        q += 1
+                        full_outlay = full_outlay_of_1_more
 
                 # if not integer positions then we should keep going until
                 # full_outlay == amount or is close enough
