@@ -360,11 +360,18 @@ class Backtest:
 
     def _compute_stat_prices(self):
         prices = self.strategy.prices
-        transactions = self.strategy.get_transactions()
+        first_transaction_date = None
+        for security in self.strategy.securities:
+            positions = security.positions
+            position_changed = positions.ne(positions.shift(fill_value=0))
+            if position_changed.any():
+                transaction_date = positions.index[position_changed][0]
+                if first_transaction_date is None or transaction_date < first_transaction_date:
+                    first_transaction_date = transaction_date
 
-        if not transactions.empty:
-            first_transaction_date = transactions.index.get_level_values(0)[0]
-            return prices.loc[first_transaction_date:]
+        if first_transaction_date is not None:
+            first_transaction_position = prices.index.get_indexer_for([first_transaction_date])[0]
+            return prices.iloc[max(first_transaction_position - 1, 0) :]
 
         return prices
 
