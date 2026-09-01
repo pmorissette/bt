@@ -1755,6 +1755,7 @@ def test_TargetVol():
     data.loc[dts[4], "c2"] = 99
     data.loc[dts[5], "c2"] = 101
     data.loc[dts[6], "c2"] = 99
+    data["c3"] = data["c2"]
 
     targetVolAlgo = algos.TargetVol(
         0.1,
@@ -1774,6 +1775,11 @@ def test_TargetVol():
     assert np.isclose(weights["c2"], weights["c1"])
 
     unannualized_c2_weight = weights["c1"]
+
+    s.temp["weights"] = {"c3": 1.0}
+    assert targetVolAlgo(s)
+    assert targetVolAlgo.target_volatility == 0.1
+    assert not np.isclose(s.temp["weights"]["c3"], 1.0)
 
     targetVolAlgo = algos.TargetVol(
         0.1 * np.sqrt(252),
