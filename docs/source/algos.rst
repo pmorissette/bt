@@ -223,7 +223,7 @@ can be added by placing those algos at the head of the relevant stack.
                         # Downstream algos could go here...
                         )
     
-    s = bt.Strategy('strategy', branch_stack, ['spy', 'agg'])
+    s = bt.Strategy('strategy', [branch_stack], ['spy', 'agg'])
     t = bt.Backtest(s, data)
     r = bt.run(t)
 
