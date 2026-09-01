@@ -977,6 +977,94 @@ def test_select_where_legacy():
     assert s.temp["selected"] == ["c2"]
 
 
+def test_select_where_missing_date_product_matrix():
+    dts = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
+
+    # Cross both supported signal paths with NumPy and nullable boolean dtypes.
+    bool_signal = pd.DataFrame([[False, False]], index=[dts[0]], columns=data.columns, dtype=bool)
+    nullable_signal = bool_signal.astype("boolean")
+    for signal in [bool_signal, nullable_signal]:
+        for use_named_data in [False, True]:
+            s = bt.Strategy("s")
+            s.setup(data, where=signal)
+            s.update(dts[1])
+            algo = algos.SelectWhere("where" if use_named_data else signal)
+
+            # An absent row stops the stack without creating an empty selection.
+            assert not algo(s)
+            assert "selected" not in s.temp
+
+            # A present all-false row remains a valid empty selection.
+            s.update(dts[0])
+            assert algo(s)
+            assert s.temp["selected"] == []
+
+
+def test_select_where_missing_date_stops_algo_stack():
+    dts = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
+    signal = pd.DataFrame([[True, False]], index=[dts[0]], columns=data.columns)
+    s = bt.Strategy("s")
+    s.setup(data)
+    s.update(dts[1])
+
+    # A prior selector may leave state behind, so the return value must stop downstream weighting.
+    stack = bt.AlgoStack(algos.SelectAll(), algos.SelectWhere(signal), algos.WeighEqually())
+    assert not stack(s)
+    assert s.temp["selected"] == ["c1", "c2"]
+    assert "weights" not in s.temp
+
+
+def test_select_where_sparse_signal_holds_and_resumes_flat_and_nested():
+    dts = pd.date_range("2010-01-01", periods=3)
+    data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100.0)
+    flat_data = data.drop(columns="c3")
+    signal = pd.DataFrame(
+        [[True, False], [False, True]],
+        index=[dts[0], dts[2]],
+        columns=["c1", "c2"],
+    )
+
+    # The flat strategy should hold its day-1 quantity across the missing signal date.
+    flat = bt.Strategy(
+        "flat",
+        [algos.SelectWhere("signal"), algos.WeighEqually(), algos.Rebalance()],
+    )
+    flat_backtest = bt.Backtest(flat, flat_data, additional_data={"signal": signal}, initial_capital=1000)
+    bt.run(flat_backtest)
+
+    assert flat_backtest.strategy["c1"].positions.loc[dts].tolist() == [10.0, 10.0, 0.0]
+    assert flat_backtest.strategy["c2"].positions.loc[dts].tolist() == [0.0, 0.0, 10.0]
+    assert flat_backtest.strategy["c1"].positions.loc[dts[1]] == 10.0
+    assert flat_backtest.strategy["c2"].positions.loc[dts[1]] == 0.0
+
+    # In a nested tree, the sparse child holds while its independently invested sibling continues.
+    sparse_child = bt.Strategy(
+        "sparse",
+        [algos.SelectWhere("signal"), algos.WeighEqually(), algos.Rebalance()],
+    )
+    sibling = bt.Strategy(
+        "sibling",
+        [algos.RunOnce(), algos.SelectThese(["c3"]), algos.WeighEqually(), algos.Rebalance()],
+    )
+    parent = bt.Strategy(
+        "parent",
+        [algos.RunOnce(), algos.SelectAll(), algos.WeighEqually(), algos.Rebalance()],
+        children=[sparse_child, sibling],
+    )
+    nested_backtest = bt.Backtest(parent, data, additional_data={"signal": signal}, initial_capital=2000)
+    bt.run(nested_backtest)
+
+    sparse_result = nested_backtest.strategy["sparse"]
+    sibling_result = nested_backtest.strategy["sibling"]
+    assert sparse_result["c1"].positions.loc[dts].tolist() == [10.0, 10.0, 0.0]
+    assert sparse_result["c2"].positions.loc[dts].tolist() == [0.0, 0.0, 10.0]
+    assert sibling_result["c3"].positions.loc[dts].tolist() == [10.0, 10.0, 10.0]
+    assert sparse_result.values.loc[dts].tolist() == [1000.0, 1000.0, 1000.0]
+    assert sibling_result.values.loc[dts].tolist() == [1000.0, 1000.0, 1000.0]
+
+
 def test_select_regex():
     s = bt.Strategy("s")
     algo = algos.SelectRegex("c1")

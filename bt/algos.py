@@ -693,7 +693,9 @@ class SelectWhere(Algo):
     Selects securities based on an indicator DataFrame.
 
     Selects securities where the value is True on the current date
-    (target.now) only if current date is present in signal DataFrame.
+    (target.now). If the date is absent from the signal DataFrame, returns
+    False to stop the AlgoStack. A present all-False row remains a valid empty
+    selection and returns True.
 
     For example, this could be the result of a pandas boolean comparison such
     as data > 100.
@@ -743,8 +745,10 @@ class SelectWhere(Algo):
                 else:
                     selected = list(universe[universe > 0].index)
             target.temp["selected"] = list(selected)
+            return True
 
-        return True
+        # Stop downstream Algos when no signal row exists for the current date.
+        return False
 
 
 class SelectRandomly(AlgoStack):
