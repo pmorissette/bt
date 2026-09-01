@@ -1482,11 +1482,15 @@ class TargetVol(Algo):
 
         t0 = target.now - self.lag
         prc = target.universe.loc[t0 - self.lookback : t0, selected]
-        returns = bt.ffn.to_returns(prc)
+        returns = bt.ffn.to_returns(prc).dropna()
 
         # calc covariance matrix
         if self.covar_method == "ledoit-wolf":
-            covar = sklearn.covariance.ledoit_wolf(returns)
+            covar = pd.DataFrame(
+                sklearn.covariance.ledoit_wolf(returns)[0],
+                index=returns.columns,
+                columns=returns.columns,
+            )
         elif self.covar_method == "standard":
             covar = returns.cov()
         else:
@@ -1572,11 +1576,15 @@ class PTE_Rebalance(Algo):
 
         t0 = target.now - self.lag
         prc = target.universe.loc[t0 - self.lookback : t0, cols]
-        returns = bt.ffn.to_returns(prc)
+        returns = bt.ffn.to_returns(prc).dropna()
 
         # calc covariance matrix
         if self.covar_method == "ledoit-wolf":
-            covar = sklearn.covariance.ledoit_wolf(returns)
+            covar = pd.DataFrame(
+                sklearn.covariance.ledoit_wolf(returns)[0],
+                index=returns.columns,
+                columns=returns.columns,
+            )
         elif self.covar_method == "standard":
             covar = returns.cov()
         else:
