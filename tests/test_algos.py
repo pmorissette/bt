@@ -1731,7 +1731,8 @@ def test_or():
     assert orAlgo(target)
 
 
-def test_TargetVol():
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+def test_TargetVol(covar_method):
 
     s = bt.Strategy("s")
 
@@ -1761,7 +1762,7 @@ def test_TargetVol():
         0.1,
         lookback=pd.DateOffset(days=5),
         lag=pd.DateOffset(days=1),
-        covar_method="standard",
+        covar_method=covar_method,
         annualization_factor=1,
     )
 
@@ -1785,7 +1786,7 @@ def test_TargetVol():
         0.1 * np.sqrt(252),
         lookback=pd.DateOffset(days=5),
         lag=pd.DateOffset(days=1),
-        covar_method="standard",
+        covar_method=covar_method,
         annualization_factor=252,
     )
 
@@ -1801,7 +1802,8 @@ def test_TargetVol():
     assert np.isclose(unannualized_c2_weight, weights["c2"])
 
 
-def test_PTE_Rebalance():
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+def test_PTE_Rebalance(covar_method):
 
     s = bt.Strategy("s")
 
@@ -1838,7 +1840,7 @@ def test_PTE_Rebalance():
         wdf,
         lookback=pd.DateOffset(months=3),
         lag=pd.DateOffset(days=1),
-        covar_method="standard",
+        covar_method=covar_method,
         annualization_factor=252,
     )
 
@@ -1850,77 +1852,35 @@ def test_PTE_Rebalance():
     assert not PTE_rebalance_Algo(s)
 
 
-def test_TargetVol_ledoit_wolf():
+def test_TargetVol_standard_uses_pairwise_covariance():
     s = bt.Strategy("s")
 
-    dts = pd.date_range("2010-01-01", periods=7)
-    data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-
-    for i, price in enumerate([95, 105, 95, 105, 95, 105, 95]):
-        data.loc[dts[i], "c1"] = price
-    for i, price in enumerate([99, 101, 99, 101, 99, 101, 99]):
-        data.loc[dts[i], "c2"] = price
+    dts = pd.date_range("2010-01-01", periods=8)
+    data = pd.DataFrame(
+        {
+            "c1": [100, 110, 99, 115, 103, 120, 108, 125],
+            "c2": [100, 102, 104, np.nan, 107, 109, 111, 114],
+        },
+        index=dts,
+    )
 
     targetVolAlgo = algos.TargetVol(
         0.1,
-        lookback=pd.DateOffset(days=5),
-        lag=pd.DateOffset(days=1),
-        covar_method="ledoit-wolf",
+        lookback=pd.DateOffset(days=7),
+        covar_method="standard",
         annualization_factor=1,
     )
 
     s.setup(data)
-    s.update(dts[6])
+    s.update(dts[-1])
     s.temp["weights"] = {"c1": 0.5, "c2": 0.5}
 
+    returns = bt.ffn.to_returns(data)
+    weights = np.array([0.5, 0.5])
+    expected_vol = np.sqrt(weights.T @ returns.cov().values @ weights)
+
     assert targetVolAlgo(s)
-    weights = s.temp["weights"]
-    assert len(weights) == 2
-    assert np.isclose(weights["c2"], weights["c1"])
-
-
-def test_PTE_Rebalance_ledoit_wolf():
-    s = bt.Strategy("s")
-
-    dts = pd.date_range("2010-01-01", periods=30 * 4)
-    data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
-
-    for i, dt in enumerate(dts[:-2]):
-        if i % 2 == 0:
-            data.loc[dt, "c1"] = 95
-            data.loc[dt, "c2"] = 101
-        else:
-            data.loc[dt, "c1"] = 105
-            data.loc[dt, "c2"] = 99
-
-    data.loc[dts[-2], "c1"] = 115
-    data.loc[dts[-2], "c2"] = 97
-
-    s.setup(data)
-    s.update(dts[-2])
-    s.adjust(1000000)
-    s.rebalance(0.4, "c1")
-    s.rebalance(0.6, "c2")
-
-    wdf = pd.DataFrame(np.zeros(data.shape), columns=data.columns, index=data.index)
-    wdf["c1"] = 0.5
-    wdf["c2"] = 0.5
-
-    PTE_rebalance_Algo = bt.algos.PTE_Rebalance(
-        0.01,
-        wdf,
-        lookback=pd.DateOffset(months=3),
-        lag=pd.DateOffset(days=1),
-        covar_method="ledoit-wolf",
-        annualization_factor=252,
-    )
-
-    assert PTE_rebalance_Algo(s)
-
-    s.rebalance(0.5, "c1")
-    s.rebalance(0.5, "c2")
-
-    assert not PTE_rebalance_Algo(s)
+    assert s.temp["weights"]["c1"] == pytest.approx(0.5 * 0.1 / expected_vol)
 
 
 def test_close_positions_after_date():
