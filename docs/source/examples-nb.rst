@@ -89,6 +89,7 @@ Let’s see how the implementation looks like.
         Selects securities based on an indicator DataFrame.
         
         Selects securities where the value is True on the current date (target.now).
+        Stops the AlgoStack if the current date is absent from the signal DataFrame.
         
         Args:
             * signal (DataFrame): DataFrame containing the signal (boolean DataFrame)
@@ -110,9 +111,10 @@ Let’s see how the implementation looks like.
     
                 # save in temp - this will be used by the weighing algo
                 target.temp['selected'] = selected
+                return True
             
-            # return True because we want to keep on moving down the stack
-            return True
+            # stop the stack when no selection was available for this date
+            return False
 
 
 So there we have it. Our selection Algo. 

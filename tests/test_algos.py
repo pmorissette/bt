@@ -977,6 +977,32 @@ def test_select_where_legacy():
     assert s.temp["selected"] == ["c2"]
 
 
+def test_select_where_missing_date():
+    dts = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
+    signal = pd.DataFrame([[True, False]], index=[dts[0]], columns=data.columns)
+    s = bt.Strategy("s")
+    s.setup(data, where=signal)
+    s.update(dts[1])
+
+    assert not algos.SelectWhere("where")(s)
+    assert "selected" not in s.temp
+
+
+def test_select_where_missing_date_stops_algo_stack():
+    dts = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame(index=dts, columns=["c1", "c2"], data=100.0)
+    signal = pd.DataFrame([[True, False]], index=[dts[0]], columns=data.columns)
+    s = bt.Strategy("s")
+    s.setup(data)
+    s.update(dts[1])
+
+    stack = bt.AlgoStack(algos.SelectAll(), algos.SelectWhere(signal), algos.WeighEqually())
+    assert not stack(s)
+    assert s.temp["selected"] == ["c1", "c2"]
+    assert "weights" not in s.temp
+
+
 def test_select_regex():
     s = bt.Strategy("s")
     algo = algos.SelectRegex("c1")
