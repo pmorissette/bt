@@ -2254,6 +2254,31 @@ def test_hedge_risk():
     assert c3.position == pytest.approx(-(100 * 2 - 10 * 5) / 10.0, 13)
 
 
+@pytest.mark.parametrize(("hedge_unit_risk", "hedge_multiplier"), [(1, 10), (10, 1)])
+def test_hedge_risk_security_multiplier(hedge_unit_risk: int, hedge_multiplier: int):
+    source = bt.Security("source")
+    hedge = bt.HedgeSecurity("hedge", multiplier=hedge_multiplier, lazy_add=True)
+    strategy = bt.Strategy("strategy", children=[source, hedge])
+    dates = pd.date_range("2010-01-01", periods=1)
+    prices = pd.DataFrame(100, index=dates, columns=["source", "hedge"])
+    unit_risk = pd.DataFrame({"source": [1], "hedge": [hedge_unit_risk]}, index=dates)
+    stack = bt.core.AlgoStack(
+        algos.UpdateRisk("Risk"),
+        algos.SelectThese(["hedge"]),
+        algos.HedgeRisks(["Risk"]),
+        algos.UpdateRisk("Risk"),
+    )
+
+    strategy.setup(prices, unit_risk={"Risk": unit_risk})
+    strategy.update(dates[0])
+    strategy.transact(100, "source")
+    stack(strategy)
+
+    # Equivalent per-contract sensitivities must produce the same hedge and residual.
+    assert strategy["hedge"].position == -10
+    assert vars(strategy)["risk"]["Risk"] == 0
+
+
 def test_hedge_risk_nan():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")
