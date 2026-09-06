@@ -102,8 +102,9 @@ class Backtest:
 
     Args:
         * strategy (Strategy, Node, StrategyBase): The Strategy to be tested.
-        * data (DataFrame): DataFrame containing data used in backtest. This
-          will be the Strategy's "universe".
+        * data (DataFrame): DataFrame containing data used in backtest. The
+          index must be monotonic increasing. This will be the Strategy's
+          "universe".
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
           Strategy.
@@ -175,6 +176,10 @@ class Backtest:
         if data.columns.duplicated().any():
             cols = data.columns[data.columns.duplicated().tolist()].tolist()
             raise ValueError(f"data provided has some duplicate column names: \n{cols} \nPlease remove duplicates!")
+
+        # Label-based universe slicing can otherwise expose future rows.
+        if not data.index.is_monotonic_increasing:
+            raise ValueError("data index must be monotonic increasing")
 
         # we want to reuse strategy logic - copy it!
         # basically strategy is a template

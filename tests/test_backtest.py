@@ -35,6 +35,18 @@ def test_backtest_dates_set():
     assert actual.dates[-1] == data.index[-1]
 
 
+def test_backtest_rejects_unsorted_dates():
+    s = mock.MagicMock()
+    data = pd.DataFrame(
+        index=pd.to_datetime(["2010-01-03", "2010-01-01", "2010-01-04"]),
+        columns=["a", "b"],
+        data=100,
+    )
+
+    with pytest.raises(ValueError, match="monotonic increasing"):
+        bt.Backtest(s, data, progress_bar=False)
+
+
 def test_backtest_auto_name():
     s = mock.MagicMock()
     s.name = "s"
