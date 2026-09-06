@@ -701,6 +701,45 @@ def test_backtest_cost_model_matches_legacy_in_nested_strategies(
     assert cost_leaf.price == pytest.approx(legacy_leaf.price)
 
 
+def test_backtest_cost_model_applies_to_dynamic_nested_strategy():
+    dates = pd.date_range("2020-01-01", periods=2, freq="B")
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+    volume = pd.DataFrame({"A": 1_000_000.0}, index=dates)
+    volatility = pd.DataFrame({"A": 0.02}, index=dates)
+
+    def add_leaf(target):
+        leaf = bt.Strategy(
+            "leaf",
+            [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()],
+            children=["A"],
+            parent=target,
+        )
+        leaf.setup_from_parent()
+        leaf.update(target.now)
+        target.allocate(target.value, leaf.name)
+        return True
+
+    strategy = bt.Strategy("root", [bt.algos.RunOnce(), add_leaf])
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.01),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=10_000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+
+    backtest.run()
+
+    leaf = backtest.strategy["leaf"]
+    expected_quantity = 10_000.0 / 101.0
+    assert leaf["A"].position == pytest.approx(expected_quantity)
+    assert leaf.fees.sum() == pytest.approx(expected_quantity)
+    assert leaf._paper["A"].position == pytest.approx(1_000_000.0 / 101.0)
+
+
 def test_backtest_cost_model_active_ac_costs_higher_than_flat_path():
     prices, volume, volatility = _impact_universe()
     eps = 0.0005

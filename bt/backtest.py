@@ -249,24 +249,55 @@ class Backtest:
 
     def _wire_strategy_tree(self, strategy: bt.core.StrategyBase):
         """Wire direct securities and lazy creation in a strategy tree."""
+        if getattr(strategy, "_cost_model_tree_wired", False):
+            return
+
         original_create = strategy._create_child_if_needed
+        original_add = strategy._add_children
+
+        def hooked_add(children, dc):
+            first_new_child = len(strategy._childrenv)
+            result = original_add(children, dc)
+            for child in strategy._childrenv[first_new_child:]:
+                if isinstance(child, bt.core.SecurityBase):
+                    self._wire_security(child)
+                elif isinstance(child, bt.core.StrategyBase):
+                    self._install_dynamic_strategy_hook(child)
+            return result
 
         def hooked_create(child: str):
             result = original_create(child)
-            sec = strategy.children.get(child)
-            if isinstance(sec, bt.core.SecurityBase):
-                self._wire_security(sec)
+            node = strategy.children.get(child)
+            if isinstance(node, bt.core.SecurityBase):
+                self._wire_security(node)
+            elif isinstance(node, bt.core.StrategyBase):
+                self._wire_nested_strategy(node)
             return result
 
+        strategy._add_children = hooked_add
         strategy._create_child_if_needed = hooked_create
+        strategy._cost_model_tree_wired = True
         for child in strategy._childrenv:
             if isinstance(child, bt.core.SecurityBase):
                 self._wire_security(child)
             elif isinstance(child, bt.core.StrategyBase):
-                self._wire_strategy_tree(child)
-                # Nested strategies price themselves through a separate paper tree.
-                if child._paper_trade:
-                    self._wire_strategy_tree(child._paper)
+                self._wire_nested_strategy(child)
+
+    def _wire_nested_strategy(self, strategy: bt.core.StrategyBase):
+        self._wire_strategy_tree(strategy)
+        # Nested strategies price themselves through a separate paper tree.
+        if strategy._paper_trade:
+            self._wire_strategy_tree(strategy._paper)
+
+    def _install_dynamic_strategy_hook(self, strategy: bt.core.StrategyBase):
+        original_setup_from_parent = strategy.setup_from_parent
+
+        def hooked_setup_from_parent(*args, **kwargs):
+            result = original_setup_from_parent(*args, **kwargs)
+            self._wire_nested_strategy(strategy)
+            return result
+
+        strategy.setup_from_parent = hooked_setup_from_parent
 
     def _wire_security(self, security):
         if getattr(security, "_cost_model_wired", False):
