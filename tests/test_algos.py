@@ -1757,7 +1757,8 @@ def test_or():
     assert orAlgo(target)
 
 
-def test_TargetVol():
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+def test_TargetVol(covar_method):
 
     s = bt.Strategy("s")
 
@@ -1787,7 +1788,7 @@ def test_TargetVol():
         0.1,
         lookback=pd.DateOffset(days=5),
         lag=pd.DateOffset(days=1),
-        covar_method="standard",
+        covar_method=covar_method,
         annualization_factor=1,
     )
 
@@ -1811,7 +1812,7 @@ def test_TargetVol():
         0.1 * np.sqrt(252),
         lookback=pd.DateOffset(days=5),
         lag=pd.DateOffset(days=1),
-        covar_method="standard",
+        covar_method=covar_method,
         annualization_factor=252,
     )
 
@@ -1827,7 +1828,8 @@ def test_TargetVol():
     assert np.isclose(unannualized_c2_weight, weights["c2"])
 
 
-def test_PTE_Rebalance():
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+def test_PTE_Rebalance(covar_method):
 
     s = bt.Strategy("s")
 
@@ -1864,7 +1866,7 @@ def test_PTE_Rebalance():
         wdf,
         lookback=pd.DateOffset(months=3),
         lag=pd.DateOffset(days=1),
-        covar_method="standard",
+        covar_method=covar_method,
         annualization_factor=252,
     )
 
@@ -1874,6 +1876,37 @@ def test_PTE_Rebalance():
     s.rebalance(0.5, "c2")
 
     assert not PTE_rebalance_Algo(s)
+
+
+def test_TargetVol_standard_uses_pairwise_covariance():
+    s = bt.Strategy("s")
+
+    dts = pd.date_range("2010-01-01", periods=8)
+    data = pd.DataFrame(
+        {
+            "c1": [100, 110, 99, 115, 103, 120, 108, 125],
+            "c2": [100, 102, 104, np.nan, 107, 109, 111, 114],
+        },
+        index=dts,
+    )
+
+    targetVolAlgo = algos.TargetVol(
+        0.1,
+        lookback=pd.DateOffset(days=7),
+        covar_method="standard",
+        annualization_factor=1,
+    )
+
+    s.setup(data)
+    s.update(dts[-1])
+    s.temp["weights"] = {"c1": 0.5, "c2": 0.5}
+
+    returns = bt.ffn.to_returns(data)
+    weights = np.array([0.5, 0.5])
+    expected_vol = np.sqrt(weights.T @ returns.cov().values @ weights)
+
+    assert targetVolAlgo(s)
+    assert s.temp["weights"]["c1"] == pytest.approx(0.5 * 0.1 / expected_vol)
 
 
 def test_close_positions_after_date():

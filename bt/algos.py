@@ -1490,7 +1490,11 @@ class TargetVol(Algo):
 
         # calc covariance matrix
         if self.covar_method == "ledoit-wolf":
-            covar = sklearn.covariance.ledoit_wolf(returns)
+            covar = pd.DataFrame(
+                sklearn.covariance.ledoit_wolf(returns.dropna())[0],
+                index=returns.columns,
+                columns=returns.columns,
+            )
         elif self.covar_method == "standard":
             covar = returns.cov()
         else:
@@ -1580,7 +1584,11 @@ class PTE_Rebalance(Algo):
 
         # calc covariance matrix
         if self.covar_method == "ledoit-wolf":
-            covar = sklearn.covariance.ledoit_wolf(returns)
+            covar = pd.DataFrame(
+                sklearn.covariance.ledoit_wolf(returns.dropna())[0],
+                index=returns.columns,
+                columns=returns.columns,
+            )
         elif self.covar_method == "standard":
             covar = returns.cov()
         else:
