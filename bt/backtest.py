@@ -235,28 +235,38 @@ class Backtest:
         return self._prepend_missing_row(df)
 
     def _install_cost_model_hook(self):
-        """Wire per-security ``commission`` after strategy setup. Also covers
-        lazily-created child securities by hooking ``_create_child_if_needed``.
-        """
+        """Wire commissions throughout real and paper trees after setup."""
         original_setup = self.strategy.setup
-        original_create = self.strategy._create_child_if_needed
 
         def hooked_setup(*args, **kwargs):
             result = original_setup(*args, **kwargs)
-            for member in self.strategy.members:
-                if isinstance(member, bt.core.SecurityBase):
-                    self._wire_security(member)
+            strategy = self.strategy
+            assert isinstance(strategy, bt.core.StrategyBase)
+            self._wire_strategy_tree(strategy)
             return result
 
-        def hooked_create(child):
+        self.strategy.setup = hooked_setup
+
+    def _wire_strategy_tree(self, strategy: bt.core.StrategyBase):
+        """Wire direct securities and lazy creation in a strategy tree."""
+        original_create = strategy._create_child_if_needed
+
+        def hooked_create(child: str):
             result = original_create(child)
-            sec = self.strategy.children.get(child)
+            sec = strategy.children.get(child)
             if isinstance(sec, bt.core.SecurityBase):
                 self._wire_security(sec)
             return result
 
-        self.strategy.setup = hooked_setup
-        self.strategy._create_child_if_needed = hooked_create
+        strategy._create_child_if_needed = hooked_create
+        for child in strategy._childrenv:
+            if isinstance(child, bt.core.SecurityBase):
+                self._wire_security(child)
+            elif isinstance(child, bt.core.StrategyBase):
+                self._wire_strategy_tree(child)
+                # Nested strategies price themselves through a separate paper tree.
+                if child._paper_trade:
+                    self._wire_strategy_tree(child._paper)
 
     def _wire_security(self, security):
         if getattr(security, "_cost_model_wired", False):

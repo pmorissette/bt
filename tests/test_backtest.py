@@ -635,6 +635,72 @@ def test_backtest_cost_model_ac_zero_alpha_beta_matches_flat_commission():
     )
 
 
+@pytest.mark.parametrize("lazy_security", [False, True], ids=["explicit", "lazy"])
+def test_backtest_cost_model_matches_legacy_in_nested_strategies(
+    lazy_security: bool,
+):
+    dates = pd.date_range("2020-01-01", periods=3, freq="B")
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+    volume = pd.DataFrame({"A": 1_000_000.0}, index=dates)
+    volatility = pd.DataFrame({"A": 0.02}, index=dates)
+    epsilon = 0.01
+
+    def trade_algos() -> list[bt.Algo]:
+        return [
+            bt.algos.RunOnDate(dates[0]),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ]
+
+    def nested_strategy(name: str) -> bt.Strategy:
+        security = "A" if lazy_security else bt.Security("A")
+        leaf = bt.Strategy("leaf", trade_algos(), children=[security])
+        return bt.Strategy(name, trade_algos(), children=[leaf])
+
+    def legacy_commission(q: float, p: float) -> float:
+        return abs(q) * p * epsilon
+
+    cost_model = bt.Backtest(
+        nested_strategy("cost_model"),
+        prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=epsilon),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=10_000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    legacy = bt.Backtest(
+        nested_strategy("legacy"),
+        prices,
+        commissions=legacy_commission,
+        initial_capital=10_000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+
+    bt.run(cost_model, legacy)
+
+    cost_leaf = cost_model.strategy["leaf"]
+    legacy_leaf = legacy.strategy["leaf"]
+
+    # Derive the real trade and fee directly from the cost-inclusive unit outlay.
+    expected_quantity = 10_000.0 / (100.0 * (1.0 + epsilon))
+    expected_fee = expected_quantity * 100.0 * epsilon
+    assert cost_leaf["A"].position == pytest.approx(expected_quantity)
+    assert cost_leaf.fees.sum() == pytest.approx(expected_fee)
+    assert cost_model.strategy.value == pytest.approx(10_000.0 - expected_fee)
+    assert cost_model.strategy.value == pytest.approx(legacy.strategy.value)
+
+    # Paper strategies trade a fixed independent amount but obey the same cost contract.
+    expected_paper_quantity = 1_000_000.0 / (100.0 * (1.0 + epsilon))
+    expected_paper_fee = expected_paper_quantity * 100.0 * epsilon
+    assert cost_leaf._paper["A"].position == pytest.approx(expected_paper_quantity)
+    assert cost_leaf._paper.fees.sum() == pytest.approx(expected_paper_fee)
+    assert cost_leaf.price == pytest.approx(legacy_leaf.price)
+
+
 def test_backtest_cost_model_active_ac_costs_higher_than_flat_path():
     prices, volume, volatility = _impact_universe()
     eps = 0.0005
