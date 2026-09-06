@@ -2359,6 +2359,9 @@ class HedgeRisks(Algo):
     """
     Hedges risk measures with selected instruments.
 
+    Unit risk is scaled by each selected security's multiplier to obtain its
+    per-contract sensitivity.
+
     Make sure that the UpdateRisk algo has been called beforehand.
 
     Args:
@@ -2419,6 +2422,16 @@ class HedgeRisks(Algo):
             data.append((i, d))
 
         hedge_risk = np.array([[_get_unit_risk(s, d, i) for (i, d) in data] for s in securities])
+        hedge_risk = hedge_risk.astype(float, copy=False)
+        for row in range(hedge_risk.shape[0]):
+            security = securities[row]
+            child = target.children.get(security)
+            if child is None:
+                child = target._lazy_children.get(security)
+
+            # Undeclared names become multiplier-one Securities when transacted.
+            if isinstance(child, bt.core.SecurityBase):
+                hedge_risk[row] *= child.multiplier
 
         # Get hedge ratios
         if self.pseudo:
