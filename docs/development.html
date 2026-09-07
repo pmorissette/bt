@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Develop bt &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/custom.css?v=890fd012" />
+    <script src="../_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/custom.js?v=956e5d78"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="API overview" href="source/overview.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section class="tex2jax_ignore mathjax_ignore" id="develop-bt">
+<h1>Develop bt<a class="headerlink" href="#develop-bt" title="Link to this heading">¶</a></h1>
+<p>Use Python 3.11 for the development and documentation tools. bt’s runtime still supports Python 3.9 and later. Install <a class="reference external" href="https://docs.astral.sh/uv/">uv</a> and a C compiler for the Cython extension, then create an environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.11
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+make<span class="w"> </span>develop
+make<span class="w"> </span>lint
+make<span class="w"> </span>checks
+make<span class="w"> </span>coverage
+make<span class="w"> </span>build
+make<span class="w"> </span>test-dist
+</pre></div>
+</div>
+<p>On Windows, activate with <code class="docutils literal notranslate"><span class="pre">.venv\Scripts\activate</span></code> instead. Run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">help</span></code> for available targets. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test</span></code> runs tests without coverage; <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">benchmark</span></code> runs the separate backtest benchmarks. Type checking (<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">check-types</span></code>) is advisory and not a CI gate.</p>
+<p>Coverage measures the Python modules. The compiled <code class="docutils literal notranslate"><span class="pre">bt.core</span></code> extension is still tested, but excluded from coverage because it is built without Cython line tracing.</p>
+<section id="build-the-documentation">
+<h2>Build the documentation<a class="headerlink" href="#build-the-documentation" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>docs-develop
+make<span class="w"> </span>docs
+make<span class="w"> </span>serve
+</pre></div>
+</div>
+<p>Open <a class="reference external" href="http://localhost:9087">http://localhost:9087</a>. Yardang reads <code class="docutils literal notranslate"><span class="pre">[tool.yardang]</span></code> in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, generates the homepage from <code class="docutils literal notranslate"><span class="pre">README.md</span></code>, and uses the repository root as the Sphinx source directory. Output goes into <code class="docutils literal notranslate"><span class="pre">docs/html</span></code>, using the installed Klink theme. The old Sphinx Makefiles, hand-maintained <code class="docutils literal notranslate"><span class="pre">conf.py</span></code>, vendored theme, and manual <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">pages</span></code> deployment are no longer used.</p>
+<p><code class="docutils literal notranslate"><span class="pre">docs/requirements.txt</span></code> pins released Yardang and Klink packages; no unreleased Yardang changes are required. <code class="docutils literal notranslate"><span class="pre">docs/build.py</span></code> uses Yardang’s configuration generator and Sphinx’s public API to register Klink’s theme path, resolve static assets, configure ffn cross-references, and treat warnings as errors. These small compatibility overrides can be removed as upstream support becomes available.</p>
+<p>Edit the landing page in <code class="docutils literal notranslate"><span class="pre">README.md</span></code> and API reference in <code class="docutils literal notranslate"><span class="pre">docs/source/overview.md</span></code>. Other guides and notebook examples still use their checked-in reStructuredText sources and images; documentation builds do not execute notebooks or fetch market data. After editing notebooks, install Pandoc and regenerate the exports with Klink’s conversion helper:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>nbconvert
+<span class="nb">cd</span><span class="w"> </span>docs/source
+python<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import klink; klink.convert_notebooks()'</span>
+</pre></div>
+</div>
+<p>This converts saved notebook outputs without executing cells, copies images into <code class="docutils literal notranslate"><span class="pre">_static</span></code>, and updates image paths and Klink CSS classes. Review and commit the changed notebooks, exports, and images together.</p>
+<p>Pull requests build documentation and upload an HTML artifact. Successful pushes to <code class="docutils literal notranslate"><span class="pre">master</span></code> also publish to the existing <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch. Local builds never publish.</p>
+</section>
+<section id="continue-the-markdown-migration">
+<h2>Continue the Markdown migration<a class="headerlink" href="#continue-the-markdown-migration" title="Link to this heading">¶</a></h2>
+<p>The first increment adopts Yardang’s README landing page and moves <code class="docutils literal notranslate"><span class="pre">bt.rst</span></code> to <code class="docutils literal notranslate"><span class="pre">overview.md</span></code>. Autodoc directives remain inside MyST <code class="docutils literal notranslate"><span class="pre">eval-rst</span></code> fences so existing RST docstrings and API anchors render correctly, as described in the <a class="reference external" href="https://myst-parser.readthedocs.io/en/stable/faq/index.html#use-sphinx-ext-autodoc-in-markdown-files">MyST autodoc guide</a>. The remaining conversion is separate from the build migration:</p>
+<ol class="arabic simple">
+<li><p>Convert the hand-written installation, algorithm, and tree guides to Markdown, preserving Sphinx cross-references and heading anchors. Keep tutorials, task guides, and API reference distinct.</p></li>
+<li><p>Convert raw reStructuredText cells in <code class="docutils literal notranslate"><span class="pre">intro.ipynb</span></code> and <code class="docutils literal notranslate"><span class="pre">examples-nb.ipynb</span></code> to Markdown before exporting notebooks. Use saved outputs, retain image paths and Klink styling, and replace each RST export with its Markdown equivalent in the same change. Do not leave both formats with the same basename.</p></li>
+<li><p>Convert the examples index and its RST includes to MyST equivalents. Remove the excluded legacy <code class="docutils literal notranslate"><span class="pre">docs/source/index.rst</span></code> once any useful material has been incorporated into the landing page or guides.</p></li>
+</ol>
+<p>For each conversion, run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">docs</span></code> and check navigation, images, API links, and heading links in a browser. Preserve page basenames where possible; maintain <code class="docutils literal notranslate"><span class="pre">[tool.yardang.redirects]</span></code> when paths change. The current redirects preserve legacy page URLs, including <code class="docutils literal notranslate"><span class="pre">bt.html</span></code>, and forward their fragments; renamed headings need explicit compatibility anchors.</p>
+</section>
+<section id="update-the-copier-template">
+<h2>Update the Copier template<a class="headerlink" href="#update-the-copier-template" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">.copier-answers.yaml</span></code> records the Cython variant of <a class="reference external" href="https://github.com/python-project-templates/base">python-project-templates/base</a> and the exact template revision. From a clean branch, update with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>copier<span class="w"> </span>update<span class="w"> </span>--answers-file<span class="w"> </span>.copier-answers.yaml<span class="w"> </span>--trust
+</pre></div>
+</div>
+<p>Review the resulting diff and resolve conflicts before running the checks above. The Python Templates Copier Update GitHub App can propose updates automatically; installing that app is separate from this repository change.</p>
+<p>bt intentionally retains its MIT license, runtime Python floor, package metadata and version, Cython build hook, native wheel matrix, top-level <code class="docutils literal notranslate"><span class="pre">tests</span></code> directory, benchmarks, and Ruff line length. Documentation adopts the template’s Markdown homepage while retaining Klink styling and redirecting legacy page URLs. The docs workflow builds from source because bt’s CI produces platform-specific wheel artifacts.</p>
+<p>The Cython template supplies shared Python/compiler setup, native-wheel CI, and distribution smoke tests. CI builds wheels from clean sdists instead of deleting compiled files from the checkout. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-dist</span></code> checks installed native extensions outside the source tree and rebuilds sdists into wheels for the same check. bt retains its full source-tree test suite; cibuildwheel verifies that each installed wheel imports the compiled <code class="docutils literal notranslate"><span class="pre">bt.core</span></code> extension.</p>
+<p>The build workflow follows the template’s Python 3.11–3.14 matrix on Linux x86_64/ARM64, macOS ARM64, and Windows x86_64. The separate release workflow retains its existing Python versions and macOS architecture selection. The runtime minimum remains unchanged.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../index.html" id="logo" title=bt><img class="logo" src="../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            Philippe Morissette
+        </div>
+
+        
+  </body>
+</html>

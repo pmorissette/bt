@@ -1,18 +1,432 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>bt.backtest &#8212; bt 0.2.10 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../_static/doctools.js"></script>
+    <title>bt.backtest &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/custom.css?v=890fd012" />
+    <script src="../../_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (true) {
+                                        addZoomToSvgs(d3.selectAll(".mermaid").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (true) {
+        const mermaids_to_add_zoom = -1 === -1 ? mermaids_active.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll(".mermaid").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (true) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+// Resolves once the lazily-loaded zenuml plugin has registered (or immediately
+// when the page has no zenuml diagram). `load` awaits this before rendering.
+let zenumlReady = Promise.resolve();
+const pageHasZenuml = () => [...document.querySelectorAll(".mermaid")].some((el) => {
+    const code = el.getAttribute("data-original-code") || el.textContent || "";
+    const diagram = code
+        .replace(/^\s*---\s*\n[^]*?\n---\s*/, "")
+        .replace(/^\s*%%\{[^]*?\}%%\s*/, "");
+    return /^\s*zenuml\b/i.test(diagram);
+});
+
+
+const load = async () => {
+    initStyles();
+
+
+    // Wait for the zenuml plugin (loaded lazily below) to finish registering
+    // before rendering, so zenuml diagrams are recognised.
+    await zenumlReady;
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+mermaid.registerLayoutLoaders(elkLayouts);
+
+
+
+// Only load and register the zenuml plugin when the page actually contains a
+// zenuml diagram. This avoids fetching the (large) zenuml bundle on every page,
+// and avoids its side effects where they are not needed. The import is kept off
+// the module's top level (no top-level await) so the "load" listener below is
+// still registered synchronously; `load` awaits `zenumlReady` before rendering.
+if (pageHasZenuml()) {
+    // The zenuml bundle injects a stylesheet that declares generic design tokens
+    // (--background, --border, --white, ...) on :root, clobbering identically-named
+    // tokens in the host theme (sphinxawesome, shibuya, ...) and causing a flash of
+    // restyled page content. Confine those declarations to the zenuml diagram
+    // subtree so they no longer leak onto the host page.
+    const descopeZenumlStyle = (node) => {
+        if (!node || node.tagName !== "STYLE" || node.hasAttribute("data-zenuml-descoped")) return;
+        const css = node.textContent || "";
+        if (!css.includes("--occurance-border")) return; // zenuml stylesheet signature
+        node.setAttribute("data-zenuml-descoped", "true");
+        node.textContent = css.replace(/:root\b/g, ".zenuml");
+    };
+    new MutationObserver((records) => {
+        for (const rec of records) {
+            for (const node of rec.addedNodes) descopeZenumlStyle(node);
+        }
+    }).observe(document.head, { childList: true });
+
+    zenumlReady = import("https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.2.2/dist/mermaid-zenuml.esm.min.mjs").then(({ default: zenumlLayouts }) => {
+        mermaid.registerExternalDiagrams([zenumlLayouts]);
+    });
+}
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script src="../../_static/js/custom.js?v=956e5d78"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
          
@@ -29,40 +443,54 @@
           <div class="body" role="main">
             
   <h1>Source code for bt.backtest</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Contains backtesting logic and objects.</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">import</span> <span class="nn">bt</span>
-<span class="kn">import</span> <span class="nn">ffn</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">import</span> <span class="nn">pyprind</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ffn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyprind</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bt</span>
 
 
-<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../bt.html#bt.backtest.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="run">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.run">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="o">*</span><span class="n">backtests</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Runs a series of backtests and returns a Result</span>
 <span class="sd">    object containing the results of the backtests.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        * backtest (*list): List of backtests.</span>
+<span class="sd">        * backtests (list): Backtests to run.</span>
+<span class="sd">        * progress_bar (bool): Show progress bar. Defaults to True unless</span>
+<span class="sd">          all backtests have progress_bar=False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Result</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
+    <span class="c1"># If progress_bar not explicitly set, derive from backtests' settings</span>
+    <span class="k">if</span> <span class="n">progress_bar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">progress_bar</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">bkt</span><span class="p">,</span> <span class="s2">"progress_bar"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">bkt</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">)</span>
+
     <span class="c1"># run each backtest</span>
-    <span class="k">for</span> <span class="n">bkt</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">bkt</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">backtests</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">progress_bar</span><span class="p">):</span>
         <span class="n">bkt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">Result</span><span class="p">(</span><span class="o">*</span><span class="n">backtests</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="benchmark_random"><a class="viewcode-back" href="../../bt.html#bt.backtest.benchmark_random">[docs]</a><span class="k">def</span> <span class="nf">benchmark_random</span><span class="p">(</span><span class="n">backtest</span><span class="p">,</span> <span class="n">random_strategy</span><span class="p">,</span> <span class="n">nsim</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="benchmark_random">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.benchmark_random">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">benchmark_random</span><span class="p">(</span><span class="n">backtest</span><span class="p">,</span> <span class="n">random_strategy</span><span class="p">,</span> <span class="n">nsim</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Given a backtest and a random strategy, compare backtest to</span>
 <span class="sd">    a number of random portfolios.</span>
 
@@ -83,10 +511,10 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        RandomBenchmarkResult</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># save name for future use</span>
     <span class="k">if</span> <span class="n">backtest</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">backtest</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;original&quot;</span>
+        <span class="n">backtest</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"original"</span>
 
     <span class="c1"># run if necessary</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">backtest</span><span class="o">.</span><span class="n">has_run</span><span class="p">:</span>
@@ -97,8 +525,8 @@
     <span class="n">data</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
 
     <span class="c1"># create and run random backtests</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsim</span><span class="p">):</span>
-        <span class="n">random_strategy</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;random_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nsim</span><span class="p">)):</span>
+        <span class="n">random_strategy</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"random_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
         <span class="n">rbt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">random_strategy</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="n">rbt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
@@ -110,9 +538,11 @@
     <span class="k">return</span> <span class="n">res</span></div>
 
 
-<div class="viewcode-block" id="Backtest"><a class="viewcode-back" href="../../bt.html#bt.backtest.Backtest">[docs]</a><span class="k">class</span> <span class="nc">Backtest</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Backtest">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Backtest">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Backtest</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A Backtest combines a Strategy with data to</span>
 <span class="sd">    produce a Result.</span>
 
@@ -125,13 +555,22 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        * strategy (Strategy, Node, StrategyBase): The Strategy to be tested.</span>
-<span class="sd">        * data (DataFrame): DataFrame containing data used in backtest. This</span>
-<span class="sd">          will be the Strategy&#39;s &quot;universe&quot;.</span>
+<span class="sd">        * data (DataFrame): DataFrame containing data used in backtest. The</span>
+<span class="sd">          index must be monotonic increasing. This will be the Strategy's</span>
+<span class="sd">          "universe".</span>
 <span class="sd">        * name (str): Backtest name - defaults to strategy name</span>
 <span class="sd">        * initial_capital (float): Initial amount of capital passed to</span>
 <span class="sd">          Strategy.</span>
-<span class="sd">        * commissions (fn(quantity, price)): The commission function</span>
-<span class="sd">          to be used. Ex: commissions=lambda q, p: max(1, abs(q) * 0.01)</span>
+<span class="sd">        * commissions: The transaction cost model. Either:</span>
+
+<span class="sd">          - a callable ``fn(quantity, price) -&gt; float`` (the original flat hook,</span>
+<span class="sd">            e.g. ``commissions=lambda q, p: max(1, abs(q) * 0.01)``), or</span>
+<span class="sd">          - an instance of :class:`bt.core.CostModel` (e.g.</span>
+<span class="sd">            :class:`bt.core.SqrtCostModel`,</span>
+<span class="sd">            :class:`bt.core.AlmgrenChrissCostModel`) for nonlinear,</span>
+<span class="sd">            size-aware costs that depend on bar volume and volatility.</span>
+<span class="sd">            When a ``CostModel`` is passed, ``volume`` and ``volatility``</span>
+<span class="sd">            must also be supplied.</span>
 <span class="sd">        * integer_positions (bool): Whether to use integer positions for securities</span>
 <span class="sd">          in the backtest. This can have unintended consequences when prices are</span>
 <span class="sd">          high relative to the amount of capital (i.e. though split-adjusted prices,</span>
@@ -141,22 +580,29 @@
 <span class="sd">        * additional_data (dict): Additional kwargs passed to StrategyBase.setup, after preprocessing</span>
 <span class="sd">          This data can be retrieved by Algos using StrategyBase.get_data.</span>
 <span class="sd">          The data may also be used by the Strategy itself, i.e.</span>
-<span class="sd">            - ``bidoffer``: A DataFrame with the same format as &#39;data&#39;, will be used</span>
+
+<span class="sd">            - ``bidoffer``: A DataFrame with the same format as 'data', will be used</span>
 <span class="sd">              by the strategy for transaction cost modeling</span>
-<span class="sd">            - ``coupons``: A DataFrame with the same format as &#39;data&#39;, will by used</span>
+<span class="sd">            - ``coupons``: A DataFrame with the same format as 'data', will by used</span>
 <span class="sd">              by :class:`CouponPayingSecurity &lt;bt.core.CouponPayingSecurity&gt;`</span>
 <span class="sd">              to determine cashflows.</span>
-<span class="sd">            - ``cost_long``/``cost_short``: A DataFrame with the same format as &#39;data&#39;,</span>
+<span class="sd">            - ``cost_long``/``cost_short``: A DataFrame with the same format as 'data',</span>
 <span class="sd">              will by used</span>
 <span class="sd">              by :class:`CouponPayingSecurity &lt;bt.core.CouponPayingSecurity&gt;`</span>
 <span class="sd">              to calculate asymmetric holding cost of long (or short) positions.</span>
+<span class="sd">        * volume (DataFrame): per-security bar volume, same index and columns</span>
+<span class="sd">          as ``data``. Required when ``commissions`` is a ``CostModel``,</span>
+<span class="sd">          ignored otherwise.</span>
+<span class="sd">        * volatility (DataFrame): per-security bar volatility, same index and</span>
+<span class="sd">          columns as ``data``. Required when ``commissions`` is a</span>
+<span class="sd">          ``CostModel``, ignored otherwise.</span>
 
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        * strategy (Strategy): The Backtest&#39;s Strategy. This will be a deepcopy</span>
+<span class="sd">        * strategy (Strategy): The Backtest's Strategy. This will be a deepcopy</span>
 <span class="sd">          of the Strategy that was passed in.</span>
 <span class="sd">        * data (DataFrame): Data passed in</span>
-<span class="sd">        * dates (DateTimeIndex): Data&#39;s index</span>
+<span class="sd">        * dates (DateTimeIndex): Data's index</span>
 <span class="sd">        * initial_capital (float): Initial capital</span>
 <span class="sd">        * name (str): Backtest name</span>
 <span class="sd">        * stats (ffn.PerformanceStats): Performance statistics</span>
@@ -166,9 +612,9 @@
 <span class="sd">          percentage of the whole portfolio over time</span>
 <span class="sd">        * additional_data (dict): Additional data passed at construction</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">strategy</span><span class="p">,</span>
         <span class="n">data</span><span class="p">,</span>
@@ -178,13 +624,16 @@
         <span class="n">integer_positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">additional_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">volume</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">volatility</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
             <span class="n">cols</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                <span class="s2">&quot;data provided has some duplicate column names: </span><span class="se">\n</span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Please remove duplicates!&quot;</span> <span class="o">%</span> <span class="n">cols</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"data provided has some duplicate column names: </span><span class="se">\n</span><span class="si">{</span><span class="n">cols</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">Please remove duplicates!"</span><span class="p">)</span>
+
+        <span class="c1"># Label-based universe slicing can otherwise expose future rows.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_monotonic_increasing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"data index must be monotonic increasing"</span><span class="p">)</span>
 
         <span class="c1"># we want to reuse strategy logic - copy it!</span>
         <span class="c1"># basically strategy is a template</span>
@@ -197,21 +646,139 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">strategy</span><span class="o">.</span><span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">progress_bar</span> <span class="o">=</span> <span class="n">progress_bar</span>
 
-        <span class="k">if</span> <span class="n">commissions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">commissions</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">CostModel</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_cost_model</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">volatility</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cost_model</span> <span class="o">=</span> <span class="n">commissions</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_impact_frame</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volatility</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_impact_frame</span><span class="p">(</span><span class="n">volatility</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_install_cost_model_hook</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">commissions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">set_commissions</span><span class="p">(</span><span class="n">commissions</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_original_prices</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_prices</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sweights</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">_process_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_cost_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">volatility</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">volume</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">volatility</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`volume` and `volatility` are required when `commissions` is a CostModel."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">volume</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`volume` index must match `data` index."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">volatility</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`volatility` index must match `data` index."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">volume</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`volume` columns must match `data` columns."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">volatility</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`volatility` columns must match `data` columns."</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepend_missing_row</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Prepend an all-missing row, promoting non-nullable column dtypes."""</span>
+        <span class="c1"># Expand positionally so duplicate date labels retain their existing behavior.</span>
+        <span class="n">positional</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">set_axis</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">RangeIndex</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+        <span class="n">positional</span> <span class="o">=</span> <span class="n">positional</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">RangeIndex</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">positional</span><span class="o">.</span><span class="n">set_axis</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_align_impact_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Prepend the t0-1 NaN row that ``_process_data`` adds to ``data``,</span>
+<span class="sd">        so per-bar lookups by ``security.now`` always resolve.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepend_missing_row</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_install_cost_model_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Wire commissions throughout real and paper trees after setup."""</span>
+        <span class="n">original_setup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">setup</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">hooked_setup</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">original_setup</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">strategy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">setup</span> <span class="o">=</span> <span class="n">hooked_setup</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wire_strategy_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Wire direct securities and lazy creation in a strategy tree."""</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="s2">"_cost_model_tree_wired"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">original_create</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_create_child_if_needed</span>
+        <span class="n">original_add</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_add_children</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">hooked_add</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">dc</span><span class="p">):</span>
+            <span class="n">first_new_child</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">strategy</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">original_add</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">dc</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">[</span><span class="n">first_new_child</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">SecurityBase</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_wire_security</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_install_dynamic_strategy_hook</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">hooked_create</span><span class="p">(</span><span class="n">child</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">original_create</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">SecurityBase</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_wire_security</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_wire_nested_strategy</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">strategy</span><span class="o">.</span><span class="n">_add_children</span> <span class="o">=</span> <span class="n">hooked_add</span>
+        <span class="n">strategy</span><span class="o">.</span><span class="n">_create_child_if_needed</span> <span class="o">=</span> <span class="n">hooked_create</span>
+        <span class="n">strategy</span><span class="o">.</span><span class="n">_cost_model_tree_wired</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">SecurityBase</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_wire_security</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_wire_nested_strategy</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wire_nested_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+        <span class="c1"># Nested strategies price themselves through a separate paper tree.</span>
+        <span class="k">if</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_paper_trade</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">strategy</span><span class="o">.</span><span class="n">_paper</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_install_dynamic_strategy_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+        <span class="n">original_setup_from_parent</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">setup_from_parent</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">hooked_setup_from_parent</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">original_setup_from_parent</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wire_nested_strategy</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">strategy</span><span class="o">.</span><span class="n">setup_from_parent</span> <span class="o">=</span> <span class="n">hooked_setup_from_parent</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wire_security</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">security</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">security</span><span class="p">,</span> <span class="s2">"_cost_model_wired"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">cost_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_model</span>
+        <span class="n">V_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume</span>
+        <span class="n">S_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">commission</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">now</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">return</span> <span class="n">cost_model</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">V_df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">dt</span><span class="p">,</span> <span class="n">name</span><span class="p">],</span> <span class="n">S_df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">dt</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span>
+
+        <span class="n">security</span><span class="o">.</span><span class="n">commission</span> <span class="o">=</span> <span class="n">commission</span>
+        <span class="n">security</span><span class="o">.</span><span class="n">_cost_model_wired</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">):</span>
         <span class="c1"># add virtual row at t0-1day with NaNs</span>
         <span class="c1"># this is so that any trading action at t0 can be evaluated relative to</span>
         <span class="c1"># a clean starting point. This is related to #83. Basically, if you</span>
         <span class="c1"># have a big trade / commision on day 0, then the Strategy.prices will</span>
-        <span class="c1"># be adjusted at 0, and hide the &#39;total&#39; return. The series should</span>
+        <span class="c1"># be adjusted at 0, and hide the 'total' return. The series should</span>
         <span class="c1"># start at 100, but may start at 90, for example. Here, we add a</span>
         <span class="c1"># starting point at t0-1day, and this is the reference starting point</span>
         <span class="n">data_new</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
@@ -231,28 +798,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">additional_data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="c1"># Look for data frames with the same index as (original) data,</span>
-        <span class="c1"># and add in the first row as well (i.e. &quot;bidoffer&quot;)</span>
+        <span class="c1"># and add in the first row as well (i.e. "bidoffer")</span>
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span><span class="p">:</span>
             <span class="n">old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">and</span> <span class="n">old</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
-                <span class="n">empty_row</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
-                    <span class="n">columns</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
-                    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="n">old</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)],</span>
-                <span class="p">)</span>
-                <span class="n">new</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">empty_row</span><span class="p">,</span> <span class="n">old</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="ow">and</span> <span class="n">old</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
-                <span class="n">empty_row</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="n">old</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
-                <span class="p">)</span>
-                <span class="n">new</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">empty_row</span><span class="p">,</span> <span class="n">old</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">))</span> <span class="ow">and</span> <span class="n">old</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepend_missing_row</span><span class="p">(</span><span class="n">old</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Backtest.run"><a class="viewcode-back" href="../../bt.html#bt.backtest.Backtest.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Backtest.run">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Backtest.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Runs the Backtest.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_run</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -291,43 +848,58 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress_bar</span><span class="p">:</span>
                     <span class="n">bar</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">calc_perf_stats</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_original_prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">prices</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_original_prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">prices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat_prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_stat_prices</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stat_prices</span><span class="o">.</span><span class="n">calc_perf_stats</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_stat_prices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">prices</span>
+        <span class="n">first_transaction_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">security</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">securities</span><span class="p">:</span>
+            <span class="n">positions</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">positions</span>
+            <span class="n">position_changed</span> <span class="o">=</span> <span class="n">positions</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="n">positions</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">position_changed</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="n">transaction_date</span> <span class="o">=</span> <span class="n">positions</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">position_changed</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">first_transaction_date</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">transaction_date</span> <span class="o">&lt;</span> <span class="n">first_transaction_date</span><span class="p">:</span>
+                    <span class="n">first_transaction_date</span> <span class="o">=</span> <span class="n">transaction_date</span>
+
+        <span class="k">if</span> <span class="n">first_transaction_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">first_transaction_position</span> <span class="o">=</span> <span class="n">prices</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_indexer_for</span><span class="p">([</span><span class="n">first_transaction_date</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">prices</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">first_transaction_position</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">:]</span>
+
+        <span class="k">return</span> <span class="n">prices</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        DataFrame of each component&#39;s weight over time</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        DataFrame of each component's weight over time</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
-                <span class="n">vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                    <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">full_name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">notional_values</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">members</span><span class="p">}</span>
-                <span class="p">)</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">full_name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">notional_values</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">members</span><span class="p">})</span>
                 <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">notional_values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                    <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">full_name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">members</span><span class="p">}</span>
-                <span class="p">)</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">full_name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">members</span><span class="p">})</span>
                 <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">vals</span>
             <span class="k">return</span> <span class="n">vals</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">positions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        DataFrame of each component&#39;s position over time</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">positions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        DataFrame of each component's position over time</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">positions</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">security_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">security_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        DataFrame containing weights of each security as a</span>
 <span class="sd">        percentage of the whole portfolio over time</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sweights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sweights</span>
         <span class="k">else</span><span class="p">:</span>
@@ -337,9 +909,9 @@
             <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">SecurityBase</span><span class="p">):</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
-                        <span class="n">m_values</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">notional_values</span>
+                        <span class="n">m_values</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">notional_values</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">m_values</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">values</span>
+                        <span class="n">m_values</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                     <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
                         <span class="n">vals</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="n">m_values</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -358,8 +930,8 @@
             <span class="k">return</span> <span class="n">vals</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">herfindahl_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">herfindahl_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculate Herfindahl-Hirschman Index (HHI) for the portfolio.</span>
 <span class="sd">        For each given day, HHI is defined as a sum of squared weights of</span>
 <span class="sd">        securities in a portfolio; and varies from 1/N to 1.</span>
@@ -367,20 +939,20 @@
 <span class="sd">        value of 1 corresponds to an extreme case when all amount is invested</span>
 <span class="sd">        in a single asset.</span>
 
-<span class="sd">        1 / HHI is often considered as &quot;an effective number of assets&quot; in</span>
+<span class="sd">        1 / HHI is often considered as "an effective number of assets" in</span>
 <span class="sd">        a given portfolio</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">security_weights</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">turnover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">turnover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculate the turnover for the backtest.</span>
 
 <span class="sd">        This function will calculate the turnover for the strategy. Turnover is</span>
 <span class="sd">        defined as the lesser of positive or negative outlays divided by NAV</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span>
         <span class="n">outlays</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">outlays</span>
 
@@ -389,18 +961,20 @@
         <span class="n">outlaysn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">outlays</span><span class="p">[</span><span class="n">outlays</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="c1"># merge and keep minimum</span>
-        <span class="n">min_outlay</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="n">outlaysp</span><span class="p">,</span> <span class="s2">&quot;neg&quot;</span><span class="p">:</span> <span class="n">outlaysn</span><span class="p">})</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">min_outlay</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"pos"</span><span class="p">:</span> <span class="n">outlaysp</span><span class="p">,</span> <span class="s2">"neg"</span><span class="p">:</span> <span class="n">outlaysn</span><span class="p">})</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># turnover is defined as min outlay / nav</span>
-        <span class="n">mrg</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;outlay&quot;</span><span class="p">:</span> <span class="n">min_outlay</span><span class="p">,</span> <span class="s2">&quot;nav&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">})</span>
+        <span class="n">mrg</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"outlay"</span><span class="p">:</span> <span class="n">min_outlay</span><span class="p">,</span> <span class="s2">"nav"</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">})</span>
 
-        <span class="k">return</span> <span class="n">mrg</span><span class="p">[</span><span class="s2">&quot;outlay&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">mrg</span><span class="p">[</span><span class="s2">&quot;nav&quot;</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">mrg</span><span class="p">[</span><span class="s2">"outlay"</span><span class="p">]</span> <span class="o">/</span> <span class="n">mrg</span><span class="p">[</span><span class="s2">"nav"</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="Result"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result">[docs]</a><span class="k">class</span> <span class="nc">Result</span><span class="p">(</span><span class="n">ffn</span><span class="o">.</span><span class="n">GroupStats</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Based on ffn&#39;s GroupStats with a few extra helper methods.</span>
+<div class="viewcode-block" id="Result">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Result</span><span class="p">(</span><span class="n">ffn</span><span class="o">.</span><span class="n">GroupStats</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Based on ffn's GroupStats with a few extra helper methods.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * backtests (list): List of backtests</span>
@@ -409,28 +983,46 @@
 <span class="sd">        * backtest_list (list): List of bactests in the same order as provided</span>
 <span class="sd">        * backtests (dict): Dict of backtests by name</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">prices</span><span class="p">})</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">]</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Result</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">tmp</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">_stat_prices</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">_stat_prices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">prices</span><span class="p">})</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">tmp</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backtest_list</span> <span class="o">=</span> <span class="n">backtests</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backtests</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">}</span>
 
-<div class="viewcode-block" id="Result.display_monthly_returns"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result.display_monthly_returns">[docs]</a>    <span class="k">def</span> <span class="nf">display_monthly_returns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Result.display_monthly_returns">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.display_monthly_returns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_monthly_returns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Display monthly returns for a specific backtest.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            * backtest (str, int): Backtest. Can be either a index (int) or the</span>
 <span class="sd">                name (str)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backtest</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
         <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">display_monthly_returns</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Result.get_weights"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result.get_weights">[docs]</a>    <span class="k">def</span> <span class="nf">get_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Result.get_monthly_max_drawdown">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.get_monthly_max_drawdown">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_monthly_max_drawdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return maximum drawdown from monthly-resampled prices.</span>
+
+<span class="sd">        The final, potentially incomplete month is included.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">monthly_prices</span><span class="o">.</span><span class="n">calc_max_drawdown</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_names</span><span class="p">},</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">"monthly_max_drawdown"</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Result.get_weights">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.get_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        :param backtest: (str, int) Backtest can be either a index (int) or the</span>
 <span class="sd">                name (str)</span>
@@ -438,7 +1030,7 @@
 <span class="sd">                is simply passed as is to DataFrame[filter], so use something</span>
 <span class="sd">                that makes sense with a DataFrame.</span>
 <span class="sd">        :return: (pd.DataFrame) DataFrame of weights</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backtest</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
 
@@ -449,8 +1041,11 @@
 
         <span class="k">return</span> <span class="n">data</span></div>
 
-<div class="viewcode-block" id="Result.plot_weights"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result.plot_weights">[docs]</a>    <span class="k">def</span> <span class="nf">plot_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Result.plot_weights">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.plot_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plots the weights of a given backtest over time.</span>
 
 <span class="sd">        Args:</span>
@@ -462,13 +1057,16 @@
 <span class="sd">            * figsize ((width, height)): figure size</span>
 <span class="sd">            * kwds (dict): Keywords passed to plot</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_weights</span><span class="p">(</span><span class="n">backtest</span><span class="p">,</span> <span class="nb">filter</span><span class="p">)</span>
 
         <span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Result.get_security_weights"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result.get_security_weights">[docs]</a>    <span class="k">def</span> <span class="nf">get_security_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Result.get_security_weights">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.get_security_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_security_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        :param backtest: (str, int) Backtest can be either a index (int) or the</span>
 <span class="sd">                name (str)</span>
@@ -476,7 +1074,7 @@
 <span class="sd">                is simply passed as is to DataFrame[filter], so use something</span>
 <span class="sd">                that makes sense with a DataFrame.</span>
 <span class="sd">        :return: (pd.DataFrame) DataFrame of security weights</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backtest</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
 
@@ -487,8 +1085,11 @@
 
         <span class="k">return</span> <span class="n">data</span></div>
 
-<div class="viewcode-block" id="Result.plot_security_weights"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result.plot_security_weights">[docs]</a>    <span class="k">def</span> <span class="nf">plot_security_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Result.plot_security_weights">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.plot_security_weights">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_security_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plots the security weights of a given backtest over time.</span>
 
 <span class="sd">        Args:</span>
@@ -500,13 +1101,16 @@
 <span class="sd">            * figsize ((width, height)): figure size</span>
 <span class="sd">            * kwds (dict): Keywords passed to plot</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">(</span><span class="n">backtest</span><span class="p">,</span> <span class="nb">filter</span><span class="p">)</span>
 
         <span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Result.plot_histogram"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result.plot_histogram">[docs]</a>    <span class="k">def</span> <span class="nf">plot_histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Result.plot_histogram">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.plot_histogram">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plots the return histogram of a given backtest over time.</span>
 
 <span class="sd">        Args:</span>
@@ -514,20 +1118,23 @@
 <span class="sd">                name (str)</span>
 <span class="sd">            * kwds (dict): Keywords passed to plot_histogram</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_backtest</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
         <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">plot_histogram</span><span class="p">(</span><span class="o">**</span><span class="n">kwds</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_get_backtest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_backtest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backtest</span><span class="p">):</span>
         <span class="c1"># based on input order</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">backtest</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="n">backtest</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
 
         <span class="c1"># default case assume ok</span>
         <span class="k">return</span> <span class="n">backtest</span>
 
-<div class="viewcode-block" id="Result.get_transactions"><a class="viewcode-back" href="../../bt.html#bt.backtest.Result.get_transactions">[docs]</a>    <span class="k">def</span> <span class="nf">get_transactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Result.get_transactions">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Result.get_transactions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_transactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Helper function that returns the transactions in the following format:</span>
 
 <span class="sd">            Date, Security | quantity, price</span>
@@ -535,20 +1142,23 @@
 <span class="sd">        The result is a MultiIndex DataFrame.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            * strategy_name (str): If none, it will take the first backtest&#39;s</span>
+<span class="sd">            * strategy_name (str): If none, it will take the first backtest's</span>
 <span class="sd">              strategy (self.backtest_list[0].name)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">strategy_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">strategy_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
 
         <span class="c1"># extract strategy given strategy_name</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backtests</span><span class="p">[</span><span class="n">strategy_name</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">get_transactions</span><span class="p">()</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backtests</span><span class="p">[</span><span class="n">strategy_name</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">get_transactions</span><span class="p">()</span></div>
+</div>
 
 
-<div class="viewcode-block" id="RandomBenchmarkResult"><a class="viewcode-back" href="../../bt.html#bt.backtest.RandomBenchmarkResult">[docs]</a><span class="k">class</span> <span class="nc">RandomBenchmarkResult</span><span class="p">(</span><span class="n">Result</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RandomBenchmarkResult">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.RandomBenchmarkResult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RandomBenchmarkResult</span><span class="p">(</span><span class="n">Result</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    RandomBenchmarkResult expands on Result to add methods specific</span>
 <span class="sd">    to random strategy benchmarking.</span>
 
@@ -560,25 +1170,25 @@
 <span class="sd">        * r_stats (Result): Stats for random strategies</span>
 <span class="sd">        * b_stats (Result): Stats for benchmarked strategy</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RandomBenchmarkResult</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">backtests</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">backtests</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_name</span> <span class="o">=</span> <span class="n">backtests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
         <span class="c1"># seperate stats to make</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_name</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">b_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">base_name</span><span class="p">]</span>
 
-<div class="viewcode-block" id="RandomBenchmarkResult.plot_histogram"><a class="viewcode-back" href="../../bt.html#bt.backtest.RandomBenchmarkResult.plot_histogram">[docs]</a>    <span class="k">def</span> <span class="nf">plot_histogram</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s2">&quot;monthly_sharpe&quot;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RandomBenchmarkResult.plot_histogram">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.RandomBenchmarkResult.plot_histogram">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s2">"monthly_sharpe"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Plots the distribution of a given statistic. The histogram</span>
-<span class="sd">        represents the distribution of the random strategies&#39; statistic</span>
-<span class="sd">        and the vertical line is the value of the benchmarked strategy&#39;s</span>
+<span class="sd">        represents the distribution of the random strategies' statistic</span>
+<span class="sd">        and the vertical line is the value of the benchmarked strategy's</span>
 <span class="sd">        statistic.</span>
 
-<span class="sd">        This helps you determine if your strategy is statistically &#39;better&#39;</span>
+<span class="sd">        This helps you determine if your strategy is statistically 'better'</span>
 <span class="sd">        than the random versions.</span>
 
 <span class="sd">        Args:</span>
@@ -589,14 +1199,12 @@
 <span class="sd">            * bins (int): Number of bins</span>
 <span class="sd">            * kwargs (dict): Passed to pandas hist function.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">statistic</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_stats</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Invalid statistic. Valid statistics&quot;</span> <span class="s2">&quot;are the statistics in self.stats&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid statistic. Valid statisticsare the statistics in self.stats"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> histogram&quot;</span> <span class="o">%</span> <span class="n">statistic</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">statistic</span><span class="si">}</span><span class="s2"> histogram"</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
 
@@ -604,12 +1212,16 @@
 
         <span class="n">ax</span> <span class="o">=</span> <span class="n">ser</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">b_stats</span><span class="p">[</span><span class="n">statistic</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
-        <span class="n">ser</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;kde&quot;</span><span class="p">)</span></div></div>
+        <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">b_stats</span><span class="p">[</span><span class="n">statistic</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"r"</span><span class="p">)</span>
+        <span class="n">ser</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"kde"</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="RenormalizedFixedIncomeResult"><a class="viewcode-back" href="../../bt.html#bt.backtest.RenormalizedFixedIncomeResult">[docs]</a><span class="k">class</span> <span class="nc">RenormalizedFixedIncomeResult</span><span class="p">(</span><span class="n">Result</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RenormalizedFixedIncomeResult">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.RenormalizedFixedIncomeResult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RenormalizedFixedIncomeResult</span><span class="p">(</span><span class="n">Result</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A new result type to help compare results generated from</span>
 <span class="sd">    :class:`FixedIncomeStrategy &lt;bt.core.FixedIncomeStrategy&gt;`.</span>
 <span class="sd">    Recall that in a fixed income strategy, the normalized prices are computed</span>
@@ -620,43 +1232,42 @@
 <span class="sd">    different notionals in the denominator (i.e. price could be below par, but</span>
 <span class="sd">    overall change in value is positive).</span>
 
-<span class="sd">    This class provides a way to &quot;renormalize&quot; the results with a different</span>
+<span class="sd">    This class provides a way to "renormalize" the results with a different</span>
 <span class="sd">    denominator value or series, i.e. using max or average notional exposure,</span>
 <span class="sd">    or the risk exposure of the strategy.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * normalizing_value: pd.Series, float or dict thereof(by strategy name)</span>
 <span class="sd">        * backtests (list): List of backtests (i.e. from Result.backtest_list)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalizing_value</span><span class="p">,</span> <span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalizing_value</span><span class="p">,</span> <span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">backtest</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">backtest</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Cannot apply RenormalizedFixedIncomeResult &quot;</span>
-                    <span class="s2">&quot;because backtest </span><span class="si">%s</span><span class="s2"> is not on a fixed income &quot;</span>
-                    <span class="s2">&quot;strategy&quot;</span> <span class="o">%</span> <span class="n">backtest</span><span class="o">.</span><span class="n">name</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot apply RenormalizedFixedIncomeResult because backtest </span><span class="si">{</span><span class="n">backtest</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not on a fixed income strategy"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">normalizing_value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">normalizing_value</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">normalizing_value</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">}</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strategy</span><span class="p">,</span> <span class="n">normalizing_value</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">])})</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">backtests</span>
-        <span class="p">]</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">backtest</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">:</span>
+            <span class="n">prices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span><span class="p">(</span><span class="n">backtest</span><span class="o">.</span><span class="n">strategy</span><span class="p">,</span> <span class="n">normalizing_value</span><span class="p">[</span><span class="n">backtest</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">backtest</span><span class="o">.</span><span class="n">_stat_prices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">prices</span> <span class="o">=</span> <span class="n">prices</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">backtest</span><span class="o">.</span><span class="n">_stat_prices</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">tmp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">backtest</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">prices</span><span class="p">}))</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Result</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">tmp</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backtest_list</span> <span class="o">=</span> <span class="n">backtests</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backtests</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">backtests</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">_price</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_price</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute the new price series from the strategy (s) and the</span>
 <span class="sd">        normalizing value (v)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Compute additive returns net of flows</span>
         <span class="n">returns</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">flows</span>
         <span class="n">prices</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">PAR</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">returns</span> <span class="o">/</span> <span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">())</span>
         <span class="n">prices</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">PAR</span>
         <span class="k">return</span> <span class="n">prices</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>
@@ -669,22 +1280,14 @@
             <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../index.html"> Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../install.html"> Installation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../algos.html"> All About Algos</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tree.html"> The Tree Structure</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples.html"> Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../bt.html"> API</a></li>
-</ul>
-
+            
 
             
             <ul>
                 <li><a href="https://github.com/pmorissette/bt">Github</a></li>
             </ul>
             
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -692,29 +1295,16 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette.
-If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
-
+            Philippe Morissette
         </div>
 
-        
-        <script>
-            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-            ga('create', 'UA-52308448-3', 'auto');
-            ga('require', 'displayfeatures');
-            ga('send', 'pageview');
-        </script>
         
   </body>
 </html>

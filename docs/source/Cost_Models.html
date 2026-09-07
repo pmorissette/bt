@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Nonlinear Cost Models: Almgren-Chriss vs. Default &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/custom.css?v=890fd012" />
+    <script src="../../_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/custom.js?v=956e5d78"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="nonlinear-cost-models-almgren-chriss-vs-default">
+<h1>Nonlinear Cost Models: Almgren-Chriss vs. Default<a class="headerlink" href="#nonlinear-cost-models-almgren-chriss-vs-default" title="Link to this heading">¶</a></h1>
+<p>By default <a class="reference internal" href="overview.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">bt.Backtest</span></code></a> charges no transaction
+cost, and even when the legacy <code class="docutils literal notranslate"><span class="pre">commissions=fn(q,</span> <span class="pre">p)</span></code> callable is supplied
+the cost depends only on quantity and price. Real trades are more expensive
+than that: large orders move the market against the trader, and that move
+scales with order size relative to the available liquidity, and with the
+instrument’s volatility.</p>
+<p>To support nonlinear, size-aware costs, <code class="docutils literal notranslate"><span class="pre">Backtest</span></code> accepts a
+<a class="reference internal" href="overview.html#bt.core.CostModel" title="bt.core.CostModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">CostModel</span></code></a> instance in place of the callable. Two
+implementations ship with bt:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="overview.html#bt.core.SqrtCostModel" title="bt.core.SqrtCostModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">SqrtCostModel</span></code></a> — the empirical square-root
+law of impact (Tóth et al. 2011).</p></li>
+<li><p><a class="reference internal" href="overview.html#bt.core.AlmgrenChrissCostModel" title="bt.core.AlmgrenChrissCostModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlmgrenChrissCostModel</span></code></a> — the
+three-component Almgren &amp; Chriss (2001) decomposition.</p></li>
+</ul>
+<p>When a <code class="docutils literal notranslate"><span class="pre">CostModel</span></code> is passed as <code class="docutils literal notranslate"><span class="pre">commissions</span></code>, <code class="docutils literal notranslate"><span class="pre">Backtest</span></code> also expects
+<code class="docutils literal notranslate"><span class="pre">volume</span></code> and <code class="docutils literal notranslate"><span class="pre">volatility</span></code> DataFrames aligned with <code class="docutils literal notranslate"><span class="pre">data</span></code>. Existing usage
+with <code class="docutils literal notranslate"><span class="pre">commissions=None</span></code> or <code class="docutils literal notranslate"><span class="pre">commissions=fn(q,</span> <span class="pre">p)</span></code> is unaffected. This
+example uses the AC model on a $1 billion notional book to make impact costs
+visible. The design of the cost-model interface follows Abbade &amp; Costa (2026)
+<a class="footnote-reference brackets" href="#abbadecosta2026" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
+<p>The cost decomposition (Almgren-Chriss):</p>
+<div class="math notranslate nohighlight">
+\[\text{cost} = \underbrace{\tfrac{1}{2} \alpha\, \sigma\, \tfrac{|q|}{V}\, |q|\, P}_{\text{permanent (triangular)}}
+            + \underbrace{\epsilon\, |q|\, P}_{\text{linear: spread / fees}}
+            + \underbrace{\beta\, \sigma\, \tfrac{|q|}{V}\, |q|\, P}_{\text{depth depletion}}\]</div>
+<p>with defaults <code class="docutils literal notranslate"><span class="pre">alpha=1.0</span></code>, <code class="docutils literal notranslate"><span class="pre">beta=1.0</span></code>, <code class="docutils literal notranslate"><span class="pre">epsilon=0.0005</span></code> (5 bps
+half-spread, typical for liquid US large-caps).</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bt.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlmgrenChrissCostModel</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="synthetic-universe">
+<h2>Synthetic Universe<a class="headerlink" href="#synthetic-universe" title="Link to this heading">¶</a></h2>
+<p>Thirty securities, five years of business-day prices on a geometric random
+walk. We also fabricate per-security daily volume (~30M shares average,
+typical for a large-cap universe) and a 20-day rolling realised volatility
+series — these are the inputs the cost model needs that a vanilla
+<code class="docutils literal notranslate"><span class="pre">Backtest</span></code> ignores.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_securities</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s1">'2018-01-01'</span><span class="p">,</span> <span class="s1">'2022-12-31'</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">'B'</span><span class="p">)</span>
+<span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span>
+<span class="n">tickers</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">'S</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s1">02d</span><span class="si">}</span><span class="s1">'</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_securities</span><span class="p">)]</span>
+
+<span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.12</span><span class="p">,</span> <span class="n">n_securities</span><span class="p">)</span> <span class="o">/</span> <span class="mi">252</span>
+<span class="n">sig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="n">n_securities</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">252</span><span class="p">)</span>
+<span class="n">returns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n_securities</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig</span> <span class="o">+</span> <span class="n">mu</span>
+<span class="n">prices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">returns</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)),</span>
+                      <span class="n">index</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">tickers</span><span class="p">)</span>
+
+<span class="n">log_ret</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">prices</span> <span class="o">/</span> <span class="n">prices</span><span class="o">.</span><span class="n">shift</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">volatility</span> <span class="o">=</span> <span class="n">log_ret</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="n">volume</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">30_000_000</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+                        <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n_securities</span><span class="p">)),</span>
+    <span class="n">index</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">tickers</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="strategy">
+<h2>Strategy<a class="headerlink" href="#strategy" title="Link to this heading">¶</a></h2>
+<p>Monthly rebalance into the top decile by trailing 6-month return — a
+classic high-turnover demo that gives the cost model real trades to score.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">momentum_strategy</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectMomentum</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">6</span><span class="p">)),</span>
+            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+            <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">(),</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="run-both-backtests">
+<h2>Run Both Backtests<a class="headerlink" href="#run-both-backtests" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">baseline</span></code> uses <code class="docutils literal notranslate"><span class="pre">bt.Backtest</span></code> with no commissions, the default
+zero-cost assumption. <code class="docutils literal notranslate"><span class="pre">realistic</span></code> uses the same <code class="docutils literal notranslate"><span class="pre">bt.Backtest</span></code> but with a
+default Almgren-Chriss cost model passed as <code class="docutils literal notranslate"><span class="pre">commissions</span></code>, plus the
+volume and volatility frames the model needs.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">INITIAL_CAPITAL</span> <span class="o">=</span> <span class="mf">1_000_000_000.0</span>  <span class="c1"># 1 billion USD</span>
+
+<span class="n">baseline</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+    <span class="n">momentum_strategy</span><span class="p">(</span><span class="s1">'baseline (no cost)'</span><span class="p">),</span>
+    <span class="n">prices</span><span class="p">,</span>
+    <span class="n">initial_capital</span><span class="o">=</span><span class="n">INITIAL_CAPITAL</span><span class="p">,</span>
+    <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">realistic</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+    <span class="n">momentum_strategy</span><span class="p">(</span><span class="s1">'realistic (AC)'</span><span class="p">),</span>
+    <span class="n">prices</span><span class="p">,</span>
+    <span class="n">commissions</span><span class="o">=</span><span class="n">AlmgrenChrissCostModel</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.0005</span><span class="p">),</span>
+    <span class="n">volume</span><span class="o">=</span><span class="n">volume</span><span class="p">,</span>
+    <span class="n">volatility</span><span class="o">=</span><span class="n">volatility</span><span class="p">,</span>
+    <span class="n">initial_capital</span><span class="o">=</span><span class="n">INITIAL_CAPITAL</span><span class="p">,</span>
+    <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">baseline</span><span class="p">,</span> <span class="n">realistic</span><span class="p">)</span>
+<span class="n">result</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">baseline</span> <span class="p">(</span><span class="n">no</span> <span class="n">cost</span><span class="p">)</span>    <span class="n">realistic</span> <span class="p">(</span><span class="n">AC</span><span class="p">)</span>
+<span class="o">-------------------</span>  <span class="o">--------------------</span>  <span class="o">----------------</span>
+<span class="n">Start</span>                <span class="mi">2017</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span>            <span class="mi">2017</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span>
+<span class="n">End</span>                  <span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">30</span>            <span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">30</span>
+<span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>                 <span class="mf">0.00</span><span class="o">%</span>
+
+<span class="n">Total</span> <span class="n">Return</span>         <span class="mf">26.53</span><span class="o">%</span>                <span class="mf">21.59</span><span class="o">%</span>
+<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.51</span>                  <span class="mf">0.43</span>
+<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">0.76</span>                  <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="equity-curves">
+<h2>Equity Curves<a class="headerlink" href="#equity-curves" title="Link to this heading">¶</a></h2>
+<p>The drag from realistic frictions on a $1B book at this turnover is
+visually obvious — the realistic curve sits below the cost-free baseline
+by roughly 5 percentage points of total return over five years.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">result</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Equity curves: cost-free vs Almgren-Chriss frictions ($1B book)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Index level (start = 100)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="cost-attribution">
+<h2>Cost Attribution<a class="headerlink" href="#cost-attribution" title="Link to this heading">¶</a></h2>
+<p>Inspecting fees paid against gross traded notional gives an effective bps
+per dollar traded — a useful sanity check that the calibration matches
+realistic expectations for a large-cap book.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">summarise</span><span class="p">(</span><span class="n">bkt</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="n">fees_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">bkt</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">fees</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">final_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">bkt</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">traded_notional</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">outlays</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                          <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">bkt</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">securities</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">'strategy'</span>             <span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+        <span class="s1">'final equity ($M)'</span>    <span class="p">:</span> <span class="n">final_value</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span>
+        <span class="s1">'total return (%)'</span>     <span class="p">:</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">final_value</span> <span class="o">/</span> <span class="n">INITIAL_CAPITAL</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="s1">'gross traded ($B)'</span>    <span class="p">:</span> <span class="n">traded_notional</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span>
+        <span class="s1">'total fees ($M)'</span>      <span class="p">:</span> <span class="n">fees_total</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span>
+        <span class="s1">'fees / traded (bps)'</span>  <span class="p">:</span> <span class="mf">1e4</span> <span class="o">*</span> <span class="n">fees_total</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">traded_notional</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="p">}</span>
+
+<span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">summarise</span><span class="p">(</span><span class="n">baseline</span><span class="p">,</span> <span class="s1">'baseline'</span><span class="p">),</span>
+              <span class="n">summarise</span><span class="p">(</span><span class="n">realistic</span><span class="p">,</span> <span class="s1">'realistic'</span><span class="p">)])</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">'strategy'</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>           final equity ($M)  total return (%)  gross traded ($B)  total fees ($M)  fees / traded (bps)
+strategy
+baseline         1265.262743         26.526274          35.432102         0.000000             0.000000
+realistic        1215.902289         21.590229          34.717752        46.394005            13.363194
+</pre></div>
+</div>
+<p>The AC cost works out to ~13 bps per dollar traded — in line with
+realistic large-cap impact at a few percent of average daily volume.</p>
+</section>
+<section id="sensitivity-to-participation-rate">
+<h2>Sensitivity to Participation Rate<a class="headerlink" href="#sensitivity-to-participation-rate" title="Link to this heading">¶</a></h2>
+<p>The permanent and depth components scale linearly in <code class="docutils literal notranslate"><span class="pre">|q|/V</span></code>. We can
+see this directly by sweeping the available volume — a thinner market
+charges more for the same trades.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_with_volume_scale</span><span class="p">(</span><span class="n">scale</span><span class="p">):</span>
+    <span class="n">bkt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+        <span class="n">momentum_strategy</span><span class="p">(</span><span class="sa">f</span><span class="s1">'V x </span><span class="si">{</span><span class="n">scale</span><span class="si">}</span><span class="s1">'</span><span class="p">),</span>
+        <span class="n">prices</span><span class="p">,</span>
+        <span class="n">commissions</span><span class="o">=</span><span class="n">AlmgrenChrissCostModel</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.0005</span><span class="p">),</span>
+        <span class="n">volume</span><span class="o">=</span><span class="n">volume</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span>
+        <span class="n">volatility</span><span class="o">=</span><span class="n">volatility</span><span class="p">,</span>
+        <span class="n">initial_capital</span><span class="o">=</span><span class="n">INITIAL_CAPITAL</span><span class="p">,</span>
+        <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">bkt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">bkt</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">fees</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+<span class="n">scales</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">]</span>
+<span class="n">fees</span> <span class="o">=</span> <span class="p">[</span><span class="n">run_with_volume_scale</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scales</span><span class="p">]</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">scales</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fees</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'o'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">'log'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Volume scale (1.0 = baseline)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Total fees ($M)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Fees vs. available volume (lower V = higher participation)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="takeaway">
+<h2>Takeaway<a class="headerlink" href="#takeaway" title="Link to this heading">¶</a></h2>
+<p>Picking the cost model is a first-order modeling choice for any strategy
+that trades non-trivial notional relative to available liquidity. A flat
+commissions function flatters such strategies by charging a fixed bps
+regardless of order size or market depth. Passing a <code class="docutils literal notranslate"><span class="pre">CostModel</span></code> to
+<code class="docutils literal notranslate"><span class="pre">Backtest</span></code> removes that bias by routing trade quantities through a cost
+model that is sensitive to size, volume, and volatility, while leaving
+existing callable-based usage of the <code class="docutils literal notranslate"><span class="pre">commissions</span></code> argument unchanged.</p>
+<p>For a flat-bps degenerate behaviour, the AC model with
+<code class="docutils literal notranslate"><span class="pre">alpha=0,</span> <span class="pre">beta=0,</span> <span class="pre">epsilon=bps/1e4</span></code> reproduces the legacy commissions
+path bit-for-bit.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="abbadecosta2026" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>Abbade, L. R., &amp; Costa, A. H. R. (2026). <em>Realistic
+Market Impact Modeling for Reinforcement Learning Trading
+Environments.</em> arXiv:2603.29086. https://arxiv.org/abs/2603.29086</p>
+</aside>
+</aside>
+<ul class="simple">
+<li><p>Almgren, R., &amp; Chriss, N. (2001). Optimal execution of portfolio
+transactions. <em>Journal of Risk</em> 3(2), 5-39.</p></li>
+<li><p>Tóth, B., Lempérière, Y., Deremble, C., de Lataillade, J., Kockelkoren,
+J., &amp; Bouchaud, J.-P. (2011). Anomalous Price Impact and the Critical
+Nature of Liquidity in Financial Markets. <em>Physical Review X</em> 1(2),
+021006.</p></li>
+<li><p>Gatheral, J. (2010). No-Dynamic-Arbitrage and Market Impact.
+<em>Quantitative Finance</em> 10(7), 749-759.</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            Philippe Morissette
+        </div>
+
+        
+  </body>
+</html>

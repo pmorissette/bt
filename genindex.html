@@ -1,18 +1,432 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; bt 0.2.10 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/css/klink.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
+    <title>Index &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/custom.css?v=890fd012" />
+    <script src="_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (true) {
+                                        addZoomToSvgs(d3.selectAll(".mermaid").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (true) {
+        const mermaids_to_add_zoom = -1 === -1 ? mermaids_active.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll(".mermaid").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (true) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+// Resolves once the lazily-loaded zenuml plugin has registered (or immediately
+// when the page has no zenuml diagram). `load` awaits this before rendering.
+let zenumlReady = Promise.resolve();
+const pageHasZenuml = () => [...document.querySelectorAll(".mermaid")].some((el) => {
+    const code = el.getAttribute("data-original-code") || el.textContent || "";
+    const diagram = code
+        .replace(/^\s*---\s*\n[^]*?\n---\s*/, "")
+        .replace(/^\s*%%\{[^]*?\}%%\s*/, "");
+    return /^\s*zenuml\b/i.test(diagram);
+});
+
+
+const load = async () => {
+    initStyles();
+
+
+    // Wait for the zenuml plugin (loaded lazily below) to finish registering
+    // before rendering, so zenuml diagrams are recognised.
+    await zenumlReady;
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+mermaid.registerLayoutLoaders(elkLayouts);
+
+
+
+// Only load and register the zenuml plugin when the page actually contains a
+// zenuml diagram. This avoids fetching the (large) zenuml bundle on every page,
+// and avoids its side effects where they are not needed. The import is kept off
+// the module's top level (no top-level await) so the "load" listener below is
+// still registered synchronously; `load` awaits `zenumlReady` before rendering.
+if (pageHasZenuml()) {
+    // The zenuml bundle injects a stylesheet that declares generic design tokens
+    // (--background, --border, --white, ...) on :root, clobbering identically-named
+    // tokens in the host theme (sphinxawesome, shibuya, ...) and causing a flash of
+    // restyled page content. Confine those declarations to the zenuml diagram
+    // subtree so they no longer leak onto the host page.
+    const descopeZenumlStyle = (node) => {
+        if (!node || node.tagName !== "STYLE" || node.hasAttribute("data-zenuml-descoped")) return;
+        const css = node.textContent || "";
+        if (!css.includes("--occurance-border")) return; // zenuml stylesheet signature
+        node.setAttribute("data-zenuml-descoped", "true");
+        node.textContent = css.replace(/:root\b/g, ".zenuml");
+    };
+    new MutationObserver((records) => {
+        for (const rec of records) {
+            for (const node of rec.addedNodes) descopeZenumlStyle(node);
+        }
+    }).observe(document.head, { childList: true });
+
+    zenumlReady = import("https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.2.2/dist/mermaid-zenuml.esm.min.mjs").then(({ default: zenumlLayouts }) => {
+        mermaid.registerExternalDiagrams([zenumlLayouts]);
+    });
+}
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script src="_static/js/custom.js?v=956e5d78"></script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
          
@@ -40,7 +454,6 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
- | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -57,52 +470,52 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.Node.adjust">adjust() (bt.core.Node method)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.adjust">adjust() (bt.core.Node method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.adjust">(bt.core.StrategyBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.adjust">(bt.core.StrategyBase method)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.core.Algo">Algo (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.core.Algo">Algo (class in bt.core)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.core.AlgoStack">AlgoStack (class in bt.core)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.AlgoStack">AlgoStack (class in bt.core)</a>
-</li>
-      <li><a href="bt.html#bt.core.Node.allocate">allocate() (bt.core.Node method)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.allocate">allocate() (bt.core.Node method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.SecurityBase.allocate">(bt.core.SecurityBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.SecurityBase.allocate">(bt.core.SecurityBase method)</a>
 </li>
-        <li><a href="bt.html#bt.core.StrategyBase.allocate">(bt.core.StrategyBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.allocate">(bt.core.StrategyBase method)</a>
 </li>
       </ul></li>
+      <li><a href="docs/source/overview.html#bt.core.AlmgrenChrissCostModel">AlmgrenChrissCostModel (class in bt.core)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.backtest.Backtest">Backtest (class in bt.backtest)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Backtest">Backtest (class in bt.backtest)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase.bankrupt">bankrupt (bt.core.StrategyBase attribute)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.benchmark_random">benchmark_random() (in module bt.backtest)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.benchmark_random">benchmark_random() (in module bt.backtest)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.bidoffer">bidoffer (bt.core.SecurityBase property)</a>
 </li>
-      <li><a href="bt.html#bt.core.SecurityBase.bidoffer">bidoffer (bt.core.SecurityBase property)</a>
-</li>
-      <li><a href="bt.html#bt.core.SecurityBase.bidoffer_paid">bidoffer_paid (bt.core.SecurityBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.bidoffer_paid">bidoffer_paid (bt.core.SecurityBase property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.bidoffer_paid">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.bidoffer_paid">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.core.SecurityBase.bidoffers">bidoffers (bt.core.SecurityBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.bidoffers">bidoffers (bt.core.SecurityBase property)</a>
 </li>
-      <li><a href="bt.html#bt.core.SecurityBase.bidoffers_paid">bidoffers_paid (bt.core.SecurityBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.bidoffers_paid">bidoffers_paid (bt.core.SecurityBase property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.bidoffers_paid">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.bidoffers_paid">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -111,35 +524,28 @@
     bt.__init__
 
       <ul>
-        <li><a href="bt.html#module-bt.__init__">module</a>
+        <li><a href="docs/source/overview.html#module-bt.__init__">module</a>
 </li>
       </ul></li>
       <li>
     bt.algos
 
       <ul>
-        <li><a href="bt.html#module-bt.algos">module</a>
+        <li><a href="docs/source/overview.html#module-bt.algos">module</a>
 </li>
       </ul></li>
       <li>
     bt.backtest
 
       <ul>
-        <li><a href="bt.html#module-bt.backtest">module</a>
+        <li><a href="docs/source/overview.html#module-bt.backtest">module</a>
 </li>
       </ul></li>
       <li>
     bt.core
 
       <ul>
-        <li><a href="bt.html#module-bt.core">module</a>
-</li>
-      </ul></li>
-      <li>
-    built-in function
-
-      <ul>
-        <li><a href="_themes/klink/docs/source/examples.html#format_exception">format_exception()</a>
+        <li><a href="docs/source/overview.html#module-bt.core">module</a>
 </li>
       </ul></li>
   </ul></td>
@@ -148,45 +554,55 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.StrategyBase.capital">capital (bt.core.StrategyBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.capital">capital (bt.core.StrategyBase property)</a>
 </li>
-      <li><a href="bt.html#bt.algos.CapitalFlow">CapitalFlow (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.CapitalFlow">CapitalFlow (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase.cash">cash (bt.core.StrategyBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.cash">cash (bt.core.StrategyBase property)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase.close">close() (bt.core.StrategyBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.close">close() (bt.core.StrategyBase method)</a>
 </li>
-      <li><a href="bt.html#bt.algos.CloseDead">CloseDead (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.CloseDead">CloseDead (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.ClosePositionsAfterDates">ClosePositionsAfterDates (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.ClosePositionsAfterDates">ClosePositionsAfterDates (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.SecurityBase.commission">commission() (bt.core.SecurityBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.commission">commission() (bt.core.SecurityBase method)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunDaily.compare_dates">compare_dates() (bt.algos.RunDaily method)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunDaily.compare_dates">compare_dates() (bt.algos.RunDaily method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.algos.RunMonthly.compare_dates">(bt.algos.RunMonthly method)</a>
+        <li><a href="docs/source/overview.html#bt.algos.RunMonthly.compare_dates">(bt.algos.RunMonthly method)</a>
 </li>
-        <li><a href="bt.html#bt.algos.RunPeriod.compare_dates">(bt.algos.RunPeriod method)</a>
+        <li><a href="docs/source/overview.html#bt.algos.RunPeriod.compare_dates">(bt.algos.RunPeriod method)</a>
 </li>
-        <li><a href="bt.html#bt.algos.RunQuarterly.compare_dates">(bt.algos.RunQuarterly method)</a>
+        <li><a href="docs/source/overview.html#bt.algos.RunQuarterly.compare_dates">(bt.algos.RunQuarterly method)</a>
 </li>
-        <li><a href="bt.html#bt.algos.RunWeekly.compare_dates">(bt.algos.RunWeekly method)</a>
+        <li><a href="docs/source/overview.html#bt.algos.RunWeekly.compare_dates">(bt.algos.RunWeekly method)</a>
 </li>
-        <li><a href="bt.html#bt.algos.RunYearly.compare_dates">(bt.algos.RunYearly method)</a>
+        <li><a href="docs/source/overview.html#bt.algos.RunYearly.compare_dates">(bt.algos.RunYearly method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_themes/klink/docs/source/klink.html#klink.__init__.convert_notebooks">convert_notebooks() (in module klink.__init__)</a>
+      <li><a href="docs/source/overview.html#bt.algos.CorporateActions">CorporateActions (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.CouponPayingSecurity.coupon">coupon (bt.core.CouponPayingSecurity property)</a>
+      <li><a href="docs/source/overview.html#bt.core.AlmgrenChrissCostModel.cost">cost() (bt.core.AlmgrenChrissCostModel method)</a>
+
+      <ul>
+        <li><a href="docs/source/overview.html#bt.core.CostModel.cost">(bt.core.CostModel method)</a>
 </li>
-      <li><a href="bt.html#bt.core.CouponPayingHedgeSecurity">CouponPayingHedgeSecurity (class in bt.core)</a>
+        <li><a href="docs/source/overview.html#bt.core.SqrtCostModel.cost">(bt.core.SqrtCostModel method)</a>
 </li>
-      <li><a href="bt.html#bt.core.CouponPayingSecurity">CouponPayingSecurity (class in bt.core)</a>
+      </ul></li>
+      <li><a href="docs/source/overview.html#bt.core.CostModel">CostModel (class in bt.core)</a>
 </li>
-      <li><a href="bt.html#bt.core.CouponPayingSecurity.coupons">coupons (bt.core.CouponPayingSecurity property)</a>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingSecurity.coupon">coupon (bt.core.CouponPayingSecurity property)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingHedgeSecurity">CouponPayingHedgeSecurity (class in bt.core)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingSecurity">CouponPayingSecurity (class in bt.core)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingSecurity.coupons">coupons (bt.core.CouponPayingSecurity property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -194,11 +610,13 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.Debug">Debug (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.data">data (bt.core.Node property)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.backtest.Result.display_monthly_returns">display_monthly_returns() (bt.backtest.Result method)</a>
+      <li><a href="docs/source/overview.html#bt.algos.Debug">Debug (class in bt.algos)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.backtest.Result.display_monthly_returns">display_monthly_returns() (bt.backtest.Result method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -206,28 +624,21 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.StrategyBase.fees">fees (bt.core.StrategyBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.fees">fees (bt.core.StrategyBase property)</a>
 </li>
-      <li><a href="bt.html#bt.core.Node.fixed_income">fixed_income (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.fixed_income">fixed_income (bt.core.Node property)</a>
 </li>
-      <li><a href="bt.html#bt.core.FixedIncomeSecurity">FixedIncomeSecurity (class in bt.core)</a>
-</li>
-      <li><a href="bt.html#bt.core.FixedIncomeStrategy">FixedIncomeStrategy (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.core.FixedIncomeSecurity">FixedIncomeSecurity (class in bt.core)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.StrategyBase.flatten">flatten() (bt.core.StrategyBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.FixedIncomeStrategy">FixedIncomeStrategy (class in bt.core)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase.flows">flows (bt.core.StrategyBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.flatten">flatten() (bt.core.StrategyBase method)</a>
 </li>
-      <li>
-    format_exception()
-
-      <ul>
-        <li><a href="_themes/klink/docs/source/examples.html#format_exception">built-in function</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.flows">flows (bt.core.StrategyBase property)</a>
 </li>
-      </ul></li>
-      <li><a href="bt.html#bt.core.Node.full_name">full_name (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.full_name">full_name (bt.core.Node property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -235,21 +646,21 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.StrategyBase.get_data">get_data() (bt.core.StrategyBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.get_data">get_data() (bt.core.StrategyBase method)</a>
 </li>
-      <li><a href="_themes/klink/docs/source/klink.html#klink.__init__.get_html_theme_path">get_html_theme_path() (in module klink.__init__)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Result.get_monthly_max_drawdown">get_monthly_max_drawdown() (bt.backtest.Result method)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.Result.get_security_weights">get_security_weights() (bt.backtest.Result method)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Result.get_security_weights">get_security_weights() (bt.backtest.Result method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.backtest.Result.get_transactions">get_transactions() (bt.backtest.Result method)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Result.get_transactions">get_transactions() (bt.backtest.Result method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.get_transactions">(bt.core.StrategyBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.get_transactions">(bt.core.StrategyBase method)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.backtest.Result.get_weights">get_weights() (bt.backtest.Result method)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Result.get_weights">get_weights() (bt.backtest.Result method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -257,17 +668,17 @@
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.HedgeRisks">HedgeRisks (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.HedgeRisks">HedgeRisks (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.HedgeSecurity">HedgeSecurity (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.core.HedgeSecurity">HedgeSecurity (class in bt.core)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.backtest.Backtest.herfindahl_index">herfindahl_index (bt.backtest.Backtest property)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Backtest.herfindahl_index">herfindahl_index (bt.backtest.Backtest property)</a>
 </li>
-      <li><a href="bt.html#bt.core.CouponPayingSecurity.holding_cost">holding_cost (bt.core.CouponPayingSecurity property)</a>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingSecurity.holding_cost">holding_cost (bt.core.CouponPayingSecurity property)</a>
 </li>
-      <li><a href="bt.html#bt.core.CouponPayingSecurity.holding_costs">holding_costs (bt.core.CouponPayingSecurity property)</a>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingSecurity.holding_costs">holding_costs (bt.core.CouponPayingSecurity property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -275,41 +686,19 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.is_zero">is_zero() (in module bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.core.is_zero">is_zero() (in module bt.core)</a>
 </li>
-  </ul></td>
-</tr></table>
-
-<h2 id="K">K</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
-    klink.__init__
-
-      <ul>
-        <li><a href="_themes/klink/docs/source/klink.html#module-klink.__init__">module</a>
-</li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
-    klink.demo
-
-      <ul>
-        <li><a href="_themes/klink/docs/source/klink.html#module-klink.demo">module</a>
-</li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.LimitDeltas">LimitDeltas (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.LimitDeltas">LimitDeltas (class in bt.algos)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.LimitWeights">LimitWeights (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.LimitWeights">LimitWeights (class in bt.algos)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -317,53 +706,43 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.Node.members">members (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.algos.Margin">Margin (class in bt.algos)</a>
 </li>
-      <li><a href="_themes/klink/docs/source/klink.html#klink.demo.TestClass.method1">method1() (klink.demo.TestClass method)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.members">members (bt.core.Node property)</a>
 </li>
       <li>
     module
 
       <ul>
-        <li><a href="bt.html#module-bt.__init__">bt.__init__</a>
+        <li><a href="docs/source/overview.html#module-bt.__init__">bt.__init__</a>
 </li>
-        <li><a href="bt.html#module-bt.algos">bt.algos</a>
+        <li><a href="docs/source/overview.html#module-bt.algos">bt.algos</a>
 </li>
-        <li><a href="bt.html#module-bt.backtest">bt.backtest</a>
+        <li><a href="docs/source/overview.html#module-bt.backtest">bt.backtest</a>
 </li>
-        <li><a href="bt.html#module-bt.core">bt.core</a>
-</li>
-        <li><a href="_themes/klink/docs/source/klink.html#module-klink.__init__">klink.__init__</a>
-</li>
-        <li><a href="_themes/klink/docs/source/klink.html#module-klink.demo">klink.demo</a>
+        <li><a href="docs/source/overview.html#module-bt.core">bt.core</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.SecurityBase.multiplier">multiplier (bt.core.SecurityBase attribute)</a>
-</li>
-      <li><a href="_themes/klink/docs/source/examples.html#MyAnimal">MyAnimal() (class)</a>
-</li>
   </ul></td>
 </tr></table>
 
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.Algo.name">name (bt.core.Algo property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Algo.name">name (bt.core.Algo property)</a>
 </li>
-      <li><a href="bt.html#bt.core.Node">Node (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node">Node (class in bt.core)</a>
 </li>
-      <li><a href="bt.html#bt.algos.Not">Not (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.Not">Not (class in bt.algos)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.Node.notional_value">notional_value (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.notional_value">notional_value (bt.core.Node property)</a>
 </li>
-      <li><a href="bt.html#bt.core.SecurityBase.notional_values">notional_values (bt.core.SecurityBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.notional_values">notional_values (bt.core.SecurityBase property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.notional_values">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.notional_values">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -372,16 +751,16 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.Or">Or (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.Or">Or (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.SecurityBase.outlay">outlay() (bt.core.SecurityBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.outlay">outlay() (bt.core.SecurityBase method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.SecurityBase.outlays">outlays (bt.core.SecurityBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.outlays">outlays (bt.core.SecurityBase property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.outlays">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.outlays">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -390,53 +769,53 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.backtest.RandomBenchmarkResult.plot_histogram">plot_histogram() (bt.backtest.RandomBenchmarkResult method)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.RandomBenchmarkResult.plot_histogram">plot_histogram() (bt.backtest.RandomBenchmarkResult method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.backtest.Result.plot_histogram">(bt.backtest.Result method)</a>
+        <li><a href="docs/source/overview.html#bt.backtest.Result.plot_histogram">(bt.backtest.Result method)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.backtest.Result.plot_security_weights">plot_security_weights() (bt.backtest.Result method)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Result.plot_security_weights">plot_security_weights() (bt.backtest.Result method)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.Result.plot_weights">plot_weights() (bt.backtest.Result method)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Result.plot_weights">plot_weights() (bt.backtest.Result method)</a>
 </li>
-      <li><a href="bt.html#bt.core.SecurityBase.position">position (bt.core.SecurityBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.position">position (bt.core.SecurityBase property)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.Backtest.positions">positions (bt.backtest.Backtest property)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Backtest.positions">positions (bt.backtest.Backtest property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.SecurityBase.positions">(bt.core.SecurityBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.SecurityBase.positions">(bt.core.SecurityBase property)</a>
 </li>
-        <li><a href="bt.html#bt.core.StrategyBase.positions">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.positions">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.core.Node.price">price (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.price">price (bt.core.Node property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.SecurityBase.price">(bt.core.SecurityBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.SecurityBase.price">(bt.core.SecurityBase property)</a>
 </li>
-        <li><a href="bt.html#bt.core.StrategyBase.price">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.price">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.Node.prices">prices (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.prices">prices (bt.core.Node property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.SecurityBase.prices">(bt.core.SecurityBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.SecurityBase.prices">(bt.core.SecurityBase property)</a>
 </li>
-        <li><a href="bt.html#bt.core.StrategyBase.prices">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.prices">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.algos.PrintDate">PrintDate (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.PrintDate">PrintDate (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.PrintInfo">PrintInfo (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.PrintInfo">PrintInfo (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.PrintRisk">PrintRisk (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.PrintRisk">PrintRisk (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.PrintTempData">PrintTempData (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.PrintTempData">PrintTempData (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.PTE_Rebalance">PTE_Rebalance (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.PTE_Rebalance">PTE_Rebalance (class in bt.algos)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -444,65 +823,65 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.backtest.RandomBenchmarkResult">RandomBenchmarkResult (class in bt.backtest)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.RandomBenchmarkResult">RandomBenchmarkResult (class in bt.backtest)</a>
 </li>
-      <li><a href="bt.html#bt.algos.Rebalance">Rebalance (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.Rebalance">Rebalance (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase.rebalance">rebalance() (bt.core.StrategyBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.rebalance">rebalance() (bt.core.StrategyBase method)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RebalanceOverTime">RebalanceOverTime (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RebalanceOverTime">RebalanceOverTime (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.RenormalizedFixedIncomeResult">RenormalizedFixedIncomeResult (class in bt.backtest)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.RenormalizedFixedIncomeResult">RenormalizedFixedIncomeResult (class in bt.backtest)</a>
 </li>
-      <li><a href="bt.html#bt.algos.ReplayTransactions">ReplayTransactions (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.ReplayTransactions">ReplayTransactions (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.Require">Require (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.Require">Require (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.ResolveOnTheRun">ResolveOnTheRun (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.ResolveOnTheRun">ResolveOnTheRun (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.Result">Result (class in bt.backtest)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Result">Result (class in bt.backtest)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RollPositionsAfterDates">RollPositionsAfterDates (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RollPositionsAfterDates">RollPositionsAfterDates (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.Backtest.run">run() (bt.backtest.Backtest method)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Backtest.run">run() (bt.backtest.Backtest method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.SecurityBase.run">(bt.core.SecurityBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.SecurityBase.run">(bt.core.SecurityBase method)</a>
 </li>
-        <li><a href="bt.html#bt.core.Strategy.run">(bt.core.Strategy method)</a>
+        <li><a href="docs/source/overview.html#bt.core.Strategy.run">(bt.core.Strategy method)</a>
 </li>
-        <li><a href="bt.html#bt.core.StrategyBase.run">(bt.core.StrategyBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.run">(bt.core.StrategyBase method)</a>
 </li>
-        <li><a href="bt.html#bt.backtest.run">(in module bt.backtest)</a>
+        <li><a href="docs/source/overview.html#bt.backtest.run">(in module bt.backtest)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.run_always">run_always() (in module bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.run_always">run_always() (in module bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunAfterDate">RunAfterDate (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunAfterDate">RunAfterDate (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunAfterDays">RunAfterDays (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunAfterDays">RunAfterDays (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunDaily">RunDaily (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunDaily">RunDaily (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunEveryNPeriods">RunEveryNPeriods (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunEveryNPeriods">RunEveryNPeriods (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunIfOutOfBounds">RunIfOutOfBounds (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunIfOutOfBounds">RunIfOutOfBounds (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunMonthly">RunMonthly (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunMonthly">RunMonthly (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunOnce">RunOnce (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunOnce">RunOnce (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunOnDate">RunOnDate (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunOnDate">RunOnDate (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunPeriod">RunPeriod (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunPeriod">RunPeriod (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunQuarterly">RunQuarterly (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunQuarterly">RunQuarterly (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunWeekly">RunWeekly (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunWeekly">RunWeekly (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.RunYearly">RunYearly (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.RunYearly">RunYearly (class in bt.algos)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -510,63 +889,67 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.ScaleWeights">ScaleWeights (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.ScaleWeights">ScaleWeights (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase.securities">securities (bt.core.StrategyBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.securities">securities (bt.core.StrategyBase property)</a>
 </li>
-      <li><a href="bt.html#bt.core.Security">Security (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.core.Security">Security (class in bt.core)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.Backtest.security_weights">security_weights (bt.backtest.Backtest property)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Backtest.security_weights">security_weights (bt.backtest.Backtest property)</a>
 </li>
-      <li><a href="bt.html#bt.core.SecurityBase">SecurityBase (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase">SecurityBase (class in bt.core)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectActive">SelectActive (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectActive">SelectActive (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectAll">SelectAll (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectAll">SelectAll (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectHasData">SelectHasData (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectHasData">SelectHasData (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectMomentum">SelectMomentum (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectMomentum">SelectMomentum (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectN">SelectN (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectN">SelectN (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectRandomly">SelectRandomly (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectRandomly">SelectRandomly (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectRegex">SelectRegex (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectRegex">SelectRegex (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectThese">SelectThese (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectThese">SelectThese (class in bt.algos)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.algos.SelectTypes">SelectTypes (class in bt.algos)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.SelectTypes">SelectTypes (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SelectWhere">SelectWhere (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SelectWhere">SelectWhere (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.set_commissions">set_commissions() (bt.core.StrategyBase method)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase.set_commissions">set_commissions() (bt.core.StrategyBase method)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SetNotional">SetNotional (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SetNotional">SetNotional (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SetStat">SetStat (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SetStat">SetStat (class in bt.algos)</a>
-</li>
-      <li><a href="bt.html#bt.core.CouponPayingSecurity.setup">setup() (bt.core.CouponPayingSecurity method)</a>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingSecurity.setup">setup() (bt.core.CouponPayingSecurity method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.Node.setup">(bt.core.Node method)</a>
+        <li><a href="docs/source/overview.html#bt.core.Node.setup">(bt.core.Node method)</a>
 </li>
-        <li><a href="bt.html#bt.core.SecurityBase.setup">(bt.core.SecurityBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.SecurityBase.setup">(bt.core.SecurityBase method)</a>
 </li>
-        <li><a href="bt.html#bt.core.StrategyBase.setup">(bt.core.StrategyBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.setup">(bt.core.StrategyBase method)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.core.StrategyBase.setup_from_parent">setup_from_parent() (bt.core.StrategyBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.setup_from_parent">setup_from_parent() (bt.core.StrategyBase method)</a>
 </li>
-      <li><a href="bt.html#bt.algos.SimulateRFQTransactions">SimulateRFQTransactions (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.SimulateRFQTransactions">SimulateRFQTransactions (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.StatTotalReturn">StatTotalReturn (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.core.SqrtCostModel">SqrtCostModel (class in bt.core)</a>
 </li>
-      <li><a href="bt.html#bt.core.Strategy">Strategy (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.algos.StatMultiPeriodReturn">StatMultiPeriodReturn (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.StrategyBase">StrategyBase (class in bt.core)</a>
+      <li><a href="docs/source/overview.html#bt.algos.StatTotalReturn">StatTotalReturn (class in bt.algos)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.core.Strategy">Strategy (class in bt.core)</a>
+</li>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase">StrategyBase (class in bt.core)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -574,21 +957,19 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.TargetVol">TargetVol (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.TargetVol">TargetVol (class in bt.algos)</a>
 </li>
-      <li><a href="_themes/klink/docs/source/klink.html#klink.demo.TestClass">TestClass (class in klink.demo)</a>
-</li>
-      <li><a href="bt.html#bt.core.Node.to_dot">to_dot() (bt.core.Node method)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.to_dot">to_dot() (bt.core.Node method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.SecurityBase.transact">transact() (bt.core.SecurityBase method)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.transact">transact() (bt.core.SecurityBase method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.transact">(bt.core.StrategyBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.transact">(bt.core.StrategyBase method)</a>
 </li>
       </ul></li>
-      <li><a href="bt.html#bt.backtest.Backtest.turnover">turnover (bt.backtest.Backtest property)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Backtest.turnover">turnover (bt.backtest.Backtest property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -596,29 +977,29 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.StrategyBase.universe">universe (bt.core.StrategyBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.StrategyBase.universe">universe (bt.core.StrategyBase property)</a>
 </li>
-      <li><a href="bt.html#bt.core.CouponPayingHedgeSecurity.update">update() (bt.core.CouponPayingHedgeSecurity method)</a>
+      <li><a href="docs/source/overview.html#bt.core.CouponPayingHedgeSecurity.update">update() (bt.core.CouponPayingHedgeSecurity method)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.CouponPayingSecurity.update">(bt.core.CouponPayingSecurity method)</a>
+        <li><a href="docs/source/overview.html#bt.core.CouponPayingSecurity.update">(bt.core.CouponPayingSecurity method)</a>
 </li>
-        <li><a href="bt.html#bt.core.FixedIncomeSecurity.update">(bt.core.FixedIncomeSecurity method)</a>
+        <li><a href="docs/source/overview.html#bt.core.FixedIncomeSecurity.update">(bt.core.FixedIncomeSecurity method)</a>
 </li>
-        <li><a href="bt.html#bt.core.HedgeSecurity.update">(bt.core.HedgeSecurity method)</a>
+        <li><a href="docs/source/overview.html#bt.core.HedgeSecurity.update">(bt.core.HedgeSecurity method)</a>
 </li>
-        <li><a href="bt.html#bt.core.Node.update">(bt.core.Node method)</a>
+        <li><a href="docs/source/overview.html#bt.core.Node.update">(bt.core.Node method)</a>
 </li>
-        <li><a href="bt.html#bt.core.SecurityBase.update">(bt.core.SecurityBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.SecurityBase.update">(bt.core.SecurityBase method)</a>
 </li>
-        <li><a href="bt.html#bt.core.StrategyBase.update">(bt.core.StrategyBase method)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.update">(bt.core.StrategyBase method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.UpdateRisk">UpdateRisk (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.UpdateRisk">UpdateRisk (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.Node.use_integer_positions">use_integer_positions() (bt.core.Node method)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.use_integer_positions">use_integer_positions() (bt.core.Node method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -626,14 +1007,14 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.Node.value">value (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.value">value (bt.core.Node property)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.core.SecurityBase.values">values (bt.core.SecurityBase property)</a>
+      <li><a href="docs/source/overview.html#bt.core.SecurityBase.values">values (bt.core.SecurityBase property)</a>
 
       <ul>
-        <li><a href="bt.html#bt.core.StrategyBase.values">(bt.core.StrategyBase property)</a>
+        <li><a href="docs/source/overview.html#bt.core.StrategyBase.values">(bt.core.StrategyBase property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -642,25 +1023,25 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.WeighEqually">WeighEqually (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.WeighEqually">WeighEqually (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.WeighERC">WeighERC (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.WeighERC">WeighERC (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.WeighInvVol">WeighInvVol (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.WeighInvVol">WeighInvVol (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.WeighMeanVar">WeighMeanVar (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.WeighMeanVar">WeighMeanVar (class in bt.algos)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="bt.html#bt.algos.WeighRandomly">WeighRandomly (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.WeighRandomly">WeighRandomly (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.algos.WeighSpecified">WeighSpecified (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.WeighSpecified">WeighSpecified (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.core.Node.weight">weight (bt.core.Node property)</a>
+      <li><a href="docs/source/overview.html#bt.core.Node.weight">weight (bt.core.Node property)</a>
 </li>
-      <li><a href="bt.html#bt.algos.WeighTarget">WeighTarget (class in bt.algos)</a>
+      <li><a href="docs/source/overview.html#bt.algos.WeighTarget">WeighTarget (class in bt.algos)</a>
 </li>
-      <li><a href="bt.html#bt.backtest.Backtest.weights">weights (bt.backtest.Backtest property)</a>
+      <li><a href="docs/source/overview.html#bt.backtest.Backtest.weights">weights (bt.backtest.Backtest property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -677,22 +1058,14 @@
             <a href="index.html" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            <ul>
-<li class="toctree-l1"><a class="reference internal" href="index.html"> Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
-</ul>
-
+            
 
             
             <ul>
                 <li><a href="https://github.com/pmorissette/bt">Github</a></li>
             </ul>
             
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -700,29 +1073,16 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette.
-If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
-
+            Philippe Morissette
         </div>
 
-        
-        <script>
-            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-            ga('create', 'UA-52308448-3', 'auto');
-            ga('require', 'displayfeatures');
-            ga('send', 'pageview');
-        </script>
         
   </body>
 </html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>bt &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/custom.css?v=890fd012" />
+    <script src="../../_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/custom.js?v=956e5d78"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="bt">
+<h1>bt<a class="headerlink" href="#bt" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">API overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#module-bt.__init__">bt package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#module-bt.algos">Algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.CapitalFlow"><code class="docutils literal notranslate"><span class="pre">CapitalFlow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.CloseDead"><code class="docutils literal notranslate"><span class="pre">CloseDead</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.ClosePositionsAfterDates"><code class="docutils literal notranslate"><span class="pre">ClosePositionsAfterDates</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.CorporateActions"><code class="docutils literal notranslate"><span class="pre">CorporateActions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.Debug"><code class="docutils literal notranslate"><span class="pre">Debug</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.HedgeRisks"><code class="docutils literal notranslate"><span class="pre">HedgeRisks</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.LimitDeltas"><code class="docutils literal notranslate"><span class="pre">LimitDeltas</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.LimitWeights"><code class="docutils literal notranslate"><span class="pre">LimitWeights</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.Margin"><code class="docutils literal notranslate"><span class="pre">Margin</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.Not"><code class="docutils literal notranslate"><span class="pre">Not</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.Or"><code class="docutils literal notranslate"><span class="pre">Or</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.PTE_Rebalance"><code class="docutils literal notranslate"><span class="pre">PTE_Rebalance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.PrintDate"><code class="docutils literal notranslate"><span class="pre">PrintDate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.PrintInfo"><code class="docutils literal notranslate"><span class="pre">PrintInfo</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.PrintRisk"><code class="docutils literal notranslate"><span class="pre">PrintRisk</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.PrintTempData"><code class="docutils literal notranslate"><span class="pre">PrintTempData</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.Rebalance"><code class="docutils literal notranslate"><span class="pre">Rebalance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RebalanceOverTime"><code class="docutils literal notranslate"><span class="pre">RebalanceOverTime</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.ReplayTransactions"><code class="docutils literal notranslate"><span class="pre">ReplayTransactions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.Require"><code class="docutils literal notranslate"><span class="pre">Require</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.ResolveOnTheRun"><code class="docutils literal notranslate"><span class="pre">ResolveOnTheRun</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RollPositionsAfterDates"><code class="docutils literal notranslate"><span class="pre">RollPositionsAfterDates</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunAfterDate"><code class="docutils literal notranslate"><span class="pre">RunAfterDate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunAfterDays"><code class="docutils literal notranslate"><span class="pre">RunAfterDays</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunDaily"><code class="docutils literal notranslate"><span class="pre">RunDaily</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.algos.RunDaily.compare_dates"><code class="docutils literal notranslate"><span class="pre">RunDaily.compare_dates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunEveryNPeriods"><code class="docutils literal notranslate"><span class="pre">RunEveryNPeriods</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunIfOutOfBounds"><code class="docutils literal notranslate"><span class="pre">RunIfOutOfBounds</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunMonthly"><code class="docutils literal notranslate"><span class="pre">RunMonthly</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.algos.RunMonthly.compare_dates"><code class="docutils literal notranslate"><span class="pre">RunMonthly.compare_dates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunOnDate"><code class="docutils literal notranslate"><span class="pre">RunOnDate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunOnce"><code class="docutils literal notranslate"><span class="pre">RunOnce</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunPeriod"><code class="docutils literal notranslate"><span class="pre">RunPeriod</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.algos.RunPeriod.compare_dates"><code class="docutils literal notranslate"><span class="pre">RunPeriod.compare_dates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunQuarterly"><code class="docutils literal notranslate"><span class="pre">RunQuarterly</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.algos.RunQuarterly.compare_dates"><code class="docutils literal notranslate"><span class="pre">RunQuarterly.compare_dates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunWeekly"><code class="docutils literal notranslate"><span class="pre">RunWeekly</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.algos.RunWeekly.compare_dates"><code class="docutils literal notranslate"><span class="pre">RunWeekly.compare_dates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.RunYearly"><code class="docutils literal notranslate"><span class="pre">RunYearly</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.algos.RunYearly.compare_dates"><code class="docutils literal notranslate"><span class="pre">RunYearly.compare_dates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.ScaleWeights"><code class="docutils literal notranslate"><span class="pre">ScaleWeights</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectActive"><code class="docutils literal notranslate"><span class="pre">SelectActive</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectAll"><code class="docutils literal notranslate"><span class="pre">SelectAll</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectHasData"><code class="docutils literal notranslate"><span class="pre">SelectHasData</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectMomentum"><code class="docutils literal notranslate"><span class="pre">SelectMomentum</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectN"><code class="docutils literal notranslate"><span class="pre">SelectN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectRandomly"><code class="docutils literal notranslate"><span class="pre">SelectRandomly</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectRegex"><code class="docutils literal notranslate"><span class="pre">SelectRegex</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectThese"><code class="docutils literal notranslate"><span class="pre">SelectThese</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectTypes"><code class="docutils literal notranslate"><span class="pre">SelectTypes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SelectWhere"><code class="docutils literal notranslate"><span class="pre">SelectWhere</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SetNotional"><code class="docutils literal notranslate"><span class="pre">SetNotional</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SetStat"><code class="docutils literal notranslate"><span class="pre">SetStat</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.SimulateRFQTransactions"><code class="docutils literal notranslate"><span class="pre">SimulateRFQTransactions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.StatMultiPeriodReturn"><code class="docutils literal notranslate"><span class="pre">StatMultiPeriodReturn</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.StatTotalReturn"><code class="docutils literal notranslate"><span class="pre">StatTotalReturn</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.TargetVol"><code class="docutils literal notranslate"><span class="pre">TargetVol</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.UpdateRisk"><code class="docutils literal notranslate"><span class="pre">UpdateRisk</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.WeighERC"><code class="docutils literal notranslate"><span class="pre">WeighERC</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.WeighEqually"><code class="docutils literal notranslate"><span class="pre">WeighEqually</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.WeighInvVol"><code class="docutils literal notranslate"><span class="pre">WeighInvVol</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.WeighMeanVar"><code class="docutils literal notranslate"><span class="pre">WeighMeanVar</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.WeighRandomly"><code class="docutils literal notranslate"><span class="pre">WeighRandomly</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.WeighSpecified"><code class="docutils literal notranslate"><span class="pre">WeighSpecified</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.WeighTarget"><code class="docutils literal notranslate"><span class="pre">WeighTarget</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.algos.run_always"><code class="docutils literal notranslate"><span class="pre">run_always()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#module-bt.backtest">Backtests and results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.backtest.Backtest"><code class="docutils literal notranslate"><span class="pre">Backtest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Backtest.herfindahl_index"><code class="docutils literal notranslate"><span class="pre">Backtest.herfindahl_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Backtest.positions"><code class="docutils literal notranslate"><span class="pre">Backtest.positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Backtest.run"><code class="docutils literal notranslate"><span class="pre">Backtest.run()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Backtest.security_weights"><code class="docutils literal notranslate"><span class="pre">Backtest.security_weights</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Backtest.turnover"><code class="docutils literal notranslate"><span class="pre">Backtest.turnover</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Backtest.weights"><code class="docutils literal notranslate"><span class="pre">Backtest.weights</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.backtest.RandomBenchmarkResult"><code class="docutils literal notranslate"><span class="pre">RandomBenchmarkResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.RandomBenchmarkResult.plot_histogram"><code class="docutils literal notranslate"><span class="pre">RandomBenchmarkResult.plot_histogram()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.backtest.RenormalizedFixedIncomeResult"><code class="docutils literal notranslate"><span class="pre">RenormalizedFixedIncomeResult</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.backtest.Result"><code class="docutils literal notranslate"><span class="pre">Result</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.display_monthly_returns"><code class="docutils literal notranslate"><span class="pre">Result.display_monthly_returns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.get_monthly_max_drawdown"><code class="docutils literal notranslate"><span class="pre">Result.get_monthly_max_drawdown()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.get_security_weights"><code class="docutils literal notranslate"><span class="pre">Result.get_security_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.get_transactions"><code class="docutils literal notranslate"><span class="pre">Result.get_transactions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.get_weights"><code class="docutils literal notranslate"><span class="pre">Result.get_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.plot_histogram"><code class="docutils literal notranslate"><span class="pre">Result.plot_histogram()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.plot_security_weights"><code class="docutils literal notranslate"><span class="pre">Result.plot_security_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.backtest.Result.plot_weights"><code class="docutils literal notranslate"><span class="pre">Result.plot_weights()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.backtest.benchmark_random"><code class="docutils literal notranslate"><span class="pre">benchmark_random()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.backtest.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#module-bt.core">Strategies and securities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.Algo"><code class="docutils literal notranslate"><span class="pre">Algo</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Algo.name"><code class="docutils literal notranslate"><span class="pre">Algo.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.AlgoStack"><code class="docutils literal notranslate"><span class="pre">AlgoStack</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.AlmgrenChrissCostModel"><code class="docutils literal notranslate"><span class="pre">AlmgrenChrissCostModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.AlmgrenChrissCostModel.cost"><code class="docutils literal notranslate"><span class="pre">AlmgrenChrissCostModel.cost()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.CostModel"><code class="docutils literal notranslate"><span class="pre">CostModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CostModel.cost"><code class="docutils literal notranslate"><span class="pre">CostModel.cost()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.CouponPayingHedgeSecurity"><code class="docutils literal notranslate"><span class="pre">CouponPayingHedgeSecurity</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CouponPayingHedgeSecurity.update"><code class="docutils literal notranslate"><span class="pre">CouponPayingHedgeSecurity.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity"><code class="docutils literal notranslate"><span class="pre">CouponPayingSecurity</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity.coupon"><code class="docutils literal notranslate"><span class="pre">CouponPayingSecurity.coupon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity.coupons"><code class="docutils literal notranslate"><span class="pre">CouponPayingSecurity.coupons</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity.holding_cost"><code class="docutils literal notranslate"><span class="pre">CouponPayingSecurity.holding_cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity.holding_costs"><code class="docutils literal notranslate"><span class="pre">CouponPayingSecurity.holding_costs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity.setup"><code class="docutils literal notranslate"><span class="pre">CouponPayingSecurity.setup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity.update"><code class="docutils literal notranslate"><span class="pre">CouponPayingSecurity.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.FixedIncomeSecurity"><code class="docutils literal notranslate"><span class="pre">FixedIncomeSecurity</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.FixedIncomeSecurity.update"><code class="docutils literal notranslate"><span class="pre">FixedIncomeSecurity.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.FixedIncomeStrategy"><code class="docutils literal notranslate"><span class="pre">FixedIncomeStrategy</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.HedgeSecurity"><code class="docutils literal notranslate"><span class="pre">HedgeSecurity</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.HedgeSecurity.update"><code class="docutils literal notranslate"><span class="pre">HedgeSecurity.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.adjust"><code class="docutils literal notranslate"><span class="pre">Node.adjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.allocate"><code class="docutils literal notranslate"><span class="pre">Node.allocate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.data"><code class="docutils literal notranslate"><span class="pre">Node.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.fixed_income"><code class="docutils literal notranslate"><span class="pre">Node.fixed_income</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.full_name"><code class="docutils literal notranslate"><span class="pre">Node.full_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.members"><code class="docutils literal notranslate"><span class="pre">Node.members</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.notional_value"><code class="docutils literal notranslate"><span class="pre">Node.notional_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.price"><code class="docutils literal notranslate"><span class="pre">Node.price</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.prices"><code class="docutils literal notranslate"><span class="pre">Node.prices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.setup"><code class="docutils literal notranslate"><span class="pre">Node.setup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.to_dot"><code class="docutils literal notranslate"><span class="pre">Node.to_dot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.update"><code class="docutils literal notranslate"><span class="pre">Node.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.use_integer_positions"><code class="docutils literal notranslate"><span class="pre">Node.use_integer_positions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.value"><code class="docutils literal notranslate"><span class="pre">Node.value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Node.weight"><code class="docutils literal notranslate"><span class="pre">Node.weight</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.Security"><code class="docutils literal notranslate"><span class="pre">Security</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.SecurityBase"><code class="docutils literal notranslate"><span class="pre">SecurityBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.allocate"><code class="docutils literal notranslate"><span class="pre">SecurityBase.allocate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.bidoffer"><code class="docutils literal notranslate"><span class="pre">SecurityBase.bidoffer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.bidoffer_paid"><code class="docutils literal notranslate"><span class="pre">SecurityBase.bidoffer_paid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.bidoffers"><code class="docutils literal notranslate"><span class="pre">SecurityBase.bidoffers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.bidoffers_paid"><code class="docutils literal notranslate"><span class="pre">SecurityBase.bidoffers_paid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.commission"><code class="docutils literal notranslate"><span class="pre">SecurityBase.commission()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.notional_values"><code class="docutils literal notranslate"><span class="pre">SecurityBase.notional_values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.outlay"><code class="docutils literal notranslate"><span class="pre">SecurityBase.outlay()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.outlays"><code class="docutils literal notranslate"><span class="pre">SecurityBase.outlays</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.position"><code class="docutils literal notranslate"><span class="pre">SecurityBase.position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.positions"><code class="docutils literal notranslate"><span class="pre">SecurityBase.positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.price"><code class="docutils literal notranslate"><span class="pre">SecurityBase.price</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.prices"><code class="docutils literal notranslate"><span class="pre">SecurityBase.prices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.run"><code class="docutils literal notranslate"><span class="pre">SecurityBase.run()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.setup"><code class="docutils literal notranslate"><span class="pre">SecurityBase.setup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.transact"><code class="docutils literal notranslate"><span class="pre">SecurityBase.transact()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.update"><code class="docutils literal notranslate"><span class="pre">SecurityBase.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SecurityBase.values"><code class="docutils literal notranslate"><span class="pre">SecurityBase.values</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.SqrtCostModel"><code class="docutils literal notranslate"><span class="pre">SqrtCostModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.SqrtCostModel.cost"><code class="docutils literal notranslate"><span class="pre">SqrtCostModel.cost()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.Strategy"><code class="docutils literal notranslate"><span class="pre">Strategy</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.Strategy.run"><code class="docutils literal notranslate"><span class="pre">Strategy.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.StrategyBase"><code class="docutils literal notranslate"><span class="pre">StrategyBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.adjust"><code class="docutils literal notranslate"><span class="pre">StrategyBase.adjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.allocate"><code class="docutils literal notranslate"><span class="pre">StrategyBase.allocate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.bidoffer_paid"><code class="docutils literal notranslate"><span class="pre">StrategyBase.bidoffer_paid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.bidoffers_paid"><code class="docutils literal notranslate"><span class="pre">StrategyBase.bidoffers_paid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.capital"><code class="docutils literal notranslate"><span class="pre">StrategyBase.capital</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.cash"><code class="docutils literal notranslate"><span class="pre">StrategyBase.cash</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.close"><code class="docutils literal notranslate"><span class="pre">StrategyBase.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.fees"><code class="docutils literal notranslate"><span class="pre">StrategyBase.fees</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.flatten"><code class="docutils literal notranslate"><span class="pre">StrategyBase.flatten()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.flows"><code class="docutils literal notranslate"><span class="pre">StrategyBase.flows</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.get_data"><code class="docutils literal notranslate"><span class="pre">StrategyBase.get_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.get_transactions"><code class="docutils literal notranslate"><span class="pre">StrategyBase.get_transactions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.notional_values"><code class="docutils literal notranslate"><span class="pre">StrategyBase.notional_values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.outlays"><code class="docutils literal notranslate"><span class="pre">StrategyBase.outlays</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.positions"><code class="docutils literal notranslate"><span class="pre">StrategyBase.positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.price"><code class="docutils literal notranslate"><span class="pre">StrategyBase.price</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.prices"><code class="docutils literal notranslate"><span class="pre">StrategyBase.prices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.rebalance"><code class="docutils literal notranslate"><span class="pre">StrategyBase.rebalance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.run"><code class="docutils literal notranslate"><span class="pre">StrategyBase.run()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.securities"><code class="docutils literal notranslate"><span class="pre">StrategyBase.securities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.set_commissions"><code class="docutils literal notranslate"><span class="pre">StrategyBase.set_commissions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.setup"><code class="docutils literal notranslate"><span class="pre">StrategyBase.setup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.setup_from_parent"><code class="docutils literal notranslate"><span class="pre">StrategyBase.setup_from_parent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.transact"><code class="docutils literal notranslate"><span class="pre">StrategyBase.transact()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.universe"><code class="docutils literal notranslate"><span class="pre">StrategyBase.universe</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.update"><code class="docutils literal notranslate"><span class="pre">StrategyBase.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="overview.html#bt.core.StrategyBase.values"><code class="docutils literal notranslate"><span class="pre">StrategyBase.values</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#bt.core.is_zero"><code class="docutils literal notranslate"><span class="pre">is_zero()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            Philippe Morissette
+        </div>
+
+        
+  </body>
+</html>

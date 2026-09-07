@@ -1,21 +1,29 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>bt - Flexible Backtesting for Python &#8212; bt 0.2.10 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/css/klink.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>bt — Flexible Backtesting for Python &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/custom.css?v=890fd012" />
+    <script src="_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/custom.js?v=956e5d78"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Getting Started" href="install.html" />
+    <link rel="next" title="Getting Started" href="docs/source/install.html" />
          
         <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
         
@@ -29,352 +37,89 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="bt-flexible-backtesting-for-python">
-<h1>bt - Flexible Backtesting for Python<a class="headerlink" href="#bt-flexible-backtesting-for-python" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="what-is-bt">
-<h2>What is bt?<a class="headerlink" href="#what-is-bt" title="Permalink to this heading">¶</a></h2>
-<p><strong>bt</strong> is a flexible backtesting framework for Python used to test quantitative
-trading strategies. <strong>Backtesting</strong> is the process of testing a strategy over a given
-data set. This framework allows you to easily create strategies that mix and match
-different <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>. It aims to foster the creation of easily testable, re-usable and
-flexible blocks of strategy logic to facilitate the rapid development of complex
-trading strategies.</p>
-<p>The goal: to save <strong>quants</strong> from re-inventing the wheel and let them focus on the
-important part of the job - strategy development.</p>
-<p><strong>bt</strong> is coded in <strong>Python</strong> and joins a vibrant and rich ecosystem for data analysis.
-Numerous libraries exist for machine learning, signal processing and statistics and can be leveraged to avoid
-re-inventing the wheel - something that happens all too often when using other
-languages that don’t have the same wealth of high-quality, open-source projects.</p>
-<p>bt is built atop <a class="reference external" href="https://github.com/pmorissette/ffn">ffn</a> - a financial function library for Python. Check it out!</p>
+  <div class="toctree-wrapper compound">
 </div>
-<div class="section" id="a-quick-example">
-<h2>A Quick Example<a class="headerlink" href="#a-quick-example" title="Permalink to this heading">¶</a></h2>
-<p>Here is a quick taste of bt:</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">bt</span>
-</pre></div>
-</div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
-</pre></div>
-</div>
-<div class="section" id="a-simple-strategy-backtest">
-<h3>A Simple Strategy Backtest<a class="headerlink" href="#a-simple-strategy-backtest" title="Permalink to this heading">¶</a></h3>
-<p>Let’s create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.</p>
-<p>First, we will download some data. By default, <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.data.get" title="(in ffn v0.3.6)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></code></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fetch some data</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spy,agg&#39;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2010-01-01&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
-</pre></div>
-</div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span>                   <span class="n">spy</span>        <span class="n">agg</span>
- <span class="n">Date</span>
- <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">04</span>  <span class="mf">89.225410</span>  <span class="mf">74.942825</span>
- <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">05</span>  <span class="mf">89.461586</span>  <span class="mf">75.283791</span>
- <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">06</span>  <span class="mf">89.524574</span>  <span class="mf">75.240227</span>
- <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">07</span>  <span class="mf">89.902473</span>  <span class="mf">75.153221</span>
- <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">08</span>  <span class="mf">90.201691</span>  <span class="mf">75.196724</span>
-</pre></div>
-</div>
-<p>Once we have our data, we will create our strategy. The <a class="reference internal" href="bt.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a> object contains the strategy logic by combining various <a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create the strategy</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s1&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
-                       <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
-                       <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
-                       <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
-</pre></div>
-</div>
-<p>Finally, we will create a <a class="reference internal" href="bt.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backtest</span></code></a>, which is the logical combination of a strategy with a data set.</p>
-<p>Once this is done, we can run the backtest and analyze the results.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a backtest and run it</span>
-<span class="n">test</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Now we can analyze the results of our backtest. The <a class="reference internal" href="bt.html#bt.backtest.Result" title="bt.backtest.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object is a thin wrapper around <a class="reference external" href="http://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats">ffn.GroupStats</a> that adds some helper methods.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># first let&#39;s see an equity curve</span>
-<span class="n">res</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
-</pre></div>
-</div>
-<a class="pynb reference internal image-reference" href="_images/intro_9_0.png"><img alt="_images/intro_9_0.png" class="pynb" src="_images/intro_9_0.png" style="width: 879px; height: 304px;" /></a>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and what about some stats?</span>
-<span class="n">res</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">Stat</span>                 <span class="n">s1</span>
- <span class="o">-------------------</span>  <span class="o">----------</span>
- <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
- <span class="n">End</span>                  <span class="mi">2022</span><span class="o">-</span><span class="mi">07</span><span class="o">-</span><span class="mi">01</span>
- <span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>
-
- <span class="n">Total</span> <span class="n">Return</span>         <span class="mf">150.73</span><span class="o">%</span>
- <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>
- <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>
- <span class="n">CAGR</span>                 <span class="mf">7.64</span><span class="o">%</span>
- <span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">18.42</span><span class="o">%</span>
- <span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">0.41</span>
-
- <span class="n">MTD</span>                  <span class="mf">0.18</span><span class="o">%</span>
- <span class="mi">3</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">10.33</span><span class="o">%</span>
- <span class="mi">6</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>
- <span class="n">YTD</span>                  <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>
- <span class="mi">1</span><span class="n">Y</span>                   <span class="o">-</span><span class="mf">10.15</span><span class="o">%</span>
- <span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">5.12</span><span class="o">%</span>
- <span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">6.44</span><span class="o">%</span>
- <span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">7.36</span><span class="o">%</span>
- <span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.64</span><span class="o">%</span>
-
- <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>
- <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>
- <span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">7.74</span><span class="o">%</span>
- <span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">8.62</span><span class="o">%</span>
- <span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.98</span>
- <span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">16.56</span>
- <span class="n">Best</span> <span class="n">Day</span>             <span class="mf">4.77</span><span class="o">%</span>
- <span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">6.63</span><span class="o">%</span>
-
- <span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">1.06</span>
- <span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">1.91</span>
- <span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.81</span><span class="o">%</span>
- <span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">7.36</span><span class="o">%</span>
- <span class="n">Monthly</span> <span class="n">Skew</span>         <span class="o">-</span><span class="mf">0.39</span>
- <span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">1.59</span>
- <span class="n">Best</span> <span class="n">Month</span>           <span class="mf">7.57</span><span class="o">%</span>
- <span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">6.44</span><span class="o">%</span>
-
- <span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">0.81</span>
- <span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="mf">1.75</span>
- <span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">7.48</span><span class="o">%</span>
- <span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">9.17</span><span class="o">%</span>
- <span class="n">Yearly</span> <span class="n">Skew</span>          <span class="o">-</span><span class="mf">1.34</span>
- <span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="mf">2.28</span>
- <span class="n">Best</span> <span class="n">Year</span>            <span class="mf">19.64</span><span class="o">%</span>
- <span class="n">Worst</span> <span class="n">Year</span>           <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>
-
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">0.84</span><span class="o">%</span>
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">13.23</span>
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">1.70</span><span class="o">%</span>
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">1.80</span><span class="o">%</span>
- <span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">83.33</span><span class="o">%</span>
- <span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">93.57</span><span class="o">%</span>
-</pre></div>
-</div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ok and how does the return distribution look like?</span>
-<span class="n">res</span><span class="o">.</span><span class="n">plot_histogram</span><span class="p">()</span>
-</pre></div>
-</div>
-<a class="pynb reference internal image-reference" href="_images/intro_11_0.png"><img alt="_images/intro_11_0.png" class="pynb" src="_images/intro_11_0.png" style="width: 894px; height: 320px;" /></a>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># and just to make sure everything went along as planned, let&#39;s plot the security weights over time</span>
-<span class="n">res</span><span class="o">.</span><span class="n">plot_security_weights</span><span class="p">()</span>
-</pre></div>
-</div>
-<a class="pynb reference internal image-reference" href="_images/intro_12_0.png"><img alt="_images/intro_12_0.png" class="pynb" src="_images/intro_12_0.png" style="width: 876px; height: 293px;" /></a>
-</div>
-<div class="section" id="modifying-a-strategy">
-<h3>Modifying a Strategy<a class="headerlink" href="#modifying-a-strategy" title="Permalink to this heading">¶</a></h3>
-<p>Now what if we ran this strategy weekly and also used some risk parity style approach by using weights that are proportional to the inverse of each asset’s volatility? Well, all we have to do is plug in some different algos. See below:</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create our new strategy</span>
-<span class="n">s2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">&#39;s2&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunWeekly</span><span class="p">(),</span>
-                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
-                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(),</span>
-                        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()])</span>
-
-<span class="c1"># now let&#39;s test it with the same data set. We will also compare it with our first backtest.</span>
-<span class="n">test2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s2</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-<span class="c1"># we include test here to see the results side-by-side</span>
-<span class="n">res2</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">test2</span><span class="p">)</span>
-
-<span class="n">res2</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
-</pre></div>
-</div>
-<a class="pynb reference internal image-reference" href="_images/intro_14_0.png"><img alt="_images/intro_14_0.png" class="pynb" src="_images/intro_14_0.png" style="width: 879px; height: 304px;" /></a>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res2</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">Stat</span>                 <span class="n">s1</span>          <span class="n">s2</span>
- <span class="o">-------------------</span>  <span class="o">----------</span>  <span class="o">----------</span>
- <span class="n">Start</span>                <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>  <span class="mi">2010</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">03</span>
- <span class="n">End</span>                  <span class="mi">2022</span><span class="o">-</span><span class="mi">07</span><span class="o">-</span><span class="mi">01</span>  <span class="mi">2022</span><span class="o">-</span><span class="mi">07</span><span class="o">-</span><span class="mi">01</span>
- <span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>       <span class="mf">0.00</span><span class="o">%</span>
-
- <span class="n">Total</span> <span class="n">Return</span>         <span class="mf">150.73</span><span class="o">%</span>     <span class="mf">69.58</span><span class="o">%</span>
- <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>        <span class="mf">0.96</span>
- <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>        <span class="mf">1.41</span>
- <span class="n">CAGR</span>                 <span class="mf">7.64</span><span class="o">%</span>       <span class="mf">4.32</span><span class="o">%</span>
- <span class="n">Max</span> <span class="n">Drawdown</span>         <span class="o">-</span><span class="mf">18.42</span><span class="o">%</span>     <span class="o">-</span><span class="mf">14.62</span><span class="o">%</span>
- <span class="n">Calmar</span> <span class="n">Ratio</span>         <span class="mf">0.41</span>        <span class="mf">0.30</span>
-
- <span class="n">MTD</span>                  <span class="mf">0.18</span><span class="o">%</span>       <span class="mf">0.38</span><span class="o">%</span>
- <span class="mi">3</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">10.33</span><span class="o">%</span>     <span class="o">-</span><span class="mf">6.88</span><span class="o">%</span>
- <span class="mi">6</span><span class="n">m</span>                   <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>     <span class="o">-</span><span class="mf">12.00</span><span class="o">%</span>
- <span class="n">YTD</span>                  <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>     <span class="o">-</span><span class="mf">12.00</span><span class="o">%</span>
- <span class="mi">1</span><span class="n">Y</span>                   <span class="o">-</span><span class="mf">10.15</span><span class="o">%</span>     <span class="o">-</span><span class="mf">10.03</span><span class="o">%</span>
- <span class="mi">3</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">5.12</span><span class="o">%</span>       <span class="mf">1.84</span><span class="o">%</span>
- <span class="mi">5</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>            <span class="mf">6.44</span><span class="o">%</span>       <span class="mf">3.35</span><span class="o">%</span>
- <span class="mi">10</span><span class="n">Y</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>           <span class="mf">7.36</span><span class="o">%</span>       <span class="mf">3.76</span><span class="o">%</span>
- <span class="n">Since</span> <span class="n">Incep</span><span class="o">.</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.64</span><span class="o">%</span>       <span class="mf">4.32</span><span class="o">%</span>
-
- <span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.90</span>        <span class="mf">0.96</span>
- <span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">1.35</span>        <span class="mf">1.41</span>
- <span class="n">Daily</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>    <span class="mf">7.74</span><span class="o">%</span>       <span class="mf">4.33</span><span class="o">%</span>
- <span class="n">Daily</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>     <span class="mf">8.62</span><span class="o">%</span>       <span class="mf">4.50</span><span class="o">%</span>
- <span class="n">Daily</span> <span class="n">Skew</span>           <span class="o">-</span><span class="mf">0.98</span>       <span class="o">-</span><span class="mf">2.21</span>
- <span class="n">Daily</span> <span class="n">Kurt</span>           <span class="mf">16.56</span>       <span class="mf">46.12</span>
- <span class="n">Best</span> <span class="n">Day</span>             <span class="mf">4.77</span><span class="o">%</span>       <span class="mf">2.84</span><span class="o">%</span>
- <span class="n">Worst</span> <span class="n">Day</span>            <span class="o">-</span><span class="mf">6.63</span><span class="o">%</span>      <span class="o">-</span><span class="mf">4.66</span><span class="o">%</span>
-
- <span class="n">Monthly</span> <span class="n">Sharpe</span>       <span class="mf">1.06</span>        <span class="mf">1.13</span>
- <span class="n">Monthly</span> <span class="n">Sortino</span>      <span class="mf">1.91</span>        <span class="mf">1.87</span>
- <span class="n">Monthly</span> <span class="n">Mean</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>  <span class="mf">7.81</span><span class="o">%</span>       <span class="mf">4.40</span><span class="o">%</span>
- <span class="n">Monthly</span> <span class="n">Vol</span> <span class="p">(</span><span class="n">ann</span><span class="o">.</span><span class="p">)</span>   <span class="mf">7.36</span><span class="o">%</span>       <span class="mf">3.89</span><span class="o">%</span>
- <span class="n">Monthly</span> <span class="n">Skew</span>         <span class="o">-</span><span class="mf">0.39</span>       <span class="o">-</span><span class="mf">1.06</span>
- <span class="n">Monthly</span> <span class="n">Kurt</span>         <span class="mf">1.59</span>        <span class="mf">3.92</span>
- <span class="n">Best</span> <span class="n">Month</span>           <span class="mf">7.57</span><span class="o">%</span>       <span class="mf">4.05</span><span class="o">%</span>
- <span class="n">Worst</span> <span class="n">Month</span>          <span class="o">-</span><span class="mf">6.44</span><span class="o">%</span>      <span class="o">-</span><span class="mf">5.04</span><span class="o">%</span>
-
- <span class="n">Yearly</span> <span class="n">Sharpe</span>        <span class="mf">0.81</span>        <span class="mf">0.65</span>
- <span class="n">Yearly</span> <span class="n">Sortino</span>       <span class="mf">1.75</span>        <span class="mf">1.19</span>
- <span class="n">Yearly</span> <span class="n">Mean</span>          <span class="mf">7.48</span><span class="o">%</span>       <span class="mf">4.13</span><span class="o">%</span>
- <span class="n">Yearly</span> <span class="n">Vol</span>           <span class="mf">9.17</span><span class="o">%</span>       <span class="mf">6.31</span><span class="o">%</span>
- <span class="n">Yearly</span> <span class="n">Skew</span>          <span class="o">-</span><span class="mf">1.34</span>       <span class="o">-</span><span class="mf">1.48</span>
- <span class="n">Yearly</span> <span class="n">Kurt</span>          <span class="mf">2.28</span>        <span class="mf">3.37</span>
- <span class="n">Best</span> <span class="n">Year</span>            <span class="mf">19.64</span><span class="o">%</span>      <span class="mf">11.71</span><span class="o">%</span>
- <span class="n">Worst</span> <span class="n">Year</span>           <span class="o">-</span><span class="mf">14.84</span><span class="o">%</span>     <span class="o">-</span><span class="mf">12.00</span><span class="o">%</span>
-
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span>        <span class="o">-</span><span class="mf">0.84</span><span class="o">%</span>      <span class="o">-</span><span class="mf">0.48</span><span class="o">%</span>
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Drawdown</span> <span class="n">Days</span>   <span class="mf">13.23</span>       <span class="mf">13.68</span>
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Up</span> <span class="n">Month</span>        <span class="mf">1.70</span><span class="o">%</span>       <span class="mf">0.90</span><span class="o">%</span>
- <span class="n">Avg</span><span class="o">.</span> <span class="n">Down</span> <span class="n">Month</span>      <span class="o">-</span><span class="mf">1.80</span><span class="o">%</span>      <span class="o">-</span><span class="mf">0.93</span><span class="o">%</span>
- <span class="n">Win</span> <span class="n">Year</span> <span class="o">%</span>           <span class="mf">83.33</span><span class="o">%</span>      <span class="mf">83.33</span><span class="o">%</span>
- <span class="n">Win</span> <span class="mi">12</span><span class="n">m</span> <span class="o">%</span>            <span class="mf">93.57</span><span class="o">%</span>      <span class="mf">91.43</span><span class="o">%</span>
-</pre></div>
-</div>
-<p>As you can see, the strategy logic is easy to understand and more importantly,
-easy to modify.  The idea of using simple, composable Algos to create strategies is one of the
-core building blocks of bt.</p>
-</div>
-</div>
-<div class="section" id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this heading">¶</a></h2>
+<section class="tex2jax_ignore mathjax_ignore" id="bt-flexible-backtesting-for-python">
+<h1>bt — Flexible Backtesting for Python<a class="headerlink" href="#bt-flexible-backtesting-for-python" title="Link to this heading">¶</a></h1>
+<p><a class="reference external" href="https://github.com/pmorissette/bt/actions/"><img alt="Build Status" src="https://github.com/pmorissette/bt/workflows/Build%20Status/badge.svg" /></a>
+<a class="reference external" href="https://pypi.org/project/bt/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/bt" /></a>
+<a class="reference external" href="https://pypi.org/project/bt/"><img alt="PyPI License" src="https://img.shields.io/pypi/l/bt" /></a></p>
+<p><a id="what-is-bt"></a></p>
+<p>Build, test, and compare investment strategies from reusable Python components.
+bt combines strategy logic with historical price data, tracks portfolio positions
+and transactions, and provides performance statistics and charts through
+<a class="reference external" href="https://github.com/pmorissette/ffn">ffn</a>.</p>
+<p><a id="features"></a></p>
 <ul class="simple">
-<li><dl class="simple">
-<dt><strong>Tree Structure</strong></dt><dd><p><a class="reference internal" href="tree.html"><span class="doc">The tree structure</span></a> facilitates the construction and composition of complex algorithmic trading
-strategies that are modular and re-usable. Furthermore, each tree <a class="reference internal" href="bt.html#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></a>
-has its own <a class="reference internal" href="bt.html#bt.core.Node.prices" title="bt.core.Node.prices"><code class="xref py py-func docutils literal notranslate"><span class="pre">price</span> <span class="pre">index</span></code></a> that can be
-used by Algos to determine a Node’s allocation.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Algorithm Stacks</strong></dt><dd><p><a class="reference internal" href="bt.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a> and <a class="reference internal" href="bt.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgoStacks</span></code></a> are
-another core feature that facilitate the creation of modular and re-usable strategy
-logic. Due to their modularity, these logic blocks are also easier to test -
-an important step in building robust financial solutions.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Transaction Cost Modeling</strong></dt><dd><p>Through the use of a commission function and instrument-specific, time-varying
-bid/offer spreads passed to the
-<a class="reference internal" href="bt.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backtest</span></code></a>.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Fixed Income</strong></dt><dd><p>Strategies can include coupon-paying instruments such as bonds,
-unfunded instruments such as swaps, holding costs, and the option for notional weighting.
-These are extensions of <a class="reference internal" href="tree.html"><span class="doc">the tree structure</span></a>.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Charting and Reporting</strong></dt><dd><p>bt also provides many useful charting functions that help visualize backtest
-results. We also plan to add more charts, tables and report formats in the future,
-such as automatically generated PDF reports.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Detailed Statistics</strong></dt><dd><p>Furthermore, bt calculates a bunch of stats relating to a backtest and offers a quick way to compare
-these various statistics across many different backtests via <code class="xref py py-class docutils literal notranslate"><span class="pre">Results'</span></code> display methods.</p>
-</dd>
-</dl>
-</li>
+<li><p><strong>Compose strategy logic:</strong> combine algorithms for scheduling, security selection, weighting, and rebalancing.</p></li>
+<li><p><strong>Build portfolios of strategies:</strong> nest strategies and securities in a common tree.</p></li>
+<li><p><strong>Model trading costs:</strong> configure commissions and transaction cost models.</p></li>
+<li><p><strong>Compare results:</strong> inspect returns, weights, transactions, drawdowns, and other statistics.</p></li>
 </ul>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>bt
+</pre></div>
 </div>
-<div class="section" id="roadmap">
-<h2>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this heading">¶</a></h2>
-<p>Future development efforts will focus on:</p>
+<p>See the <a class="reference internal" href="docs/source/install.html"><span class="std std-doc">installation guide</span></a> for additional details.</p>
+<p><a id="a-quick-example"></a>
+<a id="a-simple-strategy-backtest"></a></p>
+</section>
+<section id="a-first-backtest">
+<h2>A first backtest<a class="headerlink" href="#a-first-backtest" title="Link to this heading">¶</a></h2>
+<p>This example uses synthetic prices, so it runs without downloading market data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bt</span>
+
+<span class="n">prices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"asset_a"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">252</span><span class="p">),</span>
+        <span class="s2">"asset_b"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="mi">252</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">bdate_range</span><span class="p">(</span><span class="s2">"2020-01-01"</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="mi">252</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">strategy</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+    <span class="s2">"equal_weight"</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+        <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">(),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">prices</span><span class="p">))</span>
+<span class="n">result</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The strategy selects both assets, gives each equal weight, and rebalances monthly.
+Replace the synthetic prices with your own data to explore a strategy. Backtest
+results depend on data quality and modeling assumptions; they do not predict
+future performance.</p>
+<p><a id="modifying-a-strategy"></a></p>
+</section>
+<section id="explore-the-documentation">
+<h2>Explore the documentation<a class="headerlink" href="#explore-the-documentation" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><dl class="simple">
-<dt><strong>Speed</strong></dt><dd><p>Due to the flexible nature of bt, a trade-off had to be made between
-usability and performance. Usability will always be the priority, but we do
-wish to enhance the performance as much as possible.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Algos</strong></dt><dd><p>We will also be developing more algorithms as time goes on. We also
-encourage anyone to contribute their own algos as well.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Charting and Reporting</strong></dt><dd><p>This is another area we wish to constantly improve on
-as reporting is an important aspect of the job. Charting and reporting also
-facilitate finding bugs in strategy logic.</p>
-</dd>
-</dl>
-</li>
+<li><p><a class="reference internal" href="docs/source/intro.html"><span class="std std-doc">First strategy tutorial</span></a>: walk through a backtest and inspect its results.</p></li>
+<li><p><a class="reference internal" href="docs/source/algos.html"><span class="std std-doc">Algorithms</span></a>: compose and customize strategy logic.</p></li>
+<li><p><a class="reference internal" href="docs/source/tree.html"><span class="std std-doc">Portfolio trees</span></a>: combine securities and nested strategies.</p></li>
+<li><p><a class="reference internal" href="docs/source/examples.html"><span class="std std-doc">Examples</span></a>: explore momentum, risk allocation, and fixed-income strategies.</p></li>
+<li><p><a class="reference internal" href="docs/source/overview.html"><span class="std std-doc">API overview</span></a>: find strategy, algorithm, and backtest interfaces.</p></li>
 </ul>
-<div class="toctree-wrapper compound">
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#"> Overview</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#what-is-bt">What is bt?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#a-quick-example">A Quick Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#roadmap">Roadmap</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="install.html#installing-bt">Installing bt</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#recommended-setup">Recommended Setup</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="algos.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="algos.html#data-passing">Data Passing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="algos.html#implementation">Implementation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="algos.html#best-practices">Best Practices</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tree.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tree.html#types">Types</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#sma-strategy">SMA Strategy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#sma-crossover-strategy">SMA Crossover Strategy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#exploring-the-tree-structure">Exploring the Tree Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#buy-and-hold-strategy">Buy and Hold Strategy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#trend-example-1">Trend Example 1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#trend-example-2">Trend Example 2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#strategy-combination">Strategy Combination</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#equally-weighted-risk-contributions-portfolio">Equally Weighted Risk Contributions Portfolio</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#predicted-tracking-error-rebalance-portfolio">Predicted Tracking Error Rebalance Portfolio</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#fixed-income-examples">Fixed Income Examples</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#id1"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bt</span></code> Package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.algos"><code class="xref py py-mod docutils literal notranslate"><span class="pre">algos</span></code> Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.backtest"><code class="xref py py-mod docutils literal notranslate"><span class="pre">backtest</span></code> Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bt.html#module-bt.core"><code class="xref py py-mod docutils literal notranslate"><span class="pre">core</span></code> Module</a></li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
-</div>
+<p>The published documentation is at <a class="reference external" href="https://pmorissette.github.io/bt/">https://pmorissette.github.io/bt/</a>.</p>
+<p><a id="roadmap"></a></p>
+</section>
+<section id="contribute">
+<h2>Contribute<a class="headerlink" href="#contribute" title="Link to this heading">¶</a></h2>
+<p>See the <a class="reference internal" href="docs/development.html"><span class="std std-doc">development guide</span></a> for environment setup, tests,
+documentation builds, and Copier template updates. Report bugs and propose
+improvements through <a class="reference external" href="https://github.com/pmorissette/bt/issues">GitHub issues</a>.</p>
+<p>bt is released under the <a class="reference download internal" download="" href="_downloads/9879d6db96fd29134fc802214163b95a/LICENSE"><span class="xref download myst">MIT license</span></a>.</p>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -387,28 +132,14 @@ facilitate finding bugs in strategy logic.</p>
             <a href="#" id="logo" title=bt><img class="logo" src="_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#"> Overview</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#what-is-bt">What is bt?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#a-quick-example">A Quick Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#roadmap">Roadmap</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="install.html"> Installation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="algos.html"> All About Algos</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tree.html"> The Tree Structure</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html"> Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="bt.html"> API</a></li>
-</ul>
-
+            
 
             
             <ul>
                 <li><a href="https://github.com/pmorissette/bt">Github</a></li>
             </ul>
             
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -416,29 +147,16 @@ facilitate finding bugs in strategy logic.</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </aside>
     
       <div class="clearer"></div>
     </div>
         <div class="footer">
-            bt was created by Philippe Morissette.
-If you find a bug, please <a href="https://github.com/pmorissette/bt/issues/new" title="Open a new issue on Github">submit an issue</a> on Github.
-
+            Philippe Morissette
         </div>
 
-        
-        <script>
-            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-            ga('create', 'UA-52308448-3', 'auto');
-            ga('require', 'displayfeatures');
-            ga('send', 'pageview');
-        </script>
         
   </body>
 </html>

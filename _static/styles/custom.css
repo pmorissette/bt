@@ -1,0 +1,80 @@
+/* Wide main page */
+.content {
+    flex: 3;
+}
+aside.sidebar-drawer {
+    width: unset;
+}
+aside.toc-drawer {
+    flex: 1;
+}
+
+/* Left-align tables */
+article table.align-default {
+    margin-left: 0;
+}
+
+/* Handle logo switching for light/dark themes */
+/* Put in code like:
+<a class="logo-light" href="https://github.com/nbprint/nbprint#gh-light-mode-only">
+  <img src="https://github.com/nbprint/nbprint/raw/main/docs/img/logo-light.png?raw=true#gh-light-mode-only" alt="nbprint" width="400"></a>
+</a>
+<a class="logo-dark" href="https://github.com/nbprint/nbprint#gh-dark-mode-only">
+  <img src="https://github.com/nbprint/nbprint/raw/main/docs/img/logo-dark.png?raw=true#gh-dark-mode-only" alt="nbprint" width="400"></a>
+</a>
+*/
+body[data-theme="light"] .logo-light {
+    display: inline;
+}
+body[data-theme="light"] .logo-dark {
+    display: none;
+}
+body[data-theme="dark"] .logo-light {
+    display: none;
+}
+body[data-theme="dark"] .logo-dark {
+    display: inline;
+}
+
+@media (prefers-color-scheme: dark) {
+    .logo-light {
+        display: none;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .logo-dark {
+        display: none;
+    }
+}
+
+
+/* Handle mermaid diagrams in dark mode */
+body[data-theme="light"] .mermaid-container {
+    background-color: #fafafa;
+}
+body[data-theme="light"] pre.mermaid svg path {
+    stroke: black !important;
+}
+body[data-theme="dark"] .mermaid-container {
+    background-color: #222;
+}
+body[data-theme="dark"] pre.mermaid svg path {
+    stroke: white !important;
+}
+@media (prefers-color-scheme: dark) {
+    .mermaid-container {
+        background-color: #222;
+    }
+    pre.mermaid svg path {
+        stroke: white !important;
+    }
+}
+@media (prefers-color-scheme: light) {
+    .mermaid-container {
+        background-color: #fafafa;
+    }
+    body[data-theme="dark"] pre.mermaid svg path {
+        stroke: black !important;
+    }
+}

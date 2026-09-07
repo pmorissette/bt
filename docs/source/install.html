@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting Started &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/custom.css?v=890fd012" />
+    <script src="../../_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/custom.js?v=956e5d78"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="A Simple Strategy Backtest" href="intro.html" />
+    <link rel="prev" title="bt — Flexible Backtesting for Python" href="../../index.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h1>
+<section id="installing-bt">
+<h2>Installing bt<a class="headerlink" href="#installing-bt" title="Link to this heading">¶</a></h2>
+<p>The easiest way to install <code class="docutils literal notranslate"><span class="pre">bt</span></code> is from the <a class="reference external" href="https://pypi.python.org/pypi/bt/">Python Package Index</a>
+using <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>bt
+</pre></div>
+</div>
+<p>Since <code class="docutils literal notranslate"><span class="pre">bt</span></code> has many dependencies, we strongly recommend installing the <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda Scientific Python
+Distribution</a>, especially on Windows. This distribution
+comes with many of the required packages pre-installed, including pip. Once Anaconda is installed, the above
+command should complete the installation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">bt</span></code> is also available on <a class="reference external" href="https://conda-forge.org/">Conda Forge</a>, and installable via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>conda<span class="w"> </span>install<span class="w"> </span>bt<span class="w"> </span>--channel<span class="w"> </span>conda-forge
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">bt</span></code> is compatible with Python &gt;=3.7.</p>
+</section>
+<section id="recommended-setup">
+<h2>Recommended Setup<a class="headerlink" href="#recommended-setup" title="Link to this heading">¶</a></h2>
+<p>We believe the best environment to develop with bt is the <a class="reference external" href="http://ipython.org/notebook.html">IPython Notebook</a>. From their homepage, the IPython Notebook
+is:</p>
+<blockquote>
+<div><p>“[…] a web-based interactive computational environment
+where you can combine code execution, text, mathematics, plots and rich
+media into a single document […]”</p>
+</div></blockquote>
+<p>This environment allows you to plot your charts in-line and also allows you to
+easily add surrounding text with Markdown. You can easily create Notebooks that
+you can share with colleagues and you can also save them as PDFs. If you are not
+yet convinced, head over to their website.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            Philippe Morissette
+        </div>
+
+        
+  </body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Algorithms &#8212; bt — Flexible Backtesting for Python</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/custom.css?v=890fd012" />
+    <script src="../../_static/documentation_options.js?v=fd7cadf9"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/custom.js?v=956e5d78"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="The Tree Structure" href="tree.html" />
+    <link rel="prev" title="A Simple Strategy Backtest" href="intro.html" />
+         
+        <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono:400,500,700' rel='stylesheet' type='text/css'>
+    
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="algorithms">
+<h1>Algorithms<a class="headerlink" href="#algorithms" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>One of the core building blocks of bt is the <a class="reference internal" href="overview.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algo</span></code></a> and the
+closely related <a class="reference internal" href="overview.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgoStack</span></code></a>.</p>
+<img alt="algo stack" class="align-center" src="../../_images/stack.png" />
+<section id="algos">
+<h3>Algos<a class="headerlink" href="#algos" title="Link to this heading">¶</a></h3>
+<p>An Algo is essentially a function that returns True or False. It takes a single
+argument that is the <a class="reference internal" href="overview.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a> being tested. An Algo should ideally
+only serve one specific purpose. This purpose can control execution flow, it can
+control security selection, security allocation, etc. For example,
+you can have an Algo that checks if the month has changed (such as
+<a class="reference internal" href="overview.html#bt.algos.RunMonthly" title="bt.algos.RunMonthly"><code class="xref py py-class docutils literal notranslate"><span class="pre">bt.algos.RunMonthly</span></code></a>). If it has, this Algo return True, if not, False.</p>
+</section>
+<section id="algo-stacks">
+<h3>Algo Stacks<a class="headerlink" href="#algo-stacks" title="Link to this heading">¶</a></h3>
+<p>An <a class="reference internal" href="overview.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgoStack</span></code></a> is a class that groups together many
+Algos and runs them one after another as long as each Algo returns True. As soon
+as an Algo returns False, the AlgoStack stops its execution and returns False
+(an AlgoStack is an Algo after all).  This allows us to combine different Algos
+together and control the flow of execution with the Algo return value. Many
+AlgoStacks can they themselves be included into another AlgoStack should the
+need arise.</p>
+<p>By breaking down strategy logic into these small blocks of code, we achieve
+testability and reusability - two appealing features when working on software
+development.</p>
+</section>
+</section>
+<section id="data-passing">
+<h2>Data Passing<a class="headerlink" href="#data-passing" title="Link to this heading">¶</a></h2>
+<p>In order to pass data between different Algos, the Strategy has two properties:
+<strong>temp</strong> and <strong>perm</strong>. They are both dictionaries and are used for storing data
+generated by Algos. Temporary data is refreshed on each data change whereas
+permanent data is not altered.</p>
+<p>Algos usually <strong>set</strong> and/or <strong>require</strong> values in the temp or perm objects. For example,
+the <a class="reference internal" href="overview.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><code class="xref py py-class docutils literal notranslate"><span class="pre">bt.algos.WeighEqually</span></code></a> Algo sets the ‘weights’ key in temp, and
+it requires the ‘selected’ key in temp.</p>
+<p>For example, let’s take a simple select -&gt; weight -&gt; allocate logic chain. We
+would break this strategy up into 3 Algos:</p>
+<ul class="simple">
+<li><p><strong>selection</strong>
+Which securities do I want to allocate capital to out of the entire universe of
+investable assets? See, i.e.
+<a class="reference internal" href="overview.html#bt.algos.SelectAll" title="bt.algos.SelectAll"><code class="xref py py-class docutils literal notranslate"><span class="pre">SelectAll</span></code></a>,
+<a class="reference internal" href="overview.html#bt.algos.SelectThese" title="bt.algos.SelectThese"><code class="xref py py-class docutils literal notranslate"><span class="pre">SelectThese</span></code></a>,
+<a class="reference internal" href="overview.html#bt.algos.SelectWhere" title="bt.algos.SelectWhere"><code class="xref py py-class docutils literal notranslate"><span class="pre">SelectWhere</span></code></a>,
+<a class="reference internal" href="overview.html#bt.algos.SelectN" title="bt.algos.SelectN"><code class="xref py py-class docutils literal notranslate"><span class="pre">SelectN</span></code></a>,
+etc</p></li>
+<li><p><strong>weighting</strong>
+How much weight should each of the selected securities have in the target
+portfolio? See, i.e.
+<a class="reference internal" href="overview.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeighEqually</span></code></a>,
+<a class="reference internal" href="overview.html#bt.algos.WeighRandomly" title="bt.algos.WeighRandomly"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeighRandomly</span></code></a>
+<a class="reference internal" href="overview.html#bt.algos.WeighSpecified" title="bt.algos.WeighSpecified"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeighSpecified</span></code></a>,
+<a class="reference internal" href="overview.html#bt.algos.WeighTarget" title="bt.algos.WeighTarget"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeighTarget</span></code></a>,
+<a class="reference internal" href="overview.html#bt.algos.WeighInvVol" title="bt.algos.WeighInvVol"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeighInvVol</span></code></a>,
+<a class="reference internal" href="overview.html#bt.algos.WeighMeanVar" title="bt.algos.WeighMeanVar"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeighMeanVar</span></code></a>,
+etc</p></li>
+<li><p><strong>allocate</strong>
+Close out positions that are no longer needed and allocate capital to those
+that were selected and given target weights. See, i.e.
+<a class="reference internal" href="overview.html#bt.algos.Rebalance" title="bt.algos.Rebalance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Rebalance</span></code></a></p></li>
+</ul>
+<p>In this case, the selection Algo could set the ‘selected’ key in the strategy’s
+temp dict, and the weighting Algo could read those values and in turn set the
+‘weights’ key in the temp dict. The allocation Algo would then read the
+‘weights’ and act accordingly.</p>
+<p>To extend the simple select -&gt; weight -&gt; allocate logic chain to include an additional
+risk/exposure calculation step, one would do this by implementing specific Algos
+for this purpose. These could be used either before weighting
+(for risk-based portfolio construction) or after
+(for reporting). See, e.g. <a class="reference internal" href="overview.html#bt.algos.UpdateRisk" title="bt.algos.UpdateRisk"><code class="xref py py-class docutils literal notranslate"><span class="pre">UpdateRisk</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To preserve maximal flexibility, there
+are currently no checks to make sure the AlgoStack is valid. Therefore, it is up
+to the user and creator of Algos to make sure the requirements and side effects
+are well documented and properly used (by the way, this may not be a great way
+to go about this problem. If you have a better idea, please let me know!).</p>
+<p>Developers should add a section in the docstring that outlines
+the “sets” and the “requires”. See the doctrings of
+<a class="reference internal" href="overview.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><code class="xref py py-class docutils literal notranslate"><span class="pre">bt.algos.WeighEqually</span></code></a> for an example.</p>
+</div>
+</section>
+<section id="implementation">
+<h2>Implementation<a class="headerlink" href="#implementation" title="Link to this heading">¶</a></h2>
+<p>In most cases, Algos must preserve some kind of state. In this case, it is
+easier to implement them as classes and define the __call__ method, like
+below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyAlgo</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg1</span> <span class="o">=</span> <span class="n">arg1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg2</span> <span class="o">=</span> <span class="n">arg2</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c1"># my logic goes here</span>
+
+        <span class="c1"># accessing/storing variables through target.temp['key']</span>
+
+        <span class="c1"># remember to return a bool - True in most cases</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p>Note that the attributes on the class should <strong>not</strong> be specific to any particular
+target.</p>
+<p>However, for Algos that do not need to preserve any state, you may simply
+implement them as a basic function that takes one argument - the Strategy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">MyAlgo2</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+    <span class="c1"># all the logic</span>
+
+    <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
+<section id="re-usability">
+<h3>Re-usability<a class="headerlink" href="#re-usability" title="Link to this heading">¶</a></h3>
+<p>Recall that Algos should be re-usable across different backtests (including
+backtests on different underlying security universes or different time ranges),
+and that a Backtest is the logical combination of the strategy and the data.
+However, there are cases when the Algo needs to use some extra data that
+<strong>does</strong> depend on the security universe or time range (i.e. a data frame of
+signals that has been pre-computed).</p>
+<p>The best way to handle this is to construct the Algo with the <strong>name</strong> of the
+data, and to instantiate the backtest with this named data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyAlgo</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">Algo</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_name</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal_name</span> <span class="o">=</span> <span class="n">signal_name</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c1"># my logic goes here</span>
+
+        <span class="c1"># accessing data via target.get_data( self.signal_name )</span>
+
+        <span class="c1"># remember to return a bool - True in most cases</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<span class="c1"># create the strategy</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">'s1'</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">MyAlgo</span><span class="p">(</span> <span class="s1">'my_signal'</span> <span class="p">)])</span>
+
+<span class="c1"># create a backtest and run it</span>
+<span class="n">test</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">additional_data</span><span class="o">=</span><span class="p">{</span><span class="s1">'my_signal'</span><span class="p">:</span><span class="n">signal_df</span><span class="p">})</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+
+<span class="c1"># Run the same strategy on different data without changing MyAlgo</span>
+<span class="n">test</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data2</span><span class="p">,</span> <span class="n">additional_data</span><span class="o">=</span><span class="p">{</span><span class="s1">'my_signal'</span><span class="p">:</span><span class="n">signal_df2</span><span class="p">})</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that some additional data keys are used by the framework itself to support
+additional functionality (i.e.  <code class="docutils literal notranslate"><span class="pre">bidoffer</span></code>, <code class="docutils literal notranslate"><span class="pre">coupon</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_long</span></code> and
+<code class="docutils literal notranslate"><span class="pre">cost_short</span></code>). These are documented in the <code class="docutils literal notranslate"><span class="pre">setup</span></code> functions of
+<a class="reference internal" href="overview.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a> and
+<a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity" title="bt.core.CouponPayingSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CouponPayingSecurity</span></code></a>.</p>
+</section>
+<section id="debugging">
+<h3>Debugging<a class="headerlink" href="#debugging" title="Link to this heading">¶</a></h3>
+<p>The easiest way to debug algos is by adding leveraging one of the existing debug
+algos or by writing your own! Just insert them in the appropriate places in your
+algo stack, and add breakpoints to examine the state of the passed strategy.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="overview.html#bt.algos.Debug" title="bt.algos.Debug"><code class="xref py py-class docutils literal notranslate"><span class="pre">Debug</span></code></a></p></li>
+<li><p><a class="reference internal" href="overview.html#bt.algos.PrintTempData" title="bt.algos.PrintTempData"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrintTempData</span></code></a></p></li>
+<li><p><a class="reference internal" href="overview.html#bt.algos.PrintInfo" title="bt.algos.PrintInfo"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrintInfo</span></code></a></p></li>
+<li><p><a class="reference internal" href="overview.html#bt.algos.PrintRisk" title="bt.algos.PrintRisk"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrintRisk</span></code></a></p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="branching-and-control-flow">
+<h3>Branching and Control Flow<a class="headerlink" href="#branching-and-control-flow" title="Link to this heading">¶</a></h3>
+<p>While the Algo setup may seem overly simple (a list of functions which returns
+either True or False), this is a powerful construct that allows for complex
+branching and conditional structures. In particular, branching is achieved via
+the <a class="reference internal" href="overview.html#bt.algos.Or" title="bt.algos.Or"><code class="xref py py-class docutils literal notranslate"><span class="pre">Or</span> <span class="pre">Algo</span></code></a>.</p>
+<p>For example, the code below illustrates how printing of strategy performance can
+occur on a different timeline from rebalancing the portfolio. Additional conditions
+can be added by placing those algos at the head of the relevant stack.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bt</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'spy,agg'</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">'2010-01-01'</span><span class="p">)</span>
+
+<span class="c1"># create two separate algo stacks and combine the branches</span>
+<span class="n">logging_stack</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">AlgoStack</span><span class="p">(</span>
+                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunWeekly</span><span class="p">(),</span>
+                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s1">'</span><span class="si">{name}</span><span class="s1">:</span><span class="si">{now}</span><span class="s1">. Value:</span><span class="si">{_value:0.0f}</span><span class="s1">, Price:</span><span class="si">{_price:0.4f}</span><span class="s1">'</span><span class="p">)</span>
+                    <span class="p">)</span>
+<span class="n">trading_stack</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">AlgoStack</span><span class="p">(</span>
+                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(),</span>
+                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">SelectAll</span><span class="p">(),</span>
+                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighEqually</span><span class="p">(),</span>
+                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Rebalance</span><span class="p">()</span>
+                    <span class="p">)</span>
+<span class="n">branch_stack</span> <span class="o">=</span>  <span class="n">bt</span><span class="o">.</span><span class="n">AlgoStack</span><span class="p">(</span>
+                    <span class="c1"># Upstream algos could go here...</span>
+                    <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">Or</span><span class="p">(</span> <span class="p">[</span> <span class="n">logging_stack</span><span class="p">,</span> <span class="n">trading_stack</span> <span class="p">]</span> <span class="p">)</span>
+                    <span class="c1"># Downstream algos could go here...</span>
+                    <span class="p">)</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">'strategy'</span><span class="p">,</span> <span class="p">[</span><span class="n">branch_stack</span><span class="p">],</span> <span class="p">[</span><span class="s1">'spy'</span><span class="p">,</span> <span class="s1">'agg'</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        <aside>
+
+            
+            <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
+            
+            
+            
+
+            
+            <ul>
+                <li><a href="https://github.com/pmorissette/bt">Github</a></li>
+            </ul>
+            
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </aside>
+    
+      <div class="clearer"></div>
+    </div>
+        <div class="footer">
+            Philippe Morissette
+        </div>
+
+        
+  </body>
+</html>
