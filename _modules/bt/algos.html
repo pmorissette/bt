@@ -2104,6 +2104,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Requires:</span>
 <span class="sd">        * temp['weights']</span>
 
+<span class="sd">    Raises:</span>
+<span class="sd">        * ValueError: if an applicable target or the estimated portfolio</span>
+<span class="sd">          volatility is non-finite, or if the estimated volatility is zero</span>
+<span class="sd">          when an applicable non-zero target is requested.</span>
 
 <span class="sd">    """</span>
 
@@ -2154,6 +2158,23 @@ window.runMermaid = runMermaid;</script>
             <span class="n">target_volatility</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">target_volatility</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_volatility</span>
+
+        <span class="c1"># A target mapping may intentionally omit some or all current weights.</span>
+        <span class="n">applicable_target_volatilities</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">target_volatility</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target_volatility</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">applicable_target_volatilities</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">applicable_target_volatilities</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot target a non-finite target volatility"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">vol</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot target volatility from a non-finite portfolio volatility"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">vol</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Scaling cannot create volatility from zero; zero is already a valid target.</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">value</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">applicable_target_volatilities</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot target a non-zero volatility from a zero-volatility portfolio"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target_volatility</span><span class="p">:</span>
