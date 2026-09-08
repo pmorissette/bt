@@ -98,3 +98,10 @@ def test_strategy_prices(benchmark, prices, completed_strategy):
     result = benchmark(getattr, completed_strategy, "prices")
 
     assert result.index[-1] == prices.index[-1]
+
+
+@pytest.mark.benchmark(group="history")
+def test_strategy_data(benchmark, prices, completed_strategy):
+    result = benchmark(getattr, completed_strategy, "data")
+
+    assert result.index[-1] == prices.index[-1]
