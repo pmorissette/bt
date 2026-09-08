@@ -15,6 +15,52 @@ from bt.core import is_zero
 from bt.core import CostModel, SqrtCostModel, AlmgrenChrissCostModel
 
 
+@pytest.mark.parametrize("security_type", [bt.Security, CouponPayingSecurity])
+def test_data_and_history_stay_current_after_numpy_read(security_type):
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"asset": [100.0, 101.0, 102.0]}, index=dates)
+    strategy = Strategy("strategy", children=[security_type("asset")])
+    strategy.setup(
+        prices,
+        bidoffer=prices * 0.001,
+        coupons=prices * 0.01,
+        cost_long=prices * 0.002,
+    )
+    strategy.adjust(10000.0)
+    strategy.update(dates[0])
+    security = strategy["asset"]
+    security.transact(10)
+    strategy.update(dates[0])
+    for node in [strategy, security]:
+        node.data.to_numpy()
+
+    strategy.update(dates[1])
+    for node in [strategy, security]:
+        assert node.data.loc[dates[1], "value"] == node.value
+        pd.testing.assert_series_equal(node.values, node.data["value"].loc[:dates[1]])
+        pd.testing.assert_series_equal(node.notional_values, node.data["notional_value"].loc[:dates[1]])
+        pd.testing.assert_series_equal(node.bidoffers_paid, node.data["bidoffer_paid"].loc[:dates[1]])
+    pd.testing.assert_series_equal(strategy.prices, strategy.data["price"].loc[:dates[1]])
+    pd.testing.assert_series_equal(strategy.cash, strategy.data["cash"])
+    pd.testing.assert_series_equal(security.prices, prices["asset"].loc[:dates[1]])
+    if isinstance(security, CouponPayingSecurity):
+        pd.testing.assert_series_equal(security.coupons, security.data["coupon"].loc[:dates[1]])
+        pd.testing.assert_series_equal(security.holding_costs, security.data["holding_cost"].loc[:dates[1]])
+
+
+def test_security_without_universe_prices_preserves_missing_history():
+    dates = pd.date_range("2020-01-01", periods=3)
+    security = bt.Security("asset")
+    security.setup(pd.DataFrame(index=dates), bidoffer=pd.DataFrame(index=dates))
+    assert security.data[["price", "value", "position", "notional_value"]].isna().all().all()
+
+    security.update(dates[1], {"asset": 100.0})
+    assert security.prices.name == "price"
+    assert security.bidoffers.name == "bidoffer"
+    assert pd.isna(security.prices.iloc[0])
+    assert security.prices.iloc[-1] == 100.0
+
+
 def test_node_tree1():
     # Create a regular strategy
     c1 = Node("c1")

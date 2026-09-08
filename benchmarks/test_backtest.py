@@ -46,13 +46,14 @@ def run_equity_backtest(prices):
     return bt.run(backtest, progress_bar=False)
 
 
-def run_fixed_income_backtest(prices, additional_data):
+def run_fixed_income_backtest(prices, additional_data, funded=False):
     strategy = bt.FixedIncomeStrategy(
         "fixed-income",
         [
             bt.algos.RunMonthly(),
             bt.algos.SelectAll(),
             bt.algos.WeighEqually(),
+            *([bt.algos.SetNotional("notional")] if funded else []),
             bt.algos.Rebalance(),
         ],
         children=[bt.CouponPayingSecurity(column) for column in prices.columns],
@@ -80,6 +81,16 @@ def test_fixed_income_backtest(benchmark, prices, fixed_income_data):
     result = benchmark(run_fixed_income_backtest, prices, fixed_income_data)
 
     assert result.prices.shape[0] == prices.shape[0] + 1
+
+
+@pytest.mark.benchmark(group="backtest")
+def test_funded_fixed_income_backtest(benchmark, prices, fixed_income_data):
+    additional_data = {**fixed_income_data, "notional": pd.Series(10000.0, index=prices.index)}
+    result = benchmark(run_fixed_income_backtest, prices, additional_data, funded=True)
+
+    strategy = result.backtests["fixed-income"].strategy
+    assert strategy.notional_value > 0
+    assert sum(security.coupons.sum() for security in strategy.securities) > 0
 
 
 @pytest.mark.benchmark(group="history")

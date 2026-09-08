@@ -136,6 +136,13 @@ class Node:
     def _sync_data(self):
         pass
 
+    def _allocate_data(self, index, columns):
+        # A single block keeps pandas 1.x consolidation from detaching our arrays.
+        values = np.zeros((len(index), len(columns)), dtype=np.float64, order="F")
+        self._data = pd.DataFrame(values, index=index, columns=columns, copy=False)
+        self._data_arrays = dict(zip(columns, values.T))
+        return self._data_arrays
+
     def __getitem__(self, key):
         return self.children[key]
 
@@ -620,24 +627,31 @@ class StrategyBase(Node):
         # We're not bankrupt yet
         self.bankrupt = False
 
-        # setup internal data
-        self.data = pd.DataFrame(
-            index=funiverse.index,
-            columns=["price", "value", "notional_value", "cash", "fees", "flows"],
-            data=0.0,
-        )
-
-        self._prices = self.data["price"]
-        self._values = self.data["value"]
-        self._notl_values = self.data["notional_value"]
-        self._cash = self.data["cash"]
-        self._fees = self.data["fees"]
-        self._all_flows = self.data["flows"]
-
+        # Use NumPy storage with cached pandas views for public history access.
+        self._index = funiverse.index
+        columns = ["price", "value", "notional_value", "cash", "fees", "flows"]
         if "bidoffer" in kwargs:
             self._bidoffer_set = True
-            self.data["bidoffer_paid"] = 0.0
-            self._bidoffers_paid = self.data["bidoffer_paid"]
+            columns.append("bidoffer_paid")
+
+        arrays = self._allocate_data(self._index, columns)
+        self._prices_arr = arrays["price"]
+        self._values_arr = arrays["value"]
+        self._notl_values_arr = arrays["notional_value"]
+        self._cash_arr = arrays["cash"]
+        self._fees_arr = arrays["fees"]
+        self._all_flows_arr = arrays["flows"]
+        if self._bidoffer_set:
+            self._bidoffers_paid_arr = arrays["bidoffer_paid"]
+
+        self._prices = self._data["price"]
+        self._values = self._data["value"]
+        self._notl_values = self._data["notional_value"]
+        self._cash = self._data["cash"]
+        self._fees = self._data["fees"]
+        self._all_flows = self._data["flows"]
+        if self._bidoffer_set:
+            self._bidoffers_paid = self._data["bidoffer_paid"]
 
         # setup children as well - use original universe here - don't want to
         # pollute with potential strategy children in funiverse
@@ -670,16 +684,6 @@ class StrategyBase(Node):
         to be run against different data sets more easily.
         """
         return self._setup_kwargs[key]
-
-    def _sync_data(self):
-        self._data["price"] = self._prices
-        self._data["value"] = self._values
-        self._data["notional_value"] = self._notl_values
-        self._data["cash"] = self._cash
-        self._data["fees"] = self._fees
-        self._data["flows"] = self._all_flows
-        if self._bidoffer_set:
-            self._data["bidoffer_paid"] = self._bidoffers_paid
 
     @cy.locals(
         newpt=cy.bint,
@@ -715,7 +719,7 @@ class StrategyBase(Node):
             if self.now == 0:
                 inow = 0
             else:
-                inow = self._data.index.get_loc(date)
+                inow = self._index.get_loc(date)
 
         # update children if any and calculate value
         val = self._capital  # default if no children
@@ -755,14 +759,14 @@ class StrategyBase(Node):
         # won't change
         if newpt or not is_zero(self._value - val) or not is_zero(self._notl_value - notl_val):
             self._value = val
-            self._values.iloc[inow] = val
+            self._values_arr[inow] = val
 
             self._notl_value = notl_val
-            self._notl_values.iloc[inow] = notl_val
+            self._notl_values_arr[inow] = notl_val
 
             if self._bidoffer_set:
                 self._bidoffer_paid = bidoffer_paid
-                self._bidoffers_paid.iloc[inow] = bidoffer_paid
+                self._bidoffers_paid_arr[inow] = bidoffer_paid
 
             if self.fixed_income:
                 # For notional weights, we compute additive return
@@ -784,7 +788,7 @@ class StrategyBase(Node):
                         )
 
                 self._price = self._last_price + ret
-                self._prices.iloc[inow] = self._price
+                self._prices_arr[inow] = self._price
 
             else:
                 bottom = self._last_value + self._net_flows
@@ -809,7 +813,7 @@ class StrategyBase(Node):
                         )
 
                 self._price = self._last_price * (1 + ret)
-                self._prices.iloc[inow] = self._price
+                self._prices_arr[inow] = self._price
 
         # update children weights
         if self.children:
@@ -838,9 +842,9 @@ class StrategyBase(Node):
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".
         # Same for fees and flows
-        self._cash.iloc[inow] = self._capital
-        self._fees.iloc[inow] = self._last_fee
-        self._all_flows.iloc[inow] = self._net_flows
+        self._cash_arr[inow] = self._capital
+        self._fees_arr[inow] = self._last_fee
+        self._all_flows_arr[inow] = self._net_flows
 
         # update paper trade if necessary
         if self._paper_trade:
@@ -850,7 +854,7 @@ class StrategyBase(Node):
                 self._paper.update(date)
             # update price
             self._price = self._paper.price
-            self._prices.iloc[inow] = self._price
+            self._prices_arr[inow] = self._price
 
     @cy.locals(amount=cy.double, update=cy.bint, flow=cy.bint, fees=cy.double)
     def adjust(self, amount, update=True, flow=True, fee=0.0):
@@ -1190,6 +1194,7 @@ class SecurityBase(Node):
     _needupdate = cy.declare(cy.bint)
     _outlay = cy.declare(cy.double)
     _bidoffer = cy.declare(cy.double)
+    _extra_data_columns = ()
 
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1, lazy_add=False):
@@ -1356,63 +1361,61 @@ class SecurityBase(Node):
         except KeyError:
             prices = None
 
-        # setup internal data
+        # Store index for date lookups
+        self._index = universe.index
+
+        columns = ["value", "position", "notional_value", "outlay"]
         if prices is not None:
-            self._prices = prices
-            self.data = pd.DataFrame(
-                index=universe.index,
-                columns=["value", "position", "notional_value"],
-                data=0.0,
-            )
+            self._prices_arr = np.array(prices, copy=True)
             self._prices_set = True
         else:
-            self.data = pd.DataFrame(
-                index=universe.index,
-                columns=["price", "value", "position", "notional_value"],
-            )
-            self._prices = self.data["price"]
             self._prices_set = False
-
-        self._values = self.data["value"]
-        self._notl_values = self.data["notional_value"]
-        self._positions = self.data["position"]
-
-        # add _outlay
-        self.data["outlay"] = 0.0
-        self._outlays = self.data["outlay"]
+            columns.insert(0, "price")
 
         # save bidoffer, if provided
         if "bidoffer" in kwargs:
             self._bidoffer_set = True
-            self._bidoffers = kwargs["bidoffer"]
+            all_bidoffers = kwargs["bidoffer"]
             try:
-                bidoffers = self._bidoffers[self.name]
+                bidoffers = all_bidoffers[self.name]
             except KeyError:
                 bidoffers = None
 
             if bidoffers is not None:
                 if bidoffers.index.equals(universe.index):
-                    self._bidoffers = bidoffers
+                    self._bidoffers_arr = np.array(bidoffers, copy=True)
                 else:
                     raise ValueError("Index of bidoffer must match universe data")
             else:
-                self.data["bidoffer"] = 0.0
-                self._bidoffers = self.data["bidoffer"]
+                columns.append("bidoffer")
 
-            self.data["bidoffer_paid"] = 0.0
-            self._bidoffers_paid = self.data["bidoffer_paid"]
+            columns.append("bidoffer_paid")
+
+        columns.extend(self._extra_data_columns)
+        arrays = self._allocate_data(self._index, columns)
+        self._values_arr = arrays["value"]
+        self._positions_arr = arrays["position"]
+        self._notl_values_arr = arrays["notional_value"]
+        self._outlays_arr = arrays["outlay"]
+        if not self._prices_set:
+            self._prices_arr = arrays["price"]
+            for column in ["price", "value", "position", "notional_value"]:
+                arrays[column].fill(np.nan)
+        if self._bidoffer_set:
+            if "bidoffer" in arrays:
+                self._bidoffers_arr = arrays["bidoffer"]
+            self._bidoffers_paid_arr = arrays["bidoffer_paid"]
+
+        self._prices = pd.Series(self._prices_arr, index=self._index, name=self.name, copy=False) if self._prices_set else self._data["price"]
+        self._values = self._data["value"]
+        self._positions = self._data["position"]
+        self._notl_values = self._data["notional_value"]
+        self._outlays = self._data["outlay"]
+        if self._bidoffer_set:
+            self._bidoffers = self._data["bidoffer"] if "bidoffer" in arrays else pd.Series(self._bidoffers_arr, index=self._index, name=self.name, copy=False)
+            self._bidoffers_paid = self._data["bidoffer_paid"]
 
         self._data_ready = True
-
-    def _sync_data(self):
-        if not self._prices_set:
-            self._data["price"] = self._prices
-        self._data["value"] = self._values
-        self._data["notional_value"] = self._notl_values
-        self._data["position"] = self._positions
-        self._data["outlay"] = self._outlays
-        if self._bidoffer_set:
-            self._data["bidoffer_paid"] = self._bidoffers_paid
 
     @cy.locals(prc=cy.double)
     def update(self, date, data=None, inow=None):
@@ -1431,7 +1434,7 @@ class SecurityBase(Node):
             if date == 0:
                 inow = 0
             else:
-                inow = self._data.index.get_loc(date)
+                inow = self._index.get_loc(date)
 
         # date change - update price
         if date != self.now:
@@ -1439,19 +1442,19 @@ class SecurityBase(Node):
             self.now = date
 
             if self._prices_set:
-                self._price = self._prices.iloc[inow]
+                self._price = self._prices_arr[inow]
             # traditional data update
             elif data is not None:
                 prc = data[self.name]
                 self._price = prc
-                self._prices.iloc[inow] = prc
+                self._prices_arr[inow] = prc
 
             # update bid/offer
             if self._bidoffer_set:
-                self._bidoffer = self._bidoffers.iloc[inow]
+                self._bidoffer = self._bidoffers_arr[inow]
                 self._bidoffer_paid = 0.0
 
-        self._positions.iloc[inow] = self._position
+        self._positions_arr[inow] = self._position
         self._last_pos = self._position
 
         if np.isnan(self._price):
@@ -1464,20 +1467,20 @@ class SecurityBase(Node):
 
         self._notl_value = self._value
 
-        self._values.iloc[inow] = self._value
-        self._notl_values.iloc[inow] = self._notl_value
+        self._values_arr[inow] = self._value
+        self._notl_values_arr[inow] = self._notl_value
 
         if is_zero(self._weight) and is_zero(self._position):
             self._needupdate = False
 
         # save outlay to outlays
         if self._outlay != 0:
-            self._outlays.iloc[inow] += self._outlay
+            self._outlays_arr[inow] += self._outlay
             # reset outlay back to 0
             self._outlay = 0
 
         if self._bidoffer_set:
-            self._bidoffers_paid.iloc[inow] = self._bidoffer_paid
+            self._bidoffers_paid_arr[inow] = self._bidoffer_paid
 
     @cy.locals(amount=cy.double, update=cy.bint, q=cy.double, outlay=cy.double, i=cy.int)
     def allocate(self, amount, update=True):
@@ -1759,13 +1762,13 @@ class FixedIncomeSecurity(SecurityBase):
             if date == 0:
                 inow = 0
             else:
-                inow = self._data.index.get_loc(date)
+                inow = self._index.get_loc(date)
 
         super().update(date, data, inow)
 
         # For fixed income securities (bonds, swaps), notional value is position size, not value!
         self._notl_value = self._position
-        self._notl_values.iloc[inow] = self._notl_value
+        self._notl_values_arr[inow] = self._notl_value
 
 
 class CouponPayingSecurity(FixedIncomeSecurity):
@@ -1799,6 +1802,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
 
     _coupon = cy.declare(cy.double)
     _holding_cost = cy.declare(cy.double)
+    _extra_data_columns = ("coupon", "holding_cost")
 
     @cy.locals(multiplier=cy.double)
     def __init__(self, name, multiplier=1, fixed_income=True, lazy_add=False):
@@ -1849,16 +1853,10 @@ class CouponPayingSecurity(FixedIncomeSecurity):
         except KeyError:
             self._cost_short = None
 
-        self.data["coupon"] = 0.0
-        self.data["holding_cost"] = 0.0
-        self._coupon_income = self.data["coupon"]
-        self._holding_costs = self.data["holding_cost"]
-
-    def _sync_data(self):
-        super()._sync_data()
-        if hasattr(self, "_holding_costs"):
-            self._data["coupon"] = self._coupon_income
-            self._data["holding_cost"] = self._holding_costs
+        self._coupon_income_arr = self._data_arrays["coupon"]
+        self._holding_costs_arr = self._data_arrays["holding_cost"]
+        self._coupon_income = self._data["coupon"]
+        self._holding_costs = self._data["holding_cost"]
 
     @cy.locals(coupon=cy.double, cost=cy.double)
     def update(self, date, data=None, inow=None):
@@ -1870,7 +1868,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             if date == 0:
                 inow = 0
             else:
-                inow = self._data.index.get_loc(date)
+                inow = self._index.get_loc(date)
 
         if self._coupons is None:
             raise RuntimeError(f"coupons have not been set for security {self.name}")
@@ -1902,8 +1900,8 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             self._holding_cost = 0.0
 
         self._capital = self._coupon - self._holding_cost
-        self._coupon_income.iloc[inow] = self._coupon
-        self._holding_costs.iloc[inow] = self._holding_cost
+        self._coupon_income_arr[inow] = self._coupon
+        self._holding_costs_arr[inow] = self._holding_cost
 
     @property
     def coupon(self):
@@ -1960,7 +1958,7 @@ class HedgeSecurity(SecurityBase):
         """
         super().update(date, data, inow)
         self._notl_value = 0.0
-        self._notl_values.iloc[:] = 0.0
+        self._notl_values_arr.fill(0.0)
 
 
 class CouponPayingHedgeSecurity(CouponPayingSecurity):
@@ -1981,7 +1979,7 @@ class CouponPayingHedgeSecurity(CouponPayingSecurity):
         """
         super().update(date, data, inow)
         self._notl_value = 0.0
-        self._notl_values.iloc[:] = 0.0
+        self._notl_values_arr.fill(0.0)
 
 
 class Algo:
