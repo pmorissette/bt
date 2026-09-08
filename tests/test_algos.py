@@ -1805,6 +1805,41 @@ def test_rebalance_over_time_phases_out_omitted_target():
     assert rb.call_args[0][0] is target
 
 
+@pytest.mark.parametrize("hedge_type", [bt.HedgeSecurity, bt.CouponPayingHedgeSecurity])
+@pytest.mark.parametrize("close_hedge", [False, True])
+def test_rebalance_over_time_preserves_omitted_hedges(hedge_type, close_hedge):
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame(100.0, index=dates, columns=["a", "b", "hedge"])
+    strategy = bt.FixedIncomeStrategy(
+        "s", children=[bt.CouponPayingSecurity("a"), bt.CouponPayingSecurity("b"), hedge_type("hedge")]
+    )
+    strategy.use_integer_positions(False)
+    strategy.setup(prices, coupons=prices * 0.0)
+    strategy.adjust(10000.0)
+    strategy.update(dates[0])
+    strategy["a"].transact(5)
+    strategy["b"].transact(5)
+    strategy["hedge"].transact(-2)
+    strategy.update(dates[0])
+    assert strategy["hedge"].weight == 0.0
+
+    algo = algos.RebalanceOverTime(n=2)
+    strategy.temp["weights"] = {"a": 1.0}
+    if close_hedge:
+        strategy.temp["weights"]["hedge"] = 0.0
+    assert algo(strategy)
+    assert strategy["a"].position == pytest.approx(7.5)
+    assert strategy["b"].position == pytest.approx(2.5)
+    assert strategy["hedge"].position == (0 if close_hedge else -2)
+
+    strategy.temp = {}
+    strategy.update(dates[1])
+    assert algo(strategy)
+    assert strategy["a"].position == pytest.approx(10.0)
+    assert strategy["b"].position == 0.0
+    assert strategy["hedge"].position == (0 if close_hedge else -2)
+
+
 def test_rebalance_over_time_supports_sparse_weigh_target():
     dates = pd.date_range("2020-01-01", periods=4)
     prices = pd.DataFrame(

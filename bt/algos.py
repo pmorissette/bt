@@ -1924,8 +1924,9 @@ class RebalanceOverTime(Algo):
     weight over n periods.
 
     Rebalances towards a target weight over a n periods. Splits up the weight
-    delta over n periods. Current children omitted from the target weights are
-    treated as zero-weight targets and phased out over the same periods.
+    delta over n periods. Current children with nonzero weights omitted from the
+    targets are phased out over the same periods. Omitted zero-weight hedges
+    remain untouched.
 
     This can be useful if we want to make more conservative rebalacing
     assumptions. Some strategies can produce large swings in allocations. It
@@ -1977,6 +1978,8 @@ class RebalanceOverTime(Algo):
             for cname in target.children:
                 if cname not in tgt:
                     curr = target.children[cname].weight
+                    if curr == 0.0:
+                        continue
                     dlt = -curr / self._days_left
                     tgt[cname] = curr + dlt
 
