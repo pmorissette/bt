@@ -502,7 +502,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    securities?</span>
 
 <span class="sd">    Random backtests preserve every date from the original supplied</span>
-<span class="sd">    market data, including dates with partial missing values.</span>
+<span class="sd">    market data, including dates with partial missing values. They also</span>
+<span class="sd">    preserve initial capital, transaction costs, integer-position policy,</span>
+<span class="sd">    additional data, and CostModel impact inputs. Each control receives an</span>
+<span class="sd">    independent copy of additional data.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * backtest (Backtest): A backtest you want to benchmark</span>
@@ -528,10 +531,35 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Remove only Backtest's synthetic first row without dropping real partial rows.</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
+    <span class="c1"># Reuse constructor configuration without copying the completed Strategy state.</span>
+    <span class="n">commissions</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">cost_model</span>
+    <span class="k">if</span> <span class="n">commissions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">commission_fn</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">commission_fn</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">commission_fn</span><span class="p">,</span> <span class="s2">"__func__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="o">.</span><span class="n">_dflt_comm_fn</span><span class="p">:</span>
+            <span class="n">commissions</span> <span class="o">=</span> <span class="n">commission_fn</span>
+    <span class="n">initial_capital</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">initial_capital</span>
+    <span class="n">integer_positions</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">integer_positions</span>
+    <span class="n">additional_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">additional_data</span>
+    <span class="c1"># Impact frames must be validated against real data before Backtest adds its bootstrap row.</span>
+    <span class="n">volume</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">backtest</span><span class="o">.</span><span class="n">volume</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">backtest</span><span class="o">.</span><span class="n">volume</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">volatility</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">backtest</span><span class="o">.</span><span class="n">volatility</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">backtest</span><span class="o">.</span><span class="n">volatility</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
     <span class="c1"># create and run random backtests</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nsim</span><span class="p">)):</span>
         <span class="n">random_strategy</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"random_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
-        <span class="n">rbt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">random_strategy</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">rbt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
+            <span class="n">random_strategy</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">initial_capital</span><span class="o">=</span><span class="n">initial_capital</span><span class="p">,</span>
+            <span class="n">commissions</span><span class="o">=</span><span class="n">commissions</span><span class="p">,</span>
+            <span class="n">integer_positions</span><span class="o">=</span><span class="n">integer_positions</span><span class="p">,</span>
+            <span class="n">additional_data</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">additional_data</span><span class="p">),</span>
+            <span class="n">volume</span><span class="o">=</span><span class="n">volume</span><span class="p">,</span>
+            <span class="n">volatility</span><span class="o">=</span><span class="n">volatility</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">commissions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Override the template's fees without retaining the original strategy.</span>
+            <span class="n">rbt</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">set_commissions</span><span class="p">(</span><span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="o">.</span><span class="n">_dflt_comm_fn</span><span class="o">.</span><span class="fm">__get__</span><span class="p">(</span><span class="n">rbt</span><span class="o">.</span><span class="n">strategy</span><span class="p">))</span>
         <span class="n">rbt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
         <span class="n">bts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rbt</span><span class="p">)</span>

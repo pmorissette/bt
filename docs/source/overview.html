@@ -2045,7 +2045,10 @@ determine if your strategy has any merit - does it beat
 randomly picking weight? Or randomly picking the selected
 securities?</p>
 <p>Random backtests preserve every date from the original supplied
-market data, including dates with partial missing values.</p>
+market data, including dates with partial missing values. They also
+preserve initial capital, transaction costs, integer-position policy,
+additional data, and CostModel impact inputs. Each control receives an
+independent copy of additional data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
