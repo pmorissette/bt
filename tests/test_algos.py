@@ -1783,6 +1783,64 @@ def test_rebalance_over_time():
     assert rb.call_count == 2
 
 
+def test_rebalance_over_time_phases_out_omitted_target():
+    target = mock.MagicMock()
+    rb = mock.MagicMock()
+
+    algo = algos.RebalanceOverTime(n=2)
+    algo._rb = rb
+
+    target.temp = {"weights": {"a": 1.0}}
+    a = mock.MagicMock()
+    a.weight = 0.5
+    b = mock.MagicMock()
+    b.weight = 0.5
+    target.children = {"a": a, "b": b}
+
+    assert algo(target)
+
+    # Sparse and explicit-zero targets must follow the same interpolation path.
+    assert list(target.temp["weights"]) == ["a", "b"]
+    assert target.temp["weights"] == pytest.approx({"a": 0.75, "b": 0.25})
+    assert rb.call_args[0][0] is target
+
+
+def test_rebalance_over_time_supports_sparse_weigh_target():
+    dates = pd.date_range("2020-01-01", periods=4)
+    prices = pd.DataFrame(
+        {"a": [100.0, 100.0, 100.0, 100.0], "b": [100.0, 100.0, 100.0, 200.0]},
+        index=dates,
+    )
+    targets = pd.DataFrame({"a": [0.5, 1.0], "b": [0.5, np.nan]}, index=dates[[0, 2]])
+    strategy = bt.Strategy(
+        "s",
+        [
+            algos.WeighTarget("targets"),
+            algos.run_always(algos.RebalanceOverTime(n=2)),
+        ],
+    )
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        initial_capital=1000.0,
+        integer_positions=False,
+        additional_data={"targets": targets},
+    )
+
+    bt.run(backtest)
+
+    # The first plan reaches 50/50 before the sparse target starts phasing out b.
+    a = backtest.strategy.children["a"]
+    b = backtest.strategy.children["b"]
+    assert [a.positions.loc[dates[1]], b.positions.loc[dates[1]]] == pytest.approx([5.0, 5.0])
+    assert [a.positions.loc[dates[2]], b.positions.loc[dates[2]]] == pytest.approx([7.5, 2.5])
+    assert backtest.strategy.cash.loc[dates[2]] == pytest.approx(0.0)
+
+    # Holding 2.5 shares of b through its price change independently yields 1,250.
+    assert backtest.strategy.value == pytest.approx(1250.0)
+    assert backtest.strategy.price == pytest.approx(125.0)
+
+
 def test_require():
     target = mock.MagicMock()
     target.temp = {}

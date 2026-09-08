@@ -1924,7 +1924,8 @@ class RebalanceOverTime(Algo):
     weight over n periods.
 
     Rebalances towards a target weight over a n periods. Splits up the weight
-    delta over n periods.
+    delta over n periods. Current children omitted from the target weights are
+    treated as zero-weight targets and phased out over the same periods.
 
     This can be useful if we want to make more conservative rebalacing
     assumptions. Some strategies can produce large swings in allocations. It
@@ -1966,12 +1967,18 @@ class RebalanceOverTime(Algo):
         # if _weights are not None, we have some work to do
         if self._weights is not None:
             tgt = {}
-            # scale delta relative to # of periods left and set that as the new
-            # target
-            for cname in self._weights:
+            # Read mapping entries by key and preserve their supplied order.
+            for cname, target_weight in self._weights.items():
                 curr = target.children[cname].weight if cname in target.children else 0.0
-                dlt = (self._weights[cname] - curr) / self._days_left
+                dlt = (target_weight - curr) / self._days_left
                 tgt[cname] = curr + dlt
+
+            # Rebalance would otherwise close omitted holdings immediately.
+            for cname in target.children:
+                if cname not in tgt:
+                    curr = target.children[cname].weight
+                    dlt = -curr / self._days_left
+                    tgt[cname] = curr + dlt
 
             # mock weights and call real Rebalance
             target.temp["weights"] = tgt
