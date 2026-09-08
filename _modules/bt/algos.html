@@ -705,7 +705,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="RunWeekly.compare_dates">
 <a class="viewcode-back" href="../../docs/source/overview.html#bt.algos.RunWeekly.compare_dates">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compare_dates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">now</span><span class="p">,</span> <span class="n">date_to_compare</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">year</span> <span class="o">!=</span> <span class="n">date_to_compare</span><span class="o">.</span><span class="n">year</span> <span class="ow">or</span> <span class="n">now</span><span class="o">.</span><span class="n">week</span> <span class="o">!=</span> <span class="n">date_to_compare</span><span class="o">.</span><span class="n">week</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">now</span><span class="o">.</span><span class="n">isocalendar</span><span class="p">()[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">date_to_compare</span><span class="o">.</span><span class="n">isocalendar</span><span class="p">()[:</span><span class="mi">2</span><span class="p">]</span></div>
 </div>
 
 
