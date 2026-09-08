@@ -421,7 +421,9 @@ balue of total notional that will apply to the weights.</p></li>
 <p>Similar to Rebalance but rebalances to target
 weight over n periods.</p>
 <p>Rebalances towards a target weight over a n periods. Splits up the weight
-delta over n periods.</p>
+delta over n periods. Current children with nonzero weights omitted from the
+targets are phased out over the same periods. Omitted zero-weight hedges
+remain untouched.</p>
 <p>This can be useful if we want to make more conservative rebalacing
 assumptions. Some strategies can produce large swings in allocations. It
 might not be reasonable to assume that this rebalancing can occur at the
