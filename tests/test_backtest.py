@@ -252,7 +252,8 @@ def test_benchmark_random_preserves_additional_data(as_series: bool):
     assert signal.equals(original_signal)
 
 
-def test_benchmark_random_preserves_legacy_configuration():
+@pytest.mark.parametrize("fee", [0.0, 10.0])
+def test_benchmark_random_preserves_legacy_configuration(fee):
     dates = pd.date_range("2020-01-01", periods=3)
     data = pd.DataFrame({"a": 100.0}, index=dates)
 
@@ -260,19 +261,51 @@ def test_benchmark_random_preserves_legacy_configuration():
         _make_benchmark_rebalance_strategy("original"),
         data,
         initial_capital=1_000.0,
-        commissions=lambda quantity, price: 10.0,
+        commissions=None if fee == 0.0 else lambda quantity, price: fee,
         integer_positions=False,
         progress_bar=False,
     )
-    result = bt.backtest.benchmark_random(backtest, _make_benchmark_rebalance_strategy("random"), nsim=1)
+    random_strategy = _make_benchmark_rebalance_strategy("random")
+    random_strategy.set_commissions(lambda quantity, price: 25.0)
+    result = bt.backtest.benchmark_random(backtest, random_strategy, nsim=1)
     random_backtest = result.backtests["random_0"]
 
-    # A full allocation at 100 pays the fixed fee before buying 9.9 shares.
+    # A full allocation at 100 pays the original fee, not the random template's fee.
     assert random_backtest.initial_capital == 1_000.0
     assert random_backtest.strategy.integer_positions is False
-    assert random_backtest.strategy["a"].position == pytest.approx(9.9)
-    assert random_backtest.strategy.fees.sum() == pytest.approx(10.0)
-    assert random_backtest.strategy.value == pytest.approx(990.0)
+    assert random_backtest.strategy["a"].position == pytest.approx((1000.0 - fee) / 100.0)
+    assert random_backtest.strategy.fees.sum() == pytest.approx(fee)
+    assert random_backtest.strategy.value == pytest.approx(1000.0 - fee)
+    assert random_strategy.commission_fn(1, 100) == 25.0
+    if fee == 0.0:
+        assert random_backtest.strategy.commission_fn.__self__ is random_backtest.strategy
+
+
+@pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
+def test_benchmark_random_isolates_additional_data(as_series):
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    signal = pd.Series(0.0, index=dates, name="signal")
+    if not as_series:
+        signal = signal.to_frame()
+    backtest = bt.Backtest(
+        bt.Strategy("original"), data, additional_data={"signal": signal, "state": {"count": 0}}
+    )
+    original_signal = backtest.additional_data["signal"].copy(deep=True)
+
+    def update_inputs(target):
+        target.get_data("signal").loc[target.now] += 1.0
+        target.get_data("state")["count"] += 1
+        return True
+
+    result = bt.backtest.benchmark_random(backtest, bt.Strategy("random", [update_inputs]), nsim=2)
+
+    assert backtest.additional_data["signal"].equals(original_signal)
+    assert backtest.additional_data["state"]["count"] == 0
+    for name in ["random_0", "random_1"]:
+        control = result.backtests[name]
+        assert (control.additional_data["signal"].loc[dates].to_numpy() == 1.0).all()
+        assert control.additional_data["state"]["count"] == len(dates)
 
 
 def test_benchmark_random_preserves_cost_model_configuration():

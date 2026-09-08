@@ -54,7 +54,8 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     Random backtests preserve every date from the original supplied
     market data, including dates with partial missing values. They also
     preserve initial capital, transaction costs, integer-position policy,
-    additional data, and CostModel impact inputs.
+    additional data, and CostModel impact inputs. Each control receives an
+    independent copy of additional data.
 
     Args:
         * backtest (Backtest): A backtest you want to benchmark
@@ -84,7 +85,7 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     commissions = backtest.cost_model
     if commissions is None:
         commission_fn = backtest.strategy.commission_fn
-        if commission_fn != backtest.strategy._dflt_comm_fn:
+        if getattr(commission_fn, "__func__", None) is not bt.core.StrategyBase._dflt_comm_fn:
             commissions = commission_fn
     initial_capital = backtest.initial_capital
     integer_positions = backtest.strategy.integer_positions
@@ -102,10 +103,13 @@ def benchmark_random(backtest, random_strategy, nsim=100):
             initial_capital=initial_capital,
             commissions=commissions,
             integer_positions=integer_positions,
-            additional_data=additional_data,
+            additional_data=deepcopy(additional_data),
             volume=volume,
             volatility=volatility,
         )
+        if commissions is None:
+            # Override the template's fees without retaining the original strategy.
+            rbt.strategy.set_commissions(bt.core.StrategyBase._dflt_comm_fn.__get__(rbt.strategy))
         rbt.run()
 
         bts.append(rbt)
