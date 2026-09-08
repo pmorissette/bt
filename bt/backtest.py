@@ -52,7 +52,10 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     securities?
 
     Random backtests preserve every date from the original supplied
-    market data, including dates with partial missing values.
+    market data, including dates with partial missing values. They also
+    preserve initial capital, transaction costs, integer-position policy,
+    additional data, and CostModel impact inputs. Each control receives an
+    independent copy of additional data.
 
     Args:
         * backtest (Backtest): A backtest you want to benchmark
@@ -78,10 +81,35 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     # Remove only Backtest's synthetic first row without dropping real partial rows.
     data = backtest.data.iloc[1:]
 
+    # Reuse constructor configuration without copying the completed Strategy state.
+    commissions = backtest.cost_model
+    if commissions is None:
+        commission_fn = backtest.strategy.commission_fn
+        if getattr(commission_fn, "__func__", None) is not bt.core.StrategyBase._dflt_comm_fn:
+            commissions = commission_fn
+    initial_capital = backtest.initial_capital
+    integer_positions = backtest.strategy.integer_positions
+    additional_data: dict[str, object] = backtest.additional_data
+    # Impact frames must be validated against real data before Backtest adds its bootstrap row.
+    volume = None if backtest.volume is None else backtest.volume.iloc[1:]
+    volatility = None if backtest.volatility is None else backtest.volatility.iloc[1:]
+
     # create and run random backtests
     for i in tqdm(range(nsim)):
         random_strategy.name = f"random_{i}"
-        rbt = bt.Backtest(random_strategy, data)
+        rbt = bt.Backtest(
+            random_strategy,
+            data,
+            initial_capital=initial_capital,
+            commissions=commissions,
+            integer_positions=integer_positions,
+            additional_data=deepcopy(additional_data),
+            volume=volume,
+            volatility=volatility,
+        )
+        if commissions is None:
+            # Override the template's fees without retaining the original strategy.
+            rbt.strategy.set_commissions(bt.core.StrategyBase._dflt_comm_fn.__get__(rbt.strategy))
         rbt.run()
 
         bts.append(rbt)
