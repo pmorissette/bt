@@ -134,13 +134,40 @@ class Node:
         self._data = value
 
     def _sync_data(self):
-        pass
+        # Copies and pandas consolidation can detach columns from NumPy storage.
+        data = self._data
+        blocks = getattr(data._mgr, "blocks", None)
+        if blocks is not None and blocks is self._data_blocks:
+            return
+        shared = True
+        for column, values in self._data_arrays.items():
+            if not np.shares_memory(data[column].to_numpy(copy=False), values):
+                data[column] = values
+                shared = False
+        # BlockManager replaces this tuple on column insertion/consolidation.
+        self._data_blocks = blocks if shared else None
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state.pop("_data_blocks", None)
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._data_blocks = None
+        # deepcopy/pickle preserve array references, but copy Series separately.
+        for name, values in state.items():
+            if name.endswith("_arr"):
+                series = state.get(name[:-4])
+                if isinstance(series, pd.Series):
+                    setattr(self, name[:-4], pd.Series(values, index=series.index, name=series.name, copy=False))
 
     def _allocate_data(self, index, columns):
         # A single block keeps pandas 1.x consolidation from detaching our arrays.
         values = np.zeros((len(index), len(columns)), dtype=np.float64, order="F")
         self._data = pd.DataFrame(values, index=index, columns=columns, copy=False)
         self._data_arrays = dict(zip(columns, values.T))
+        self._data_blocks = None
         return self._data_arrays
 
     def __getitem__(self, key):
@@ -630,8 +657,9 @@ class StrategyBase(Node):
         # Use NumPy storage with cached pandas views for public history access.
         self._index = funiverse.index
         columns = ["price", "value", "notional_value", "cash", "fees", "flows"]
-        if "bidoffer" in kwargs:
-            self._bidoffer_set = True
+        self._bidoffer_set = "bidoffer" in kwargs
+        self._bidoffer_paid = 0
+        if self._bidoffer_set:
             columns.append("bidoffer_paid")
 
         arrays = self._allocate_data(self._index, columns)
@@ -1373,8 +1401,9 @@ class SecurityBase(Node):
             columns.insert(0, "price")
 
         # save bidoffer, if provided
-        if "bidoffer" in kwargs:
-            self._bidoffer_set = True
+        self._bidoffer_set = "bidoffer" in kwargs
+        self._bidoffer_paid = 0
+        if self._bidoffer_set:
             all_bidoffers = kwargs["bidoffer"]
             try:
                 bidoffers = all_bidoffers[self.name]

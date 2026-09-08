@@ -1,6 +1,8 @@
 from __future__ import division
 
 import copy
+import pickle
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,7 +18,9 @@ from bt.core import CostModel, SqrtCostModel, AlmgrenChrissCostModel
 
 
 @pytest.mark.parametrize("security_type", [bt.Security, CouponPayingSecurity])
-def test_data_and_history_stay_current_after_numpy_read(security_type):
+@pytest.mark.parametrize("add_column", [False, True])
+@pytest.mark.parametrize("restore", [lambda node: node, copy.deepcopy, lambda node: pickle.loads(pickle.dumps(node))], ids=["original", "deepcopy", "pickle"])
+def test_data_and_history_stay_current_after_numpy_read(security_type, add_column, restore):
     dates = pd.date_range("2020-01-01", periods=3)
     prices = pd.DataFrame({"asset": [100.0, 101.0, 102.0]}, index=dates)
     strategy = Strategy("strategy", children=[security_type("asset")])
@@ -31,12 +35,20 @@ def test_data_and_history_stay_current_after_numpy_read(security_type):
     security = strategy["asset"]
     security.transact(10)
     strategy.update(dates[0])
+    original = strategy
+    strategy = restore(strategy)
+    security = strategy["asset"]
     for node in [strategy, security]:
+        if add_column:
+            node.data["signal"] = 42.0
         node.data.to_numpy()
 
     strategy.update(dates[1])
     for node in [strategy, security]:
+        assert node.values.iloc[-1] == node.value
         assert node.data.loc[dates[1], "value"] == node.value
+        if add_column:
+            assert (node.data["signal"] == 42.0).all()
         pd.testing.assert_series_equal(node.values, node.data["value"].loc[:dates[1]])
         pd.testing.assert_series_equal(node.notional_values, node.data["notional_value"].loc[:dates[1]])
         pd.testing.assert_series_equal(node.bidoffers_paid, node.data["bidoffer_paid"].loc[:dates[1]])
@@ -46,12 +58,35 @@ def test_data_and_history_stay_current_after_numpy_read(security_type):
     if isinstance(security, CouponPayingSecurity):
         pd.testing.assert_series_equal(security.coupons, security.data["coupon"].loc[:dates[1]])
         pd.testing.assert_series_equal(security.holding_costs, security.data["holding_cost"].loc[:dates[1]])
+    if strategy is not original:
+        assert original.now == dates[0]
+        assert original.data.loc[dates[1], "value"] == 0.0
 
 
-def test_security_without_universe_prices_preserves_missing_history():
+@pytest.mark.parametrize("node_type", [Strategy, bt.Security, CouponPayingSecurity])
+def test_setup_resets_bidoffer_mode(node_type):
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"asset": [100.0, 101.0, 102.0]}, index=dates)
+    node = node_type("asset")
+    for enabled in [True, False, True]:
+        kwargs = {"coupons": prices * 0.01}
+        if enabled:
+            kwargs["bidoffer"] = prices * 0.001
+        node.setup(prices, **kwargs)
+        node.update(dates[0])
+        assert node._bidoffer_set == enabled
+        assert ("bidoffer_paid" in node.data) == enabled
+        if not enabled:
+            with pytest.raises(RuntimeError, match="Bid/offer accounting not turned on"):
+                node.bidoffers_paid
+
+
+@pytest.mark.parametrize("restore", [lambda node: node, copy.deepcopy, lambda node: pickle.loads(pickle.dumps(node))], ids=["original", "deepcopy", "pickle"])
+def test_security_without_universe_prices_preserves_missing_history(restore):
     dates = pd.date_range("2020-01-01", periods=3)
     security = bt.Security("asset")
     security.setup(pd.DataFrame(index=dates), bidoffer=pd.DataFrame(index=dates))
+    security = restore(security)
     assert security.data[["price", "value", "position", "notional_value"]].isna().all().all()
 
     security.update(dates[1], {"asset": 100.0})
@@ -2100,7 +2135,8 @@ def test_strategy_tree_proper_universes():
     assert len(parent._strat_children) == 2
 
 
-def test_strategy_tree_paper():
+@pytest.mark.parametrize("restore", [lambda node: node, copy.deepcopy, lambda node: pickle.loads(pickle.dumps(node))], ids=["original", "deepcopy", "pickle"])
+def test_strategy_tree_paper(restore):
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["a"], data=100.0)
     data.loc[dts[1], "a"] = 101
@@ -2121,6 +2157,8 @@ def test_strategy_tree_paper():
     m.setup(data)
     m.update(dts[0])
     m.run()
+    m = restore(m)
+    s = m["s"]
 
     assert m.price == 100
     assert s.price == 100
@@ -2142,6 +2180,8 @@ def test_strategy_tree_paper():
     assert m.value == 0
     assert s.value == 0
     assert np.allclose(s.price, 100.0 * (102 / 101.0))
+    assert s.prices.iloc[-1] == s.price
+    assert s._paper.prices.iloc[-1] == s._paper.price
 
 
 def test_dynamic_strategy():
