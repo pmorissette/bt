@@ -1874,7 +1874,7 @@ or the risk exposure of the strategy.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="bt.backtest.Result">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bt.backtest.</span></span><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">backtests</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/backtest.html#Result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.backtest.Result" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://pmorissette.github.io/ffn/ffn.html#ffn.core.GroupStats" title="(in ffn v0.3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupStats</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://pmorissette.github.io/ffn/docs/source/ffn.html#ffn.core.GroupStats" title="(in ffn v1.2.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupStats</span></code></a></p>
 <p>Based on ffn’s GroupStats with a few extra helper methods.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2042,6 +2042,8 @@ some part of the logic randomly - basically you are trying to
 determine if your strategy has any merit - does it beat
 randomly picking weight? Or randomly picking the selected
 securities?</p>
+<p>Random backtests preserve every date from the original supplied
+market data, including dates with partial missing values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

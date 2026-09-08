@@ -501,6 +501,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    randomly picking weight? Or randomly picking the selected</span>
 <span class="sd">    securities?</span>
 
+<span class="sd">    Random backtests preserve every date from the original supplied</span>
+<span class="sd">    market data, including dates with partial missing values.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        * backtest (Backtest): A backtest you want to benchmark</span>
 <span class="sd">        * random_strategy (Strategy): A strategy you want to benchmark</span>
@@ -522,7 +525,8 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">bts</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">bts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="c1"># Remove only Backtest's synthetic first row without dropping real partial rows.</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">backtest</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
     <span class="c1"># create and run random backtests</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nsim</span><span class="p">)):</span>
