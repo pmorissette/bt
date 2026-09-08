@@ -211,6 +211,111 @@ def test_benchmark_random_preserves_all_missing_dates():
         pd.testing.assert_index_equal(result.backtests[name].dates[1:], dates)
 
 
+def _make_benchmark_rebalance_strategy(name: str) -> bt.Strategy:
+    return bt.Strategy(
+        name,
+        [
+            bt.algos.RunOnce(),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+    )
+
+
+@pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
+def test_benchmark_random_preserves_additional_data(as_series: bool):
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    signal = pd.Series([1.0, 2.0, 3.0], index=dates, name="signal")
+    if not as_series:
+        signal = signal.to_frame()
+    original_signal = signal.copy(deep=True)
+
+    # Exercise the public named-data lookup from both supported container paths.
+    def record_signal(target: bt.Strategy) -> bool:
+        target.get_data("signal")
+        target.perm["signal_loaded"] = True
+        return True
+
+    backtest = bt.Backtest(
+        bt.Strategy("original", [record_signal]),
+        data,
+        additional_data={"signal": signal},
+        progress_bar=False,
+    )
+    result = bt.backtest.benchmark_random(backtest, bt.Strategy("random", [record_signal]), nsim=1)
+
+    # The reconstructed control must expose the named value without mutating caller data.
+    random_backtest = result.backtests["random_0"]
+    assert random_backtest.strategy.perm["signal_loaded"] is True
+    assert signal.equals(original_signal)
+
+
+def test_benchmark_random_preserves_legacy_configuration():
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+
+    backtest = bt.Backtest(
+        _make_benchmark_rebalance_strategy("original"),
+        data,
+        initial_capital=1_000.0,
+        commissions=lambda quantity, price: 10.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    result = bt.backtest.benchmark_random(backtest, _make_benchmark_rebalance_strategy("random"), nsim=1)
+    random_backtest = result.backtests["random_0"]
+
+    # A full allocation at 100 pays the fixed fee before buying 9.9 shares.
+    assert random_backtest.initial_capital == 1_000.0
+    assert random_backtest.strategy.integer_positions is False
+    assert random_backtest.strategy["a"].position == pytest.approx(9.9)
+    assert random_backtest.strategy.fees.sum() == pytest.approx(10.0)
+    assert random_backtest.strategy.value == pytest.approx(990.0)
+
+
+def test_benchmark_random_preserves_cost_model_configuration():
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    volume = pd.DataFrame({"a": 1_000.0}, index=dates)
+    volatility = pd.DataFrame({"a": 0.2}, index=dates)
+    original_volume = volume.copy(deep=True)
+    original_volatility = volatility.copy(deep=True)
+    alpha, beta, epsilon = 2.0, 3.0, 0.01
+    cost_model = bt.AlmgrenChrissCostModel(alpha=alpha, beta=beta, epsilon=epsilon)
+
+    backtest = bt.Backtest(
+        _make_benchmark_rebalance_strategy("original"),
+        data,
+        initial_capital=1_000.0,
+        commissions=cost_model,
+        integer_positions=False,
+        volume=volume,
+        volatility=volatility,
+        progress_bar=False,
+    )
+    result = bt.backtest.benchmark_random(backtest, _make_benchmark_rebalance_strategy("random"), nsim=1)
+    random_backtest = result.backtests["random_0"]
+
+    # Solve capital = price * quantity + documented Almgren-Chriss cost independently.
+    price = 100.0
+    impact = (0.5 * alpha + beta) * 0.2 * price / 1_000.0
+    linear = price * (1.0 + epsilon)
+    expected_position = 2_000.0 / (linear + np.sqrt(linear**2 + 4.0 * impact * 1_000.0))
+    expected_fee = 1_000.0 - price * expected_position
+
+    # Both impact inputs and their downstream numerical effects must match the source Backtest.
+    assert random_backtest.initial_capital == 1_000.0
+    assert random_backtest.strategy.integer_positions is False
+    assert isinstance(random_backtest.cost_model, bt.AlmgrenChrissCostModel)
+    assert random_backtest.strategy["a"].position == pytest.approx(expected_position)
+    assert random_backtest.strategy.fees.sum() == pytest.approx(expected_fee)
+    assert random_backtest.strategy.value == pytest.approx(1_000.0 - expected_fee)
+    pd.testing.assert_frame_equal(volume, original_volume)
+    pd.testing.assert_frame_equal(volatility, original_volatility)
+
+
 def test_Results_helper_functions():
 
     names = ["foo", "bar"]
