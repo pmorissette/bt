@@ -2810,6 +2810,39 @@ def test_margin():
     assert pytest.approx(999.73, 0.001) == s.value
 
 
+@pytest.mark.parametrize(
+    ("leverage", "requirement"),
+    [(1.5, 0.8), (3.0, 0.5)],
+)
+def test_margin_liquidation_scales_with_leverage(leverage: float, requirement: float):
+    algo = algos.Margin(0, requirement)
+    s = bt.Strategy("s", algos=[algos.WeighSpecified(c1=leverage), algos.Rebalance()])
+    # Fractional positions isolate the liquidation formula from integer rounding.
+    s.use_integer_positions(False)
+    dts = pd.date_range("2010-01-01", periods=1)
+    data = pd.DataFrame(index=dts, columns=["c1"], data=1)
+    algo._last_date = dts[0] - timedelta(days=1)
+
+    s.setup(data)
+    s.update(dts[0])
+    s.adjust(1000)
+    s.run()
+
+    equity = s.value
+    invested_value = s["c1"].value
+    assert invested_value == pytest.approx(equity * leverage)
+    assert equity / invested_value < requirement
+
+    algo(s)
+
+    # With no interest or transaction costs, liquidation preserves equity and targets E / R.
+    expected_invested_value = equity / requirement
+    invested_value = s["c1"].value
+    assert s.value == pytest.approx(equity)
+    assert invested_value == pytest.approx(expected_invested_value)
+    assert s.value / invested_value == pytest.approx(requirement)
+
+
 def test_corporate_actions():
     dts = pd.date_range("2010-01-01", periods=3)
 
