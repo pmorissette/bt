@@ -631,11 +631,10 @@ class StrategyBase(Node):
         # funiverse will be empty, to signal that no other ticker should be
         # used in addition to the strategies
         if self._original_children_are_present:
-            # if we have universe_tickers defined, limit universe to
-            # those tickers
-            valid_filter = list(set(universe.columns).intersection(self._universe_tickers))
+            # Limit the universe by name while preserving its original column order.
+            valid_filter = universe.columns.isin(self._universe_tickers)
 
-            funiverse = universe[valid_filter].copy()
+            funiverse = universe.loc[:, valid_filter].copy()
 
             # if we have strat children, we will need to create their columns
             # in the new universe
