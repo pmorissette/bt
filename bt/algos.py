@@ -1605,6 +1605,9 @@ class PTE_Rebalance(Algo):
     """
     Triggers a rebalance when PTE from static weights is past a level.
 
+    Current weights include each Security's multiplier when converting
+    position quantities to portfolio value.
+
     Args:
         * PTE_volatility_cap: annualized volatility to target
         * target_weights: dataframe of weights that needs to have the same index as the price dataframe
@@ -1647,7 +1650,9 @@ class PTE_Rebalance(Algo):
         if prices is None:
             return True
 
-        current_weights = positions * prices / target.value
+        # Convert contract quantities to economic exposure before comparing weights.
+        multipliers = pd.Series({security.name: security.multiplier for security in target.securities})
+        current_weights = positions * prices * multipliers / target.value
 
         target_weights = self.target_weights.loc[target.now, :]
 

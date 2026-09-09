@@ -2215,6 +2215,42 @@ def test_PTE_Rebalance(covar_method):
     assert not PTE_rebalance_Algo(s)
 
 
+@pytest.mark.parametrize("multiplier", [1, 10])
+def test_PTE_Rebalance_security_multiplier(multiplier: int):
+    dates = pd.date_range("2010-01-01", periods=8)
+    data = pd.DataFrame(
+        {
+            "c1": [100, 105, 95, 110, 90, 115, 105, 120],
+            "c2": [100, 99, 101, 98, 102, 97, 103, 100],
+        },
+        index=dates,
+    )
+    strategy = bt.Strategy(
+        "s",
+        children=[bt.Security("c1", multiplier=multiplier), bt.Security("c2")],
+    )
+    strategy.use_integer_positions(False)
+    strategy.setup(data)
+    strategy.update(dates[-1])
+    strategy.adjust(1_000_000)
+    strategy.rebalance(0.4, "c1")
+    strategy.rebalance(0.6, "c2")
+    target_weights = pd.DataFrame({"c1": 0.4, "c2": 0.6}, index=dates)
+    algo = bt.algos.PTE_Rebalance(
+        0.01,
+        target_weights,
+        lookback=pd.DateOffset(days=6),
+        lag=pd.DateOffset(days=1),
+    )
+
+    # Independently reconstruct economic weights from quantities and contract sizes.
+    c1_weight: float = strategy["c1"].position * 120 * multiplier / strategy.value
+    c2_weight: float = strategy["c2"].position * 100 / strategy.value
+    assert c1_weight == pytest.approx(0.4)
+    assert c2_weight == pytest.approx(0.6)
+    assert not algo(strategy)
+
+
 def test_TargetVol_standard_uses_pairwise_covariance():
     s = bt.Strategy("s")
 
