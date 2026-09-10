@@ -2190,6 +2190,9 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Triggers a rebalance when PTE from static weights is past a level.</span>
 
+<span class="sd">    Current weights include each Security's multiplier when converting</span>
+<span class="sd">    position quantities to portfolio value.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        * PTE_volatility_cap: annualized volatility to target</span>
 <span class="sd">        * target_weights: dataframe of weights that needs to have the same index as the price dataframe</span>
@@ -2232,7 +2235,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">prices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="n">current_weights</span> <span class="o">=</span> <span class="n">positions</span> <span class="o">*</span> <span class="n">prices</span> <span class="o">/</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># Convert contract quantities to economic exposure before comparing weights.</span>
+        <span class="n">multipliers</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">({</span><span class="n">security</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">security</span><span class="o">.</span><span class="n">multiplier</span> <span class="k">for</span> <span class="n">security</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">securities</span><span class="p">})</span>
+        <span class="n">current_weights</span> <span class="o">=</span> <span class="n">positions</span> <span class="o">*</span> <span class="n">prices</span> <span class="o">*</span> <span class="n">multipliers</span> <span class="o">/</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span>
 
         <span class="n">target_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_weights</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="p">:]</span>
 
