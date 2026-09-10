@@ -2,6 +2,7 @@ from __future__ import division
 
 import copy
 import pickle
+import random
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,13 @@ from bt.core import FixedIncomeStrategy, HedgeSecurity, FixedIncomeSecurity
 from bt.core import CouponPayingSecurity, CouponPayingHedgeSecurity
 from bt.core import is_zero
 from bt.core import CostModel, SqrtCostModel, AlmgrenChrissCostModel
+
+
+class DeterministicHashString(str):
+    """Provide stable hashes that expose unordered universe filtering."""
+
+    def __hash__(self) -> int:
+        return "AEBDCZ".index(self)
 
 
 @pytest.mark.parametrize("security_type", [bt.Security, CouponPayingSecurity])
@@ -2133,6 +2141,70 @@ def test_strategy_tree_proper_universes():
     assert child2.get_data("test_data2") == "test2"
 
     assert len(parent._strat_children) == 2
+
+
+def test_explicit_children_preserve_universe_order_for_seeded_results():
+    """Keep seeded selection and results stable after restricting the universe."""
+
+    dates = pd.date_range("2020-01-01", periods=2)
+    tickers = [DeterministicHashString(name) for name in "ABCDE"]
+    prices = pd.DataFrame(
+        [[100.0] * 5, [110.0, 120.0, 130.0, 140.0, 150.0]],
+        index=dates,
+        columns=pd.Index(tickers, dtype=object),
+    )
+    children = list(reversed(tickers)) + [DeterministicHashString("Z")]
+    strategy = Strategy(
+        "seeded",
+        [
+            bt.algos.RunOnce(),
+            bt.algos.SelectAll(),
+            bt.algos.SelectRandomly(n=2),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+        children=children,
+    )
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        initial_capital=1000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+
+    # Preserve the global generator for other tests while exercising the documented seed path.
+    random_state = random.getstate()
+    random.seed(271828)
+    try:
+        backtest.run()
+    finally:
+        random.setstate(random_state)
+
+    strategy = backtest.strategy
+    # B and A return 20% and 10%, so their equal-weighted index must finish at 115.
+    assert strategy.prices.iloc[-1] == pytest.approx(115.0)
+    assert strategy._universe.columns.tolist() == tickers
+
+
+def test_explicit_children_preserve_universe_order_with_strategy_child():
+    """Append Strategy children after source-ordered security columns."""
+
+    tickers = [DeterministicHashString(name) for name in "ABCDE"]
+    data = pd.DataFrame(
+        [[1.0] * 5],
+        index=pd.date_range("2020-01-01", periods=1),
+        columns=pd.Index(tickers, dtype=object),
+    )
+    child = Strategy("child")
+    parent = Strategy(
+        "parent",
+        children=[tickers[4], child, tickers[2], tickers[0], DeterministicHashString("Z")],
+    )
+
+    parent.setup(data)
+
+    assert parent._universe.columns.tolist() == [tickers[0], tickers[2], tickers[4], "child"]
 
 
 @pytest.mark.parametrize("restore", [lambda node: node, copy.deepcopy, lambda node: pickle.loads(pickle.dumps(node))], ids=["original", "deepcopy", "pickle"])
