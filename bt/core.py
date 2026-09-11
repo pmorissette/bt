@@ -1850,36 +1850,45 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             * coupons (DataFrame): Manatory DataFrame of coupon/carry amount with
               the same schema as universe.
             * cost_long (DataFrame): Optional DataFrame containing the cost of
-              holding a unit long position in the security (i.e. funding).
+              holding a unit long position in the security (i.e. funding), with
+              the same index as universe.
             * cost_short (DataFrame): Optional DataFrame containing the cost of
-              holding a unit short position in the security (i.e. repo).
+              holding a unit short position in the security (i.e. repo), with
+              the same index as universe.
             * kwargs (dict): Dictionary of additional information needed by
               the strategy. In particular, often takes the form of a DataFrame
               of security level information (i.e. signals, risk, etc).
         """
-        super().setup(universe, **kwargs)
-
-        # Handle coupons
+        # Validate all carry inputs before base setup installs persistent data.
         if "coupons" not in kwargs:
             raise ValueError('"coupons" must be passed to setup for a CouponPayingSecurity')
 
         try:
-            self._coupons = kwargs["coupons"][self.name]
+            coupons = kwargs["coupons"][self.name]
         except KeyError:
-            self._coupons = None
+            coupons = None
 
-        if self._coupons is None or not self._coupons.index.equals(universe.index):
+        if coupons is None or not coupons.index.equals(universe.index):
             raise ValueError("Index of coupons must match universe data")
 
-        # Handle holding costs
         try:
-            self._cost_long = kwargs["cost_long"][self.name]
+            cost_long = kwargs["cost_long"][self.name]
         except KeyError:
-            self._cost_long = None
+            cost_long = None
         try:
-            self._cost_short = kwargs["cost_short"][self.name]
+            cost_short = kwargs["cost_short"][self.name]
         except KeyError:
-            self._cost_short = None
+            cost_short = None
+
+        for cost, name in ((cost_long, "cost_long"), (cost_short, "cost_short")):
+            if cost is not None and not cost.index.equals(universe.index):
+                raise ValueError(f"Index of {name} must match universe data")
+
+        super().setup(universe, **kwargs)
+
+        self._coupons = coupons
+        self._cost_long = cost_long
+        self._cost_short = cost_short
 
         self._coupon_income_arr = self._data_arrays["coupon"]
         self._holding_costs_arr = self._data_arrays["holding_cost"]

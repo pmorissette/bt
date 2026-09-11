@@ -3057,6 +3057,35 @@ def test_couponpayingsecurity_setup_costs():
     assert c2.prices.iloc[0] == 95
 
 
+@pytest.mark.parametrize("cost_name", ["cost_long", "cost_short"])
+@pytest.mark.parametrize("preconfigured", [False, True], ids=["fresh", "configured"])
+def test_couponpayingsecurity_rejects_misaligned_holding_cost_index(cost_name: str, preconfigured: bool):
+    dts = pd.date_range("2010-01-01", periods=3)
+    data = pd.DataFrame(index=dts, columns=["c1"], data=100.0)
+    coupons = pd.DataFrame(index=dts, columns=["c1"], data=0.0)
+    aligned_cost = pd.DataFrame(index=dts, columns=["c1"], data=1.0)
+
+    # Keep both cost inputs present while reversing only the branch under test.
+    reversed_cost = pd.DataFrame(index=dts[::-1], columns=["c1"], data=[23.0, 7.0, 1.0])
+    costs = {"cost_long": aligned_cost, "cost_short": aligned_cost}
+    costs[cost_name] = reversed_cost
+    security = CouponPayingSecurity("c1")
+    if preconfigured:
+        security.setup(
+            data,
+            coupons=coupons,
+            cost_long=aligned_cost,
+            cost_short=aligned_cost,
+        )
+    state_before_setup = security.__dict__.copy()
+
+    # Either cost input must be rejected before setup installs any partial state.
+    with pytest.raises(ValueError, match=f"Index of {cost_name} must match universe data"):
+        security.setup(data, coupons=coupons, **costs)
+
+    assert security.__dict__ == state_before_setup
+
+
 def test_couponpayingsecurity_carry():
     c1 = CouponPayingSecurity("c1")
     s = StrategyBase("p", [c1])
