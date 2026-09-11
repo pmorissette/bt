@@ -3193,14 +3193,16 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../docs/source/overview.html#bt.algos.Margin">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Margin</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Margin allows us to model margin lending using bt. It will periodically charge the strategy</span>
-<span class="sd">    a set interest rate and will liquidate its positions if it falls below a specified maintance</span>
-<span class="sd">    requirement</span>
+<span class="sd">    Model margin lending by periodically charging interest and liquidating a leveraged long</span>
+<span class="sd">    portfolio when it falls below a specified maintenance requirement.</span>
+
+<span class="sd">    For a portfolio with positive equity, liquidation targets the maintenance requirement when</span>
+<span class="sd">    no transaction costs apply. Integer-position constraints may liquidate beyond that boundary.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * rate (float): the margin interest rate. i.e: 0.05 -&gt; 5%</span>
 <span class="sd">        * requirement (float): the maintenance requirement. The algorithm will liquidate the portfolio if the</span>
-<span class="sd">        equity in falls below this percentage.</span>
+<span class="sd">        equity falls below this percentage.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">requirement</span><span class="p">):</span>
@@ -3241,9 +3243,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">equity_ratio</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">requirement</span><span class="p">:</span>
                 <span class="n">max_value</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">requirement</span><span class="p">)</span>
 
-                <span class="c1"># liquidate</span>
+                <span class="c1"># Strategy.allocate applies the amount through child weights, which sum to port_val / equity.</span>
                 <span class="n">deficit</span> <span class="o">=</span> <span class="n">max_value</span> <span class="o">-</span> <span class="n">port_val</span>
-                <span class="n">target</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">deficit</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">deficit</span> <span class="o">*</span> <span class="n">equity_ratio</span><span class="p">)</span>
 
         <span class="c1"># update our date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>

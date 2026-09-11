@@ -261,15 +261,16 @@ their current weights.</p>
 <dt class="sig sig-object py" id="bt.algos.Margin">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bt.algos.</span></span><span class="sig-name descname"><span class="pre">Margin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requirement</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/algos.html#Margin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.algos.Margin" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algo</span></code></a></p>
-<p>Margin allows us to model margin lending using bt. It will periodically charge the strategy
-a set interest rate and will liquidate its positions if it falls below a specified maintance
-requirement</p>
+<p>Model margin lending by periodically charging interest and liquidating a leveraged long
+portfolio when it falls below a specified maintenance requirement.</p>
+<p>For a portfolio with positive equity, liquidation targets the maintenance requirement when
+no transaction costs apply. Integer-position constraints may liquidate beyond that boundary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>rate</strong> (<em>*</em>) – the margin interest rate. i.e: 0.05 -&gt; 5%</p></li>
 <li><p><strong>requirement</strong> (<em>*</em>) – the maintenance requirement. The algorithm will liquidate the portfolio if the</p></li>
-<li><p><strong>percentage.</strong> (<em>equity in falls below this</em>)</p></li>
+<li><p><strong>percentage.</strong> (<em>equity falls below this</em>)</p></li>
 </ul>
 </dd>
 </dl>
