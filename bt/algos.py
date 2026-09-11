@@ -2551,14 +2551,16 @@ class HedgeRisks(Algo):
 
 class Margin(Algo):
     """
-    Margin allows us to model margin lending using bt. It will periodically charge the strategy
-    a set interest rate and will liquidate its positions if it falls below a specified maintance
-    requirement
+    Model margin lending by periodically charging interest and liquidating a leveraged long
+    portfolio when it falls below a specified maintenance requirement.
+
+    For a portfolio with positive equity, liquidation targets the maintenance requirement when
+    no transaction costs apply. Integer-position constraints may liquidate beyond that boundary.
 
     Args:
         * rate (float): the margin interest rate. i.e: 0.05 -> 5%
         * requirement (float): the maintenance requirement. The algorithm will liquidate the portfolio if the
-        equity in falls below this percentage.
+        equity falls below this percentage.
     """
 
     def __init__(self, rate, requirement):
@@ -2599,9 +2601,9 @@ class Margin(Algo):
             if equity_ratio < self.requirement:
                 max_value = target.value * (1 / self.requirement)
 
-                # liquidate
+                # Strategy.allocate applies the amount through child weights, which sum to port_val / equity.
                 deficit = max_value - port_val
-                target.allocate(deficit / 2)
+                target.allocate(deficit * equity_ratio)
 
         # update our date
         self._last_date = target.now
