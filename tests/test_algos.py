@@ -3061,3 +3061,57 @@ def test_corporate_actions():
     assert s["c1"].position == 100
     assert s["c2"].position == 100 * 10.0
     assert s["c3"].position == 100
+
+
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("include_zero_dividend_row", [False, True])
+def test_corporate_actions_refreshes_stale_split_state_before_rebalance(nested: bool, include_zero_dividend_row: bool):
+    dts = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"c1": [100.0, 50.0], "c2": [100.0, 100.0]}, index=dts)
+
+    # A nested target must invalidate the root rather than a target-local flag.
+    if nested:
+        root = bt.Strategy("root")
+        root.use_integer_positions(False)
+        root.setup(data)
+        target = bt.Strategy("target", children=["c1", "c2"], parent=root)
+        target.setup_from_parent()
+    else:
+        target = root = bt.Strategy("target", children=["c1", "c2"])
+        root.use_integer_positions(False)
+        root.setup(data)
+
+    # Establish an exact 50/50 portfolio before the unadjusted split date.
+    root.adjust(2000.0)
+    root.update(dts[0])
+    if nested:
+        root.allocate(2000.0, "target")
+    target.allocate(1000.0, "c1")
+    target.allocate(1000.0, "c2")
+    root.update(dts[0])
+    root.update(dts[1])
+
+    # A zero dividend row is inert and must not control split invalidation.
+    dividend_index = dts[1:] if include_zero_dividend_row else dts[:0]
+    dividends = pd.DataFrame(0.0, index=dividend_index, columns=["c1", "c2"])
+    splits = pd.DataFrame({"c1": [2.0], "c2": [1.0]}, index=dts[1:])
+    stack = bt.AlgoStack(
+        algos.CorporateActions(dividends, splits),
+        algos.WeighSpecified(c1=0.5, c2=0.5),
+        algos.Rebalance(),
+    )
+
+    assert stack(target)
+
+    # The split doubles quantity as price halves, so no rebalance trade is needed.
+    assert target["c1"].position == pytest.approx(20.0)
+    assert target["c2"].position == pytest.approx(10.0)
+    assert target["c1"].value == pytest.approx(1000.0)
+    assert target["c2"].value == pytest.approx(1000.0)
+    assert target["c1"].weight == pytest.approx(0.5)
+    assert target["c2"].weight == pytest.approx(0.5)
+    assert target["c1"].outlays.loc[dts[1]] == pytest.approx(0.0)
+    assert target["c2"].outlays.loc[dts[1]] == pytest.approx(0.0)
+    assert target.capital == pytest.approx(0.0)
+    assert target.value == pytest.approx(2000.0)
+    assert root.value == pytest.approx(2000.0)
