@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bt"
-version = "1.2.2"
+version = "1.2.3"
 description = "A flexible backtesting framework for Python"
 readme = "README.md"
 license = { text = "MIT" }
@@ -76,7 +76,7 @@ Repository = "https://github.com/pmorissette/bt"
 Documentation = "https://pmorissette.github.io/bt/"
 
 [tool.bumpversion]
-current_version = "1.2.2"
+current_version = "1.2.3"
 commit = true
 tag = true
 commit_args = "-s"

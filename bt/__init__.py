@@ -18,4 +18,4 @@ from .core import (
     Strategy,
 )
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
