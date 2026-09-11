@@ -1333,6 +1333,85 @@ def test_weigh_inv_vol():
     assert weights["c2"] == pytest.approx(0.980, 3)
 
 
+def _make_inv_vol_missing_data() -> pd.DataFrame:
+    dates = pd.date_range("2020-01-01", periods=9)
+    returns = pd.DataFrame(
+        {
+            "A": [0, 0.08, -0.04, 0.01, 0.06, -0.03, 0.02, -0.01, 0.03],
+            "B": [0, 0.01, 0.015, -0.005, 0.012, 0.008, -0.004, 0.009, 0.006],
+            "C": [0, 0.03, -0.02, 0.01, 0.04, -0.01, 0.02, -0.015, 0.025],
+        },
+        index=dates,
+    )
+    prices = 100 * (1 + returns).cumprod()
+
+    # Combine complete, gappy, all-missing, and zero-volatility columns.
+    prices["D"] = np.nan
+    prices["E"] = 100.0
+    prices.loc[dates[4], ["C", "E"]] = np.nan
+    return prices
+
+
+@pytest.mark.parametrize("dtype", ["float64", "Float64"])
+def test_weigh_inv_vol_missing_data_is_column_local(dtype: str):
+    prices = _make_inv_vol_missing_data().astype(dtype)
+    strategy = bt.Strategy("s")
+    strategy.setup(prices)
+    strategy.update(prices.index[-1])
+    strategy.temp["selected"] = list(prices.columns)
+
+    algo = algos.WeighInvVol(lookback=pd.DateOffset(days=20), lag=pd.DateOffset(days=0))
+    assert algo(strategy)
+
+    # Calculate the sample volatility from each asset's explicit valid returns.
+    return_samples = [
+        [0.08, -0.04, 0.01, 0.06, -0.03, 0.02, -0.01, 0.03],
+        [0.01, 0.015, -0.005, 0.012, 0.008, -0.004, 0.009, 0.006],
+        [0.03, -0.02, 0.01, 0.02, -0.015, 0.025],
+    ]
+    expected = 1.0 / np.array([np.std(sample, ddof=1) for sample in return_samples])
+    expected /= expected.sum()
+
+    # Missing-only and zero-volatility assets remain excluded from the weights.
+    weights = strategy.temp["weights"]
+    assert isinstance(weights, pd.Series)
+    assert weights.index.tolist() == ["A", "B", "C"]
+    np.testing.assert_allclose(weights.to_numpy(dtype=float), expected)
+
+
+def test_weigh_inv_vol_missing_data_reaches_rebalance():
+    prices = _make_inv_vol_missing_data()
+    final_weights = {}
+
+    # Compare equivalent public stacks with and without the unrelated gappy asset.
+    for columns in (["A", "B"], ["A", "B", "C"]):
+        strategy = bt.Strategy(
+            "s",
+            [
+                algos.RunOnDate(prices.index[-1]),
+                algos.SelectAll(),
+                algos.WeighInvVol(lookback=pd.DateOffset(days=20), lag=pd.DateOffset(days=0)),
+                algos.Rebalance(),
+            ],
+        )
+        backtest = bt.Backtest(
+            strategy,
+            prices.reindex(columns=columns),
+            initial_capital=1_000_000,
+            integer_positions=False,
+            progress_bar=False,
+        )
+        backtest.run()
+        final_weights[tuple(columns)] = {name: backtest.strategy.children[name].weight for name in columns}
+
+    # Adding C may change normalization, but not A's share of unchanged A and B.
+    weights_ab = final_weights[("A", "B")]
+    weights_abc = final_weights[("A", "B", "C")]
+    share_ab = weights_ab["A"] / (weights_ab["A"] + weights_ab["B"])
+    share_abc = weights_abc["A"] / (weights_abc["A"] + weights_abc["B"])
+    assert share_abc == pytest.approx(share_ab)
+
+
 @mock.patch("ffn.calc_mean_var_weights")
 def test_weigh_mean_var(mock_mv):
     algo = algos.WeighMeanVar(lookback=pd.DateOffset(days=5))
