@@ -24,7 +24,7 @@ and transactions, and provides performance statistics and charts through
 pip install bt
 ```
 
-See the [installation guide](docs/source/install.rst) for additional details.
+See the [installation guide](docs/source/install.md) for additional details.
 
 <a id="a-quick-example"></a>
 <a id="a-simple-strategy-backtest"></a>
@@ -69,10 +69,10 @@ future performance.
 
 ## Explore the documentation
 
-- [First strategy tutorial](docs/source/intro.rst): walk through a backtest and inspect its results.
-- [Algorithms](docs/source/algos.rst): compose and customize strategy logic.
-- [Portfolio trees](docs/source/tree.rst): combine securities and nested strategies.
-- [Examples](docs/source/examples.rst): explore momentum, risk allocation, and fixed-income strategies.
+- [First strategy tutorial](docs/source/intro.md): walk through a backtest and inspect its results.
+- [Algorithms](docs/source/algos.md): compose and customize strategy logic.
+- [Portfolio trees](docs/source/tree.md): combine securities and nested strategies.
+- [Examples](docs/source/examples.md): explore momentum, risk allocation, and fixed-income strategies.
 - [API overview](docs/source/overview.md): find strategy, algorithm, and backtest interfaces.
 
 The published documentation is at <https://pmorissette.github.io/bt/>.

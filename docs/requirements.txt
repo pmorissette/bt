@@ -1,2 +1,2 @@
 yardang==0.9.4
-klink==0.1.10
+klink==0.1.12
