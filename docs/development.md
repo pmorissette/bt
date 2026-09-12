@@ -27,29 +27,24 @@ make serve
 
 Open <http://localhost:9087>. Yardang reads `[tool.yardang]` in `pyproject.toml`, generates the homepage from `README.md`, and uses the repository root as the Sphinx source directory. Output goes into `docs/html`, using the installed Klink theme. The old Sphinx Makefiles, hand-maintained `conf.py`, vendored theme, and manual `make pages` deployment are no longer used.
 
-`docs/requirements.txt` pins released Yardang and Klink packages; no unreleased Yardang changes are required. `docs/build.py` uses Yardang's configuration generator and Sphinx's public API to register Klink's theme path, resolve static assets, configure ffn cross-references, and treat warnings as errors. These small compatibility overrides can be removed as upstream support becomes available.
+`docs/requirements.txt` pins released Yardang and Klink packages. Klink 0.1.12 registers its theme automatically and includes Yardang's hidden top-level navigation in the sidebar. `docs/build.py` uses Yardang's configuration generator and Sphinx's public API to resolve static assets, configure ffn cross-references, and treat warnings as errors.
 
-Edit the landing page in `README.md` and API reference in `docs/source/overview.md`. Other guides and notebook examples still use their checked-in reStructuredText sources and images; documentation builds do not execute notebooks or fetch market data. After editing notebooks, install Pandoc and regenerate the exports with Klink's conversion helper:
+Edit the landing page in `README.md`, guides in `docs/source/*.md`, and API reference in `docs/source/overview.md`. Keep tutorials, task guides, and API reference distinct. Autodoc directives remain inside MyST `eval-rst` fences so existing RST docstrings and API anchors render correctly, as described in the [MyST autodoc guide](https://myst-parser.readthedocs.io/en/stable/faq/index.html#use-sphinx-ext-autodoc-in-markdown-files).
+
+Notebook examples use checked-in Markdown exports and images; documentation builds do not execute notebooks or fetch market data. After editing notebooks, regenerate the exports from their saved outputs:
 
 ```bash
 uv pip install nbconvert
 cd docs/source
-python -c 'import klink; klink.convert_notebooks()'
+jupyter nbconvert --to markdown --template-file=../notebook.md.j2 --NbConvertApp.output_files_dir=_static *.ipynb
+python -m mdformat *.md
 ```
 
-This converts saved notebook outputs without executing cells, copies images into `_static`, and updates image paths and Klink CSS classes. Review and commit the changed notebooks, exports, and images together.
+The export template preserves image paths, retina dimensions, and Klink CSS classes. Pandoc is not required. Review and commit the changed notebooks, exports, and images together.
 
 Pull requests build documentation and upload an HTML artifact. Successful pushes to `master` also publish to the existing `gh-pages` branch. Local builds never publish.
 
-## Continue the Markdown migration
-
-The first increment adopts Yardang's README landing page and moves `bt.rst` to `overview.md`. Autodoc directives remain inside MyST `eval-rst` fences so existing RST docstrings and API anchors render correctly, as described in the [MyST autodoc guide](https://myst-parser.readthedocs.io/en/stable/faq/index.html#use-sphinx-ext-autodoc-in-markdown-files). The remaining conversion is separate from the build migration:
-
-1. Convert the hand-written installation, algorithm, and tree guides to Markdown, preserving Sphinx cross-references and heading anchors. Keep tutorials, task guides, and API reference distinct.
-1. Convert raw reStructuredText cells in `intro.ipynb` and `examples-nb.ipynb` to Markdown before exporting notebooks. Use saved outputs, retain image paths and Klink styling, and replace each RST export with its Markdown equivalent in the same change. Do not leave both formats with the same basename.
-1. Convert the examples index and its RST includes to MyST equivalents. Remove the excluded legacy `docs/source/index.rst` once any useful material has been incorporated into the landing page or guides.
-
-For each conversion, run `make docs` and check navigation, images, API links, and heading links in a browser. Preserve page basenames where possible; maintain `[tool.yardang.redirects]` when paths change. The current redirects preserve legacy page URLs, including `bt.html`, and forward their fragments; renamed headings need explicit compatibility anchors.
+Run `make docs` after documentation changes and check navigation, images, API links, and heading links in a browser. Preserve page basenames where possible; maintain `[tool.yardang.redirects]` when paths change. The redirects preserve legacy page URLs, including `bt.html`, and forward their fragments; renamed headings need explicit compatibility anchors. `docs/source/examples.md` includes the individual Markdown examples, which also retain their standalone URLs.
 
 ## Update the Copier template
 

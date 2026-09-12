@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import klink
 from sphinx.application import Sphinx
 from yardang.build import generate_docs_configuration
 
@@ -16,8 +15,6 @@ def main():
             doctreedir="docs/html/.doctrees",
             buildername="html",
             confoverrides={
-                # Klink 0.1.10 predates Sphinx theme entry-point registration.
-                "html_theme_path": [klink.get_html_theme_path()],
                 "html_static_path": [str(Path("docs/source/_static").resolve())],
                 "html_title": "bt — Flexible Backtesting for Python",
                 "intersphinx_mapping": {"ffn": ("https://pmorissette.github.io/ffn/", None)},

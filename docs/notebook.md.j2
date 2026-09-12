@@ -1,0 +1,32 @@
+{% extends 'markdown/index.md.j2' %}
+
+{% block data_png %}
+```{image} {{ output.metadata.filenames['image/png'] | path2url }}
+:class: pynb
+{%- for dimension in ['width', 'height'] %}
+{%- if dimension in output.metadata.get('image/png', {}) %}
+:{{ dimension }}: {{ output.metadata['image/png'][dimension] }}px
+{%- endif %}
+{%- endfor %}
+```
+{% endblock data_png %}
+
+{% block stream %}
+```{code-block} text
+:class: pynb-result
+
+{{ output.text }}
+```
+{% endblock stream %}
+
+{% block data_text %}
+```{code-block} text
+:class: pynb-result
+
+{{ output.data['text/plain'] }}
+```
+{% endblock data_text %}
+
+{% block data_html %}
+{{ output.data['text/html'] | replace('<div>', '<div class="pynb-result">') }}
+{% endblock data_html %}

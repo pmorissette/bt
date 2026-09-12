@@ -53,6 +53,7 @@ develop = [
     "hatch-cython",
     "matplotlib>=2",
     "mdformat",
+    "mdformat-myst",
     "mdformat-tables>=1",
     "numpy>=1",
     "pandas>=0.19",
@@ -161,11 +162,14 @@ archs = "arm64"
 archs = "AMD64"
 skip = "*win32 *arm64"
 
+[tool.codespell]
+ignore-words-list = "strat"
+
 [tool.ruff]
 line-length = 180
 
 [tool.ruff.lint.isort]
-known-third-party = ["klink", "yardang"]
+known-third-party = ["yardang"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
@@ -176,18 +180,18 @@ theme = "klink"
 docs-host = "https://pmorissette.github.io/bt/"
 root = "README.md"
 pages = [
-    "docs/source/install.rst",
-    "docs/source/intro.rst",
-    "docs/source/algos.rst",
-    "docs/source/tree.rst",
-    "docs/source/examples.rst",
+    "docs/source/install.md",
+    "docs/source/intro.md",
+    "docs/source/algos.md",
+    "docs/source/tree.md",
+    "docs/source/examples.md",
     "docs/source/overview.md",
     "docs/development.md",
 ]
 use-autoapi = false
 use-search = false
 nb-execution-mode = "off"
-exclude-patterns = ["**/*.ipynb", "docs/source/_themes", "docs/source/index.rst", "TODO.md", "base", "benched", "github", "klink", "python-template-cython", "yardang"]
+exclude-patterns = ["**/*.ipynb", "docs/source/_themes", "TODO.md", "base", "benched", "github", "klink", "python-template-cython", "yardang"]
 extensions = ["sphinx.ext.intersphinx"]
 
 [tool.yardang.html-theme-options]
