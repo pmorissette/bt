@@ -62,7 +62,6 @@ develop = [
     "pytest",
     "pytest-benchmark",
     "pytest-cov",
-    "packaging>=24.2",
     "ruff",
     "setuptools",
     "twine>=6.1",

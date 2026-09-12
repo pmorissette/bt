@@ -133,8 +133,17 @@ jobs:
           CIBW_BUILD: "${{ matrix.python.cibuildwheel }}-win_amd64"
         if: matrix.platform == 'windows-latest'
 
-      - name: Test distributions
-        run: make test-dist
+      - name: Test wheel
+        uses: actions-ext/python/test-wheel@ec67f82b3bd863948308a41ecb9e70547cbb19c7
+        with:
+          module: bt
+        if: runner.os == 'Linux'
+
+      - name: Test source distribution
+        uses: actions-ext/python/test-sdist@ec67f82b3bd863948308a41ecb9e70547cbb19c7
+        with:
+          module: bt
+        if: matrix.platform == 'ubuntu-latest'
 
       - name: Upload distributions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
