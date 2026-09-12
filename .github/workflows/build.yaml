@@ -97,13 +97,41 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Build distributions
+      - name: Build distributions (Linux x86_64)
         run: |
-          make clean
+          rm -rf dist
           make dist-py-wheel
           make dist-check
         env:
-          CIBW_BUILD: "${{ matrix.python.cibuildwheel }}-*"
+          CIBW_BUILD: "${{ matrix.python.cibuildwheel }}-manylinux*"
+        if: matrix.platform == 'ubuntu-latest'
+
+      - name: Build distributions (Linux ARM64)
+        run: |
+          rm -rf dist
+          make dist-py-wheel
+          make dist-check
+        env:
+          CIBW_BUILD: "${{ matrix.python.cibuildwheel }}-manylinux*"
+        if: matrix.platform == 'ubuntu-24.04-arm'
+
+      - name: Build distributions (macOS)
+        run: |
+          rm -rf dist
+          make dist-py-wheel
+          make dist-check
+        env:
+          CIBW_BUILD: "${{ matrix.python.cibuildwheel }}-macos*"
+        if: matrix.platform == 'macos-latest'
+
+      - name: Build distributions (Windows)
+        run: |
+          if (Test-Path dist) { Remove-Item dist -Recurse -Force }
+          make dist-py-wheel
+          make dist-check
+        env:
+          CIBW_BUILD: "${{ matrix.python.cibuildwheel }}-win_amd64"
+        if: matrix.platform == 'windows-latest'
 
       - name: Test distributions
         run: make test-dist
