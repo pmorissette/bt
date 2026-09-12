@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: develop requirements build install build_dev lint-py lint-docs fix-py fix-docs lint lints fix format check-dist check-types checks check test tests coverage benchmark show-version patch minor major dist dist-build dist-py-wheel dist-py-sdist dist-check test-dist publish upload docs docs-develop serve notebooks clean help
+.PHONY: develop requirements build install build_dev lint-py lint-docs fix-py fix-docs lint lints fix format check-dist check-types checks check test tests coverage benchmark show-version patch minor major dist dist-build dist-py-wheel dist-py-sdist dist-check test-dist publish upload docs serve notebooks clean help
 
 develop:  ## install dependencies and build library
 	uv pip install -e '.[develop]'
@@ -16,16 +16,16 @@ install:  ## install library
 build_dev: develop
 
 lint-py:  ## lint Python with ruff
-	python -m ruff check bt .github/scripts docs/build.py
-	python -m ruff format --check bt .github/scripts docs/build.py
+	python -m ruff check bt .github/scripts
+	python -m ruff format --check bt .github/scripts
 
 lint-docs:  ## lint documentation
 	python -m mdformat --check README.md docs/development.md docs/source/*.md
 	python -m codespell_lib README.md docs/development.md docs/source/*.md
 
 fix-py:  ## autoformat Python code
-	python -m ruff check --fix bt .github/scripts docs/build.py
-	python -m ruff format bt .github/scripts docs/build.py
+	python -m ruff check --fix bt .github/scripts
+	python -m ruff format bt .github/scripts
 
 fix-docs:  ## autoformat documentation
 	python -m mdformat README.md docs/development.md docs/source/*.md
@@ -93,11 +93,9 @@ publish: dist
 upload: dist  ## upload distributions to PyPI
 	python -m twine upload dist/* --skip-existing
 
-docs-develop:  ## install documentation dependencies
-	uv pip install -r docs/requirements.txt
-
 docs:  ## build documentation with Yardang and Klink
-	python docs/build.py
+	yardang build --warning-is-error
+	cp -R docs/source/_static/. docs/html/_static/
 
 serve:  ## serve built documentation on port 9087
 	python -m http.server 9087 --directory docs/html

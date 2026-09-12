@@ -24,10 +24,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install documentation dependencies
+      - name: Install development dependencies
         run: |
           python -m pip install uv
-          uv pip install --system . -r docs/requirements.txt
+          uv pip install --system '.[develop]'
 
       - name: Build documentation
         run: make docs
