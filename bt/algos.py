@@ -1195,7 +1195,9 @@ class WeighInvVol(Algo):
         returns = prc.to_returns()
         # Explicit axis=0 to compute per-column std and avoid FutureWarning
         # from pandas (axis=None will reduce over both axes in a future version)
-        vol = 1.0 / returns.std(axis=0, ddof=1)
+        # pandas 1.x reduces nullable columns to an object Series containing pd.NA.
+        # Normalize missing values before NumPy's isinf check.
+        vol = (1.0 / returns.std(axis=0, ddof=1)).fillna(np.nan).astype(float)
         vol[np.isinf(vol)] = np.nan
         tw = vol / vol.sum()
         target.temp["weights"] = tw.dropna()
