@@ -51,6 +51,7 @@ develop = [
     "ffn>=1.1.2",
     "hatchling",
     "hatch-cython",
+    "klink>=0.1.13",
     "matplotlib>=2",
     "mdformat",
     "mdformat-myst",
@@ -68,6 +69,7 @@ develop = [
     "ty",
     "uv",
     "wheel",
+    "yardang",
 ]
 dev = ["bt[develop]"]
 
@@ -136,7 +138,7 @@ packages = ["bt"]
 
 [tool.check-dist]
 present = ["bt/__init__.py", "bt/algos.py", "bt/backtest.py", "bt/core.py"]
-absent = ["base/*", "yardang/*", "klink/*", "tests/*", "docs/*"]
+absent = ["klink/*", "tests/*", "docs/*"]
 
 [tool.check-dist.sdist]
 present = ["LICENSE", "README.md", "pyproject.toml"]
