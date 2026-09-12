@@ -10,7 +10,6 @@ make lint
 make checks
 make coverage
 make build
-make test-dist
 ```
 
 On Windows, activate with `.venv\Scripts\activate` instead. Run `make help` for available targets. `make test` runs tests without coverage; `make benchmark` runs the separate backtest benchmarks. Type checking (`make check-types`) is advisory and not a CI gate.
@@ -60,6 +59,6 @@ Review the resulting diff and resolve conflicts before running the checks above.
 
 bt intentionally retains its MIT license, runtime Python floor, package metadata and version, Cython build hook, native wheel matrix, top-level `tests` directory, benchmarks, and Ruff line length. Documentation adopts the template's Markdown homepage while retaining Klink styling and redirecting legacy page URLs. The docs workflow builds from source because bt's CI produces platform-specific wheel artifacts.
 
-The Cython template supplies shared Python/compiler setup, native-wheel CI, and distribution smoke tests. CI builds wheels from clean sdists instead of deleting compiled files from the checkout. `make test-dist` checks installed native extensions outside the source tree and rebuilds sdists into wheels for the same check. bt retains its full source-tree test suite; cibuildwheel verifies that each installed wheel imports the compiled `bt.core` extension.
+The Cython template supplies shared Python/compiler setup, native-wheel CI, and distribution smoke tests. CI builds wheels from clean sdists instead of deleting compiled files from the checkout. CI uses the template's `actions-ext/python/test-wheel` and `actions-ext/python/test-sdist` actions for installation smoke tests. bt retains its full source-tree test suite; cibuildwheel verifies that each installed wheel imports the compiled `bt.core` extension.
 
 The build workflow follows the template's Python 3.11–3.14 matrix on Linux x86_64/ARM64, macOS ARM64, and Windows x86_64. The separate release workflow retains its existing Python versions and macOS architecture selection. The runtime minimum remains unchanged.
