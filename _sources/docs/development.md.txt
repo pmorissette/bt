@@ -20,14 +20,16 @@ Coverage measures the Python modules. The compiled `bt.core` extension is still 
 ## Build the documentation
 
 ```bash
-make docs-develop
+make develop
 make docs
 make serve
 ```
 
 Open <http://localhost:9087>. Yardang reads `[tool.yardang]` in `pyproject.toml`, generates the homepage from `README.md`, and uses the repository root as the Sphinx source directory. Output goes into `docs/html`, using the installed Klink theme. The old Sphinx Makefiles, hand-maintained `conf.py`, vendored theme, and manual `make pages` deployment are no longer used.
 
-`docs/requirements.txt` pins released Yardang and Klink packages. Klink 0.1.12 registers its theme automatically and includes Yardang's hidden top-level navigation in the sidebar. `docs/build.py` uses Yardang's configuration generator and Sphinx's public API to resolve static assets, configure ffn cross-references, and treat warnings as errors.
+Documentation dependencies live in `pyproject.toml` under the `develop` extra, alongside the other development tools. Both local setup and documentation CI install that extra, including `klink>=0.1.13` for the sidebar and footnote fixes. There is no separate documentation requirements file.
+
+`make docs` runs `yardang build --warning-is-error`, then copies `docs/source/_static` into the built site's `_static` directory. ffn cross-references are configured in `[tool.yardang.intersphinx-mapping]`; Yardang 0.10.0 or later supports this setting. No custom Python build wrapper is needed.
 
 Edit the landing page in `README.md`, guides in `docs/source/*.md`, and API reference in `docs/source/overview.md`. Keep tutorials, task guides, and API reference distinct. Autodoc directives remain inside MyST `eval-rst` fences so existing RST docstrings and API anchors render correctly, as described in the [MyST autodoc guide](https://myst-parser.readthedocs.io/en/stable/faq/index.html#use-sphinx-ext-autodoc-in-markdown-files).
 

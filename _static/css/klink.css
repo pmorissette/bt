@@ -1801,36 +1801,36 @@ input {
 input:focus {
   background: white;
 }
-aside {
+.klink-sidebar {
   position: fixed;
   top: 25px;
   width: 240px;
   color: #999;
   padding-left: 20px;
 }
-aside > ul {
+.klink-sidebar > ul {
   list-style: none;
   margin: 0 4px;
   padding: 0;
 }
-aside > ul > li {
+.klink-sidebar > ul > li {
   margin-bottom: 10px;
   font-size: 18px;
   color: #777;
 }
-aside > ul > li a:link,
-aside > ul > li a:visited {
+.klink-sidebar > ul > li a:link,
+.klink-sidebar > ul > li a:visited {
   color: #777;
 }
-aside > ul > li ul {
+.klink-sidebar > ul > li ul {
   margin: 10px 0 0 0;
   padding-left: 30px;
   font-size: 16px;
 }
-aside input[type=submit] {
+.klink-sidebar input[type=submit] {
   display: none;
 }
-aside input[type=text] {
+.klink-sidebar input[type=text] {
   width: 85%;
 }
 .literal {
@@ -2211,7 +2211,7 @@ div#searchbox {
   .section {
     margin: 0px !important;
   }
-  aside {
+  .klink-sidebar {
     position: static;
     width: 100%;
     margin: 5px 20px;

@@ -5,9 +5,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Develop bt &#8212; bt — Flexible Backtesting for Python</title>
+    <title>Develop bt &#8212; bt - Flexible Backtesting for Python v1.2.3</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../_static/css/klink.css?v=010e5783" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/klink.css?v=c1d18d48" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -54,13 +54,14 @@ make<span class="w"> </span>test-dist
 <p>Coverage measures the Python modules. The compiled <code class="docutils literal notranslate"><span class="pre">bt.core</span></code> extension is still tested, but excluded from coverage because it is built without Cython line tracing.</p>
 <section id="build-the-documentation">
 <h2>Build the documentation<a class="headerlink" href="#build-the-documentation" title="Link to this heading">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>docs-develop
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>develop
 make<span class="w"> </span>docs
 make<span class="w"> </span>serve
 </pre></div>
 </div>
 <p>Open <a class="reference external" href="http://localhost:9087">http://localhost:9087</a>. Yardang reads <code class="docutils literal notranslate"><span class="pre">[tool.yardang]</span></code> in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, generates the homepage from <code class="docutils literal notranslate"><span class="pre">README.md</span></code>, and uses the repository root as the Sphinx source directory. Output goes into <code class="docutils literal notranslate"><span class="pre">docs/html</span></code>, using the installed Klink theme. The old Sphinx Makefiles, hand-maintained <code class="docutils literal notranslate"><span class="pre">conf.py</span></code>, vendored theme, and manual <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">pages</span></code> deployment are no longer used.</p>
-<p><code class="docutils literal notranslate"><span class="pre">docs/requirements.txt</span></code> pins released Yardang and Klink packages. Klink 0.1.12 registers its theme automatically and includes Yardang’s hidden top-level navigation in the sidebar. <code class="docutils literal notranslate"><span class="pre">docs/build.py</span></code> uses Yardang’s configuration generator and Sphinx’s public API to resolve static assets, configure ffn cross-references, and treat warnings as errors.</p>
+<p>Documentation dependencies live in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> under the <code class="docutils literal notranslate"><span class="pre">develop</span></code> extra, alongside the other development tools. Both local setup and documentation CI install that extra, including <code class="docutils literal notranslate"><span class="pre">klink&gt;=0.1.13</span></code> for the sidebar and footnote fixes. There is no separate documentation requirements file.</p>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">docs</span></code> runs <code class="docutils literal notranslate"><span class="pre">yardang</span> <span class="pre">build</span> <span class="pre">--warning-is-error</span></code>, then copies <code class="docutils literal notranslate"><span class="pre">docs/source/_static</span></code> into the built site’s <code class="docutils literal notranslate"><span class="pre">_static</span></code> directory. ffn cross-references are configured in <code class="docutils literal notranslate"><span class="pre">[tool.yardang.intersphinx-mapping]</span></code>; Yardang 0.10.0 or later supports this setting. No custom Python build wrapper is needed.</p>
 <p>Edit the landing page in <code class="docutils literal notranslate"><span class="pre">README.md</span></code>, guides in <code class="docutils literal notranslate"><span class="pre">docs/source/*.md</span></code>, and API reference in <code class="docutils literal notranslate"><span class="pre">docs/source/overview.md</span></code>. Keep tutorials, task guides, and API reference distinct. Autodoc directives remain inside MyST <code class="docutils literal notranslate"><span class="pre">eval-rst</span></code> fences so existing RST docstrings and API anchors render correctly, as described in the <a class="reference external" href="https://myst-parser.readthedocs.io/en/stable/faq/index.html#use-sphinx-ext-autodoc-in-markdown-files">MyST autodoc guide</a>.</p>
 <p>Notebook examples use checked-in Markdown exports and images; documentation builds do not execute notebooks or fetch market data. After editing notebooks, regenerate the exports from their saved outputs:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>nbconvert
@@ -91,7 +92,7 @@ python<span class="w"> </span>-m<span class="w"> </span>mdformat<span class="w">
           </div>
         </div>
       </div>
-        <aside>
+        <aside class="klink-sidebar">
 
             
             <a href="../index.html" id="logo" title=bt><img class="logo" src="../_static/logo.png" width="150px" height="150px" title=bt /></a>
