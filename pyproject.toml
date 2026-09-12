@@ -69,7 +69,7 @@ develop = [
     "ty",
     "uv",
     "wheel",
-    "yardang",
+    "yardang>=0.10.0",
 ]
 dev = ["bt[develop]"]
 
@@ -170,9 +170,6 @@ ignore-words-list = "strat"
 [tool.ruff]
 line-length = 180
 
-[tool.ruff.lint.isort]
-known-third-party = ["yardang"]
-
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 
@@ -198,6 +195,9 @@ extensions = ["sphinx.ext.intersphinx"]
 
 [tool.yardang.html-theme-options]
 github = "pmorissette/bt"
+
+[tool.yardang.intersphinx-mapping]
+ffn = ["https://pmorissette.github.io/ffn/", "https://pmorissette.github.io/ffn/objects.inv"]
 
 [tool.yardang.redirects]
 bt = "docs/source/overview.html"
