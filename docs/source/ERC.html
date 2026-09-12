@@ -7,7 +7,7 @@
 
     <title>Equally Weighted Risk Contributions Portfolio &#8212; bt — Flexible Backtesting for Python</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=010e5783" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -36,21 +36,21 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="equally-weighted-risk-contributions-portfolio">
+  <section class="tex2jax_ignore mathjax_ignore" id="equally-weighted-risk-contributions-portfolio">
 <h1>Equally Weighted Risk Contributions Portfolio<a class="headerlink" href="#equally-weighted-risk-contributions-portfolio" title="Link to this heading">¶</a></h1>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ffn</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bt</span>
 
-<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
 </pre></div>
 </div>
 <section id="create-fake-index-data">
 <h2>Create Fake Index Data<a class="headerlink" href="#create-fake-index-data" title="Link to this heading">¶</a></h2>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.05</span><span class="o">/</span><span class="mi">252</span> <span class="o">+</span> <span class="mf">0.02</span><span class="o">/</span><span class="mi">252</span><span class="p">,</span> <span class="mf">0.03</span><span class="o">/</span><span class="mi">252</span> <span class="o">+</span> <span class="mf">0.02</span><span class="o">/</span><span class="mi">252</span><span class="p">])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.05</span><span class="o">/</span><span class="mi">252</span> <span class="o">+</span> <span class="mf">0.02</span><span class="o">/</span><span class="mi">252</span><span class="p">,</span> <span class="mf">0.03</span><span class="o">/</span><span class="mi">252</span> <span class="o">+</span> <span class="mf">0.02</span><span class="o">/</span><span class="mi">252</span><span class="p">])</span>
 <span class="n">volatility</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">252</span><span class="p">),</span> <span class="mf">0.05</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">252</span><span class="p">)])</span>
 <span class="n">variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">volatility</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">correlation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
@@ -67,11 +67,11 @@
 <span class="n">covariance</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">array</span><span class="p">([[</span><span class="mf">1.58730159e-04</span><span class="p">,</span> <span class="mf">9.92063492e-06</span><span class="p">],</span>
-        <span class="p">[</span><span class="mf">9.92063492e-06</span><span class="p">,</span> <span class="mf">9.92063492e-06</span><span class="p">]])</span>
+<div class="pynb-result highlight-text notranslate"><div class="highlight"><pre><span></span>array([[1.58730159e-04, 9.92063492e-06],
+       [9.92063492e-06, 9.92063492e-06]])
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'foo'</span><span class="p">,</span><span class="s1">'bar'</span><span class="p">,</span><span class="s1">'rf'</span><span class="p">]</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'foo'</span><span class="p">,</span><span class="s1">'bar'</span><span class="p">,</span><span class="s1">'rf'</span><span class="p">]</span>
 <span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">'2015-01-01'</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s1">'2018-12-31'</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">BDay</span><span class="p">())</span>
 <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span>
 <span class="n">rdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
@@ -94,8 +94,8 @@
 <section id="build-and-run-erc-strategy">
 <h2>Build and run ERC Strategy<a class="headerlink" href="#build-and-run-erc-strategy" title="Link to this heading">¶</a></h2>
 <p>You can read more about ERC here.
-<a class="reference external" href="http://thierry-roncalli.com/download/erc.pdf">http://thierry-roncalli.com/download/erc.pdf</a></p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">runAfterDaysAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunAfterDays</span><span class="p">(</span>
+http://thierry-roncalli.com/download/erc.pdf</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">runAfterDaysAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunAfterDays</span><span class="p">(</span>
     <span class="mi">20</span><span class="o">*</span><span class="mi">6</span> <span class="o">+</span> <span class="mi">1</span>
 <span class="p">)</span>
 
@@ -133,17 +133,17 @@
 <span class="n">res_target</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
 <a class="pynb reference internal image-reference" href="../../_images/ERC_7_0.png"><img alt="../../_images/ERC_7_0.png" class="pynb" src="../../_images/ERC_7_0.png" style="width: 373px; height: 262px;" />
 </a>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_target</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">res_target</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
 <a class="pynb reference internal image-reference" href="../../_images/ERC_8_0.png"><img alt="../../_images/ERC_8_0.png" class="pynb" src="../../_images/ERC_8_0.png" style="width: 376px; height: 264px;" />
 </a>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">weights_target</span> <span class="o">=</span> <span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">weights_target</span> <span class="o">=</span> <span class="n">res_target</span><span class="o">.</span><span class="n">get_security_weights</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">rolling_cov_target</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="n">weights_target</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">pct_change</span><span class="p">()</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">252</span><span class="p">)</span><span class="o">.</span><span class="n">cov</span><span class="p">()</span><span class="o">*</span><span class="mi">252</span>
 
 
@@ -161,12 +161,15 @@
 <span class="n">trc_target</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Total Risk Contribution'</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+
 </pre></div>
 </div>
 <a class="pynb reference internal image-reference" href="../../_images/ERC_9_0.png"><img alt="../../_images/ERC_9_0.png" class="pynb" src="../../_images/ERC_9_0.png" style="width: 386px; height: 277px;" />
 </a>
-<p>You can see the Total Risk Contribution is roughly equal from both
-assets.</p>
+<p>You can see the Total Risk Contribution is roughly equal from both assets.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -181,7 +184,17 @@ assets.</p>
             <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">A Simple Strategy Backtest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#modifying-a-strategy">Modifying a Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html">The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">API overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Develop bt</a></li>
+</ul>
+
 
             
             <ul>

@@ -1,7 +1,7 @@
 # API overview
 
 bt's public interfaces are grouped below by module. For a worked example, start
-with the [first strategy tutorial](intro.rst).
+with the [first strategy tutorial](intro.md).
 
 (id1)=
 

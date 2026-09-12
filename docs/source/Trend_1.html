@@ -7,7 +7,7 @@
 
     <title>Trend Example 1 &#8212; bt — Flexible Backtesting for Python</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=010e5783" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -36,21 +36,21 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="trend-example-1">
+  <section class="tex2jax_ignore mathjax_ignore" id="trend-example-1">
 <h1>Trend Example 1<a class="headerlink" href="#trend-example-1" title="Link to this heading">¶</a></h1>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ffn</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bt</span>
 
-<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
 </pre></div>
 </div>
 <section id="create-fake-data">
 <h2>Create fake data<a class="headerlink" href="#create-fake-data" title="Link to this heading">¶</a></h2>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rf</span> <span class="o">=</span> <span class="mf">0.04</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rf</span> <span class="o">=</span> <span class="mf">0.04</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">mus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="n">rf</span>
 <span class="n">sigmas</span> <span class="o">=</span> <span class="p">(</span><span class="n">mus</span> <span class="o">-</span> <span class="n">rf</span><span class="p">)</span><span class="o">/</span><span class="mf">0.3</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
@@ -86,7 +86,7 @@
 </section>
 <section id="create-trend-signal-over-the-last-12-months">
 <h2>Create Trend signal over the last 12 months<a class="headerlink" href="#create-trend-signal-over-the-last-12-months" title="Link to this heading">¶</a></h2>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sma</span>  <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">num_days_per_month</span><span class="o">*</span><span class="mi">12</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sma</span>  <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">num_days_per_month</span><span class="o">*</span><span class="mi">12</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pdf</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="n">pdf</span><span class="p">[</span><span class="s1">'foo'</span><span class="p">])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sma</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="n">sma</span><span class="p">[</span><span class="s1">'foo'</span><span class="p">])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -94,7 +94,7 @@
 </div>
 <a class="pynb reference internal image-reference" href="../../_images/Trend_1_5_0.png"><img alt="../../_images/Trend_1_5_0.png" class="pynb" src="../../_images/Trend_1_5_0.png" style="width: 384px; height: 251px;" />
 </a>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#sma with 1 day lag</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#sma with 1 day lag</span>
 <span class="n">sma</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -103,14 +103,15 @@
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataframe</span> <span class="n">tbody</span> <span class="n">tr</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">vertical</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">top</span><span class="p">;</span>
+<span class="p">}</span>
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
+<span class="o">.</span><span class="n">dataframe</span> <span class="n">thead</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">text</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -166,7 +167,8 @@
     </tr>
   </tbody>
 </table>
-</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#sma with 0 day lag</span>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#sma with 0 day lag</span>
 <span class="n">pdf</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">num_days_per_month</span><span class="o">*</span><span class="mi">12</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -175,14 +177,15 @@
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataframe</span> <span class="n">tbody</span> <span class="n">tr</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">vertical</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">top</span><span class="p">;</span>
+<span class="p">}</span>
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
+<span class="o">.</span><span class="n">dataframe</span> <span class="n">thead</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">text</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -238,7 +241,8 @@
     </tr>
   </tbody>
 </table>
-</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># target weights</span>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># target weights</span>
 <span class="n">trend</span> <span class="o">=</span> <span class="n">sma</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="n">trend</span><span class="p">[</span><span class="n">pdf</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="n">trend</span><span class="p">[</span><span class="n">pdf</span> <span class="o">&lt;=</span> <span class="n">sma</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -251,14 +255,15 @@
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataframe</span> <span class="n">tbody</span> <span class="n">tr</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">vertical</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">top</span><span class="p">;</span>
+<span class="p">}</span>
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
+<span class="o">.</span><span class="n">dataframe</span> <span class="n">thead</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">text</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -314,10 +319,12 @@
     </tr>
   </tbody>
 </table>
-</div><p>Compare EW and 1/vol</p>
-<p>Both strategies rebalance daily using trend with 1 day lag and weights
-limited to 40%.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsmom_invvol_strat</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
+</div>
+<p>Compare EW and 1/vol</p>
+<p>Both strategies rebalance daily using trend with 1 day lag and weights limited to 40%.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+
+<span class="n">tsmom_invvol_strat</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span>
     <span class="s1">'tsmom_invvol'</span><span class="p">,</span>
     <span class="p">[</span>
         <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunDaily</span><span class="p">(),</span>
@@ -340,7 +347,7 @@ limited to 40%.</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create and run</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># create and run</span>
 <span class="n">tsmom_invvol_bt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
     <span class="n">tsmom_invvol_strat</span><span class="p">,</span>
     <span class="n">pdf</span><span class="p">,</span>
@@ -354,7 +361,7 @@ limited to 40%.</p>
 <span class="n">tsmom_ew_bt</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
     <span class="n">tsmom_ew_strat</span><span class="p">,</span>
     <span class="n">pdf</span><span class="p">,</span>
-
+    
     <span class="n">initial_capital</span><span class="o">=</span><span class="mf">50000000.0</span><span class="p">,</span>
     <span class="n">commissions</span><span class="o">=</span><span class="k">lambda</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.0021</span><span class="p">),</span>
     <span class="n">integer_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -363,23 +370,24 @@ limited to 40%.</p>
 <span class="n">tsmom_ew_res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tsmom_ew_bt</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="pynb-result highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">tsmom_invvol</span>
- <span class="mi">0</span><span class="o">%</span> <span class="p">[</span><span class="c1">############################# ] 100% | ETA: 00:00:00tsmom_ew</span>
- <span class="mi">0</span><span class="o">%</span> <span class="p">[</span><span class="c1">############################# ] 100% | ETA: 00:00:00</span>
+<div class="pynb-result highlight-text notranslate"><div class="highlight"><pre><span></span>tsmom_invvol
+0% [############################# ] 100% | ETA: 00:00:00tsmom_ew
+0% [############################# ] 100% | ETA: 00:00:00
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tsmom_ew_res</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="n">tsmom_ew_res</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">'EW'</span><span class="p">)</span>
 <span class="n">pdf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
 
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
 </pre></div>
 </div>
 <a class="pynb reference internal image-reference" href="../../_images/Trend_1_12_0.png"><img alt="../../_images/Trend_1_12_0.png" class="pynb" src="../../_images/Trend_1_12_0.png" style="width: 376px; height: 240px;" />
 </a>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsmom_ew_res</span><span class="o">.</span><span class="n">stats</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tsmom_ew_res</span><span class="o">.</span><span class="n">stats</span>
 </pre></div>
 </div>
 <div class="pynb-result">
@@ -387,14 +395,15 @@ limited to 40%.</p>
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataframe</span> <span class="n">tbody</span> <span class="n">tr</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">vertical</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">top</span><span class="p">;</span>
+<span class="p">}</span>
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
+<span class="o">.</span><span class="n">dataframe</span> <span class="n">thead</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">text</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -590,7 +599,11 @@ limited to 40%.</p>
     </tr>
   </tbody>
 </table>
-</div></section>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</section>
 </section>
 
 
@@ -604,7 +617,17 @@ limited to 40%.</p>
             <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">A Simple Strategy Backtest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#modifying-a-strategy">Modifying a Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html">The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">API overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Develop bt</a></li>
+</ul>
+
 
             
             <ul>

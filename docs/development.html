@@ -7,7 +7,7 @@
 
     <title>Develop bt &#8212; bt — Flexible Backtesting for Python</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/klink.css?v=010e5783" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
@@ -60,25 +60,18 @@ make<span class="w"> </span>serve
 </pre></div>
 </div>
 <p>Open <a class="reference external" href="http://localhost:9087">http://localhost:9087</a>. Yardang reads <code class="docutils literal notranslate"><span class="pre">[tool.yardang]</span></code> in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, generates the homepage from <code class="docutils literal notranslate"><span class="pre">README.md</span></code>, and uses the repository root as the Sphinx source directory. Output goes into <code class="docutils literal notranslate"><span class="pre">docs/html</span></code>, using the installed Klink theme. The old Sphinx Makefiles, hand-maintained <code class="docutils literal notranslate"><span class="pre">conf.py</span></code>, vendored theme, and manual <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">pages</span></code> deployment are no longer used.</p>
-<p><code class="docutils literal notranslate"><span class="pre">docs/requirements.txt</span></code> pins released Yardang and Klink packages; no unreleased Yardang changes are required. <code class="docutils literal notranslate"><span class="pre">docs/build.py</span></code> uses Yardang’s configuration generator and Sphinx’s public API to register Klink’s theme path, resolve static assets, configure ffn cross-references, and treat warnings as errors. These small compatibility overrides can be removed as upstream support becomes available.</p>
-<p>Edit the landing page in <code class="docutils literal notranslate"><span class="pre">README.md</span></code> and API reference in <code class="docutils literal notranslate"><span class="pre">docs/source/overview.md</span></code>. Other guides and notebook examples still use their checked-in reStructuredText sources and images; documentation builds do not execute notebooks or fetch market data. After editing notebooks, install Pandoc and regenerate the exports with Klink’s conversion helper:</p>
+<p><code class="docutils literal notranslate"><span class="pre">docs/requirements.txt</span></code> pins released Yardang and Klink packages. Klink 0.1.12 registers its theme automatically and includes Yardang’s hidden top-level navigation in the sidebar. <code class="docutils literal notranslate"><span class="pre">docs/build.py</span></code> uses Yardang’s configuration generator and Sphinx’s public API to resolve static assets, configure ffn cross-references, and treat warnings as errors.</p>
+<p>Edit the landing page in <code class="docutils literal notranslate"><span class="pre">README.md</span></code>, guides in <code class="docutils literal notranslate"><span class="pre">docs/source/*.md</span></code>, and API reference in <code class="docutils literal notranslate"><span class="pre">docs/source/overview.md</span></code>. Keep tutorials, task guides, and API reference distinct. Autodoc directives remain inside MyST <code class="docutils literal notranslate"><span class="pre">eval-rst</span></code> fences so existing RST docstrings and API anchors render correctly, as described in the <a class="reference external" href="https://myst-parser.readthedocs.io/en/stable/faq/index.html#use-sphinx-ext-autodoc-in-markdown-files">MyST autodoc guide</a>.</p>
+<p>Notebook examples use checked-in Markdown exports and images; documentation builds do not execute notebooks or fetch market data. After editing notebooks, regenerate the exports from their saved outputs:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>nbconvert
 <span class="nb">cd</span><span class="w"> </span>docs/source
-python<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import klink; klink.convert_notebooks()'</span>
+jupyter<span class="w"> </span>nbconvert<span class="w"> </span>--to<span class="w"> </span>markdown<span class="w"> </span>--template-file<span class="o">=</span>../notebook.md.j2<span class="w"> </span>--NbConvertApp.output_files_dir<span class="o">=</span>_static<span class="w"> </span>*.ipynb
+python<span class="w"> </span>-m<span class="w"> </span>mdformat<span class="w"> </span>*.md
 </pre></div>
 </div>
-<p>This converts saved notebook outputs without executing cells, copies images into <code class="docutils literal notranslate"><span class="pre">_static</span></code>, and updates image paths and Klink CSS classes. Review and commit the changed notebooks, exports, and images together.</p>
+<p>The export template preserves image paths, retina dimensions, and Klink CSS classes. Pandoc is not required. Review and commit the changed notebooks, exports, and images together.</p>
 <p>Pull requests build documentation and upload an HTML artifact. Successful pushes to <code class="docutils literal notranslate"><span class="pre">master</span></code> also publish to the existing <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch. Local builds never publish.</p>
-</section>
-<section id="continue-the-markdown-migration">
-<h2>Continue the Markdown migration<a class="headerlink" href="#continue-the-markdown-migration" title="Link to this heading">¶</a></h2>
-<p>The first increment adopts Yardang’s README landing page and moves <code class="docutils literal notranslate"><span class="pre">bt.rst</span></code> to <code class="docutils literal notranslate"><span class="pre">overview.md</span></code>. Autodoc directives remain inside MyST <code class="docutils literal notranslate"><span class="pre">eval-rst</span></code> fences so existing RST docstrings and API anchors render correctly, as described in the <a class="reference external" href="https://myst-parser.readthedocs.io/en/stable/faq/index.html#use-sphinx-ext-autodoc-in-markdown-files">MyST autodoc guide</a>. The remaining conversion is separate from the build migration:</p>
-<ol class="arabic simple">
-<li><p>Convert the hand-written installation, algorithm, and tree guides to Markdown, preserving Sphinx cross-references and heading anchors. Keep tutorials, task guides, and API reference distinct.</p></li>
-<li><p>Convert raw reStructuredText cells in <code class="docutils literal notranslate"><span class="pre">intro.ipynb</span></code> and <code class="docutils literal notranslate"><span class="pre">examples-nb.ipynb</span></code> to Markdown before exporting notebooks. Use saved outputs, retain image paths and Klink styling, and replace each RST export with its Markdown equivalent in the same change. Do not leave both formats with the same basename.</p></li>
-<li><p>Convert the examples index and its RST includes to MyST equivalents. Remove the excluded legacy <code class="docutils literal notranslate"><span class="pre">docs/source/index.rst</span></code> once any useful material has been incorporated into the landing page or guides.</p></li>
-</ol>
-<p>For each conversion, run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">docs</span></code> and check navigation, images, API links, and heading links in a browser. Preserve page basenames where possible; maintain <code class="docutils literal notranslate"><span class="pre">[tool.yardang.redirects]</span></code> when paths change. The current redirects preserve legacy page URLs, including <code class="docutils literal notranslate"><span class="pre">bt.html</span></code>, and forward their fragments; renamed headings need explicit compatibility anchors.</p>
+<p>Run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">docs</span></code> after documentation changes and check navigation, images, API links, and heading links in a browser. Preserve page basenames where possible; maintain <code class="docutils literal notranslate"><span class="pre">[tool.yardang.redirects]</span></code> when paths change. The redirects preserve legacy page URLs, including <code class="docutils literal notranslate"><span class="pre">bt.html</span></code>, and forward their fragments; renamed headings need explicit compatibility anchors. <code class="docutils literal notranslate"><span class="pre">docs/source/examples.md</span></code> includes the individual Markdown examples, which also retain their standalone URLs.</p>
 </section>
 <section id="update-the-copier-template">
 <h2>Update the Copier template<a class="headerlink" href="#update-the-copier-template" title="Link to this heading">¶</a></h2>
@@ -104,7 +97,21 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s1">'import
             <a href="../index.html" id="logo" title=bt><img class="logo" src="../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="source/install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/intro.html">A Simple Strategy Backtest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/intro.html#modifying-a-strategy">Modifying a Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/algos.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/tree.html">The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/overview.html">API overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Develop bt</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#build-the-documentation">Build the documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#update-the-copier-template">Update the Copier template</a></li>
+</ul>
+</li>
+</ul>
+
 
             
             <ul>

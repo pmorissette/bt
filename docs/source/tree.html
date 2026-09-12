@@ -7,7 +7,7 @@
 
     <title>The Tree Structure &#8212; bt — Flexible Backtesting for Python</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=010e5783" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -38,13 +38,13 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="the-tree-structure">
+  <section class="tex2jax_ignore mathjax_ignore" id="the-tree-structure">
 <h1>The Tree Structure<a class="headerlink" href="#the-tree-structure" title="Link to this heading">¶</a></h1>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
 <p>In addition to the concept of <a class="reference internal" href="overview.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a> and <a class="reference internal" href="overview.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgoStacks</span></code></a>, a tree structure lies
-at the heart of the framework.  It allows you to mix and match securities and strategies in order to express
-your sophisticated trading ideas.  Here is a very simple diagram to help explain this concept:</p>
+at the heart of the framework. It allows you to mix and match securities and strategies in order to express
+your sophisticated trading ideas. Here is a very simple diagram to help explain this concept:</p>
 <img alt="simple tree structure" class="align-center" src="../../_images/tree1.png" />
 <p>This diagram represents the strategy we tested in the <a class="reference internal" href="intro.html"><span class="doc">overview example</span></a>. A simple <a class="reference internal" href="overview.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">strategy</span></code></a>
 with two children that happen to be <a class="reference internal" href="overview.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">securities</span></code></a>. However, children nodes don’t have to be
@@ -132,24 +132,22 @@ which is useful for building <strong>path-dependent</strong> algos as well as fo
 into the strategy behavior <em>after</em> the backtest has run.</p>
 <p>For more information, see the APIs for <a class="reference internal" href="overview.html#bt.core.Node" title="bt.core.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></a>,
 <a class="reference internal" href="overview.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecurityBase</span></code></a> and <a class="reference internal" href="overview.html#bt.core.StrategyBase" title="bt.core.StrategyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StrategyBase</span></code></a>.</p>
-<dl class="simple">
-<dt>There are two main sub-types of <a class="reference internal" href="overview.html#bt.core.StrategyBase" title="bt.core.StrategyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StrategyBase</span></code></a>:</dt><dd><ul class="simple">
-<li><p><a class="reference internal" href="overview.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a>: Market-value weighted strategy based on
-<a class="reference internal" href="overview.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p></li>
+<p>There are two main sub-types of <a class="reference internal" href="overview.html#bt.core.StrategyBase" title="bt.core.StrategyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StrategyBase</span></code></a>:
+: - <a class="reference internal" href="overview.html#bt.core.Strategy" title="bt.core.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a>: Market-value weighted strategy based on
+<a class="reference internal" href="overview.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p>
+<ul class="simple">
 <li><p><a class="reference internal" href="overview.html#bt.core.FixedIncomeStrategy" title="bt.core.FixedIncomeStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FixedIncomeStrategy</span></code></a>: Notional weighted
 strategy based on <a class="reference internal" href="overview.html#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algos</span></code></a>.</p></li>
 </ul>
-</dd>
-<dt>There are also two main sub-types of <a class="reference internal" href="overview.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecurityBase</span></code></a>:</dt><dd><ul class="simple">
-<li><p><a class="reference internal" href="overview.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a>: Standard security. If used within a
+<p>There are also two main sub-types of <a class="reference internal" href="overview.html#bt.core.SecurityBase" title="bt.core.SecurityBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecurityBase</span></code></a>:
+: - <a class="reference internal" href="overview.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a>: Standard security. If used within a
 <a class="reference internal" href="overview.html#bt.core.FixedIncomeStrategy" title="bt.core.FixedIncomeStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FixedIncomeStrategy</span></code></a>, its notional weight
-is equal to market value. i.e. common stock.</p></li>
+is equal to market value. i.e. common stock.</p>
+<ul class="simple">
 <li><p><a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity" title="bt.core.CouponPayingSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CouponPayingSecurity</span></code></a>: A security that
 pays regular or irregular cashflows, and can have (asymmetric) holding costs.
 i.e. a corporate bond with funding and repo costs, or an unfunded swap.</p></li>
 </ul>
-</dd>
-</dl>
 <p>When using <a class="reference internal" href="overview.html#bt.core.FixedIncomeStrategy" title="bt.core.FixedIncomeStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FixedIncomeStrategy</span></code></a>,
 there are additional security types that are helpful due to the different
 treatment of their notional weight in the portfolio. These have no effect in a standard
@@ -185,7 +183,21 @@ security nodes yourself before passing them to the strategy.</p>
             <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">A Simple Strategy Backtest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#modifying-a-strategy">Modifying a Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html">Algorithms</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Tree Structure</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#types">Types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">API overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Develop bt</a></li>
+</ul>
+
 
             
             <ul>

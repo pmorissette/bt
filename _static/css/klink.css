@@ -2199,14 +2199,6 @@ div.pynb-result table,
 div.pynb-result p {
   margin-left: 20px;
 }
-div.pynb-result .highlight {
-  background: inherit;
-  border: none;
-}
-div.pynb-result .highlight pre {
-  background: inherit;
-  border: none;
-}
 div#searchbox {
   padding-top: 10px;
 }

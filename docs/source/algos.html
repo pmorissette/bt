@@ -7,7 +7,7 @@
 
     <title>Algorithms &#8212; bt — Flexible Backtesting for Python</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=010e5783" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -38,7 +38,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="algorithms">
+  <section class="tex2jax_ignore mathjax_ignore" id="algorithms">
 <h1>Algorithms<a class="headerlink" href="#algorithms" title="Link to this heading">¶</a></h1>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
@@ -59,7 +59,7 @@ you can have an Algo that checks if the month has changed (such as
 <p>An <a class="reference internal" href="overview.html#bt.core.AlgoStack" title="bt.core.AlgoStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgoStack</span></code></a> is a class that groups together many
 Algos and runs them one after another as long as each Algo returns True. As soon
 as an Algo returns False, the AlgoStack stops its execution and returns False
-(an AlgoStack is an Algo after all).  This allows us to combine different Algos
+(an AlgoStack is an Algo after all). This allows us to combine different Algos
 together and control the flow of execution with the Algo return value. Many
 AlgoStacks can they themselves be included into another AlgoStack should the
 need arise.</p>
@@ -112,15 +112,14 @@ risk/exposure calculation step, one would do this by implementing specific Algos
 for this purpose. These could be used either before weighting
 (for risk-based portfolio construction) or after
 (for reporting). See, e.g. <a class="reference internal" href="overview.html#bt.algos.UpdateRisk" title="bt.algos.UpdateRisk"><code class="xref py py-class docutils literal notranslate"><span class="pre">UpdateRisk</span></code></a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<div class="\{note} docutils">
 <p>To preserve maximal flexibility, there
 are currently no checks to make sure the AlgoStack is valid. Therefore, it is up
 to the user and creator of Algos to make sure the requirements and side effects
 are well documented and properly used (by the way, this may not be a great way
 to go about this problem. If you have a better idea, please let me know!).</p>
 <p>Developers should add a section in the docstring that outlines
-the “sets” and the “requires”. See the doctrings of
+the “sets” and the “requires”. See the docstrings of
 <a class="reference internal" href="overview.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><code class="xref py py-class docutils literal notranslate"><span class="pre">bt.algos.WeighEqually</span></code></a> for an example.</p>
 </div>
 </section>
@@ -159,7 +158,7 @@ implement them as a basic function that takes one argument - the Strategy:</p>
 <h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
 <section id="re-usability">
 <h3>Re-usability<a class="headerlink" href="#re-usability" title="Link to this heading">¶</a></h3>
-<p>Recall that Algos should be re-usable across different backtests (including
+<p>Recall that Algos should be reusable across different backtests (including
 backtests on different underlying security universes or different time ranges),
 and that a Backtest is the logical combination of the strategy and the data.
 However, there are cases when the Algo needs to use some extra data that
@@ -193,7 +192,7 @@ data, and to instantiate the backtest with this named data:</p>
 </pre></div>
 </div>
 <p>Note that some additional data keys are used by the framework itself to support
-additional functionality (i.e.  <code class="docutils literal notranslate"><span class="pre">bidoffer</span></code>, <code class="docutils literal notranslate"><span class="pre">coupon</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_long</span></code> and
+additional functionality (i.e. <code class="docutils literal notranslate"><span class="pre">bidoffer</span></code>, <code class="docutils literal notranslate"><span class="pre">coupon</span></code>, <code class="docutils literal notranslate"><span class="pre">cost_long</span></code> and
 <code class="docutils literal notranslate"><span class="pre">cost_short</span></code>). These are documented in the <code class="docutils literal notranslate"><span class="pre">setup</span></code> functions of
 <a class="reference internal" href="overview.html#bt.core.Security" title="bt.core.Security"><code class="xref py py-class docutils literal notranslate"><span class="pre">Security</span></code></a> and
 <a class="reference internal" href="overview.html#bt.core.CouponPayingSecurity" title="bt.core.CouponPayingSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CouponPayingSecurity</span></code></a>.</p>
@@ -262,7 +261,23 @@ can be added by placing those algos at the head of the relevant stack.</p>
             <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">A Simple Strategy Backtest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#modifying-a-strategy">Modifying a Strategy</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-passing">Data Passing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html">The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">API overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Develop bt</a></li>
+</ul>
+
 
             
             <ul>

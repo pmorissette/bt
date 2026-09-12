@@ -7,7 +7,7 @@
 
     <title>Buy and Hold Strategy &#8212; bt — Flexible Backtesting for Python</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=010e5783" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -36,21 +36,21 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="buy-and-hold-strategy">
+  <section class="tex2jax_ignore mathjax_ignore" id="buy-and-hold-strategy">
 <h1>Buy and Hold Strategy<a class="headerlink" href="#buy-and-hold-strategy" title="Link to this heading">¶</a></h1>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ffn</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bt</span>
 
-<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
 </pre></div>
 </div>
 <section id="create-fake-index-data">
 <h2>Create Fake Index Data<a class="headerlink" href="#create-fake-index-data" title="Link to this heading">¶</a></h2>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'foo'</span><span class="p">,</span><span class="s1">'bar'</span><span class="p">,</span><span class="s1">'rf'</span><span class="p">]</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'foo'</span><span class="p">,</span><span class="s1">'bar'</span><span class="p">,</span><span class="s1">'rf'</span><span class="p">]</span>
 <span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">'2017-01-01'</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s1">'2017-12-31'</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">BDay</span><span class="p">())</span>
 <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span>
 <span class="n">rdf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
@@ -73,7 +73,7 @@
 </section>
 <section id="build-strategy">
 <h2>Build Strategy<a class="headerlink" href="#build-strategy" title="Link to this heading">¶</a></h2>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># algo to fire on the beginning of every month and to run on the first date</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># algo to fire on the beginning of every month and to run on the first date</span>
 <span class="n">runMonthlyAlgo</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">RunMonthly</span><span class="p">(</span>
     <span class="n">run_on_first_date</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
@@ -102,9 +102,8 @@
 </section>
 <section id="run-backtest">
 <h2>Run Backtest<a class="headerlink" href="#run-backtest" title="Link to this heading">¶</a></h2>
-<p>Note: The logic of the strategy is seperate from the data used in the
-backtest.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set integer_positions=False when positions are not required to be integers(round numbers)</span>
+<p>Note: The logic of the strategy is separate from the data used in the backtest.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># set integer_positions=False when positions are not required to be integers(round numbers)</span>
 <span class="n">backtest</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span>
     <span class="n">strat</span><span class="p">,</span>
     <span class="n">pdf</span><span class="p">,</span>
@@ -114,7 +113,7 @@ backtest.</p>
 <span class="n">res</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">backtest</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">stats</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">stats</span>
 </pre></div>
 </div>
 <div class="pynb-result">
@@ -122,14 +121,15 @@ backtest.</p>
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataframe</span> <span class="n">tbody</span> <span class="n">tr</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">vertical</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">top</span><span class="p">;</span>
+<span class="p">}</span>
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
+<span class="o">.</span><span class="n">dataframe</span> <span class="n">thead</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">text</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -325,7 +325,8 @@ backtest.</p>
     </tr>
   </tbody>
 </table>
-</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 <div class="pynb-result">
@@ -333,14 +334,15 @@ backtest.</p>
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataframe</span> <span class="n">tbody</span> <span class="n">tr</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">vertical</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">top</span><span class="p">;</span>
+<span class="p">}</span>
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
+<span class="o">.</span><span class="n">dataframe</span> <span class="n">thead</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">text</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -372,13 +374,14 @@ backtest.</p>
     </tr>
   </tbody>
 </table>
-</div><div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_security_weights</span><span class="p">()</span>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">plot_security_weights</span><span class="p">()</span>
 </pre></div>
 </div>
 <a class="pynb reference internal image-reference" href="../../_images/Buy_and_hold_10_0.png"><img alt="../../_images/Buy_and_hold_10_0.png" class="pynb" src="../../_images/Buy_and_hold_10_0.png" style="width: 876px; height: 297px;" />
 </a>
 <p>Strategy value over time</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">performanceStats</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">'static'</span><span class="p">]</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">performanceStats</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">'static'</span><span class="p">]</span>
 <span class="c1">#performance stats is an ffn object</span>
 <span class="n">res</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
@@ -386,15 +389,14 @@ backtest.</p>
 <a class="pynb reference internal image-reference" href="../../_images/Buy_and_hold_12_0.png"><img alt="../../_images/Buy_and_hold_12_0.png" class="pynb" src="../../_images/Buy_and_hold_12_0.png" style="width: 380px; height: 259px;" />
 </a>
 <p>Strategy Outlays</p>
-<p>Outlays are the total dollar amount spent(gained) by a purchase(sale) of
-securities.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">outlays</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+<p>Outlays are the total dollar amount spent(gained) by a purchase(sale) of securities.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">outlays</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
 <a class="pynb reference internal image-reference" href="../../_images/Buy_and_hold_14_0.png"><img alt="../../_images/Buy_and_hold_14_0.png" class="pynb" src="../../_images/Buy_and_hold_14_0.png" style="width: 395px; height: 248px;" />
 </a>
 <p>You can get the change in number of shares purchased a</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">security_names</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">outlays</span><span class="o">.</span><span class="n">columns</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">security_names</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">outlays</span><span class="o">.</span><span class="n">columns</span>
 
 
 <span class="n">res</span><span class="o">.</span><span class="n">backtest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">outlays</span><span class="o">/</span><span class="n">pdf</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="n">security_names</span><span class="p">]</span>
@@ -407,14 +409,15 @@ securities.</p>
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataframe</span> <span class="n">tbody</span> <span class="n">tr</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">vertical</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">top</span><span class="p">;</span>
+<span class="p">}</span>
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
+<span class="o">.</span><span class="n">dataframe</span> <span class="n">thead</span> <span class="n">th</span> <span class="p">{</span>
+    <span class="n">text</span><span class="o">-</span><span class="n">align</span><span class="p">:</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -483,7 +486,11 @@ securities.</p>
   </tbody>
 </table>
 <p>261 rows × 2 columns</p>
-</div></section>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</section>
 </section>
 
 
@@ -497,7 +504,17 @@ securities.</p>
             <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">A Simple Strategy Backtest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#modifying-a-strategy">Modifying a Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html">The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">API overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Develop bt</a></li>
+</ul>
+
 
             
             <ul>

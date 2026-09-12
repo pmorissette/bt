@@ -7,7 +7,7 @@
 
     <title>Nonlinear Cost Models: Almgren-Chriss vs. Default &#8212; bt — Flexible Backtesting for Python</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=f4590041" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=010e5783" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -38,7 +38,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="nonlinear-cost-models-almgren-chriss-vs-default">
+  <section class="tex2jax_ignore mathjax_ignore" id="nonlinear-cost-models-almgren-chriss-vs-default">
 <h1>Nonlinear Cost Models: Almgren-Chriss vs. Default<a class="headerlink" href="#nonlinear-cost-models-almgren-chriss-vs-default" title="Link to this heading">¶</a></h1>
 <p>By default <a class="reference internal" href="overview.html#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">bt.Backtest</span></code></a> charges no transaction
 cost, and even when the legacy <code class="docutils literal notranslate"><span class="pre">commissions=fn(q,</span> <span class="pre">p)</span></code> callable is supplied
@@ -63,9 +63,11 @@ visible. The design of the cost-model interface follows Abbade &amp; Costa (2026
 <a class="footnote-reference brackets" href="#abbadecosta2026" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
 <p>The cost decomposition (Almgren-Chriss):</p>
 <div class="math notranslate nohighlight">
-\[\text{cost} = \underbrace{\tfrac{1}{2} \alpha\, \sigma\, \tfrac{|q|}{V}\, |q|\, P}_{\text{permanent (triangular)}}
+\[
+\text{cost} = \underbrace{\tfrac{1}{2} \alpha\, \sigma\, \tfrac{|q|}{V}\, |q|\, P}_{\text{permanent (triangular)}}
             + \underbrace{\epsilon\, |q|\, P}_{\text{linear: spread / fees}}
-            + \underbrace{\beta\, \sigma\, \tfrac{|q|}{V}\, |q|\, P}_{\text{depth depletion}}\]</div>
+            + \underbrace{\beta\, \sigma\, \tfrac{|q|}{V}\, |q|\, P}_{\text{depth depletion}}
+\]</div>
 <p>with defaults <code class="docutils literal notranslate"><span class="pre">alpha=1.0</span></code>, <code class="docutils literal notranslate"><span class="pre">beta=1.0</span></code>, <code class="docutils literal notranslate"><span class="pre">epsilon=0.0005</span></code> (5 bps
 half-spread, typical for liquid US large-caps).</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -156,15 +158,15 @@ volume and volatility frames the model needs.</p>
 <span class="n">result</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Stat</span>                 <span class="n">baseline</span> <span class="p">(</span><span class="n">no</span> <span class="n">cost</span><span class="p">)</span>    <span class="n">realistic</span> <span class="p">(</span><span class="n">AC</span><span class="p">)</span>
-<span class="o">-------------------</span>  <span class="o">--------------------</span>  <span class="o">----------------</span>
-<span class="n">Start</span>                <span class="mi">2017</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span>            <span class="mi">2017</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span>
-<span class="n">End</span>                  <span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">30</span>            <span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">30</span>
-<span class="n">Risk</span><span class="o">-</span><span class="n">free</span> <span class="n">rate</span>       <span class="mf">0.00</span><span class="o">%</span>                 <span class="mf">0.00</span><span class="o">%</span>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Stat                 baseline (no cost)    realistic (AC)
+-------------------  --------------------  ----------------
+Start                2017-12-31            2017-12-31
+End                  2022-12-30            2022-12-30
+Risk-free rate       0.00%                 0.00%
 
-<span class="n">Total</span> <span class="n">Return</span>         <span class="mf">26.53</span><span class="o">%</span>                <span class="mf">21.59</span><span class="o">%</span>
-<span class="n">Daily</span> <span class="n">Sharpe</span>         <span class="mf">0.51</span>                  <span class="mf">0.43</span>
-<span class="n">Daily</span> <span class="n">Sortino</span>        <span class="mf">0.76</span>                  <span class="o">...</span>
+Total Return         26.53%                21.59%
+Daily Sharpe         0.51                  0.43
+Daily Sortino        0.76                  ...
 </pre></div>
 </div>
 </section>
@@ -206,7 +208,7 @@ realistic expectations for a large-cap book.</p>
               <span class="n">summarise</span><span class="p">(</span><span class="n">realistic</span><span class="p">,</span> <span class="s1">'realistic'</span><span class="p">)])</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">'strategy'</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>           final equity ($M)  total return (%)  gross traded ($B)  total fees ($M)  fees / traded (bps)
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>           final equity ($M)  total return (%)  gross traded ($B)  total fees ($M)  fees / traded (bps)
 strategy
 baseline         1265.262743         26.526274          35.432102         0.000000             0.000000
 realistic        1215.902289         21.590229          34.717752        46.394005            13.363194
@@ -264,14 +266,6 @@ path bit-for-bit.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
-<aside class="footnote-list brackets">
-<aside class="footnote brackets" id="abbadecosta2026" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
-<p>Abbade, L. R., &amp; Costa, A. H. R. (2026). <em>Realistic
-Market Impact Modeling for Reinforcement Learning Trading
-Environments.</em> arXiv:2603.29086. https://arxiv.org/abs/2603.29086</p>
-</aside>
-</aside>
 <ul class="simple">
 <li><p>Almgren, R., &amp; Chriss, N. (2001). Optimal execution of portfolio
 transactions. <em>Journal of Risk</em> 3(2), 5-39.</p></li>
@@ -284,6 +278,15 @@ Nature of Liquidity in Financial Markets. <em>Physical Review X</em> 1(2),
 </ul>
 </section>
 </section>
+<hr class="footnotes docutils" />
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="abbadecosta2026" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>Abbade, L. R., &amp; Costa, A. H. R. (2026). <em>Realistic
+Market Impact Modeling for Reinforcement Learning Trading
+Environments.</em> arXiv:2603.29086. https://arxiv.org/abs/2603.29086</p>
+</aside>
+</aside>
 
 
             <div class="clearer"></div>
@@ -296,7 +299,17 @@ Nature of Liquidity in Financial Markets. <em>Physical Review X</em> 1(2),
             <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
-            
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">A Simple Strategy Backtest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#modifying-a-strategy">Modifying a Strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algos.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tree.html">The Tree Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">API overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Develop bt</a></li>
+</ul>
+
 
             
             <ul>
