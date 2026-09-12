@@ -369,9 +369,10 @@ class RunAfterDays(Algo):
 
 class RunIfOutOfBounds(Algo):
     """
-    This algo returns true if any of the target weights deviate by an amount greater
-    than tolerance. For example, it will be run if the tolerance is set to 0.5 and
-    a security grows from a target weight of 0.2 to greater than 0.3.
+    This algo returns true if any current or target weight deviates by an amount
+    greater than tolerance. For example, it will be run if the tolerance is set to
+    0.5 and a security grows from a target weight of 0.2 to greater than 0.3.
+    A missing current or target weight is treated as zero.
     A zero target weight is out of bounds whenever the current weight is nonzero.
 
     A strategy where rebalancing is performed quarterly or whenever any
@@ -397,16 +398,17 @@ class RunIfOutOfBounds(Algo):
 
         targets = target.temp["weights"]
 
-        for cname in target.children:
-            if cname in targets:
-                c = target.children[cname]
-                if targets[cname] == 0:
-                    if c.weight != 0:
-                        return True
-                    continue
-                deviation = abs((c.weight - targets[cname]) / targets[cname])
-                if deviation > self.tolerance:
+        # Rebalance treats names missing from either side as zero weight.
+        for cname in target.children.keys() | targets.keys():
+            current_weight = target.children[cname].weight if cname in target.children else 0.0
+            target_weight = targets.get(cname, 0.0)
+            if target_weight == 0:
+                if current_weight != 0:
                     return True
+                continue
+            deviation = (current_weight - target_weight) / target_weight
+            if deviation > self.tolerance or deviation < -self.tolerance:
+                return True
 
         if "cash" in target.temp:
             cash_deviation = abs((target.capital - targets.value) / targets.value - target.temp["cash"])
