@@ -1160,7 +1160,8 @@ class WeighInvVol(Algo):
     Sets the target weights based on ffn's calc_inv_vol_weights. This
     is a commonly used technique for risk parity portfolios. The least
     volatile elements receive the highest weight under this scheme. Weights
-    are proportional to the inverse of their volatility.
+    are proportional to the inverse of their volatility. Each asset's
+    volatility estimate uses its own available returns.
 
     Args:
         * lookback (DateOffset): lookback period for estimating volatility
@@ -1191,10 +1192,12 @@ class WeighInvVol(Algo):
 
         t0 = target.now - self.lag
         prc = target.universe.loc[t0 - self.lookback : t0, selected]
-        returns = prc.to_returns().dropna()
+        returns = prc.to_returns()
         # Explicit axis=0 to compute per-column std and avoid FutureWarning
         # from pandas (axis=None will reduce over both axes in a future version)
-        vol = 1.0 / returns.std(axis=0, ddof=1)
+        # pandas 1.x reduces nullable columns to an object Series containing pd.NA.
+        # Normalize missing values before NumPy's isinf check.
+        vol = (1.0 / returns.std(axis=0, ddof=1)).fillna(np.nan).astype(float)
         vol[np.isinf(vol)] = np.nan
         tw = vol / vol.sum()
         target.temp["weights"] = tw.dropna()
