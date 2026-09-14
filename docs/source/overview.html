@@ -1407,7 +1407,8 @@ selected.</p>
 <p>Sets the target weights based on ffn’s calc_inv_vol_weights. This
 is a commonly used technique for risk parity portfolios. The least
 volatile elements receive the highest weight under this scheme. Weights
-are proportional to the inverse of their volatility.</p>
+are proportional to the inverse of their volatility. Each asset’s
+volatility estimate uses its own available returns.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>lookback</strong> (<em>*</em>) – lookback period for estimating volatility</p>

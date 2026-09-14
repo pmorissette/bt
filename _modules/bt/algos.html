@@ -1724,7 +1724,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Sets the target weights based on ffn's calc_inv_vol_weights. This</span>
 <span class="sd">    is a commonly used technique for risk parity portfolios. The least</span>
 <span class="sd">    volatile elements receive the highest weight under this scheme. Weights</span>
-<span class="sd">    are proportional to the inverse of their volatility.</span>
+<span class="sd">    are proportional to the inverse of their volatility. Each asset's</span>
+<span class="sd">    volatility estimate uses its own available returns.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * lookback (DateOffset): lookback period for estimating volatility</span>
@@ -1755,10 +1756,12 @@ window.runMermaid = runMermaid;</script>
 
         <span class="n">t0</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lag</span>
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="p">:</span> <span class="n">t0</span><span class="p">,</span> <span class="n">selected</span><span class="p">]</span>
-        <span class="n">returns</span> <span class="o">=</span> <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="n">returns</span> <span class="o">=</span> <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span>
         <span class="c1"># Explicit axis=0 to compute per-column std and avoid FutureWarning</span>
         <span class="c1"># from pandas (axis=None will reduce over both axes in a future version)</span>
-        <span class="n">vol</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">returns</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># pandas 1.x reduces nullable columns to an object Series containing pd.NA.</span>
+        <span class="c1"># Normalize missing values before NumPy's isinf check.</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">returns</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
         <span class="n">vol</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">vol</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">tw</span> <span class="o">=</span> <span class="n">vol</span> <span class="o">/</span> <span class="n">vol</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
