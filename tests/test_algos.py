@@ -432,6 +432,104 @@ def test_run_if_out_of_bounds():
     assert algo(s)
 
 
+@pytest.mark.parametrize(
+    ("initial_targets", "next_targets", "current_weight", "target_weight", "should_run", "expected_position"),
+    [
+        pytest.param({}, {"asset": 1.0}, 0.0, 1.0, True, 10.0, id="target-only-dict"),
+        pytest.param({}, pd.Series({"asset": 1.0}), 0.0, 1.0, True, 10.0, id="target-only-series"),
+        pytest.param({"asset": 1.0}, {}, 1.0, 0.0, True, 0.0, id="current-only"),
+        pytest.param({}, {"asset": 0.0}, 0.0, 0.0, False, 0.0, id="target-only-zero"),
+    ],
+)
+def test_run_if_out_of_bounds_checks_names_on_either_side(
+    initial_targets: object,
+    next_targets: object,
+    current_weight: float,
+    target_weight: float,
+    should_run: bool,
+    expected_position: float,
+):
+    algo = algos.RunIfOutOfBounds(0.5)
+    rebalance = algos.Rebalance()
+    date = pd.Timestamp("2020-01-01")
+    strategy = bt.Strategy("s")
+    strategy.setup(pd.DataFrame({"asset": [100.0]}, index=[date]))
+    strategy.adjust(1000.0)
+    strategy.update(date)
+
+    # Establish an optional current position before checking the next sparse target.
+    strategy.temp["weights"] = initial_targets
+    assert rebalance(strategy)
+    strategy.temp["weights"] = next_targets
+
+    # Missing names have weight zero; apply the documented deviation rules independently.
+    if target_weight == 0:
+        expected_decision = current_weight != 0
+    else:
+        expected_decision = abs((current_weight - target_weight) / target_weight) > 0.5
+    assert bool(expected_decision) is should_run
+    child_exists_before = "asset" in strategy.children
+    assert algo(strategy) is should_run
+    assert ("asset" in strategy.children) is child_exists_before
+    assert strategy.temp["weights"] is next_targets
+
+    # Rebalance provides the downstream position oracle for each sparse-target direction.
+    assert rebalance(strategy)
+    position = strategy["asset"].position if "asset" in strategy.children else 0.0
+    assert position == expected_position
+
+
+@pytest.mark.parametrize("hedge_type", [bt.HedgeSecurity, bt.CouponPayingHedgeSecurity])
+def test_run_if_out_of_bounds_preserves_omitted_zero_weight_hedges(hedge_type: type[bt.core.SecurityBase]):
+    date = pd.Timestamp("2020-01-01")
+    prices = pd.DataFrame({"hedge": [100.0]}, index=[date])
+    strategy = bt.FixedIncomeStrategy("s", children=[hedge_type("hedge")])
+    strategy.setup(prices, coupons=prices * 0.0)
+    strategy.update(date)
+    strategy["hedge"].transact(-2)
+    strategy.update(date)
+    assert strategy["hedge"].weight == 0.0
+
+    # An omitted zero-notional hedge is not an economic weight deviation or a close request.
+    strategy.temp["weights"] = {}
+    assert not algos.RunIfOutOfBounds(0.5)(strategy)
+    assert algos.Rebalance()(strategy)
+    assert strategy["hedge"].position == -2
+
+
+def test_run_if_out_of_bounds_allows_sparse_target_rotation():
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame(100.0, index=dates, columns=["A", "B"])
+    targets = pd.DataFrame({"A": [np.nan, 1.0], "B": [1.0, np.nan]}, index=dates)
+
+    def make_backtest(name: str, gate: list[bt.Algo]) -> bt.Backtest:
+        strategy = bt.Strategy(
+            name,
+            [algos.WeighTarget("targets"), *gate, algos.Rebalance()],
+        )
+        return bt.Backtest(
+            strategy,
+            prices,
+            initial_capital=1000.0,
+            additional_data={"targets": targets},
+            progress_bar=False,
+        )
+
+    gated = make_backtest("gated", [algos.Or([algos.RunOnce(), algos.RunIfOutOfBounds(0.5)])])
+    control = make_backtest("control", [])
+    bt.run(gated, control)
+
+    # At a constant price, 1,000 capital independently implies a complete 10-share rotation.
+    for backtest in (gated, control):
+        asset_a = backtest.strategy["A"]
+        asset_b = backtest.strategy["B"]
+        assert asset_b.positions.loc[dates[0]] == 10.0
+        assert asset_a.position == 10.0
+        assert asset_b.position == 0.0
+        assert asset_a.outlays.loc[dates[1]] == 1000.0
+        assert asset_b.outlays.loc[dates[1]] == -1000.0
+
+
 def test_run_after_date():
     target = mock.MagicMock()
     target.now = pd.to_datetime("2010-01-01")
