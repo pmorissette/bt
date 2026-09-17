@@ -2296,9 +2296,11 @@ one of the columns.</p></li>
 <li><p><strong>coupons</strong> (<em>*</em>) – Manatory DataFrame of coupon/carry amount with
 the same schema as universe.</p></li>
 <li><p><strong>cost_long</strong> (<em>*</em>) – Optional DataFrame containing the cost of
-holding a unit long position in the security (i.e. funding).</p></li>
+holding a unit long position in the security (i.e. funding), with
+the same index as universe.</p></li>
 <li><p><strong>cost_short</strong> (<em>*</em>) – Optional DataFrame containing the cost of
-holding a unit short position in the security (i.e. repo).</p></li>
+holding a unit short position in the security (i.e. repo), with
+the same index as universe.</p></li>
 <li><p><strong>kwargs</strong> (<em>*</em>) – Dictionary of additional information needed by
 the strategy. In particular, often takes the form of a DataFrame
 of security level information (i.e. signals, risk, etc).</p></li>
@@ -3648,8 +3650,6 @@ Use this data to determine strategy logic.</p>
       </div>
         <aside class="klink-sidebar">
 
-            
-            <a href="../../index.html" id="logo" title=bt><img class="logo" src="../../_static/logo.png" width="150px" height="150px" title=bt /></a>
             
             
             <ul class="current">
