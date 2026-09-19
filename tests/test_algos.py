@@ -1340,6 +1340,145 @@ def test_select_has_data_preselected():
     assert len(selected) == 0
 
 
+def _selector_with_independent_price_flags(selector_name, columns):
+    if selector_name == "SelectAll":
+        return algos.SelectAll(include_no_data=True, include_negative=False)
+    if selector_name == "SelectThese":
+        return algos.SelectThese(
+            columns, include_no_data=True, include_negative=False
+        )
+    if selector_name == "SelectHasData":
+        return algos.SelectHasData(
+            lookback=pd.DateOffset(days=1),
+            min_count=1,
+            include_no_data=True,
+            include_negative=False,
+        )
+    if selector_name == "SelectWhere":
+        return algos.SelectWhere(
+            "signal", include_no_data=True, include_negative=False
+        )
+    if selector_name == "SelectRandomly":
+        return algos.SelectRandomly(
+            n=None, include_no_data=True, include_negative=False
+        )
+    if selector_name == "ResolveOnTheRun":
+        return algos.ResolveOnTheRun(
+            "on_the_run", include_no_data=True, include_negative=False
+        )
+    raise ValueError(f"Unknown selector: {selector_name}")
+
+
+@pytest.mark.parametrize(
+    "selector_name",
+    [
+        "SelectAll",
+        "SelectThese",
+        "SelectHasData",
+        "SelectWhere",
+        "SelectRandomly",
+        "ResolveOnTheRun",
+    ],
+)
+def test_selector_filters_treat_include_no_data_and_include_negative_independently(
+    selector_name,
+):
+    # Give every selector enough history while crossing missing and non-positive prices.
+    dts = pd.date_range("2010-01-01", periods=2)
+    columns = ["missing", "negative", "zero", "live"]
+    data = pd.DataFrame(1.0, index=dts, columns=columns)
+    data.loc[dts[-1]] = [np.nan, -1.0, 0.0, 1.0]
+    signal = pd.DataFrame(True, index=dts, columns=columns)
+    aliases = [f"alias_{column}" for column in columns]
+    on_the_run = pd.DataFrame([columns, columns], index=dts, columns=aliases)
+
+    strategy = bt.Strategy("strategy")
+    strategy.setup(data, signal=signal, on_the_run=on_the_run)
+    strategy.update(dts[-1])
+    if selector_name == "ResolveOnTheRun":
+        strategy.temp["selected"] = aliases
+
+    selector = _selector_with_independent_price_flags(selector_name, columns)
+    assert selector(strategy)
+    assert list(strategy.temp["selected"]) == ["missing", "live"]
+
+
+@pytest.mark.parametrize(
+    "include_no_data, include_negative, expected",
+    [
+        (False, False, ["live"]),
+        (False, True, ["negative", "zero", "live"]),
+        (True, False, ["missing", "live"]),
+        (True, True, ["missing", "negative", "zero", "live"]),
+    ],
+)
+def test_select_all_include_no_data_and_include_negative_matrix(
+    include_no_data, include_negative, expected
+):
+    # The expected labels are the independent truth table for the two public flags.
+    dt = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame(
+        [[np.nan, -1.0, 0.0, 1.0]],
+        index=[dt],
+        columns=["missing", "negative", "zero", "live"],
+    )
+    strategy = bt.Strategy("strategy")
+    strategy.setup(data)
+    strategy.update(dt)
+
+    selector = algos.SelectAll(
+        include_no_data=include_no_data, include_negative=include_negative
+    )
+    assert selector(strategy)
+    assert list(strategy.temp["selected"]) == expected
+
+
+@pytest.mark.parametrize("adverse_price", [-1.0, 0.0])
+def test_selector_price_flags_protect_rebalance(adverse_price):
+    # A non-positive candidate must be removed before equal weighting and allocation.
+    data = pd.DataFrame(
+        [[adverse_price, 1.0]],
+        index=[pd.Timestamp("2010-01-01")],
+        columns=["adverse", "live"],
+    )
+    strategy = bt.Strategy(
+        "strategy",
+        [
+            algos.SelectThese(
+                ["adverse", "live"],
+                include_no_data=True,
+                include_negative=False,
+            ),
+            algos.WeighEqually(),
+            algos.Rebalance(),
+        ],
+    )
+    backtest = bt.Backtest(strategy, data, initial_capital=10000.0)
+
+    bt.run(backtest)
+
+    assert "adverse" not in backtest.strategy.children
+    assert backtest.strategy["live"].position == pytest.approx(10000.0)
+
+
+def test_selector_price_flags_preserve_on_the_run_aliases():
+    # The documented fixed-income stack selects an absent alias before resolving it.
+    dt = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame([[1.0]], index=[dt], columns=["bond"])
+    on_the_run = pd.DataFrame([["bond"]], index=[dt], columns=["alias"])
+    strategy = bt.Strategy("strategy")
+    strategy.setup(data, on_the_run=on_the_run)
+    strategy.update(dt)
+
+    stack = bt.AlgoStack(
+        algos.SelectThese(["alias"], include_no_data=True),
+        algos.ResolveOnTheRun("on_the_run"),
+    )
+
+    assert stack(strategy)
+    assert strategy.temp["selected"] == ["bond"]
+
+
 @mock.patch("ffn.calc_erc_weights")
 def test_weigh_erc(mock_erc):
     algo = algos.WeighERC(lookback=pd.DateOffset(days=5))
