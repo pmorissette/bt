@@ -457,6 +457,17 @@ class RunEveryNPeriods(Algo):
                 return False
 
 
+def _select_by_price(prices, candidates, include_no_data, include_negative):
+    """Return labels allowed by the independent data and price-sign flags."""
+    if include_no_data:
+        prices = prices.reindex(candidates)
+    else:
+        prices = prices.loc[candidates].dropna()
+    if not include_negative:
+        prices = prices[prices.isna() | (prices > 0)]
+    return list(prices.index)
+
+
 class SelectAll(Algo):
     """
     Sets temp['selected'] with all securities (based on universe).
@@ -480,14 +491,16 @@ class SelectAll(Algo):
         self.include_negative = include_negative
 
     def __call__(self, target):
-        if self.include_no_data:
+        if self.include_no_data and self.include_negative:
             target.temp["selected"] = target.universe.columns
         else:
-            universe = target.universe.loc[target.now].dropna()
-            if self.include_negative:
-                target.temp["selected"] = list(universe.index)
-            else:
-                target.temp["selected"] = list(universe[universe > 0].index)
+            prices = target.universe.loc[target.now]
+            target.temp["selected"] = _select_by_price(
+                prices,
+                target.universe.columns,
+                self.include_no_data,
+                self.include_negative,
+            )
         return True
 
 
@@ -513,14 +526,11 @@ class SelectThese(Algo):
         self.include_negative = include_negative
 
     def __call__(self, target):
-        if self.include_no_data:
+        if self.include_no_data and self.include_negative:
             target.temp["selected"] = self.tickers
         else:
-            universe = target.universe.loc[target.now, self.tickers].dropna()
-            if self.include_negative:
-                target.temp["selected"] = list(universe.index)
-            else:
-                target.temp["selected"] = list(universe[universe > 0].index)
+            prices = target.universe.loc[target.now]
+            target.temp["selected"] = _select_by_price(prices, self.tickers, self.include_no_data, self.include_negative)
         return True
 
 
@@ -584,11 +594,8 @@ class SelectHasData(Algo):
         filt = target.universe.loc[target.now - self.lookback :, selected]
         cnt = filt.count()
         cnt = cnt[cnt >= self.min_count]
-        if not self.include_no_data:
-            cnt = cnt[~target.universe.loc[target.now, selected].isnull()]
-            if not self.include_negative:
-                cnt = cnt[target.universe.loc[target.now, selected] > 0]
-        target.temp["selected"] = list(cnt.index)
+        prices = target.universe.loc[target.now]
+        target.temp["selected"] = _select_by_price(prices, cnt.index, self.include_no_data, self.include_negative)
         return True
 
 
@@ -756,12 +763,8 @@ class SelectWhere(Algo):
             # selected = sig.index[sig]
             selected = sig[sig == True].index
             # save as list
-            if not self.include_no_data:
-                universe = target.universe.loc[target.now, list(selected)].dropna()
-                if self.include_negative:
-                    selected = list(universe.index)
-                else:
-                    selected = list(universe[universe > 0].index)
+            prices = target.universe.loc[target.now]
+            selected = _select_by_price(prices, selected, self.include_no_data, self.include_negative)
             target.temp["selected"] = list(selected)
             return True
 
@@ -813,12 +816,9 @@ class SelectRandomly(AlgoStack):
         else:
             sel = list(target.universe.columns)
 
-        if not self.include_no_data:
-            universe = target.universe.loc[target.now, sel].dropna()
-            if self.include_negative:
-                sel = list(universe.index)
-            else:
-                sel = list(universe[universe > 0].index)
+        if not (self.include_no_data and self.include_negative):
+            prices = target.universe.loc[target.now]
+            sel = _select_by_price(prices, sel, self.include_no_data, self.include_negative)
 
         if self.n is not None:
             n = min(len(sel), self.n)
@@ -890,12 +890,8 @@ class ResolveOnTheRun(Algo):
         selected = target.temp["selected"]
         aliases = [s for s in selected if s in on_the_run.columns]
         resolved = on_the_run.loc[target.now, aliases].tolist()
-        if not self.include_no_data:
-            universe = target.universe.loc[target.now, resolved].dropna()
-            if self.include_negative:
-                resolved = list(universe.index)
-            else:
-                resolved = list(universe[universe > 0].index)
+        prices = target.universe.loc[target.now]
+        resolved = _select_by_price(prices, resolved, self.include_no_data, self.include_negative)
         target.temp["selected"] = resolved + [s for s in selected if s not in on_the_run.columns]
         return True
 
