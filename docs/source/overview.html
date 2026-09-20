@@ -3344,7 +3344,8 @@ SecurityBase</p>
 commission (transaction fee) amount. Could be used to model
 slippage (implementation shortfall). Note that often fees are
 symmetric for buy and sell and absolute value of quantity should
-be used for calculation.</p>
+be used for calculation. A dynamically attached Strategy inherits
+its parent’s current non-default commission function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>fn(quantity, price)</p>
