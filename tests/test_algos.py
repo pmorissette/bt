@@ -1890,6 +1890,60 @@ def test_stat_multi_period_return_validation():
     assert algo.weights == pytest.approx([0.5, 0.5])
 
 
+@pytest.mark.parametrize(
+    "weights",
+    [
+        pytest.param([1.0, np.nan], id="nan"),
+        pytest.param([1.0, np.inf], id="positive-infinity"),
+        pytest.param([1.0, -np.inf], id="negative-infinity"),
+        pytest.param([np.inf, -np.inf], id="opposite-infinities"),
+        pytest.param([np.finfo(float).max, np.finfo(float).max], id="non-finite-sum"),
+    ],
+)
+def test_stat_multi_period_return_rejects_non_finite_weights(weights: list[float]):
+    lookbacks = [pd.DateOffset(days=1), pd.DateOffset(days=2)]
+
+    # Validate both caller values and their derived sum before normalization.
+    with np.errstate(over="raise", invalid="raise"), pytest.raises(ValueError, match="weights and their sum must be finite"):
+        algos.StatMultiPeriodReturn(lookbacks, weights=weights)
+
+
+def test_select_momentum_rejects_non_finite_weights_before_rebalancing():
+    dates = pd.date_range("2020-01-01", periods=5)
+    prices = pd.DataFrame(
+        {
+            "c1": [50.0, 100.0, 100.0, 100.0, 100.0],
+            "c2": [100.0, 100.0, 100.0, 50.0, 100.0],
+        },
+        index=dates,
+    )
+    strategy = bt.Strategy("s")
+    strategy.setup(prices)
+    strategy.update(dates[-1])
+    strategy.adjust(2000.0)
+    strategy.allocate(1000.0, "c1")
+    strategy.allocate(1000.0, "c2")
+    strategy.temp["selected"] = ["c1", "c2"]
+
+    # Rejection must precede the empty-selection path that would liquidate both holdings.
+    with pytest.raises(ValueError, match="weights and their sum must be finite"):
+        algos.SelectMomentum(
+            n=1,
+            lookback=[pd.DateOffset(days=1), pd.DateOffset(days=4)],
+            weights=[1.0, np.nan],
+        )(strategy)
+        algos.WeighEqually()(strategy)
+        algos.Rebalance()(strategy)
+
+    assert strategy.temp["selected"] == ["c1", "c2"]
+    assert "stat" not in strategy.temp
+    assert "weights" not in strategy.temp
+    assert strategy["c1"].position == 10.0
+    assert strategy["c2"].position == 10.0
+    assert strategy.capital == 0.0
+    assert strategy.value == 2000.0
+
+
 def test_stat_multi_period_return_lag_and_history():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame({"c1": [100.0, 110.0, 120.0, 130.0, 200.0]}, index=dts)

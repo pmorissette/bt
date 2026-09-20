@@ -685,8 +685,8 @@ class SelectMomentum(AlgoStack):
         * sort_descending (bool): Sort descending (highest return is best)
         * all_or_none (bool): If true, only populates temp['selected'] if we
           have n items. If we have less than n, then temp['selected'] = [].
-        * weights (sequence): Optional non-negative weights for multiple
-          lookback periods.
+        * weights (sequence): Optional finite, non-negative weights for multiple
+          lookback periods. Their sum must be finite and positive.
 
     Sets:
         * selected
@@ -986,9 +986,9 @@ class StatMultiPeriodReturn(Algo):
 
     Args:
         * lookbacks (sequence): DateOffset lookback periods.
-        * weights (sequence): Optional non-negative weight for each lookback.
-          Equal weights are used by default. Weights are normalized to sum to
-          one.
+        * weights (sequence): Optional finite, non-negative weight for each
+          lookback. Their sum must be finite and positive. Equal weights are
+          used by default and normalized to sum to one.
         * lag (DateOffset): Lag interval. Each total return ends at now - lag.
 
     Sets:
@@ -1010,11 +1010,18 @@ class StatMultiPeriodReturn(Algo):
             raise ValueError("weights and lookbacks must have the same length")
 
         weights = np.asarray(weights, dtype=float)
+        if not np.all(np.isfinite(weights)):
+            raise ValueError("weights and their sum must be finite")
+        # Check the aggregate too because finite values can overflow when summed.
+        with np.errstate(over="ignore"):
+            weight_sum = weights.sum()
+        if not np.isfinite(weight_sum):
+            raise ValueError("weights and their sum must be finite")
         if np.any(weights < 0):
             raise ValueError("weights must be non-negative")
-        if weights.sum() == 0:
+        if weight_sum == 0:
             raise ValueError("weights must not sum to zero")
-        self.weights = weights / weights.sum()
+        self.weights = weights / weight_sum
         self.lag = lag
 
     def __call__(self, target):
