@@ -408,9 +408,10 @@ the last Algo called once the target weights have been set.</p>
 <li><p>cash (optional): You can set a ‘cash’ value on temp. This should be a
 number between 0-1 and determines the amount of cash to set aside.
 For example, if cash=0.3, the strategy will allocate 70% of its
-value to the provided weights, and the remaining 30% will be kept
+value among the provided weights, and the remaining 30% will be kept
 in cash. If this value is not provided (default), the full value
-of the strategy is allocated to securities.</p></li>
+of the strategy is allocated to securities. Fixed-income strategies
+ignore this value.</p></li>
 <li><p>notional_value (optional): Required only for fixed_income targets. This is the base
 balue of total notional that will apply to the weights.</p></li>
 </ul>
@@ -659,7 +660,12 @@ master strategy that would allocate equal amounts of capital to each.</p>
 greater than tolerance. For example, it will be run if the tolerance is set to
 0.5 and a security grows from a target weight of 0.2 to greater than 0.3.
 A missing current or target weight is treated as zero.
-A zero target weight is out of bounds whenever the current weight is nonzero.</p>
+A zero target weight is out of bounds whenever the current weight is nonzero.
+For ordinary strategies, an optional <code class="docutils literal notranslate"><span class="pre">cash</span></code> fraction scales the supplied
+weights to the investable portion of total value and is checked against the
+strategy’s actual cash fraction. Fixed-income strategies ignore <code class="docutils literal notranslate"><span class="pre">cash</span></code>.
+A zero-value ordinary strategy is within its cash target only when its
+capital is also zero.</p>
 <p>A strategy where rebalancing is performed quarterly or whenever any
 security’s weight deviates by more than 20% could be implemented by:</p>
 <blockquote>

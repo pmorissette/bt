@@ -884,6 +884,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    0.5 and a security grows from a target weight of 0.2 to greater than 0.3.</span>
 <span class="sd">    A missing current or target weight is treated as zero.</span>
 <span class="sd">    A zero target weight is out of bounds whenever the current weight is nonzero.</span>
+<span class="sd">    For ordinary strategies, an optional ``cash`` fraction scales the supplied</span>
+<span class="sd">    weights to the investable portion of total value and is checked against the</span>
+<span class="sd">    strategy's actual cash fraction. Fixed-income strategies ignore ``cash``.</span>
+<span class="sd">    A zero-value ordinary strategy is within its cash target only when its</span>
+<span class="sd">    capital is also zero.</span>
 
 <span class="sd">    A strategy where rebalancing is performed quarterly or whenever any</span>
 <span class="sd">    security's weight deviates by more than 20% could be implemented by:</span>
@@ -907,11 +912,14 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="kc">True</span>
 
         <span class="n">targets</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
+        <span class="n">target_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
+            <span class="n">target_scale</span> <span class="o">-=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">]</span>
 
         <span class="c1"># Rebalance treats names missing from either side as zero weight.</span>
         <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">|</span> <span class="n">targets</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">current_weight</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
-            <span class="n">target_weight</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">target_weight</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">target_scale</span>
             <span class="k">if</span> <span class="n">target_weight</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">current_weight</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">return</span> <span class="kc">True</span>
@@ -920,8 +928,11 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">deviation</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span> <span class="ow">or</span> <span class="n">deviation</span> <span class="o">&lt;</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
-            <span class="n">cash_deviation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">target</span><span class="o">.</span><span class="n">capital</span> <span class="o">-</span> <span class="n">targets</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">/</span> <span class="n">targets</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="k">return</span> <span class="ow">not</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">capital</span><span class="p">)</span>
+            <span class="n">cash_deviation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">capital</span> <span class="o">/</span> <span class="n">value</span> <span class="o">-</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">cash_deviation</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">True</span>
 
@@ -2466,9 +2477,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * cash (optional): You can set a 'cash' value on temp. This should be a</span>
 <span class="sd">          number between 0-1 and determines the amount of cash to set aside.</span>
 <span class="sd">          For example, if cash=0.3, the strategy will allocate 70% of its</span>
-<span class="sd">          value to the provided weights, and the remaining 30% will be kept</span>
+<span class="sd">          value among the provided weights, and the remaining 30% will be kept</span>
 <span class="sd">          in cash. If this value is not provided (default), the full value</span>
-<span class="sd">          of the strategy is allocated to securities.</span>
+<span class="sd">          of the strategy is allocated to securities. Fixed-income strategies</span>
+<span class="sd">          ignore this value.</span>
 <span class="sd">        * notional_value (optional): Required only for fixed_income targets. This is the base</span>
 <span class="sd">          balue of total notional that will apply to the weights.</span>
 <span class="sd">    """</span>
@@ -2511,14 +2523,15 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="c1"># If cash is set (it should be a value between 0-1 representing the</span>
-        <span class="c1"># proportion of cash to keep), calculate the new 'base'</span>
+        <span class="c1"># Child weights describe the investable slice; retain total value as the</span>
+        <span class="c1"># stable base so repeated cash-aware rebalances remain idempotent.</span>
+        <span class="n">target_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
-            <span class="n">base</span> <span class="o">=</span> <span class="n">base</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">])</span>
+            <span class="n">target_scale</span> <span class="o">-=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">]</span>
 
         <span class="c1"># Turn off updating while we rebalance each child</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">rebalance</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">child</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">rebalance</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">target_scale</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Now update</span>
         <span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
