@@ -952,8 +952,8 @@ calculation, or a sequence of periods whose returns are averaged</p></li>
 <li><p><strong>sort_descending</strong> (<em>*</em>) – Sort descending (highest return is best)</p></li>
 <li><p><strong>all_or_none</strong> (<em>*</em>) – If true, only populates temp[‘selected’] if we
 have n items. If we have less than n, then temp[‘selected’] = [].</p></li>
-<li><p><strong>weights</strong> (<em>*</em>) – Optional non-negative weights for multiple
-lookback periods.</p></li>
+<li><p><strong>weights</strong> (<em>*</em>) – Optional finite, non-negative weights for multiple
+lookback periods. Their sum must be finite and positive.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1231,9 +1231,9 @@ Date, Security | quantity, and additional columns as required by model</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>lookbacks</strong> (<em>*</em>) – DateOffset lookback periods.</p></li>
-<li><p><strong>weights</strong> (<em>*</em>) – Optional non-negative weight for each lookback.
-Equal weights are used by default. Weights are normalized to sum to
-one.</p></li>
+<li><p><strong>weights</strong> (<em>*</em>) – Optional finite, non-negative weight for each
+lookback. Their sum must be finite and positive. Equal weights are
+used by default and normalized to sum to one.</p></li>
 <li><p><strong>lag</strong> (<em>*</em>) – Lag interval. Each total return ends at now - lag.</p></li>
 </ul>
 </dd>

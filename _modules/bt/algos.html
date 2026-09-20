@@ -1213,8 +1213,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * sort_descending (bool): Sort descending (highest return is best)</span>
 <span class="sd">        * all_or_none (bool): If true, only populates temp['selected'] if we</span>
 <span class="sd">          have n items. If we have less than n, then temp['selected'] = [].</span>
-<span class="sd">        * weights (sequence): Optional non-negative weights for multiple</span>
-<span class="sd">          lookback periods.</span>
+<span class="sd">        * weights (sequence): Optional finite, non-negative weights for multiple</span>
+<span class="sd">          lookback periods. Their sum must be finite and positive.</span>
 
 <span class="sd">    Sets:</span>
 <span class="sd">        * selected</span>
@@ -1535,9 +1535,9 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * lookbacks (sequence): DateOffset lookback periods.</span>
-<span class="sd">        * weights (sequence): Optional non-negative weight for each lookback.</span>
-<span class="sd">          Equal weights are used by default. Weights are normalized to sum to</span>
-<span class="sd">          one.</span>
+<span class="sd">        * weights (sequence): Optional finite, non-negative weight for each</span>
+<span class="sd">          lookback. Their sum must be finite and positive. Equal weights are</span>
+<span class="sd">          used by default and normalized to sum to one.</span>
 <span class="sd">        * lag (DateOffset): Lag interval. Each total return ends at now - lag.</span>
 
 <span class="sd">    Sets:</span>
@@ -1559,11 +1559,18 @@ window.runMermaid = runMermaid;</script>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights and lookbacks must have the same length"</span><span class="p">)</span>
 
         <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">weights</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights and their sum must be finite"</span><span class="p">)</span>
+        <span class="c1"># Check the aggregate too because finite values can overflow when summed.</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">over</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+            <span class="n">weight_sum</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">weight_sum</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights and their sum must be finite"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">weights</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights must be non-negative"</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">weight_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights must not sum to zero"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">weight_sum</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lag</span> <span class="o">=</span> <span class="n">lag</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
