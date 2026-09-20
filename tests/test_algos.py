@@ -479,6 +479,82 @@ def test_run_if_out_of_bounds_checks_names_on_either_side(
     assert position == expected_position
 
 
+@pytest.mark.parametrize(
+    ("cash", "expected_position"),
+    [
+        pytest.param(0.0, 10.0, id="fully-invested"),
+        pytest.param(0.5, 5.0, id="partly-invested"),
+        pytest.param(1.0, 0.0, id="all-cash"),
+    ],
+)
+def test_cash_targets_are_idempotent_and_in_bounds(cash: float, expected_position: float):
+    date = pd.Timestamp("2020-01-01")
+    strategy = bt.Strategy("s")
+    strategy.setup(pd.DataFrame({"asset": [100.0]}, index=[date]))
+    strategy.adjust(1000.0)
+    strategy.update(date)
+    strategy.temp["weights"] = {"asset": 1.0}
+    strategy.temp["cash"] = cash
+
+    rebalance = algos.Rebalance()
+    gate = algos.RunIfOutOfBounds(0.01)
+
+    # Full value is the independent base; cash scales the investable-slice target.
+    assert rebalance(strategy)
+    position = strategy["asset"].position if "asset" in strategy.children else 0.0
+    outlay = strategy["asset"].outlays.loc[date] if "asset" in strategy.children else 0.0
+    assert position == expected_position
+    assert strategy.capital == pytest.approx(1000.0 * cash)
+    assert strategy.value == pytest.approx(1000.0)
+    assert not gate(strategy)
+
+    # Reapplying unchanged targets must preserve allocation and transaction history.
+    assert rebalance(strategy)
+    position = strategy["asset"].position if "asset" in strategy.children else 0.0
+    assert position == expected_position
+    assert strategy.capital == pytest.approx(1000.0 * cash)
+    assert strategy.value == pytest.approx(1000.0)
+    assert not gate(strategy)
+    if "asset" in strategy.children:
+        assert strategy["asset"].outlays.loc[date] == outlay
+
+
+@pytest.mark.parametrize(
+    ("weights", "cash"),
+    [
+        pytest.param({"asset": 0.8}, 0.5, id="child-drift"),
+        pytest.param({"asset": 0.625}, 0.2, id="cash-drift"),
+    ],
+)
+def test_run_if_out_of_bounds_detects_cash_target_drift(weights: dict[str, float], cash: float):
+    date = pd.Timestamp("2020-01-01")
+    strategy = bt.Strategy("s")
+    strategy.setup(pd.DataFrame({"asset": [100.0]}, index=[date]))
+    strategy.adjust(1000.0)
+    strategy.update(date)
+    strategy.temp["weights"] = {"asset": 1.0}
+    strategy.temp["cash"] = 0.5
+    assert algos.Rebalance()(strategy)
+
+    strategy.temp["weights"] = weights
+    strategy.temp["cash"] = cash
+
+    # Each case isolates one allocation beyond five percent of its effective target.
+    assert algos.RunIfOutOfBounds(0.05)(strategy)
+
+
+def test_run_if_out_of_bounds_handles_zero_value_cash_target():
+    date = pd.Timestamp("2020-01-01")
+    strategy = bt.Strategy("s")
+    strategy.setup(pd.DataFrame(index=[date]))
+    strategy.update(date)
+    strategy.temp["weights"] = {}
+    strategy.temp["cash"] = 0.5
+
+    # Zero total value and zero capital have no cash-dollar mismatch.
+    assert not algos.RunIfOutOfBounds(0.01)(strategy)
+
+
 @pytest.mark.parametrize("hedge_type", [bt.HedgeSecurity, bt.CouponPayingHedgeSecurity])
 def test_run_if_out_of_bounds_preserves_omitted_zero_weight_hedges(hedge_type: type[bt.core.SecurityBase]):
     date = pd.Timestamp("2020-01-01")
@@ -772,6 +848,7 @@ def test_rebalance_fixedincome():
     s.update(dts[0])
     s.temp["notional_value"] = 1000
     s.temp["weights"] = {"c1": 1}
+    s.temp["cash"] = 0.5
     assert algo(s)
     assert s.value == pytest.approx(0.0)
     assert s.notional_value == 1000
@@ -781,6 +858,7 @@ def test_rebalance_fixedincome():
     assert c1.notional_value == 1000
     assert c1.position == 10
     assert c1.weight == pytest.approx(1.0)
+    assert not algos.RunIfOutOfBounds(0.01)(s)
 
     s.temp["weights"] = {"c2": 1}
 
