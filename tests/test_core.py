@@ -2026,6 +2026,44 @@ def test_set_commissions():
     assert s.capital == 999
 
 
+def test_dynamic_strategy_inherits_legacy_commissions():
+    def inherited_commission(quantity, price):
+        return 7.0
+
+    def child_commission(quantity, price):
+        return 3.0
+
+    parent = Strategy("parent")
+    parent.set_commissions(inherited_commission)
+
+    # Attachment inherits through the complete preconstructed subtree.
+    child = Strategy(
+        "child",
+        children=[Strategy("nested", children=["asset"])],
+        parent=parent,
+    )
+    nested = child["nested"]
+    assert child.commission_fn is inherited_commission
+    assert nested.commission_fn is inherited_commission
+
+    # A child override made after attachment remains authoritative through setup.
+    child.set_commissions(child_commission)
+    prices = pd.DataFrame(
+        {"asset": [100.0]},
+        index=pd.date_range("2020-01-01", periods=1),
+    )
+    parent.setup(prices)
+    assert child.commission_fn is child_commission
+    assert child._paper.commission_fn is child_commission
+    assert nested.commission_fn is child_commission
+
+    # With a default parent, each dynamic child retains its own bound default.
+    default_parent = Strategy("default_parent")
+    default_child = Strategy("default_child", parent=default_parent)
+    assert default_child.commission_fn.__func__ is StrategyBase._dflt_comm_fn
+    assert default_child.commission_fn.__self__ is default_child
+
+
 def test_strategy_tree_proper_return_calcs():
     s1 = StrategyBase("s1")
     s2 = StrategyBase("s2")

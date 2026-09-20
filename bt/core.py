@@ -402,7 +402,8 @@ class StrategyBase(Node):
           commission (transaction fee) amount. Could be used to model
           slippage (implementation shortfall). Note that often fees are
           symmetric for buy and sell and absolute value of quantity should
-          be used for calculation.
+          be used for calculation. A dynamically attached Strategy inherits
+          its parent's current non-default commission function.
         * capital (float): Capital amount in Strategy - cash
         * universe (DataFrame): Data universe available at the current time.
           Universe contains the data passed in when creating a Backtest. Use
@@ -437,6 +438,11 @@ class StrategyBase(Node):
 
         # default commission function
         self.commission_fn = self._dflt_comm_fn
+        if isinstance(parent, StrategyBase):
+            commission_fn = parent.commission_fn
+            # Install configured fees before setup copies the subtree for paper trading.
+            if getattr(commission_fn, "__func__", None) is not StrategyBase._dflt_comm_fn:
+                self.set_commissions(commission_fn)
 
         self._paper_trade = False
         self._positions = None
