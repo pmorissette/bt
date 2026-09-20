@@ -977,6 +977,48 @@ def test_backtest_cost_model_applies_to_dynamic_nested_strategy():
     assert leaf._paper["A"].position == pytest.approx(1_000_000.0 / 101.0)
 
 
+def test_backtest_dynamic_strategy_inherits_legacy_commissions():
+    dates = pd.date_range("2020-01-01", periods=2, freq="B")
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+
+    def add_leaf(target):
+        leaf = bt.Strategy(
+            "leaf",
+            [
+                bt.algos.RunOnce(),
+                bt.algos.SelectAll(),
+                bt.algos.WeighEqually(),
+                bt.algos.Rebalance(),
+            ],
+            children=["A"],
+            parent=target,
+        )
+        leaf.setup_from_parent()
+        leaf.update(target.now)
+        target.allocate(target.value, leaf.name)
+        return True
+
+    backtest = bt.Backtest(
+        bt.Strategy("root", [bt.algos.RunOnce(), add_leaf]),
+        prices,
+        commissions=lambda quantity, price: 7.0,
+        initial_capital=1_000.0,
+        progress_bar=False,
+    )
+
+    backtest.run()
+
+    leaf = backtest.strategy["leaf"]
+    # A $7 fee makes 9 shares the largest affordable integer position.
+    assert leaf["A"].position == 9
+    assert leaf.fees.sum() == pytest.approx(7.0)
+    assert backtest.strategy.value == pytest.approx(993.0)
+
+    # The independent paper trade follows the same inherited cost contract.
+    assert leaf._paper["A"].position == 9_999
+    assert leaf._paper.fees.sum() == pytest.approx(7.0)
+
+
 def test_backtest_cost_model_active_ac_costs_higher_than_flat_path():
     prices, volume, volatility = _impact_universe()
     eps = 0.0005
