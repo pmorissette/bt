@@ -1737,7 +1737,8 @@ class CorporateActions(Algo):
 
     Security positions are adjusted on dates where a split value other than
     1.0 is given. A value above 1.0 causes the position size to increase
-    (compared to the previous date) and vice versa.
+    (compared to the previous date) and vice versa. Split-adjusted values and
+    weights are available to subsequent Algos in the same iteration.
 
     On a given date, a position on a security causes a cash inflow (when
     long) or outflow (when short) given by the size of the position times
@@ -1765,13 +1766,14 @@ class CorporateActions(Algo):
         self.splits = splits.fillna(1.0)
 
     def __call__(self, target):
-        # adjust last position if there is a split
+        # A split changes positions without a transaction, so invalidate cached tree values.
         if target.now in self.splits.index:
             for c in target.children:
                 if c in self.splits.columns:
                     spl = self.splits.loc[target.now, c]
                     if spl != 1.0:
                         target.children[c]._position *= spl
+                        target.root.stale = True
 
         # adjust capital due to dividends
         if target.now in self.dividends.index:
