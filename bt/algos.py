@@ -374,6 +374,11 @@ class RunIfOutOfBounds(Algo):
     0.5 and a security grows from a target weight of 0.2 to greater than 0.3.
     A missing current or target weight is treated as zero.
     A zero target weight is out of bounds whenever the current weight is nonzero.
+    For ordinary strategies, an optional ``cash`` fraction scales the supplied
+    weights to the investable portion of total value and is checked against the
+    strategy's actual cash fraction. Fixed-income strategies ignore ``cash``.
+    A zero-value ordinary strategy is within its cash target only when its
+    capital is also zero.
 
     A strategy where rebalancing is performed quarterly or whenever any
     security's weight deviates by more than 20% could be implemented by:
@@ -397,11 +402,14 @@ class RunIfOutOfBounds(Algo):
             return True
 
         targets = target.temp["weights"]
+        target_scale = 1.0
+        if "cash" in target.temp and not target.fixed_income:
+            target_scale -= target.temp["cash"]
 
         # Rebalance treats names missing from either side as zero weight.
         for cname in target.children.keys() | targets.keys():
             current_weight = target.children[cname].weight if cname in target.children else 0.0
-            target_weight = targets.get(cname, 0.0)
+            target_weight = targets.get(cname, 0.0) * target_scale
             if target_weight == 0:
                 if current_weight != 0:
                     return True
@@ -410,8 +418,11 @@ class RunIfOutOfBounds(Algo):
             if deviation > self.tolerance or deviation < -self.tolerance:
                 return True
 
-        if "cash" in target.temp:
-            cash_deviation = abs((target.capital - targets.value) / targets.value - target.temp["cash"])
+        if "cash" in target.temp and not target.fixed_income:
+            value = target.value
+            if is_zero(value):
+                return not is_zero(target.capital)
+            cash_deviation = abs(target.capital / value - target.temp["cash"])
             if cash_deviation > self.tolerance:
                 return True
 
@@ -1866,9 +1877,10 @@ class Rebalance(Algo):
         * cash (optional): You can set a 'cash' value on temp. This should be a
           number between 0-1 and determines the amount of cash to set aside.
           For example, if cash=0.3, the strategy will allocate 70% of its
-          value to the provided weights, and the remaining 30% will be kept
+          value among the provided weights, and the remaining 30% will be kept
           in cash. If this value is not provided (default), the full value
-          of the strategy is allocated to securities.
+          of the strategy is allocated to securities. Fixed-income strategies
+          ignore this value.
         * notional_value (optional): Required only for fixed_income targets. This is the base
           balue of total notional that will apply to the weights.
     """
@@ -1911,14 +1923,15 @@ class Rebalance(Algo):
             if v != 0.0 and not np.isnan(v):
                 target.close(cname, update=False)
 
-        # If cash is set (it should be a value between 0-1 representing the
-        # proportion of cash to keep), calculate the new 'base'
+        # Child weights describe the investable slice; retain total value as the
+        # stable base so repeated cash-aware rebalances remain idempotent.
+        target_scale = 1.0
         if "cash" in target.temp and not target.fixed_income:
-            base = base * (1 - target.temp["cash"])
+            target_scale -= target.temp["cash"]
 
         # Turn off updating while we rebalance each child
         for item in targets.items():
-            target.rebalance(item[1], child=item[0], base=base, update=False)
+            target.rebalance(item[1] * target_scale, child=item[0], base=base, update=False)
 
         # Now update
         target.root.update(target.now)
