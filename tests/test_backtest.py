@@ -672,6 +672,84 @@ def test_RenomalizedFixedIncomeResult():
     assert norm_res.stats["s"].total_return == res.stats["s"].total_return
     assert norm_res.prices.equals(res.prices)
 
+    # A missing interior denominator must not let ffn silently shorten the history.
+    with pytest.raises(ValueError, match="finite, non-zero"):
+        bt.backtest.RenormalizedFixedIncomeResult(
+            notl_values.drop(dts[2]), *res.backtest_list
+        )
+
+
+def _fixed_income_result_backtest(name="s", stat_index=None):
+    """Build a result-only backtest with independently specified additive P&L."""
+    dates = pd.date_range("2026-01-01", periods=5)
+    strategy = mock.Mock()
+    strategy.name = name
+    strategy.fixed_income = True
+    strategy.values = pd.Series([0.0, 0.0, 100.0, 300.0, 600.0], index=dates)
+    strategy.flows = pd.Series(0.0, index=dates)
+
+    backtest = mock.Mock()
+    backtest.name = name
+    backtest.strategy = strategy
+    backtest._stat_prices = (
+        None if stat_index is None else pd.Series(100.0, index=stat_index)
+    )
+    return backtest
+
+
+@pytest.mark.parametrize(
+    "invalid_value",
+    [
+        pytest.param(None, id="missing"),
+        pytest.param(0.0, id="zero"),
+        pytest.param(np.nan, id="nan"),
+        pytest.param(np.inf, id="positive-infinity"),
+        pytest.param(-np.inf, id="negative-infinity"),
+    ],
+)
+def test_renormalized_fixed_income_result_rejects_invalid_denominators(
+    invalid_value,
+):
+    backtest = _fixed_income_result_backtest()
+    dates = backtest.strategy.values.index
+    normalizer = pd.Series(100.0, index=dates)
+    if invalid_value is None:
+        normalizer = normalizer.drop(dates[2])
+    else:
+        normalizer.loc[dates[2]] = invalid_value
+
+    # Every post-bootstrap increment needs a usable same-date denominator.
+    with pytest.raises(ValueError, match="finite, non-zero"):
+        bt.backtest.RenormalizedFixedIncomeResult(normalizer, backtest)
+
+
+def test_renormalized_fixed_income_result_ignores_unneeded_normalizer_labels():
+    backtest = _fixed_income_result_backtest()
+    dates = backtest.strategy.values.index
+    extra_date = dates[0] - pd.Timedelta(days=1)
+    normalizer = pd.Series(100.0, index=dates[1:].insert(0, extra_date))
+
+    result = bt.backtest.RenormalizedFixedIncomeResult(normalizer, backtest)
+
+    # The bootstrap denominator is unused, while extra labels must not enter prices.
+    expected = pd.Series([100.0, 100.0, 200.0, 400.0, 700.0], index=dates)
+    pd.testing.assert_series_equal(result.prices["s"], expected, check_names=False)
+    assert result.stats.loc["total_return", "s"] == pytest.approx(6.0)
+
+
+def test_renormalized_fixed_income_result_validates_each_mapped_backtest():
+    first = _fixed_income_result_backtest("first")
+    dates = first.strategy.values.index
+    second = _fixed_income_result_backtest("second", stat_index=dates[3:])
+    normalizers = {
+        "first": 100.0,
+        "second": pd.Series(100.0, index=dates.delete(2)),
+    }
+
+    # Validation precedes both result construction and the later statistics window.
+    with pytest.raises(ValueError, match="second.*finite, non-zero"):
+        bt.backtest.RenormalizedFixedIncomeResult(normalizers, first, second)
+
 
 @pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
 def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series):

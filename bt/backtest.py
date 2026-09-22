@@ -777,8 +777,14 @@ class RenormalizedFixedIncomeResult(Result):
     or the risk exposure of the strategy.
 
     Args:
-        * normalizing_value: pd.Series, float or dict thereof(by strategy name)
+        * normalizing_value: finite, non-zero float, pd.Series, or dict thereof
+            (by strategy name). Series values are aligned to the strategy
+            history and must cover every date after the initial price.
         * backtests (list): List of backtests (i.e. from Result.backtest_list)
+
+    Raises:
+        * ValueError: If an applicable normalizing value is missing, zero, or
+            non-finite.
     """
 
     def __init__(self, normalizing_value, *backtests):
@@ -804,6 +810,26 @@ class RenormalizedFixedIncomeResult(Result):
         """
         # Compute additive returns net of flows
         returns = s.values.diff() - s.flows
+
+        # Align labels before validation so extra dates cannot become price observations.
+        if isinstance(v, pd.Series) and not v.index.equals(returns.index):
+            v = v.reindex(returns.index)
+
+        # The first diff is the PAR bootstrap; every later denominator is required.
+        values = np.asarray(v)
+        if len(returns) <= 1:
+            applicable_values = np.asarray([], dtype=float)
+        elif values.ndim == 0:
+            applicable_values = values.reshape(1)
+        else:
+            applicable_values = values[1:]
+        try:
+            applicable_values = np.asarray(applicable_values, dtype=float)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"normalizing_value for strategy {s.name!r} must contain finite, non-zero values for every date after the initial price") from exc
+        if not np.isfinite(applicable_values).all() or (applicable_values == 0).any():
+            raise ValueError(f"normalizing_value for strategy {s.name!r} must contain finite, non-zero values for every date after the initial price")
+
         prices = bt.core.PAR * (1.0 + (returns / v).cumsum())
         prices.iloc[0] = bt.core.PAR
         return prices
