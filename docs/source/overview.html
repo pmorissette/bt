@@ -1878,9 +1878,15 @@ or the risk exposure of the strategy.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>normalizing_value</strong> (<em>*</em>) – pd.Series, float or dict thereof(by strategy name)</p></li>
+<li><p><strong>normalizing_value</strong> (<em>*</em>) – finite, non-zero float, pd.Series, or dict thereof
+(by strategy name). Series values are aligned to the strategy
+history and must cover every date after the initial price.</p></li>
 <li><p><strong>backtests</strong> (<em>*</em>) – List of backtests (i.e. from Result.backtest_list)</p></li>
 </ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>* ValueError</strong> – If an applicable normalizing value is missing, zero, or
+    non-finite.</p>
 </dd>
 </dl>
 </dd></dl>
