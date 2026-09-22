@@ -2803,6 +2803,126 @@ def test_roll_positions_after_date():
     assert s.perm["rolled"] == set(["c1", "c2"])
 
 
+def test_roll_positions_after_date_aggregates_finite_factors():
+    dates = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame(100.0, index=dates, columns=["old_a", "old_b", "new"])
+    strategy = bt.FixedIncomeStrategy(
+        "strategy",
+        children=[
+            bt.FixedIncomeSecurity("old_a"),
+            bt.FixedIncomeSecurity("old_b"),
+            bt.FixedIncomeSecurity("new", lazy_add=True),
+        ],
+    )
+    roll = pd.DataFrame(
+        {
+            "date": [dates[0], dates[0]],
+            "target": ["new", "new"],
+            "factor": [0.0, -0.5],
+        },
+        index=["old_a", "old_b"],
+    )
+    strategy.setup(data, roll=roll)
+    strategy.update(dates[0])
+    strategy.transact(10, "old_a")
+    strategy.transact(20, "old_b")
+
+    assert algos.RollPositionsAfterDates("roll")(strategy)
+
+    # Both due rows roll atomically into the same lazily-created target.
+    assert strategy["old_a"].position == 0
+    assert strategy["old_b"].position == 0
+    assert strategy["new"].position == -10
+    assert strategy.perm["rolled"] == {"old_a", "old_b"}
+
+
+@pytest.mark.parametrize(
+    ("invalid_factor", "old_b_position", "new_position"),
+    [
+        pytest.param(np.nan, 20, 0, id="nan"),
+        pytest.param(np.inf, 20, 0, id="positive-infinity"),
+        pytest.param(-np.inf, 20, 0, id="negative-infinity"),
+        pytest.param(pd.NA, 20, 0, id="missing"),
+        pytest.param(np.finfo(float).max, 20, 0, id="non-finite-result"),
+        pytest.param(1e308, 1, 1e308, id="destination-overflow"),
+        pytest.param(1e308, -1, -1e308, id="destination-negative-overflow"),
+    ],
+)
+def test_roll_positions_after_date_rejects_non_finite_rolls(invalid_factor, old_b_position, new_position):
+    dates = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame(100.0, index=dates, columns=["old_a", "old_b", "new"])
+    if new_position:
+        data["new"] = 0.0
+    strategy = bt.FixedIncomeStrategy(
+        "strategy",
+        children=[
+            bt.FixedIncomeSecurity("old_a"),
+            bt.FixedIncomeSecurity("old_b"),
+            bt.FixedIncomeSecurity("new", lazy_add=True),
+        ],
+    )
+    roll = pd.DataFrame(
+        {
+            "date": [dates[0], dates[0]],
+            "target": ["new", "new"],
+            "factor": [0.5, invalid_factor],
+        },
+        index=["old_a", "old_b"],
+    )
+    strategy.setup(data, roll=roll)
+    strategy.update(dates[0])
+    strategy.transact(10, "old_a")
+    strategy.transact(old_b_position, "old_b")
+    if new_position:
+        strategy.transact(new_position, "new")
+
+    # A later invalid row must leave the entire due roll set untouched.
+    before_children = tuple(strategy.children)
+    before_lazy_children = tuple(strategy._lazy_children)
+    before_positions = {name: strategy[name].position for name in before_children}
+    before_capital = strategy.capital
+    before_value = strategy.value
+    before_perm = strategy.perm.copy()
+    before_histories = {
+        name: (strategy[name].positions.copy(), strategy[name].outlays.copy())
+        for name in before_children
+    }
+
+    with pytest.raises(ValueError, match="finite"):
+        algos.RollPositionsAfterDates("roll")(strategy)
+
+    assert tuple(strategy.children) == before_children
+    assert tuple(strategy._lazy_children) == before_lazy_children
+    assert {name: strategy[name].position for name in before_children} == before_positions
+    assert strategy.capital == before_capital
+    assert strategy.value == before_value
+    assert strategy.perm == before_perm
+    for name, (positions, outlays) in before_histories.items():
+        pd.testing.assert_series_equal(strategy[name].positions, positions)
+        pd.testing.assert_series_equal(strategy[name].outlays, outlays)
+
+
+@pytest.mark.parametrize("destination_due", [False, True])
+def test_roll_positions_after_date_allows_finite_destination_positions(destination_due):
+    dates = pd.date_range("2010-01-01", periods=2)
+    strategy = bt.FixedIncomeStrategy("strategy", children=[bt.FixedIncomeSecurity("old"), bt.FixedIncomeSecurity("new")])
+    roll = pd.DataFrame({"date": [dates[0]], "target": ["new"], "factor": [1e308]}, index=["old"])
+    if destination_due:
+        roll.loc["new"] = [dates[0], "old", 0.0]
+    strategy.setup(pd.DataFrame(0.0, index=dates, columns=["old", "new"]), roll=roll)
+    strategy.update(dates[0])
+    strategy.transact(1.0, "old")
+    strategy.transact(1e308 if destination_due else -1e308, "new")
+
+    # A destination can offset the transfer or be closed before receiving it.
+    assert algos.RollPositionsAfterDates("roll")(strategy)
+
+    assert strategy["old"].position == 0
+    assert strategy["new"].position == (1e308 if destination_due else 0.0)
+    assert strategy.value == 0
+    assert strategy.perm["rolled"] == ({"old", "new"} if destination_due else {"old"})
+
+
 def test_replay_transactions():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")

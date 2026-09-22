@@ -2213,7 +2213,9 @@ class RollPositionsAfterDates(Algo):
             - "date": the first date at which the roll can occur
             - "target": the security name we are rolling into
             - "factor": the conversion factor. One unit of the original security
-              rolls into "factor" units of the new one.
+              rolls into "factor" units of the new one. Applicable factors and
+              resulting quantities must be finite; invalid due data is rejected
+              before portfolio state changes.
 
     Sets:
         * target.perm['rolled'] : to keep track of which securities have already rolled
@@ -2224,26 +2226,46 @@ class RollPositionsAfterDates(Algo):
         self.roll_data = roll_data
 
     def __call__(self, target):
-        if "rolled" not in target.perm:
-            target.perm["rolled"] = set()
         roll_data = target.get_data(self.roll_data)
+        rolled = target.perm.get("rolled", set())
         transactions = {}
         # Find securities that are candidate for roll
-        sec_names = [
-            sec_name for sec_name, sec in target.children.items() if isinstance(sec, SecurityBase) and sec_name in roll_data.index and sec_name not in target.perm["rolled"]
-        ]
+        sec_names = [sec_name for sec_name, sec in target.children.items() if isinstance(sec, SecurityBase) and sec_name in roll_data.index and sec_name not in rolled]
 
-        # Calculate new transaction and close old position
-        for sec_name, sec_fields in roll_data.loc[sec_names].iterrows():
-            if sec_fields["date"] <= target.now:
-                target.perm["rolled"].add(sec_name)
-                new_quantity = sec_fields["factor"] * target[sec_name].position
-                new_sec = sec_fields["target"]
-                if new_sec in transactions:
-                    transactions[new_sec] += new_quantity
-                else:
-                    transactions[new_sec] = new_quantity
-                target.close(sec_name, update=False)
+        # Build and validate the complete due transaction plan before mutation.
+        due_rolls = roll_data.loc[sec_names]
+        due_rolls = due_rolls[due_rolls["date"] <= target.now]
+        for sec_name, sec_fields in due_rolls.iterrows():
+            factor = sec_fields["factor"]
+            factor_array = np.asarray(factor)
+            if factor_array.ndim != 0 or factor_array.dtype.kind not in "biuf" or not np.isfinite(factor_array).item():
+                raise ValueError("Roll factors and resulting quantities must be finite")
+
+            with np.errstate(over="raise", invalid="raise"):
+                try:
+                    new_quantity = float(factor * target[sec_name].position)
+                    new_sec = sec_fields["target"]
+                    if new_sec in transactions:
+                        new_quantity += transactions[new_sec]
+                except FloatingPointError as exc:
+                    raise ValueError("Roll factors and resulting quantities must be finite") from exc
+            if not np.isfinite(new_quantity):
+                raise ValueError("Roll factors and resulting quantities must be finite")
+            transactions[new_sec] = new_quantity
+
+        # Due sources are closed before transfers; other destinations retain their positions.
+        for new_sec, quantity in transactions.items():
+            child = target.children.get(new_sec)
+            if isinstance(child, SecurityBase) and new_sec not in due_rolls.index and not np.isfinite(float(child.position) + quantity):
+                raise ValueError("Roll factors and resulting quantities must be finite")
+
+        if "rolled" not in target.perm:
+            target.perm["rolled"] = set()
+
+        # Apply the validated plan only after every due row has succeeded.
+        for sec_name in due_rolls.index:
+            target.perm["rolled"].add(sec_name)
+            target.close(sec_name, update=False)
 
         # Do all the new transactions at the end, to do any necessary aggregations first
         for new_sec, quantity in transactions.items():
