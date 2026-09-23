@@ -689,6 +689,57 @@ def test_rebalance():
     assert c2.weight == pytest.approx(1.0)
 
 
+@pytest.mark.parametrize("amount", [1000.0, -1000.0])
+def test_rebalance_closes_omitted_zero_price_position(amount):
+    dates = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 0.0]}, index=dates)
+    strategy = bt.Strategy("strategy", children=["asset"])
+    strategy.setup(data)
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    strategy.allocate(amount, "asset")
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    security = strategy["asset"]
+    initial_position = security.position
+    initial_cash = strategy.capital
+    initial_value = strategy.value
+    strategy.temp["weights"] = {}
+
+    assert algos.Rebalance()(strategy)
+
+    transactions = strategy.get_transactions()
+    assert security.position == 0.0
+    assert strategy.capital == initial_cash
+    assert strategy.value == initial_value
+    assert transactions.iloc[-1]["quantity"] == -initial_position
+    assert transactions.iloc[-1]["price"] == 0.0
+
+
+def test_rebalance_closes_omitted_zero_value_nested_strategy():
+    dates = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 0.0]}, index=dates)
+    sleeve = bt.Strategy("sleeve", children=["asset"])
+    strategy = bt.Strategy("strategy", children=[sleeve])
+    strategy.setup(data)
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    strategy.rebalance(1.0, "sleeve")
+    sleeve = strategy["sleeve"]
+    sleeve.allocate(1000.0, "asset")
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    initial_cash = strategy.capital
+    initial_value = strategy.value
+    strategy.temp["weights"] = {}
+
+    assert algos.Rebalance()(strategy)
+
+    assert sleeve["asset"].position == 0.0
+    assert strategy.capital == initial_cash
+    assert strategy.value == initial_value
+
+
 def test_rebalance_with_commissions():
     algo = algos.Rebalance()
 
@@ -2728,6 +2779,24 @@ def test_TargetVol_standard_uses_pairwise_covariance():
 
     assert targetVolAlgo(s)
     assert s.temp["weights"]["c1"] == pytest.approx(0.5 * 0.1 / expected_vol)
+
+
+def test_close_dead_closes_zero_price_position():
+    dates = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 0.0]}, index=dates)
+    strategy = bt.Strategy("strategy", children=["asset"])
+    strategy.setup(data)
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    strategy.allocate(1000.0, "asset")
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    strategy.temp["weights"] = {"asset": 1.0}
+
+    assert algos.CloseDead()(strategy)
+
+    assert strategy["asset"].position == 0.0
+    assert "asset" not in strategy.temp["weights"]
 
 
 def test_close_positions_after_date():
