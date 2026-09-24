@@ -1472,11 +1472,14 @@ class SecurityBase(Node):
 
         self._data_ready = True
 
-    @cy.locals(prc=cy.double)
+    @cy.locals(prc=cy.double, value=cy.double)
     def update(self, date, data=None, inow=None):
         """
         Update security with a given date and optionally, some data.
         This will update price, value, weight, etc.
+
+        Prospective prices and values are validated before changing current
+        state or history. Missing prices remain valid for zero positions.
         """
         # filter for internal calls when position has not changed - nothing to
         # do. Internal calls (stale root calls) have None data. Also want to
@@ -1491,17 +1494,36 @@ class SecurityBase(Node):
             else:
                 inow = self._index.get_loc(date)
 
+        prc = self._price
+
+        # date change - select the prospective price
+        if date != self.now:
+            if self._prices_set:
+                prc = self._prices_arr[inow]
+            elif data is not None:
+                prc = data[self.name]
+
+        # Validate before exposing the prospective observation or derived value.
+        if math.isinf(prc):
+            raise ValueError(f"Price is infinite for security {self.name} on {date}. Cannot update node value.")
+        if math.isnan(prc):
+            if is_zero(self._position):
+                value = 0.0
+            else:
+                raise ValueError(f"Position is open (non-zero: {self._position}) and latest price is NaN for security {self.name} on {date}. Cannot update node value.")
+        else:
+            value = self._position * prc * self.multiplier
+            if not math.isfinite(value):
+                raise ValueError(f"Price {prc} produces a non-finite value for security {self.name} on {date}. Cannot update node value.")
+
         # date change - update price
         if date != self.now:
             # update now
             self.now = date
 
-            if self._prices_set:
-                self._price = self._prices_arr[inow]
+            self._price = prc
             # traditional data update
-            elif data is not None:
-                prc = data[self.name]
-                self._price = prc
+            if not self._prices_set and data is not None:
                 self._prices_arr[inow] = prc
 
             # update bid/offer
@@ -1511,14 +1533,7 @@ class SecurityBase(Node):
 
         self._positions_arr[inow] = self._position
         self._last_pos = self._position
-
-        if np.isnan(self._price):
-            if is_zero(self._position):
-                self._value = 0
-            else:
-                raise ValueError(f"Position is open (non-zero: {self._position}) and latest price is NaN for security {self.name} on {date}. Cannot update node value.")
-        else:
-            self._value = self._position * self._price * self.multiplier
+        self._value = value
 
         self._notl_value = self._value
 

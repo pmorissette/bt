@@ -476,6 +476,88 @@ def test_update_fails_if_price_is_nan_and_position_open():
     assert c1._value == 0
 
 
+# Cross both price-ingestion paths with each distinct rejection mechanism.
+@pytest.mark.parametrize(
+    ("invalid_price", "position", "multiplier", "message"),
+    [
+        pytest.param(np.inf, 0.0, 1.0, "Price is infinite", id="positive-infinity-closed"),
+        pytest.param(-np.inf, 100.0, 1.0, "Price is infinite", id="negative-infinity-long"),
+        pytest.param(np.inf, -100.0, 1.0, "Price is infinite", id="positive-infinity-short"),
+        pytest.param(np.nan, 100.0, 1.0, "Position is open", id="nan-long"),
+        pytest.param(np.nan, -100.0, 1.0, "Position is open", id="nan-short"),
+        pytest.param(np.finfo(float).max, 1.0, 2.0, "non-finite value", id="overflow-long"),
+        pytest.param(np.finfo(float).max, -1.0, 2.0, "non-finite value", id="overflow-short"),
+    ],
+)
+@pytest.mark.parametrize("price_source", ["setup", "update"])
+def test_update_rejects_nonfinite_price_or_value_before_state_mutation(
+    invalid_price,
+    position,
+    multiplier,
+    message,
+    price_source,
+):
+    dates = pd.date_range("2010-01-01", periods=2)
+    if price_source == "setup":
+        universe = pd.DataFrame({"asset": [100.0, invalid_price]}, index=dates)
+        updates = [None, None]
+    else:
+        universe = pd.DataFrame(index=dates)
+        updates = [{"asset": 100.0}, {"asset": invalid_price}]
+
+    security = SecurityBase("asset", multiplier=multiplier)
+    security.setup(universe)
+    security._position = position
+    security.update(dates[0], updates[0])
+
+    # Snapshot every update-owned state surface to prove rejection is atomic.
+    state = (
+        security.now,
+        security._price,
+        security._value,
+        security._notl_value,
+        security._last_pos,
+        security._needupdate,
+        security.data.copy(deep=True),
+        security._prices.copy(deep=True),
+    )
+
+    with pytest.raises(ValueError, match=message):
+        security.update(dates[1], updates[1])
+
+    assert security.now == state[0]
+    assert security._price == state[1]
+    assert security._value == state[2]
+    assert security._notl_value == state[3]
+    assert security._last_pos == state[4]
+    assert security._needupdate == state[5]
+    pd.testing.assert_frame_equal(security.data, state[6])
+    pd.testing.assert_series_equal(security._prices, state[7])
+
+
+# Preserve the established missing-price behavior when no position is held.
+@pytest.mark.parametrize("price_source", ["setup", "update"])
+def test_update_accepts_nan_price_for_zero_position(price_source):
+    dates = pd.date_range("2010-01-01", periods=2)
+    if price_source == "setup":
+        universe = pd.DataFrame({"asset": [100.0, np.nan]}, index=dates)
+        updates = [None, None]
+    else:
+        universe = pd.DataFrame(index=dates)
+        updates = [{"asset": 100.0}, {"asset": np.nan}]
+
+    security = SecurityBase("asset")
+    security.setup(universe)
+    security.update(dates[0], updates[0])
+    security.update(dates[1], updates[1])
+
+    assert security.now == dates[1]
+    assert np.isnan(security._price)
+    assert security._value == 0.0
+    assert security._positions.loc[dates[1]] == 0.0
+    assert np.isnan(security._prices.loc[dates[1]])
+
+
 def test_strategybase_tree_allocate():
     c1 = SecurityBase("c1")
     c2 = SecurityBase("c2")
