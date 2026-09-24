@@ -823,6 +823,39 @@ def test_strategybase_close():
     assert s.value == 1000
 
 
+@pytest.mark.parametrize("operation", ["close", "flatten"])
+@pytest.mark.parametrize("amount", [1000.0, -1000.0])
+def test_strategybase_closes_zero_price_positions(operation, amount):
+    dates = pd.date_range("2010-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 0.0]}, index=dates)
+    strategy = StrategyBase("strategy")
+    strategy.setup(data)
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    strategy.allocate(amount, "asset")
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    security = strategy["asset"]
+    initial_position = security.position
+    initial_cash = strategy.capital
+    initial_value = strategy.value
+
+    # Both public close operations must use the live quantity when value is zero.
+    if operation == "close":
+        strategy.close("asset")
+    else:
+        strategy.flatten()
+    strategy.update(dates[1])
+
+    transactions = strategy.get_transactions()
+    assert security.position == 0.0
+    assert security.value == 0.0
+    assert strategy.capital == initial_cash
+    assert strategy.value == initial_value
+    assert transactions.iloc[-1]["quantity"] == -initial_position
+    assert transactions.iloc[-1]["price"] == 0.0
+
+
 def test_strategybase_flatten():
     s = StrategyBase("s")
 

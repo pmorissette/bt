@@ -1095,7 +1095,10 @@ class StrategyBase(Node):
             if c.position != 0.0:
                 c.transact(-c.position, update=update)
         else:
-            if c.value != 0.0 and not np.isnan(c.value):
+            # A zero price can hide a live security position behind zero value.
+            if c._issec and c.value == 0.0 and c.position != 0.0:
+                c.transact(-c.position, update=update)
+            elif c.value != 0.0 and not np.isnan(c.value):
                 c.allocate(-c.value, update=update)
 
     def flatten(self):
@@ -1106,7 +1109,12 @@ class StrategyBase(Node):
         if self.fixed_income:
             [c.transact(-c.position, update=False) for c in self._childrenv if c.position != 0]
         else:
-            [c.allocate(-c.value, update=False) for c in self._childrenv if c.value != 0]
+            for c in self._childrenv:
+                # A zero price can hide a live security position behind zero value.
+                if c._issec and c.value == 0.0 and c.position != 0.0:
+                    c.transact(-c.position, update=False)
+                elif c.value != 0.0:
+                    c.allocate(-c.value, update=False)
 
         self.root.stale = True
 
@@ -1552,13 +1560,8 @@ class SecurityBase(Node):
         if self._needupdate or self.now != self.parent.now:
             self.update(self.parent.now)
 
-        # ignore 0 alloc
-        # Note that if the price of security has dropped to zero, then it
-        # should never be selected by SelectAll, SelectN etc. I.e. we should
-        # not open the position at zero price. At the same time, we are able
-        # to close it at zero price, because at that point amount=0.
-        # Note also that we don't erase the position in an asset which price
-        # has dropped to zero (though the weight will indeed be = 0)
+        # Ignore zero adjustments. StrategyBase.close handles a live position
+        # whose price and value are zero by transacting its exact quantity.
         if is_zero(amount):
             return
 

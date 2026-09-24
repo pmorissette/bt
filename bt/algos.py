@@ -1912,8 +1912,7 @@ class Rebalance(Algo):
         else:
             base = target.value
 
-        # de-allocate children that are not in targets and have non-zero value
-        # (open positions)
+        # De-allocate open children that are not in targets.
         for cname in target.children:
             # if this child is in our targets, we don't want to close it out
             if cname in targets:
@@ -1926,8 +1925,9 @@ class Rebalance(Algo):
             else:
                 v = c.value
 
-            # if non-zero and non-null, we need to close it out
-            if v != 0.0 and not np.isnan(v):
+            # Zero value can hide live ordinary positions directly or in a child strategy.
+            zero_value_child = not target.fixed_income and v == 0.0
+            if (v != 0.0 and not np.isnan(v)) or zero_value_child:
                 target.close(cname, update=False)
 
         # Child weights describe the investable slice; retain total value as the
