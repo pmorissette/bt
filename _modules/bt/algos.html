@@ -2512,8 +2512,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">base</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span>
 
-        <span class="c1"># de-allocate children that are not in targets and have non-zero value</span>
-        <span class="c1"># (open positions)</span>
+        <span class="c1"># De-allocate open children that are not in targets.</span>
         <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
             <span class="c1"># if this child is in our targets, we don't want to close it out</span>
             <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
@@ -2526,8 +2525,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">v</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
 
-            <span class="c1"># if non-zero and non-null, we need to close it out</span>
-            <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="c1"># Zero value can hide live ordinary positions directly or in a child strategy.</span>
+            <span class="n">zero_value_child</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">==</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="ow">or</span> <span class="n">zero_value_child</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Child weights describe the investable slice; retain total value as the</span>
