@@ -558,7 +558,9 @@ rolled as necessary.</p>
 <li><p>”date”: the first date at which the roll can occur</p></li>
 <li><p>”target”: the security name we are rolling into</p></li>
 <li><p>”factor”: the conversion factor. One unit of the original security
-rolls into “factor” units of the new one.</p></li>
+rolls into “factor” units of the new one. Applicable factors and
+resulting quantities must be finite; invalid due data is rejected
+before portfolio state changes.</p></li>
 </ul>
 </p>
 </dd>
