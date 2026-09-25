@@ -3052,6 +3052,8 @@ adjustment.</p>
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.update" title="Link to this definition">¶</a></dt>
 <dd><p>Update security with a given date and optionally, some data.
 This will update price, value, weight, etc.</p>
+<p>Prospective prices and values are validated before changing current
+state or history. Missing prices remain valid for zero positions.</p>
 </dd></dl>
 
 <dl class="py property">
