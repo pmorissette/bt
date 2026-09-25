@@ -410,6 +410,77 @@ def test_strategybase_tree_adjust():
     assert s.flows[dts[0]] == 1000
 
 
+@pytest.mark.parametrize("amount", [100.0, -100.0])
+def test_strategybase_adjust_propagates_external_flow_to_ancestors(amount):
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
+    root = StrategyBase(
+        "root",
+        [StrategyBase("child", [StrategyBase("leaf")])],
+    )
+    child = root["child"]
+    leaf = child["leaf"]
+    root.setup(data)
+    root.adjust(1000.0)
+    root.update(dates[0])
+    root.update(dates[1])
+
+    leaf.adjust(amount)
+    root.update(dates[1])
+
+    # Every value-owning ancestor needs the external flow in its return denominator.
+    for strategy in (root, child, leaf):
+        assert strategy.flows.loc[dates[1]] == amount
+        assert strategy.price == pytest.approx(100.0)
+    assert root.value == pytest.approx(1000.0 + amount)
+    assert child.value == pytest.approx(amount)
+    assert leaf.value == pytest.approx(amount)
+
+
+def test_fixed_income_adjust_propagates_external_flow_to_ancestors():
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
+    root = FixedIncomeStrategy(
+        "root",
+        children=[FixedIncomeStrategy("child")],
+    )
+    root.setup(data)
+    child = root["child"]
+    root.update(dates[0])
+    root.update(dates[1])
+
+    child.adjust(100.0)
+    root.update(dates[1])
+
+    # Additive P&L must also remain neutral when the flow enters a child sleeve.
+    assert root.flows.loc[dates[1]] == 100.0
+    assert child.flows.loc[dates[1]] == 100.0
+    assert root.price == pytest.approx(100.0)
+    assert child.price == pytest.approx(100.0)
+
+
+def test_strategybase_adjust_does_not_propagate_non_flow():
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
+    root = StrategyBase("root", [StrategyBase("child")])
+    root.setup(data)
+    child = root["child"]
+    root.adjust(1000.0)
+    root.update(dates[0])
+    child.allocate(500.0)
+    root.update(dates[0])
+    root.update(dates[1])
+
+    child.adjust(100.0, flow=False)
+    root.update(dates[1])
+
+    # A non-flow change in a sleeve remains genuine performance at the root.
+    assert child.flows.loc[dates[1]] == 0.0
+    assert root.flows.loc[dates[1]] == 0.0
+    assert root.value == pytest.approx(1100.0)
+    assert root.price == pytest.approx(110.0)
+
+
 def test_strategybase_tree_update():
     c1 = SecurityBase("c1")
     c2 = SecurityBase("c2")
@@ -2206,6 +2277,7 @@ def test_strategy_tree_proper_return_calcs():
     assert m.price == 100
     assert s1.value == 0
     assert s2.value == 0
+    assert m.flows.loc[dts[0]] == 1000
 
     # now allocate directly to child
     s1.allocate(500)
@@ -2217,6 +2289,8 @@ def test_strategy_tree_proper_return_calcs():
     assert s1.weight == pytest.approx(500.0 / 1000)
     assert s1.price == 100
     assert s2.weight == 0
+    assert m.flows.loc[dts[0]] == 1000
+    assert s1.flows.loc[dts[0]] == 500
 
     # allocate to child2 via parent method
     m.allocate(500, "s2")
@@ -2230,6 +2304,8 @@ def test_strategy_tree_proper_return_calcs():
     assert s2.value == 500
     assert s2.weight == pytest.approx(500.0 / 1000)
     assert s2.price == 100
+    assert m.flows.loc[dts[0]] == 1000
+    assert s2.flows.loc[dts[0]] == 500
 
     # now allocate and incur commission fee
     s1.allocate(500, "c1")
