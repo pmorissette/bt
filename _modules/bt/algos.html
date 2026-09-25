@@ -3281,7 +3281,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">fee</span> <span class="o">=</span> <span class="n">margin</span> <span class="o">*</span> <span class="n">f</span>
 
             <span class="c1"># charge it</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="o">-</span><span class="n">fee</span><span class="p">,</span> <span class="n">fee</span><span class="o">=</span><span class="n">fee</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="o">-</span><span class="n">fee</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fee</span><span class="o">=</span><span class="n">fee</span><span class="p">)</span>
 
             <span class="n">equity_ratio</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="n">port_val</span>
             <span class="c1"># check and see if we are below our margin requirement</span>
