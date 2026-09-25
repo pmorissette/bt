@@ -522,7 +522,7 @@ def test_update_rejects_nonfinite_price_or_value_before_state_mutation(
         security._prices.copy(deep=True),
     )
 
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(ValueError, match=message), np.errstate(all="raise"):
         security.update(dates[1], updates[1])
 
     assert security.now == state[0]

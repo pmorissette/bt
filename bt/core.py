@@ -1512,7 +1512,8 @@ class SecurityBase(Node):
             else:
                 raise ValueError(f"Position is open (non-zero: {self._position}) and latest price is NaN for security {self.name} on {date}. Cannot update node value.")
         else:
-            value = self._position * prc * self.multiplier
+            # Float arithmetic reaches validation regardless of NumPy error settings.
+            value = float(self._position) * float(prc) * float(self.multiplier)
             if not math.isfinite(value):
                 raise ValueError(f"Price {prc} produces a non-finite value for security {self.name} on {date}. Cannot update node value.")
 
