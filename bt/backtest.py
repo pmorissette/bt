@@ -508,18 +508,21 @@ class Backtest:
     @property
     def herfindahl_index(self):
         """
-        Calculate Herfindahl-Hirschman Index (HHI) for the portfolio.
-        For each given day, HHI is defined as a sum of squared weights of
-        securities in a portfolio; and varies from 1/N to 1.
-        Value of 1/N would correspond to an equally weighted portfolio and
-        value of 1 corresponds to an extreme case when all amount is invested
-        in a single asset.
+        Calculate Herfindahl-Hirschman Index (HHI) for invested securities.
+        For each day, signed security weights are normalized by total absolute
+        security weight before they are squared and summed. Cash is excluded,
+        so HHI varies from 1/N for N equally exposed securities to 1 for a
+        single security, regardless of leverage. HHI is NaN when there is no
+        security exposure.
 
         1 / HHI is often considered as "an effective number of assets" in
         a given portfolio
         """
         w = self.security_weights
-        return (w**2).sum(axis=1)
+        # Gross normalization keeps concentration independent of cash and leverage scale.
+        gross_exposure = w.abs().sum(axis=1)
+        normalized_weights = w.div(gross_exposure.where(gross_exposure != 0), axis=0)
+        return (normalized_weights**2).sum(axis=1, min_count=1)
 
     @property
     def turnover(self):
