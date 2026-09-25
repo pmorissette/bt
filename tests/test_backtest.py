@@ -251,6 +251,47 @@ def test_herfindahl_index_matches_fixed_income_gross_exposure():
     )
 
 
+def test_nested_capital_flow_is_neutral_in_result():
+    dates = pd.date_range("2024-01-01", periods=3)
+    prices = pd.DataFrame({"asset": [100.0, 100.0, 100.0]}, index=dates)
+
+    def add_child_flow(target):
+        target["sleeve"].adjust(100.0)
+        return True
+
+    flat = bt.Backtest(
+        bt.Strategy(
+            "flat",
+            [bt.algos.RunOnce(), bt.algos.CapitalFlow(100.0)],
+        ),
+        prices,
+        initial_capital=1000.0,
+        progress_bar=False,
+    )
+    nested = bt.Backtest(
+        bt.Strategy(
+            "nested",
+            [bt.algos.RunOnce(), add_child_flow],
+            children=[bt.Strategy("sleeve")],
+        ),
+        prices,
+        initial_capital=1000.0,
+        progress_bar=False,
+    )
+
+    result = bt.run(flat, nested)
+
+    # Equivalent deposits must produce the same value, flow history, and zero return.
+    assert flat.strategy.value == nested.strategy.value == 1100.0
+    pd.testing.assert_series_equal(nested.strategy.flows, flat.strategy.flows)
+    pd.testing.assert_series_equal(
+        result.prices["nested"],
+        result.prices["flat"],
+        check_names=False,
+    )
+    assert result.stats.loc["total_return", "nested"] == pytest.approx(0.0)
+
+
 def test_can_disable_progress_bar_from_run():
     from contextlib import redirect_stderr
     from io import StringIO

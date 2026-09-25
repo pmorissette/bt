@@ -2639,7 +2639,7 @@ class Margin(Algo):
             fee = margin * f
 
             # charge it
-            target.adjust(-fee, fee=fee)
+            target.adjust(-fee, flow=False, fee=fee)
 
             equity_ratio = target.value / port_val
             # check and see if we are below our margin requirement

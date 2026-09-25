@@ -3447,6 +3447,38 @@ def test_margin():
     assert pytest.approx(999.73, 0.001) == s.value
 
 
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("requirement", [0.1, 2.0 / 3.0])
+def test_margin_interest_reduces_return_without_external_flow(nested, requirement):
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
+    sleeve = bt.Strategy("sleeve", children=["asset"])
+    root = bt.Strategy("root", children=[sleeve]) if nested else sleeve
+    root.use_integer_positions(False)
+    root.setup(data)
+    root.adjust(1000.0)
+    root.update(dates[0])
+    target = root["sleeve"] if nested else root
+    if nested:
+        target.allocate(1000.0)
+    target.allocate(2000.0, "asset")
+    root.update(dates[0])
+    margin = algos.Margin(0.1, requirement)
+    margin(target)
+
+    root.update(dates[1])
+    margin(target)
+    root.update(dates[1])
+
+    expected_fee = 1000.0 * (1.1 ** (1.0 / 365.25) - 1.0)
+    assert target.fees.loc[dates[1]] == pytest.approx(expected_fee)
+    # Liquidation can return capital to the parent, but interest is never a flow.
+    assert target.flows.loc[dates[1]] == pytest.approx(-root.capital if nested else 0.0)
+    assert root.flows.loc[dates[1]] == 0.0
+    assert root.value == pytest.approx(1000.0 - expected_fee)
+    assert root.price == pytest.approx(100.0 * (1000.0 - expected_fee) / 1000.0)
+
+
 @pytest.mark.parametrize(
     ("leverage", "requirement"),
     [(1.5, 0.8), (3.0, 0.5)],

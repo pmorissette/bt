@@ -909,11 +909,12 @@ class StrategyBase(Node):
             * amount (float): Amount to adjust by.
             * update (bool): Force update?
             * flow (bool): Is this adjustment a flow? A flow will not have an
-              impact on the performance (price index). Example of flows are
-              simply capital injections (say a monthly contribution to a
-              portfolio). This should not be reflected in the returns. A
-              non-flow (flow=False) does impact performance. A good example
-              of this is a commission, or a dividend.
+              impact on this strategy's or its ancestors' performance (price
+              index). Example of flows are simply capital injections (say a
+              monthly contribution to a portfolio). This should not be
+              reflected in the returns. A non-flow (flow=False) does impact
+              performance. A good example of this is a commission, or a
+              dividend.
 
         """
         # adjust capital
@@ -924,7 +925,12 @@ class StrategyBase(Node):
         # performance. Commissions and other fees are not flows since
         # they have a performance impact
         if flow:
-            self._net_flows += amount
+            node = self
+            while True:
+                node._net_flows += amount
+                if node.parent is node:
+                    break
+                node = node.parent
 
         if update:
             # indicates that data is now stale and must
@@ -967,8 +973,10 @@ class StrategyBase(Node):
                 # and therefore should not incur flow
                 self.parent.adjust(-amount, update=False, flow=False)
 
-            # adjust self's capital
-            self.adjust(amount, update=False, flow=True)
+            # Internal allocation is a flow only for the receiving sleeve;
+            # the ancestors' total values do not change.
+            self.adjust(amount, update=False, flow=False)
+            self._net_flows += amount
 
             # push allocation down to children if any
             # use _weight to avoid triggering an update
