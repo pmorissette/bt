@@ -167,6 +167,35 @@ def test_herfindahl_index_normalizes_gross_security_exposure(weights, expected):
     assert backtest.herfindahl_index.iloc[-1] == pytest.approx(expected)
 
 
+@pytest.mark.parametrize("nested", [False, True])
+def test_herfindahl_index_preserves_exposure_at_zero_nav(nested):
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame({"a": [100.0, 50.0], "b": [100.0, 150.0]}, index=dates)
+
+    def make_strategy(name):
+        return bt.Strategy(
+            name,
+            [bt.algos.RunOnDate(dates[0]), bt.algos.WeighSpecified(a=1.0, b=-1.0), bt.algos.Rebalance()],
+        )
+
+    if nested:
+        strategy = bt.Strategy(
+            "root",
+            [bt.algos.RunOnce(), bt.algos.WeighSpecified(left=0.5, right=0.5), bt.algos.Rebalance()],
+            children=[make_strategy("left"), make_strategy("right")],
+        )
+    else:
+        strategy = make_strategy("root")
+    backtest = bt.Backtest(strategy, prices, initial_capital=100.0, integer_positions=False, progress_bar=False)
+
+    bt.run(backtest)
+
+    # Cash offsets net security value, but the exposures are still 50 and -150.
+    assert backtest.strategy.value == 0.0
+    assert backtest.herfindahl_index.loc[dates[0]] == pytest.approx(0.5)
+    assert backtest.herfindahl_index.loc[dates[1]] == pytest.approx(0.625)
+
+
 def test_herfindahl_index_is_undefined_without_security_exposure():
     dates = pd.date_range("2024-01-01", periods=2)
     prices = pd.DataFrame(100.0, index=dates, columns=["a", "b"])
@@ -175,6 +204,7 @@ def test_herfindahl_index_is_undefined_without_security_exposure():
 
     bt.run(backtest)
 
+    assert backtest.herfindahl_index.index.equals(backtest.strategy.values.index)
     assert backtest.herfindahl_index.isna().all()
 
 

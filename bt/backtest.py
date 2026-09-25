@@ -509,19 +509,26 @@ class Backtest:
     def herfindahl_index(self):
         """
         Calculate Herfindahl-Hirschman Index (HHI) for invested securities.
-        For each day, signed security weights are normalized by total absolute
-        security weight before they are squared and summed. Cash is excluded,
-        so HHI varies from 1/N for N equally exposed securities to 1 for a
-        single security, regardless of leverage. HHI is NaN when there is no
-        security exposure.
+        For each day, signed security values (notionals for fixed income) are
+        normalized by total absolute security exposure before they are squared
+        and summed. Cash is excluded, so HHI varies from 1/N for N equally
+        exposed securities to 1 for a single security, regardless of leverage.
+        HHI is NaN when there is no security exposure.
 
         1 / HHI is often considered as "an effective number of assets" in
         a given portfolio
         """
-        w = self.security_weights
+        values = {}
+        for security in self.strategy.securities:
+            exposure = security.notional_values if self.strategy.fixed_income else security.values
+            if security.name in values:
+                values[security.name] = values[security.name].add(exposure, fill_value=0)
+            else:
+                values[security.name] = exposure
+        exposures = pd.DataFrame(values, index=self.strategy.values.index)
         # Gross normalization keeps concentration independent of cash and leverage scale.
-        gross_exposure = w.abs().sum(axis=1)
-        normalized_weights = w.div(gross_exposure.where(gross_exposure != 0), axis=0)
+        gross_exposure = exposures.abs().sum(axis=1)
+        normalized_weights = exposures.div(gross_exposure.where(gross_exposure != 0), axis=0)
         return (normalized_weights**2).sum(axis=1, min_count=1)
 
     @property
