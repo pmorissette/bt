@@ -1747,12 +1747,12 @@ percentage of the whole portfolio over time</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="bt.backtest.Backtest.herfindahl_index">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">herfindahl_index</span></span><a class="headerlink" href="#bt.backtest.Backtest.herfindahl_index" title="Link to this definition">¶</a></dt>
-<dd><p>Calculate Herfindahl-Hirschman Index (HHI) for the portfolio.
-For each given day, HHI is defined as a sum of squared weights of
-securities in a portfolio; and varies from 1/N to 1.
-Value of 1/N would correspond to an equally weighted portfolio and
-value of 1 corresponds to an extreme case when all amount is invested
-in a single asset.</p>
+<dd><p>Calculate Herfindahl-Hirschman Index (HHI) for invested securities.
+For each day, signed security values (notionals for fixed income) are
+normalized by total absolute security exposure before they are squared
+and summed. Cash is excluded, so HHI varies from 1/N for N equally
+exposed securities to 1 for a single security, regardless of leverage.
+HHI is NaN when there is no security exposure.</p>
 <p>1 / HHI is often considered as “an effective number of assets” in
 a given portfolio</p>
 </dd></dl>

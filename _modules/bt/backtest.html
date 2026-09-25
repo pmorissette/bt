@@ -964,18 +964,28 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">herfindahl_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Calculate Herfindahl-Hirschman Index (HHI) for the portfolio.</span>
-<span class="sd">        For each given day, HHI is defined as a sum of squared weights of</span>
-<span class="sd">        securities in a portfolio; and varies from 1/N to 1.</span>
-<span class="sd">        Value of 1/N would correspond to an equally weighted portfolio and</span>
-<span class="sd">        value of 1 corresponds to an extreme case when all amount is invested</span>
-<span class="sd">        in a single asset.</span>
+<span class="sd">        Calculate Herfindahl-Hirschman Index (HHI) for invested securities.</span>
+<span class="sd">        For each day, signed security values (notionals for fixed income) are</span>
+<span class="sd">        normalized by total absolute security exposure before they are squared</span>
+<span class="sd">        and summed. Cash is excluded, so HHI varies from 1/N for N equally</span>
+<span class="sd">        exposed securities to 1 for a single security, regardless of leverage.</span>
+<span class="sd">        HHI is NaN when there is no security exposure.</span>
 
 <span class="sd">        1 / HHI is often considered as "an effective number of assets" in</span>
 <span class="sd">        a given portfolio</span>
 <span class="sd">        """</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">security_weights</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">security</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">securities</span><span class="p">:</span>
+            <span class="n">exposure</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">notional_values</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">fixed_income</span> <span class="k">else</span> <span class="n">security</span><span class="o">.</span><span class="n">values</span>
+            <span class="k">if</span> <span class="n">security</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                <span class="n">values</span><span class="p">[</span><span class="n">security</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">security</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">exposure</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">values</span><span class="p">[</span><span class="n">security</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">exposure</span>
+        <span class="n">exposures</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="c1"># Gross normalization keeps concentration independent of cash and leverage scale.</span>
+        <span class="n">gross_exposure</span> <span class="o">=</span> <span class="n">exposures</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">normalized_weights</span> <span class="o">=</span> <span class="n">exposures</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">gross_exposure</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gross_exposure</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">normalized_weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">min_count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">turnover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
