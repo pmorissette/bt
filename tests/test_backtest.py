@@ -553,6 +553,47 @@ def test_nested_strategy_backtest_handles_initial_paper_trade_value():
     assert result.prices["root"].iloc[0] == 100
 
 
+@pytest.mark.parametrize(
+    ("invalid_price", "multiplier", "message"),
+    [
+        pytest.param(np.inf, 1.0, "Price is infinite", id="infinite-price"),
+        pytest.param(np.finfo(float).max, 2.0, "non-finite value", id="derived-overflow"),
+    ],
+)
+def test_backtest_rejects_nonfinite_value_before_result_construction(
+    invalid_price,
+    multiplier,
+    message,
+):
+    dates = pd.date_range("2026-01-01", periods=3)
+    prices = pd.DataFrame({"asset": [100.0, invalid_price, 110.0]}, index=dates)
+    strategy = bt.Strategy(
+        "strategy",
+        [
+            bt.algos.RunOnce(),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+        children=[bt.Security("asset", multiplier=multiplier)],
+    )
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        integer_positions=False,
+        progress_bar=False,
+    )
+
+    # Rejection must precede invalid portfolio arithmetic and result construction.
+    with pytest.raises(ValueError, match=message), np.errstate(all="raise"):
+        backtest.run()
+
+    assert backtest.strategy["asset"].now == dates[0]
+    assert np.isfinite(backtest.strategy["asset"]._value)
+    assert backtest._stat_prices is None
+    assert backtest.stats == {}
+
+
 def test_run_after_date_stats_include_first_transaction():
     dates = pd.date_range("2000-01-01", "2002-12-31", freq=pd.tseries.offsets.BDay())
     prices = pd.DataFrame(index=dates, data={"a": 100.0})
