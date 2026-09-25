@@ -134,6 +134,123 @@ def test_turnover():
     assert np.allclose(t.turnover[dts[4]], 76100.0 / 1015285)
 
 
+@pytest.mark.parametrize(
+    ("weights", "expected"),
+    [
+        pytest.param({"a": 0.5, "b": 0.5}, 0.5, id="fully-invested"),
+        pytest.param({"a": 0.25, "b": 0.25}, 0.5, id="cash-reserve"),
+        pytest.param({"a": 2.0, "b": -1.0}, 5.0 / 9.0, id="leveraged-long-short"),
+        pytest.param({"a": 0.2, "b": -0.1}, 5.0 / 9.0, id="scaled-long-short"),
+    ],
+)
+def test_herfindahl_index_normalizes_gross_security_exposure(weights, expected):
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame(100.0, index=dates, columns=["a", "b"])
+    strategy = bt.Strategy(
+        "ordinary",
+        [
+            bt.algos.RunOnce(),
+            bt.algos.WeighSpecified(**weights),
+            bt.algos.Rebalance(),
+        ],
+    )
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        integer_positions=False,
+        progress_bar=False,
+    )
+
+    bt.run(backtest)
+
+    # Concentration depends on relative invested exposure, not cash or leverage scale.
+    assert backtest.herfindahl_index.iloc[-1] == pytest.approx(expected)
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_herfindahl_index_preserves_exposure_at_zero_nav(nested):
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame({"a": [100.0, 50.0], "b": [100.0, 150.0]}, index=dates)
+
+    def make_strategy(name):
+        return bt.Strategy(
+            name,
+            [bt.algos.RunOnDate(dates[0]), bt.algos.WeighSpecified(a=1.0, b=-1.0), bt.algos.Rebalance()],
+        )
+
+    if nested:
+        strategy = bt.Strategy(
+            "root",
+            [bt.algos.RunOnce(), bt.algos.WeighSpecified(left=0.5, right=0.5), bt.algos.Rebalance()],
+            children=[make_strategy("left"), make_strategy("right")],
+        )
+    else:
+        strategy = make_strategy("root")
+    backtest = bt.Backtest(strategy, prices, initial_capital=100.0, integer_positions=False, progress_bar=False)
+
+    bt.run(backtest)
+
+    # Cash offsets net security value, but the exposures are still 50 and -150.
+    assert backtest.strategy.value == 0.0
+    assert backtest.herfindahl_index.loc[dates[0]] == pytest.approx(0.5)
+    assert backtest.herfindahl_index.loc[dates[1]] == pytest.approx(0.625)
+
+
+def test_herfindahl_index_is_undefined_without_security_exposure():
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame(100.0, index=dates, columns=["a", "b"])
+    strategy = bt.Strategy("cash_only")
+    backtest = bt.Backtest(strategy, prices, progress_bar=False)
+
+    bt.run(backtest)
+
+    assert backtest.herfindahl_index.index.equals(backtest.strategy.values.index)
+    assert backtest.herfindahl_index.isna().all()
+
+
+def test_herfindahl_index_matches_fixed_income_gross_exposure():
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame(100.0, index=dates, columns=["a", "b"])
+    weights = {"a": 2.0, "b": -1.0}
+    ordinary = bt.Backtest(
+        bt.Strategy(
+            "ordinary",
+            [
+                bt.algos.RunOnce(),
+                bt.algos.WeighSpecified(**weights),
+                bt.algos.Rebalance(),
+            ],
+        ),
+        prices,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    fixed_income = bt.Backtest(
+        bt.FixedIncomeStrategy(
+            "fixed_income",
+            [
+                bt.algos.RunOnce(),
+                bt.algos.WeighSpecified(**weights),
+                bt.algos.SetNotional("notional"),
+                bt.algos.Rebalance(),
+            ],
+        ),
+        prices,
+        initial_capital=0,
+        integer_positions=False,
+        progress_bar=False,
+        additional_data={"notional": pd.Series(1_000_000.0, index=dates)},
+    )
+
+    bt.run(ordinary, fixed_income)
+
+    # Equivalent signed exposures must agree across value- and notional-weighted strategies.
+    assert ordinary.herfindahl_index.iloc[-1] == pytest.approx(5.0 / 9.0)
+    assert ordinary.herfindahl_index.iloc[-1] == pytest.approx(
+        fixed_income.herfindahl_index.iloc[-1]
+    )
+
+
 def test_can_disable_progress_bar_from_run():
     from contextlib import redirect_stderr
     from io import StringIO
