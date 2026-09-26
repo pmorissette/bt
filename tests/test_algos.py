@@ -1826,6 +1826,62 @@ def test_weigh_randomly():
         assert weights[c] >= 0.3
 
 
+@pytest.mark.parametrize("bounds", [(0.6, 1.0), (0.0, 0.4), (0.8, 0.2)])
+def test_weigh_randomly_rejects_infeasible_bounds_without_changing_weights(bounds):
+    strategy = bt.Strategy("s")
+    strategy.temp["selected"] = ["c1", "c2"]
+    original_weights = {"c1": 0.5, "c2": 0.5}
+    strategy.temp["weights"] = original_weights
+
+    # Rejection at the weight owner must precede replacement of valid targets.
+    with pytest.raises(ValueError):
+        algos.WeighRandomly(bounds)(strategy)
+
+    assert strategy.temp["weights"] is original_weights
+
+
+def test_weigh_randomly_rejection_prevents_rebalance_liquidation():
+    dates = pd.date_range("2026-01-01", periods=1)
+    prices = pd.DataFrame({"c1": [100.0], "c2": [100.0]}, index=dates)
+    strategy = bt.Strategy("s", children=["c1", "c2"])
+    strategy.setup(prices)
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    strategy.allocate(500.0, "c1")
+    strategy.allocate(500.0, "c2")
+    strategy.temp["selected"] = ["c1", "c2"]
+    original_weights = {"c1": 0.5, "c2": 0.5}
+    strategy.temp["weights"] = original_weights
+
+    # The real weighting-to-rebalance chain must stop before selling either holding.
+    stack = bt.AlgoStack(algos.WeighRandomly((0.6, 1.0)), algos.Rebalance())
+    with pytest.raises(ValueError, match="solution not possible"):
+        stack(strategy)
+
+    assert strategy.temp["weights"] is original_weights
+    assert strategy["c1"].position == 5.0
+    assert strategy["c2"].position == 5.0
+    assert strategy.capital == 0.0
+    assert strategy.value == 1000.0
+
+
+def test_weigh_randomly_accepts_empty_selection():
+    strategy = bt.Strategy("s")
+    strategy.temp["selected"] = []
+
+    assert algos.WeighRandomly()(strategy)
+    assert strategy.temp["weights"] == {}
+
+
+@pytest.mark.parametrize("bounds", [(0.5, 1.0), (0.0, 0.5)])
+def test_weigh_randomly_accepts_exact_feasibility_boundary(bounds):
+    strategy = bt.Strategy("s")
+    strategy.temp["selected"] = ["c1", "c2"]
+
+    assert algos.WeighRandomly(bounds)(strategy)
+    assert strategy.temp["weights"] == pytest.approx({"c1": 0.5, "c2": 0.5})
+
+
 def test_set_stat():
     s = bt.Strategy("s")
 

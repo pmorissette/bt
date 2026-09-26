@@ -1397,6 +1397,10 @@ class WeighRandomly(Algo):
     Requires:
         * selected
 
+    Raises:
+        * ValueError: If the bounds cannot produce the requested weight sum for
+          the selected securities.
+
     """
 
     def __init__(self, bounds=(0.0, 1.0), weight_sum=1):
@@ -1408,14 +1412,13 @@ class WeighRandomly(Algo):
         sel = target.temp["selected"]
         n = len(sel)
 
-        w = {}
-        try:
-            rw = bt.ffn.random_weights(n, self.bounds, self.weight_sum)
-            w = dict(zip(sel, rw))
-        except ValueError:
-            pass
+        # No selection is a valid target state, independent of the requested sum.
+        if n == 0:
+            target.temp["weights"] = {}
+            return True
 
-        target.temp["weights"] = w
+        rw = bt.ffn.random_weights(n, self.bounds, self.weight_sum)
+        target.temp["weights"] = dict(zip(sel, rw))
         return True
 
 
