@@ -1970,6 +1970,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Requires:</span>
 <span class="sd">        * selected</span>
 
+<span class="sd">    Raises:</span>
+<span class="sd">        * ValueError: If the bounds cannot produce the requested weight sum for</span>
+<span class="sd">          the selected securities.</span>
+
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">weight_sum</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -1981,14 +1985,13 @@ window.runMermaid = runMermaid;</script>
         <span class="n">sel</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"selected"</span><span class="p">]</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span>
 
-        <span class="n">w</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">rw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">random_weights</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span><span class="p">)</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="n">rw</span><span class="p">))</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">pass</span>
+        <span class="c1"># No selection is a valid target state, independent of the requested sum.</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
+        <span class="n">rw</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">random_weights</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_sum</span><span class="p">)</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="n">rw</span><span class="p">))</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
 
