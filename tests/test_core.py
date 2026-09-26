@@ -4152,6 +4152,54 @@ def test_fi_strategy_tree_rebalance():
     assert c2.notional_value == -500
 
 
+@pytest.mark.parametrize(
+    ("fixed_income", "expected_position"),
+    [
+        pytest.param(True, 1000.0, id="quantity-notional"),
+        pytest.param(False, 5.0, id="market-value-notional"),
+    ],
+)
+def test_fi_strategy_rebalance_respects_coupon_security_mode(
+    fixed_income,
+    expected_position,
+):
+    date = pd.Timestamp("2020-01-01")
+    prices = pd.DataFrame({"bond": [100.0]}, index=[date])
+    security = CouponPayingSecurity(
+        "bond",
+        multiplier=2,
+        fixed_income=fixed_income,
+    )
+    strategy = FixedIncomeStrategy("strategy", children=[security])
+    strategy.use_integer_positions(False)
+    strategy.setup(prices, coupons=prices * 0.0)
+    strategy.update(date)
+    security = strategy["bond"]
+
+    # The mode selects quantity or market value as the common 1000 notional target.
+    strategy.rebalance(1.0, "bond", base=1000.0)
+    assert security.fixed_income is fixed_income
+    assert security.position == pytest.approx(expected_position)
+    assert security.notional_value == pytest.approx(1000.0)
+
+    # Repeating an unchanged target must not trade or alter accounting state.
+    outlays = security.outlays.copy()
+    state = (
+        security.position,
+        strategy.capital,
+        strategy.value,
+        strategy.notional_value,
+    )
+    strategy.rebalance(1.0, "bond", base=1000.0)
+    assert (
+        security.position,
+        strategy.capital,
+        strategy.value,
+        strategy.notional_value,
+    ) == pytest.approx(state)
+    pd.testing.assert_series_equal(security.outlays, outlays)
+
+
 def test_fi_strategy_tree_rebalance_nested():
     c1 = CouponPayingSecurity("c1")
     c2 = CouponPayingSecurity("c2")

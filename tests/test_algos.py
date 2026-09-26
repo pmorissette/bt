@@ -928,6 +928,34 @@ def test_rebalance_fixedincome():
     assert c2.weight == pytest.approx(1.0)
 
 
+@pytest.mark.parametrize("lazy_add", [False, True], ids=["explicit", "lazy"])
+def test_rebalance_fixed_income_security_targets_notional(lazy_add):
+    date = pd.Timestamp("2020-01-01")
+    prices = pd.DataFrame({"bond": [100.0]}, index=[date])
+    strategy = bt.FixedIncomeStrategy(
+        "strategy",
+        children=[bt.FixedIncomeSecurity("bond", multiplier=2, lazy_add=lazy_add)],
+    )
+    strategy.setup(prices)
+    strategy.update(date)
+    strategy.temp["notional_value"] = 1000.0
+    strategy.temp["weights"] = {"bond": 1.0}
+
+    # Both child-resolution paths must dispatch the target as quantity notional.
+    assert algos.Rebalance()(strategy)
+    security = strategy["bond"]
+    assert security.fixed_income
+    assert security.position == 1000.0
+    assert security.notional_value == 1000.0
+    assert security.value == 200000.0
+
+    # Repeating the same Algo target must not add another transaction.
+    outlays = security.outlays.copy()
+    assert algos.Rebalance()(strategy)
+    assert security.position == 1000.0
+    pd.testing.assert_series_equal(security.outlays, outlays)
+
+
 def test_select_all():
     algo = algos.SelectAll()
 
