@@ -1488,6 +1488,48 @@ def test_backtest_cost_model_rejects_runtime_invalid_input_before_trade():
     assert backtest.strategy.get_transactions().empty
 
 
+@pytest.mark.parametrize("cost_model_type", [bt.SqrtCostModel, bt.AlmgrenChrissCostModel])
+@pytest.mark.parametrize("market_input", ["volume", "volatility"])
+@pytest.mark.parametrize(
+    ("initial_position", "method", "amount"),
+    [(0.0, "transact", 1.0), (2.0, "transact", 1.0), (2.0, "transact", -2.0), (2.0, "allocate", -200.0)],
+    ids=["open", "add", "close", "allocate-close"],
+)
+def test_cost_model_rejection_preserves_transaction_state(cost_model_type, market_input, initial_position, method, amount):
+    dates = pd.date_range("2026-01-01", periods=2)
+    prices = pd.DataFrame({"asset": 100.0}, index=dates)
+    backtest = bt.Backtest(
+        bt.Strategy("strategy", children=[bt.Security("asset")]),
+        prices,
+        commissions=cost_model_type(),
+        volume=prices * 10.0,
+        volatility=prices * 0.002,
+        initial_capital=1_000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    backtest.run()
+    strategy = backtest.strategy
+    security = strategy["asset"]
+    security.transact(initial_position)
+    strategy.update(strategy.now)
+    getattr(backtest, market_input).loc[strategy.now, "asset"] = np.nan
+    security_state = {name: getattr(security, name) for name in ("_position", "_needupdate", "_outlay", "_bidoffer_paid")}
+    strategy_state = {name: getattr(strategy, name) for name in ("_capital", "_last_fee", "stale")}
+    security_data = security.data.copy()
+    strategy_data = strategy.data.copy()
+    transactions = strategy.get_transactions().copy()
+
+    with pytest.raises(ValueError, match=market_input), np.errstate(all="raise"):
+        getattr(security, method)(amount)
+
+    assert {name: getattr(security, name) for name in security_state} == security_state
+    assert {name: getattr(strategy, name) for name in strategy_state} == strategy_state
+    pd.testing.assert_frame_equal(security.data, security_data)
+    pd.testing.assert_frame_equal(strategy.data, strategy_data)
+    pd.testing.assert_frame_equal(strategy.get_transactions(), transactions)
+
+
 def test_backtest_cost_model_does_not_pollute_legacy_path():
     """Running a Backtest with a CostModel must not perturb the unmodified path."""
     prices, volume, volatility = _impact_universe()

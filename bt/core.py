@@ -1744,6 +1744,9 @@ class SecurityBase(Node):
         if price is not None and not self._bidoffer_set:
             raise ValueError('Cannot transact at custom prices when "bidoffer" has not been passed during setup to enable bid-offer tracking.')
 
+        # Calculate costs before mutating trade state: commission validation can fail.
+        full_outlay, outlay, fee, bidoffer = self.outlay(q, p=price)
+
         # this security will need an update, even if pos is 0 (for example if
         # we close the positions, value and pos is 0, but still need to do that
         # last update)
@@ -1751,12 +1754,6 @@ class SecurityBase(Node):
 
         # adjust position & value
         self._position += q
-
-        # calculate proper adjustment for parent
-        # parent passed down amount so we want to pass
-        # -outlay back up to parent to adjust for capital
-        # used
-        full_outlay, outlay, fee, bidoffer = self.outlay(q, p=price)
 
         # store outlay for future reference
         self._outlay += outlay
