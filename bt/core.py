@@ -1744,6 +1744,9 @@ class SecurityBase(Node):
         if price is not None and not self._bidoffer_set:
             raise ValueError('Cannot transact at custom prices when "bidoffer" has not been passed during setup to enable bid-offer tracking.')
 
+        # Calculate costs before mutating trade state: commission validation can fail.
+        full_outlay, outlay, fee, bidoffer = self.outlay(q, p=price)
+
         # this security will need an update, even if pos is 0 (for example if
         # we close the positions, value and pos is 0, but still need to do that
         # last update)
@@ -1751,12 +1754,6 @@ class SecurityBase(Node):
 
         # adjust position & value
         self._position += q
-
-        # calculate proper adjustment for parent
-        # parent passed down amount so we want to pass
-        # -outlay back up to parent to adjust for capital
-        # used
-        full_outlay, outlay, fee, bidoffer = self.outlay(q, p=price)
 
         # store outlay for future reference
         self._outlay += outlay
@@ -2224,8 +2221,18 @@ class CostModel:
     law, Almgren-Chriss, etc.). Commissions / spread / fees are absorbed
     into the model's linear term where applicable.
 
+    For nonzero trades, volume and volatility must be finite and
+    non-negative. Zero volume remains an explicit zero-cost observation.
     Subclasses implement ``cost(q, p, V, sigma) -> float``.
     """
+
+    @cy.locals(V=cy.double, sigma=cy.double)
+    def _validate_inputs(self, V, sigma):
+        """Reject market inputs that cannot produce a valid impact cost."""
+        if not math.isfinite(V) or V < 0.0:
+            raise ValueError("volume must be finite and non-negative")
+        if not math.isfinite(sigma) or sigma < 0.0:
+            raise ValueError("volatility must be finite and non-negative")
 
     @cy.locals(q=cy.double, p=cy.double, V=cy.double, sigma=cy.double)
     def cost(self, q, p, V, sigma):
@@ -2257,7 +2264,10 @@ class SqrtCostModel(CostModel):
     @cy.locals(q=cy.double, p=cy.double, V=cy.double, sigma=cy.double, abs_q=cy.double)
     def cost(self, q, p, V, sigma):
         abs_q = abs(q)
-        if V <= 0.0 or abs_q == 0.0:
+        if abs_q == 0.0:
+            return 0.0
+        self._validate_inputs(V, sigma)
+        if V == 0.0:
             return 0.0
         return (2.0 / 3.0) * self.Y * sigma * abs_q * (abs_q / V) ** 0.5 * p
 
@@ -2296,7 +2306,10 @@ class AlmgrenChrissCostModel(CostModel):
     @cy.locals(q=cy.double, p=cy.double, V=cy.double, sigma=cy.double, abs_q=cy.double, part=cy.double)
     def cost(self, q, p, V, sigma):
         abs_q = abs(q)
-        if V <= 0.0 or abs_q == 0.0:
+        if abs_q == 0.0:
+            return 0.0
+        self._validate_inputs(V, sigma)
+        if V == 0.0:
             return 0.0
         part = abs_q / V
         return ((0.5 * self.alpha + self.beta) * sigma * part + self.epsilon) * abs_q * p
