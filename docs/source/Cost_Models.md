@@ -23,6 +23,10 @@ example uses the AC model on a \$1 billion notional book to make impact costs
 visible. The design of the cost-model interface follows Abbade & Costa (2026)
 [^abbadecosta2026].
 
+Volume and volatility observations must be finite and non-negative. Zero
+volatility is valid. Zero volume retains the established zero-cost behavior,
+which lets callers represent a bar on which the model should not charge impact.
+
 The cost decomposition (Almgren-Chriss):
 
 $$

@@ -4440,7 +4440,6 @@ def test_sqrt_cost_model_matches_closed_form():
 def test_sqrt_cost_model_zero_volume_returns_zero():
     cm = SqrtCostModel()
     assert cm.cost(100.0, 50.0, 0.0, 0.02) == 0.0
-    assert cm.cost(100.0, 50.0, -1.0, 0.02) == 0.0
 
 
 def test_sqrt_cost_model_zero_quantity_returns_zero():
@@ -4477,6 +4476,49 @@ def test_almgren_chriss_cost_model_zero_volume_returns_zero():
 def test_almgren_chriss_cost_model_zero_quantity_returns_zero():
     cm = AlmgrenChrissCostModel()
     assert cm.cost(0.0, 50.0, 1_000_000.0, 0.02) == 0.0
+
+
+@pytest.mark.parametrize("cost_model_type", [SqrtCostModel, AlmgrenChrissCostModel])
+@pytest.mark.parametrize(
+    ("volume", "volatility", "invalid_input"),
+    [
+        pytest.param(-1.0, 0.02, "volume", id="negative-volume"),
+        pytest.param(np.nan, 0.02, "volume", id="missing-volume"),
+        pytest.param(np.inf, 0.02, "volume", id="positive-infinite-volume"),
+        pytest.param(-np.inf, 0.02, "volume", id="negative-infinite-volume"),
+        pytest.param(1_000_000.0, -0.02, "volatility", id="negative-volatility"),
+        pytest.param(1_000_000.0, np.nan, "volatility", id="missing-volatility"),
+        pytest.param(1_000_000.0, np.inf, "volatility", id="positive-infinite-volatility"),
+        pytest.param(1_000_000.0, -np.inf, "volatility", id="negative-infinite-volatility"),
+    ],
+)
+def test_cost_models_reject_invalid_market_inputs(
+    cost_model_type,
+    volume,
+    volatility,
+    invalid_input,
+):
+    """Market-impact inputs must not produce negative or non-finite costs."""
+    with pytest.raises(ValueError, match=invalid_input), np.errstate(all="raise"):
+        cost_model_type().cost(100.0, 50.0, volume, volatility)
+
+
+@pytest.mark.parametrize(
+    ("cost_model", "expected_cost"),
+    [
+        pytest.param(SqrtCostModel(), 0.0, id="square-root"),
+        pytest.param(AlmgrenChrissCostModel(), 2.5, id="almgren-chriss"),
+    ],
+)
+def test_cost_models_accept_zero_volatility(cost_model, expected_cost):
+    """Zero volatility is valid and preserves each model's non-impact terms."""
+    assert cost_model.cost(100.0, 50.0, 1_000_000.0, 0.0) == expected_cost
+
+
+@pytest.mark.parametrize("cost_model_type", [SqrtCostModel, AlmgrenChrissCostModel])
+def test_cost_models_zero_quantity_does_not_require_market_inputs(cost_model_type):
+    """Market inputs are inapplicable when no trade is requested."""
+    assert cost_model_type().cost(0.0, 50.0, np.nan, np.nan) == 0.0
 
 
 def test_almgren_chriss_cost_model_sign_invariance():

@@ -1379,6 +1379,115 @@ def test_backtest_cost_model_requires_volume_and_volatility():
         )
 
 
+@pytest.mark.parametrize("market_input", ["volume", "volatility"])
+@pytest.mark.parametrize("dtype", ["float64", "Float64"])
+@pytest.mark.parametrize(
+    ("invalid_value", "case"),
+    [
+        pytest.param(-1.0, "negative", id="negative"),
+        pytest.param(np.nan, "missing", id="missing"),
+        pytest.param(np.inf, "infinite", id="infinite"),
+    ],
+)
+def test_backtest_cost_model_rejects_invalid_market_data(
+    market_input,
+    dtype,
+    invalid_value,
+    case,
+):
+    prices, volume, volatility = _impact_universe(n_periods=2, n_securities=1)
+    frames = {"volume": volume, "volatility": volatility}
+    frame = frames[market_input].astype(dtype)
+    frame.iloc[0, 0] = pd.NA if dtype == "Float64" and case == "missing" else invalid_value
+    frames[market_input] = frame
+    strategy = bt.Strategy(
+        "strategy",
+        [
+            bt.algos.RunOnce(),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+        children=[bt.Security("A")],
+    )
+
+    # Complete market inputs must be rejected before the strategy template is used.
+    with pytest.raises(ValueError, match=market_input), np.errstate(all="raise"):
+        bt.Backtest(
+            strategy,
+            prices,
+            commissions=bt.SqrtCostModel(),
+            volume=frames["volume"],
+            volatility=frames["volatility"],
+            initial_capital=1_000.0,
+            integer_positions=False,
+            progress_bar=False,
+        )
+
+    assert strategy["A"].position == 0.0
+    assert strategy.capital == 0.0
+
+
+@pytest.mark.parametrize("market_input", ["volume", "volatility"])
+def test_backtest_cost_model_accepts_zero_market_data(market_input):
+    prices, volume, volatility = _impact_universe(n_periods=2, n_securities=1)
+    frames = {"volume": volume, "volatility": volatility}
+    frames[market_input].iloc[:, :] = 0.0
+    backtest = bt.Backtest(
+        _ew_strategy(),
+        prices,
+        commissions=bt.SqrtCostModel(),
+        volume=frames["volume"],
+        volatility=frames["volatility"],
+        initial_capital=1_000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+
+    backtest.run()
+
+    # Neutral market inputs remain valid and produce no impact cost.
+    assert backtest.strategy.fees.sum() == 0.0
+
+
+def test_backtest_cost_model_rejects_runtime_invalid_input_before_trade():
+    dates = pd.date_range("2026-01-01", periods=2)
+    prices = pd.DataFrame({"asset": 100.0}, index=dates)
+    volume = pd.DataFrame({"asset": 1_000.0}, index=dates)
+    volatility = pd.DataFrame({"asset": 0.2}, index=dates)
+    strategy = bt.Strategy(
+        "strategy",
+        [
+            bt.algos.RunOnce(),
+            bt.algos.SelectAll(),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+    )
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        commissions=bt.SqrtCostModel(),
+        volume=volume,
+        volatility=volatility,
+        initial_capital=1_000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    backtest.volatility.loc[dates[0], "asset"] = -0.2
+
+    # The per-trade guard protects callers that alter public inputs after construction.
+    with pytest.raises(ValueError, match="volatility"), np.errstate(all="raise"):
+        backtest.run()
+
+    security = backtest.strategy["asset"]
+    assert security.position == 0.0
+    assert security._outlay == 0.0
+    assert backtest.strategy.capital == 1_000.0
+    assert backtest.strategy.fees.sum() == 0.0
+    assert backtest.strategy.get_transactions().empty
+
+
 def test_backtest_cost_model_does_not_pollute_legacy_path():
     """Running a Backtest with a CostModel must not perturb the unmodified path."""
     prices, volume, volatility = _impact_universe()

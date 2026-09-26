@@ -169,12 +169,12 @@ class Backtest:
               will by used
               by :class:`CouponPayingSecurity <bt.core.CouponPayingSecurity>`
               to calculate asymmetric holding cost of long (or short) positions.
-        * volume (DataFrame): per-security bar volume, same index and columns
-          as ``data``. Required when ``commissions`` is a ``CostModel``,
-          ignored otherwise.
-        * volatility (DataFrame): per-security bar volatility, same index and
-          columns as ``data``. Required when ``commissions`` is a
-          ``CostModel``, ignored otherwise.
+        * volume (DataFrame): finite, non-negative per-security bar volume,
+          with the same index and columns as ``data``. Required when
+          ``commissions`` is a ``CostModel``, ignored otherwise.
+        * volatility (DataFrame): finite, non-negative per-security bar
+          volatility, with the same index and columns as ``data``. Required
+          when ``commissions`` is a ``CostModel``, ignored otherwise.
 
 
     Attributes:
@@ -256,6 +256,12 @@ class Backtest:
             raise ValueError("`volume` columns must match `data` columns.")
         if not volatility.columns.equals(data.columns):
             raise ValueError("`volatility` columns must match `data` columns.")
+
+        # Validate the complete market-data domain before any trading can begin.
+        for name, frame in (("volume", volume), ("volatility", volatility)):
+            values = frame.to_numpy(dtype=float, na_value=np.nan)
+            if not np.isfinite(values).all() or (values < 0.0).any():
+                raise ValueError(f"`{name}` must contain only finite, non-negative values.")
 
     @staticmethod
     def _prepend_missing_row(data):
