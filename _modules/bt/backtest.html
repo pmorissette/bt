@@ -622,12 +622,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">              will by used</span>
 <span class="sd">              by :class:`CouponPayingSecurity &lt;bt.core.CouponPayingSecurity&gt;`</span>
 <span class="sd">              to calculate asymmetric holding cost of long (or short) positions.</span>
-<span class="sd">        * volume (DataFrame): per-security bar volume, same index and columns</span>
-<span class="sd">          as ``data``. Required when ``commissions`` is a ``CostModel``,</span>
-<span class="sd">          ignored otherwise.</span>
-<span class="sd">        * volatility (DataFrame): per-security bar volatility, same index and</span>
-<span class="sd">          columns as ``data``. Required when ``commissions`` is a</span>
-<span class="sd">          ``CostModel``, ignored otherwise.</span>
+<span class="sd">        * volume (DataFrame): finite, non-negative per-security bar volume,</span>
+<span class="sd">          with the same index and columns as ``data``. Required when</span>
+<span class="sd">          ``commissions`` is a ``CostModel``, ignored otherwise.</span>
+<span class="sd">        * volatility (DataFrame): finite, non-negative per-security bar</span>
+<span class="sd">          volatility, with the same index and columns as ``data``. Required</span>
+<span class="sd">          when ``commissions`` is a ``CostModel``, ignored otherwise.</span>
 
 
 <span class="sd">    Attributes:</span>
@@ -709,6 +709,12 @@ window.runMermaid = runMermaid;</script>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`volume` columns must match `data` columns."</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">volatility</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`volatility` columns must match `data` columns."</span><span class="p">)</span>
+
+        <span class="c1"># Validate the complete market-data domain before any trading can begin.</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"volume"</span><span class="p">,</span> <span class="n">volume</span><span class="p">),</span> <span class="p">(</span><span class="s2">"volatility"</span><span class="p">,</span> <span class="n">volatility</span><span class="p">)):</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">na_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">values</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` must contain only finite, non-negative values."</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepend_missing_row</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>

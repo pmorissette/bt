@@ -1623,12 +1623,12 @@ to calculate asymmetric holding cost of long (or short) positions.</p></li>
 </ul>
 </div></blockquote>
 </p></li>
-<li><p><strong>volume</strong> (<em>*</em>) – per-security bar volume, same index and columns
-as <code class="docutils literal notranslate"><span class="pre">data</span></code>. Required when <code class="docutils literal notranslate"><span class="pre">commissions</span></code> is a <code class="docutils literal notranslate"><span class="pre">CostModel</span></code>,
-ignored otherwise.</p></li>
-<li><p><strong>volatility</strong> (<em>*</em>) – per-security bar volatility, same index and
-columns as <code class="docutils literal notranslate"><span class="pre">data</span></code>. Required when <code class="docutils literal notranslate"><span class="pre">commissions</span></code> is a
-<code class="docutils literal notranslate"><span class="pre">CostModel</span></code>, ignored otherwise.</p></li>
+<li><p><strong>volume</strong> (<em>*</em>) – finite, non-negative per-security bar volume,
+with the same index and columns as <code class="docutils literal notranslate"><span class="pre">data</span></code>. Required when
+<code class="docutils literal notranslate"><span class="pre">commissions</span></code> is a <code class="docutils literal notranslate"><span class="pre">CostModel</span></code>, ignored otherwise.</p></li>
+<li><p><strong>volatility</strong> (<em>*</em>) – finite, non-negative per-security bar
+volatility, with the same index and columns as <code class="docutils literal notranslate"><span class="pre">data</span></code>. Required
+when <code class="docutils literal notranslate"><span class="pre">commissions</span></code> is a <code class="docutils literal notranslate"><span class="pre">CostModel</span></code>, ignored otherwise.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2195,7 +2195,9 @@ units. Intended as an alternative to the flat <code class="docutils literal notr
 hook for models that depend on market depth and volatility (square-root
 law, Almgren-Chriss, etc.). Commissions / spread / fees are absorbed
 into the model’s linear term where applicable.</p>
-<p>Subclasses implement <code class="docutils literal notranslate"><span class="pre">cost(q,</span> <span class="pre">p,</span> <span class="pre">V,</span> <span class="pre">sigma)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p>
+<p>For nonzero trades, volume and volatility must be finite and
+non-negative. Zero volume remains an explicit zero-cost observation.
+Subclasses implement <code class="docutils literal notranslate"><span class="pre">cost(q,</span> <span class="pre">p,</span> <span class="pre">V,</span> <span class="pre">sigma)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bt.core.CostModel.cost">
 <span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.CostModel.cost" title="Link to this definition">¶</a></dt>
