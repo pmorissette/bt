@@ -740,18 +740,25 @@ class StrategyBase(Node):
         """
         Update strategy. Updates prices, values, weight, etc.
         """
-        if self is self.root and ("cost_long" in self._setup_kwargs or "cost_short" in self._setup_kwargs):
+        if self._has_strat_children or "cost_long" in self._setup_kwargs or "cost_short" in self._setup_kwargs:
             if inow is None:
                 if date == 0:
                     inow = 0
                 else:
                     inow = self._index.get_loc(date)
 
-            # Validate every applicable leaf before this strategy or an earlier
-            # sibling can change state.
-            for security in self.securities:
-                if isinstance(security, CouponPayingSecurity) and security._needupdate:
-                    security._holding_cost_for_update(date, inow)
+            # Include child-specific inputs and paper portfolios that will update
+            # on this date, before any calling strategy or sibling changes state.
+            pending = [self]
+            while pending:
+                strategy = pending.pop()
+                for child in strategy._childrenv:
+                    if isinstance(child, StrategyBase):
+                        pending.append(child)
+                    elif isinstance(child, CouponPayingSecurity) and child._needupdate:
+                        child._holding_cost_for_update(date, inow)
+                if strategy._paper_trade and (strategy.now == 0 or strategy.now != date):
+                    pending.append(strategy._paper)
 
         # resolve stale state
         self.root.stale = False
@@ -1979,7 +1986,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
                 raise ValueError(f"Holding cost must be finite for security {self.name} on {date}. Cannot update node value.") from None
             if not math.isfinite(cost):
                 raise ValueError(f"Holding cost must be finite for security {self.name} on {date}. Cannot update node value.")
-            holding_cost = abs(self._position) * cost
+            holding_cost = abs(float(self._position)) * cost
             if not math.isfinite(holding_cost):
                 raise ValueError(f"Holding cost must be finite for security {self.name} on {date}. Cannot update node value.")
 

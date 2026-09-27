@@ -3407,6 +3407,7 @@ def _holding_cost_update_case(position, cost_long, cost_short, price=100.0, nest
         pytest.param(-5.0, 0.0, np.inf, 100.0, id="short-infinity"),
         pytest.param(5.0, pd.NA, 0.0, 100.0, id="long-nullable"),
         pytest.param(1e308, 1e308, 0.0, 0.0, id="finite-overflow"),
+        pytest.param(np.float64(1e308), 1e308, 0.0, 0.0, id="numpy-overflow"),
     ],
 )
 def test_couponpayingsecurity_rejects_nonfinite_holding_cost_before_state_mutation(
@@ -3499,6 +3500,58 @@ def test_strategy_update_rejects_nonfinite_holding_cost_without_contamination(ne
     strategy.update(dates[2])
     assert np.isfinite(strategy.prices).all()
     assert np.isfinite(strategy.prices.pct_change().dropna()).all()
+
+
+@pytest.mark.parametrize("update_child", [False, True], ids=["root-update", "child-update"])
+@pytest.mark.parametrize("paper_only", [False, True], ids=["child-specific-costs", "paper-position"])
+def test_nested_holding_cost_rejection_preserves_calling_strategies(update_child, paper_only):
+    dates = pd.date_range("2010-01-01", periods=3)
+    prices = pd.DataFrame({"asset": 100.0}, index=dates)
+    coupons = prices * 0.0
+    costs = pd.DataFrame({"asset": [0.0, np.nan, 0.0]}, index=dates)
+    root = Strategy("root")
+    if paper_only:
+        child = Strategy(
+            "child",
+            [bt.algos.RunOnce(), bt.algos.WeighSpecified(asset=1.0), bt.algos.Rebalance()],
+            children=[CouponPayingSecurity("asset", fixed_income=False)],
+        )
+        root = Strategy("root", children=[child])
+        root.setup(prices, coupons=coupons, cost_long=costs)
+    else:
+        root.setup(prices, coupons=coupons)
+        child = StrategyBase("child", parent=root, children=[CouponPayingSecurity("asset")])
+        child.setup_from_parent(cost_long=costs)
+    root.adjust(1000.0)
+    root.update(dates[0])
+    child = root["child"]
+    if not paper_only:
+        child.allocate(1000.0)
+        child["asset"].transact(5.0)
+        root.update(dates[0])
+    else:
+        assert child["asset"].position == 0.0
+        assert child._paper["asset"].position > 0.0
+
+    nodes = root.members + child._paper.members
+    state = [(node.now, node._capital, node._value, node._price, node.data.copy()) for node in nodes]
+    root.stale = True
+    target = child if update_child else root
+    with pytest.raises(ValueError, match="Holding cost must be finite"):
+        target.update(dates[1])
+
+    assert root.stale
+    for node, previous in zip(nodes, state):
+        assert (node.now, node._capital, node._value, node._price) == previous[:4]
+        pd.testing.assert_frame_equal(node.data, previous[4])
+
+    for strategy in (child, child._paper):
+        strategy["asset"]._cost_long.loc[dates[1]] = 0.25
+    root.update(dates[1])
+    root.update(dates[2])
+    assert np.isfinite(root.prices).all()
+    assert np.isfinite(child.prices).all()
+    assert np.isfinite(child._paper.prices).all()
 
 
 def test_strategy_update_preflights_all_holding_costs_before_updating_a_sibling():
