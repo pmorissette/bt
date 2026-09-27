@@ -1120,7 +1120,7 @@ class StrategyBase(Node):
             c.flatten()
 
         if self.fixed_income:
-            if c.position != 0.0:
+            if c._issec and c.position != 0.0:
                 c.transact(-c.position, update=update)
         else:
             # A zero price can hide a live security position behind zero value.
@@ -1135,7 +1135,12 @@ class StrategyBase(Node):
         """
         # go right to base alloc
         if self.fixed_income:
-            [c.transact(-c.position, update=False) for c in self._childrenv if c.position != 0]
+            for c in self._childrenv:
+                if c._issec:
+                    if c.position != 0.0:
+                        c.transact(-c.position, update=False)
+                else:
+                    c.flatten()
         else:
             for c in self._childrenv:
                 # A zero price can hide a live security position behind zero value.
