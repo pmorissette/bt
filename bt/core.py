@@ -740,6 +740,26 @@ class StrategyBase(Node):
         """
         Update strategy. Updates prices, values, weight, etc.
         """
+        if self._has_strat_children or "cost_long" in self._setup_kwargs or "cost_short" in self._setup_kwargs:
+            if inow is None:
+                if date == 0:
+                    inow = 0
+                else:
+                    inow = self._index.get_loc(date)
+
+            # Include child-specific inputs and paper portfolios that will update
+            # on this date, before any calling strategy or sibling changes state.
+            pending = [self]
+            while pending:
+                strategy = pending.pop()
+                for child in strategy._childrenv:
+                    if isinstance(child, StrategyBase):
+                        pending.append(child)
+                    elif isinstance(child, CouponPayingSecurity) and child._needupdate:
+                        child._holding_cost_for_update(date, inow)
+                if strategy._paper_trade and (strategy.now == 0 or strategy.now != date):
+                    pending.append(strategy._paper)
+
         # resolve stale state
         self.root.stale = False
 
@@ -1875,6 +1895,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
 
     Represents a coupon-paying security, where coupon payments adjust
     the capital of the parent. Coupons and costs must be passed in during setup.
+    Applicable holding-cost observations and derived costs must be finite.
     """
 
     _coupon = cy.declare(cy.double)
@@ -1944,7 +1965,34 @@ class CouponPayingSecurity(FixedIncomeSecurity):
         self._coupon_income = self._data["coupon"]
         self._holding_costs = self._data["holding_cost"]
 
-    @cy.locals(coupon=cy.double, cost=cy.double)
+    @cy.locals(cost=cy.double, holding_cost=cy.double, has_holding_cost=cy.bint)
+    def _holding_cost_for_update(self, date, inow):
+        """Return the applicable finite holding cost without changing state."""
+        if self._position > 0 and self._cost_long is not None:
+            raw_cost = self._cost_long.iloc[inow]
+            has_holding_cost = True
+        elif self._position < 0 and self._cost_short is not None:
+            raw_cost = self._cost_short.iloc[inow]
+            has_holding_cost = True
+        else:
+            has_holding_cost = False
+
+        if not has_holding_cost:
+            holding_cost = 0.0
+        else:
+            try:
+                cost = float(raw_cost)
+            except (TypeError, ValueError):
+                raise ValueError(f"Holding cost must be finite for security {self.name} on {date}. Cannot update node value.") from None
+            if not math.isfinite(cost):
+                raise ValueError(f"Holding cost must be finite for security {self.name} on {date}. Cannot update node value.")
+            holding_cost = abs(float(self._position)) * cost
+            if not math.isfinite(holding_cost):
+                raise ValueError(f"Holding cost must be finite for security {self.name} on {date}. Cannot update node value.")
+
+        return holding_cost
+
+    @cy.locals(coupon=cy.double, holding_cost=cy.double)
     def update(self, date, data=None, inow=None):
         """
         Update security with a given date and optionally, some data.
@@ -1958,6 +2006,9 @@ class CouponPayingSecurity(FixedIncomeSecurity):
 
         if self._coupons is None:
             raise RuntimeError(f"coupons have not been set for security {self.name}")
+
+        # Validate the applicable carry before the base update changes state.
+        holding_cost = self._holding_cost_for_update(date, inow)
 
         # Standard update
         super().update(date, data, inow)
@@ -1976,14 +2027,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
         else:
             self._coupon = self._position * coupon
 
-        if self._position > 0 and self._cost_long is not None:
-            cost = self._cost_long.iloc[inow]
-            self._holding_cost = self._position * cost
-        elif self._position < 0 and self._cost_short is not None:
-            cost = self._cost_short.iloc[inow]
-            self._holding_cost = -self._position * cost
-        else:
-            self._holding_cost = 0.0
+        self._holding_cost = holding_cost
 
         self._capital = self._coupon - self._holding_cost
         self._coupon_income_arr[inow] = self._coupon
