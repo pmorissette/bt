@@ -3098,6 +3098,9 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># General setup of risk on nodes</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">"risk"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_setup_risk</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">set_history</span><span class="p">)</span>
+        <span class="c1"># Different measures may track history at different tree depths.</span>
+        <span class="k">if</span> <span class="n">set_history</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">"risks"</span><span class="p">):</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">risks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">risk</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_setup_measure</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">set_history</span><span class="p">)</span>
 
