@@ -3115,9 +3115,6 @@ def test_replay_transactions():
 
 
 def test_replay_transactions_consistency():
-    c1 = bt.Security("c1")
-    c2 = bt.Security("c2")
-    s = bt.Strategy("s", children=[c1, c2])
     dts = pd.date_range("2010-01-01", periods=3)
     data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100)
 
@@ -3131,7 +3128,8 @@ def test_replay_transactions_consistency():
     transactions = transactions.set_index(["Date", "Security"])
 
     algo = algos.ReplayTransactions("transactions")
-    strategy = bt.Strategy("strategy", algos=[algo], children=[c1, c2])
+    # Exercise the public Backtest path without predeclaring blotter securities.
+    strategy = bt.Strategy("strategy", algos=[algo])
     backtest = bt.backtest.Backtest(
         strategy,
         data,
@@ -3142,6 +3140,103 @@ def test_replay_transactions_consistency():
     t1 = transactions.sort_index(axis=1)
     t2 = out.get_transactions().sort_index(axis=1)
     assert t1.equals(t2)
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+@pytest.mark.parametrize(
+    ("construction", "expected_multiplier"),
+    [
+        ("absent", 1),
+        ("string", 1),
+        ("explicit", 1),
+        ("lazy-multiplier", 2),
+        ("explicit-multiplier", 2),
+    ],
+)
+def test_replayed_transactions_resolve_lazy_securities(
+    algo_name, construction, expected_multiplier
+):
+    date = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame({"x": [100.0]}, index=[date])
+    transactions = pd.DataFrame(
+        [(date, "x", 1.0, 99.0)],
+        columns=["Date", "Security", "quantity", "price"],
+    ).set_index(["Date", "Security"])
+
+    # Exercise every native construction source, including a property-bearing lazy node.
+    if construction == "absent":
+        children = None
+    elif construction == "string":
+        children = ["x"]
+    elif construction == "explicit":
+        children = [bt.Security("x")]
+    elif construction == "lazy-multiplier":
+        children = [bt.Security("x", multiplier=2, lazy_add=True)]
+    else:
+        children = [bt.Security("x", multiplier=2)]
+
+    # Replay and RFQ use separate public transaction-dispatch loops.
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions(
+            "rfqs", lambda rfqs, target: transactions.loc[rfqs.index]
+        )
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    strategy = bt.Strategy("strategy", children=children)
+    strategy.setup(data, bidoffer={}, **additional_data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+
+    assert algo(strategy)
+
+    # Derive the portfolio and reconstructed transaction values independently.
+    security = strategy["x"]
+    assert security.multiplier == expected_multiplier
+    assert security.position == 1.0
+    assert security.bidoffer_paid == -1.0 * expected_multiplier
+    assert strategy.capital == 1000.0 - 99.0 * expected_multiplier
+    assert strategy.value == 1000.0 + expected_multiplier
+    expected_transactions = transactions.copy()
+    expected_transactions["price"] = 100.0 + (99.0 - 100.0) * expected_multiplier
+    pd.testing.assert_frame_equal(
+        strategy.get_transactions().sort_index(axis=1),
+        expected_transactions.sort_index(axis=1),
+    )
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+def test_replayed_transactions_reject_unknown_securities(algo_name):
+    date = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame({"x": [100.0]}, index=[date])
+    transactions = pd.DataFrame(
+        [(date, "missing", 1.0, 99.0)],
+        columns=["Date", "Security", "quantity", "price"],
+    ).set_index(["Date", "Security"])
+
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions(
+            "rfqs", lambda rfqs, target: transactions.loc[rfqs.index]
+        )
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    strategy = bt.Strategy("strategy")
+    strategy.setup(data, bidoffer={}, **additional_data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+
+    # An undeclared label without market data must fail before creating a child.
+    with pytest.raises(KeyError, match="missing"):
+        algo(strategy)
+
+    assert "missing" not in strategy.children
+    assert strategy.capital == 1000.0
+    assert strategy.value == 1000.0
 
 
 def test_simulate_rfq_transactions():

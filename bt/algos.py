@@ -2305,12 +2305,23 @@ class SelectActive(Algo):
         return True
 
 
+def _resolve_transaction_security(target, security):
+    """Resolve a declared or market-backed security for transaction dispatch."""
+    if security not in target.children and security not in target._lazy_children and security not in target.universe.columns:
+        raise KeyError(security)
+
+    target._create_child_if_needed(security)
+    return target[security]
+
+
 class ReplayTransactions(Algo):
     """
     Replay a list of transactions that were executed.
     This is useful for taking a blotter of actual trades that occurred,
     and measuring performance against hypothetical strategies.
-    In particular, one can replay the outputs of backtest.Result.get_transactions
+    In particular, one can replay the outputs of backtest.Result.get_transactions.
+    Securities may be existing children, lazily declared children, or available
+    columns in the target's market-data universe.
 
     Note that this allows the timestamps and prices of the reported transactions
     to be completely arbitrary, so while the strategy may track performance
@@ -2343,7 +2354,7 @@ class ReplayTransactions(Algo):
         timestamps = all_transactions.index.get_level_values("Date")
         transactions = all_transactions[(timestamps > start) & (timestamps <= end)]
         for (_, security), transaction in transactions.iterrows():
-            c = target[security]
+            c = _resolve_transaction_security(target, security)
             c.transact(transaction["quantity"], price=transaction["price"], update=False)
 
         # Now update
@@ -2358,6 +2369,8 @@ class SimulateRFQTransactions(Algo):
     using a "model" that determines which ones becomes transactions and at what price
     those transactions happen. This can be used from the perspective of the sender of the
     RFQ or the receiver.
+    Transaction securities may be existing children, lazily declared children, or
+    available columns in the target's market-data universe.
 
     Args:
         * rfqs (str): name of a dataframe with columns
@@ -2391,7 +2404,7 @@ class SimulateRFQTransactions(Algo):
         transactions = self.model(rfqs, target)
 
         for (_, security), transaction in transactions.iterrows():
-            c = target[security]
+            c = _resolve_transaction_security(target, security)
             c.transact(transaction["quantity"], price=transaction["price"], update=False)
 
         # Now update
