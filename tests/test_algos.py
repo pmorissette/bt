@@ -3399,6 +3399,105 @@ def test_update_risk_history_2():
     assert c2.risks["Test"].iloc[1] == 5 * 95
 
 
+@pytest.mark.parametrize("shallow_history", [0, 1, 2])
+def test_update_risk_history_is_independent_of_measure_order(shallow_history):
+    dts = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dts)
+    unit_risk = {
+        "IR01": pd.DataFrame({"asset": [3.0, 4.0]}, index=dts),
+        "DV01": pd.DataFrame({"asset": [5.0, 7.0]}, index=dts),
+    }
+
+    def run(measures):
+        # Exercise history boundaries at root, sleeve, and security depths.
+        target = bt.Strategy("root")
+        target.setup(data, unit_risk=unit_risk)
+        sleeve = bt.Strategy(
+            "sleeve",
+            children=[bt.Security("asset", multiplier=2)],
+            parent=target,
+        )
+        sleeve.setup_from_parent()
+        target.adjust(1000)
+        target.update(dts[0])
+        sleeve.transact(2, "asset")
+
+        updates = {
+            "IR01": algos.UpdateRisk("IR01", history=shallow_history),
+            "DV01": algos.UpdateRisk("DV01", history=shallow_history + 1),
+        }
+        stack = bt.AlgoStack(*(updates[measure] for measure in measures))
+        assert stack(target)
+        return target
+
+    # Reversing independent measures must not change values or history availability.
+    shallow_first = run(("IR01", "DV01"))
+    deep_first = run(("DV01", "IR01"))
+    shallow_nodes = [
+        shallow_first,
+        shallow_first["sleeve"],
+        shallow_first["sleeve"]["asset"],
+    ]
+    deep_nodes = [
+        deep_first,
+        deep_first["sleeve"],
+        deep_first["sleeve"]["asset"],
+    ]
+
+    for depth, (actual, control) in enumerate(zip(shallow_nodes, deep_nodes)):
+        assert actual.risk == control.risk == {"IR01": 12.0, "DV01": 20.0}
+        # A history depth tracks nodes whose zero-based depth is below it.
+        expected_history = {}
+        if depth < shallow_history:
+            expected_history["IR01"] = 12.0
+        if depth < shallow_history + 1:
+            expected_history["DV01"] = 20.0
+
+        if expected_history:
+            assert actual.risks.loc[dts[0]].dropna().to_dict() == expected_history
+            pd.testing.assert_frame_equal(
+                actual.risks.sort_index(axis=1), control.risks.sort_index(axis=1)
+            )
+        else:
+            assert not hasattr(actual, "risks")
+            assert not hasattr(control, "risks")
+
+
+def test_update_risk_history_starts_when_deeper_measure_is_first_tracked():
+    dts = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dts)
+    unit_risk = {
+        "IR01": pd.DataFrame({"asset": [3.0, 4.0]}, index=dts),
+        "DV01": pd.DataFrame({"asset": [5.0, 7.0]}, index=dts),
+    }
+    target = bt.Strategy("root")
+    target.setup(data, unit_risk=unit_risk)
+    sleeve = bt.Strategy(
+        "sleeve",
+        children=[bt.Security("asset", multiplier=2)],
+        parent=target,
+    )
+    sleeve.setup_from_parent()
+    target.adjust(1000)
+    target.update(dts[0])
+    sleeve.transact(2, "asset")
+    shallow = algos.UpdateRisk("IR01", history=0)
+    deeper = algos.UpdateRisk("DV01", history=3)
+
+    # Establish current-only IR01 before deeper DV01 tracking starts a date later.
+    assert shallow(target)
+    target.update(dts[1])
+    assert shallow(target)
+    assert deeper(target)
+
+    # Late history initialization must not fabricate the untracked measure's past.
+    for node in (target, target["sleeve"], target["sleeve"]["asset"]):
+        assert node.risk == {"IR01": 16.0, "DV01": 28.0}
+        assert list(node.risks.columns) == ["DV01"]
+        assert pd.isna(node.risks.loc[dts[0], "DV01"])
+        assert node.risks.loc[dts[1], "DV01"] == 28.0
+
+
 def test_hedge_risk():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")
