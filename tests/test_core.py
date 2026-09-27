@@ -4225,6 +4225,45 @@ def test_fi_strategy_flatten():
         assert c.value == 0
 
 
+@pytest.mark.parametrize("operation", ["close", "flatten"])
+def test_fi_strategy_closes_nested_positions(operation):
+    dates = pd.date_range("2024-01-01", periods=1)
+    data = pd.DataFrame(
+        {"direct_asset": [100.0], "nested_asset": [100.0]},
+        index=dates,
+    )
+    strategy = FixedIncomeStrategy(
+        "strategy",
+        children=[
+            SecurityBase("direct_asset"),
+            FixedIncomeStrategy("nested", children=[SecurityBase("nested_asset")]),
+        ],
+    )
+    strategy.setup(data)
+    strategy.update(dates[0])
+    nested = strategy["nested"]
+    direct_asset = strategy["direct_asset"]
+    nested_asset = nested["nested_asset"]
+    strategy.transact(5.0, "direct_asset")
+    nested.transact(10.0, "nested_asset")
+    strategy.update(dates[0])
+
+    if operation == "close":
+        strategy.close("nested")
+        expected_direct_position = 5.0
+    else:
+        strategy.flatten()
+        expected_direct_position = 0.0
+    strategy.update(dates[0])
+
+    # Reconstruct notionals from the surviving leaf positions after recursion.
+    assert direct_asset.position == expected_direct_position
+    assert nested_asset.position == 0.0
+    assert nested.notional_value == 0.0
+    assert strategy.notional_value == abs(expected_direct_position * 100.0)
+    assert strategy.value == 0.0
+
+
 def test_fi_strategy_prices():
     c1 = CouponPayingSecurity("c1")
     s = FixedIncomeStrategy("s", children=[c1])
