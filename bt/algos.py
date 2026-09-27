@@ -2465,6 +2465,9 @@ class UpdateRisk(Algo):
         # General setup of risk on nodes
         if not hasattr(target, "risk"):
             self._setup_risk(target, set_history)
+        # Different measures may track history at different tree depths.
+        if set_history and not hasattr(target, "risks"):
+            target.risks = pd.DataFrame(index=target.data.index)
         if self.measure not in target.risk:
             self._setup_measure(target, set_history)
 
