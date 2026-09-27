@@ -1822,6 +1822,11 @@ class FixedIncomeSecurity(SecurityBase):
     Only relevant when using :class:`FixedIncomeStrategy <bt.core.FixedIncomeStrategy>`.
     """
 
+    @cy.locals(multiplier=cy.double)
+    def __init__(self, name, multiplier=1, lazy_add=False):
+        super().__init__(name, multiplier, lazy_add)
+        self._fixed_income = True
+
     @cy.locals(coupon=cy.double)
     def update(self, date, data=None, inow=None):
         """
@@ -1837,9 +1842,10 @@ class FixedIncomeSecurity(SecurityBase):
 
         super().update(date, data, inow)
 
-        # For fixed income securities (bonds, swaps), notional value is position size, not value!
-        self._notl_value = self._position
-        self._notl_values_arr[inow] = self._notl_value
+        if self.fixed_income:
+            # Quantity-notional mode overrides SecurityBase's market-value notional.
+            self._notl_value = self._position
+            self._notl_values_arr[inow] = self._notl_value
 
 
 class CouponPayingSecurity(FixedIncomeSecurity):
