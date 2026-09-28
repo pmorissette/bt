@@ -2582,7 +2582,7 @@ class HedgeRisks(Algo):
         for m in self.measures:
             d = target.get_data("unit_risk").get(m)
             if d is None:
-                raise ValueError(f"unit_risk for {self.measure} not present in temp on {target.name}")
+                raise ValueError(f"unit_risk for {m} not present in temp on {target.name}")
             i = d.index.get_loc(target.now)
             data.append((i, d))
 
