@@ -1,5 +1,6 @@
 from __future__ import division
 from datetime import datetime, timedelta
+from typing import ClassVar
 from unittest import mock
 
 import numpy as np
@@ -3831,6 +3832,48 @@ def test_corporate_actions():
     assert s["c1"].position == 100
     assert s["c2"].position == 100 * 10.0
     assert s["c3"].position == 100
+
+
+def test_corporate_actions_reads_each_action_row_once():
+    class LocCountingFrame(pd.DataFrame):
+        _metadata: ClassVar[list[str]] = ["loc_accesses"]
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.loc_accesses = 0
+
+        @property
+        def _constructor(self):
+            return LocCountingFrame
+
+        @property
+        def loc(self):
+            self.loc_accesses += 1
+            return super().loc
+
+    date = pd.Timestamp("2024-01-02")
+    names = ["long", "short", "flat"]
+    data = pd.DataFrame(100.0, index=[date], columns=names)
+    dividends = LocCountingFrame([[1.0, 2.0, 4.0]], index=[date], columns=names)
+    splits = LocCountingFrame([[2.0, 0.5, 3.0]], index=[date], columns=names)
+    algo = algos.CorporateActions(dividends, splits)
+    target = bt.Strategy("target", children=[bt.Security(name) for name in names])
+    target.setup(data)
+    target.update(date)
+    target.adjust(100.0, update=False)
+    target["long"]._position = 10.0
+    target["short"]._position = -5.0
+
+    assert algo(target)
+
+    # Splits precede dividends, so cash uses the adjusted long and short positions.
+    assert target["long"].position == pytest.approx(20.0)
+    assert target["short"].position == pytest.approx(-2.5)
+    assert target["flat"].position == pytest.approx(0.0)
+    assert target.capital == pytest.approx(115.0)
+    assert target.root.stale
+    assert algo.splits.loc_accesses == 1
+    assert algo.dividends.loc_accesses == 1
 
 
 @pytest.mark.parametrize("nested", [False, True])
