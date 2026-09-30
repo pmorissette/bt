@@ -3876,6 +3876,36 @@ def test_corporate_actions_reads_each_action_row_once():
     assert algo.dividends.loc_accesses == 1
 
 
+@pytest.mark.parametrize("action", ["split", "dividend"])
+@pytest.mark.parametrize("dtype", ["float32", "Float32"])
+def test_corporate_actions_preserves_mixed_column_arithmetic(action, dtype):
+    date = pd.Timestamp("2024-01-02")
+    data = pd.DataFrame({"asset": [1.0]}, index=[date])
+    actions = pd.DataFrame(
+        {
+            "asset": pd.Series([0.1], index=[date], dtype=dtype),
+            "unheld": pd.Series([0.25], index=[date], dtype="float64"),
+        }
+    )
+    empty = pd.DataFrame()
+    algo = algos.CorporateActions(empty if action == "split" else actions, actions if action == "split" else empty)
+    target = bt.Strategy("target", children=[bt.Security("asset")])
+    target.setup(data)
+    target.adjust(100_000_000.0)
+    target.update(date)
+    target["asset"].transact(10_000_000.0)
+    target.update(date)
+    position = target["asset"].position
+    capital = target.capital
+    # Preserve the existing scalar lookup's dtype and arithmetic exactly.
+    expected = float(actions.loc[date, "asset"] * position)
+
+    assert algo(target)
+
+    assert target["asset"].position == (expected if action == "split" else position)
+    assert target.capital == (capital if action == "split" else capital + expected)
+
+
 @pytest.mark.parametrize("nested", [False, True])
 @pytest.mark.parametrize("include_zero_dividend_row", [False, True])
 def test_corporate_actions_refreshes_stale_split_state_before_rebalance(nested: bool, include_zero_dividend_row: bool):
