@@ -752,6 +752,50 @@ def test_backtest_rejects_nonfinite_value_before_result_construction(
     assert backtest.stats == {}
 
 
+@pytest.mark.parametrize(
+    ("position_values", "expected_start", "duplicate_dates"),
+    [
+        pytest.param(([0, 0, 1, 1], [0, 1, 1, 1]), 0, False, id="initial"),
+        pytest.param(([0, 0, 0, 1], [0, 0, 1, 1]), 1, False, id="delayed"),
+        pytest.param(([0, 0, 0, 0], [0, 0, 0, 0]), 0, False, id="absent"),
+        pytest.param(([0, 1, 1, 1], [0, 0, 1, 1]), 0, True, id="duplicate-date"),
+    ],
+)
+def test_compute_stat_prices_preserves_first_transaction_window(
+    position_values,
+    expected_start,
+    duplicate_dates,
+):
+    dates = (
+        pd.DatetimeIndex(["2025-12-31", "2026-01-01", "2026-01-01", "2026-01-02"])
+        if duplicate_dates
+        else pd.date_range("2026-01-01", periods=4)
+    )
+    prices = pd.Series(np.arange(len(dates), dtype=float) + 100.0, index=dates)
+    securities = [mock.Mock(positions=pd.Series(values, index=dates)) for values in position_values]
+    backtest = mock.Mock(strategy=mock.Mock(prices=prices, securities=securities))
+
+    actual = bt.Backtest._compute_stat_prices(backtest)
+
+    pd.testing.assert_series_equal(actual, prices.iloc[expected_start:])
+
+
+def test_compute_stat_prices_stops_at_first_tradable_date():
+    dates = pd.date_range("2026-01-01", periods=4)
+    prices = pd.Series(np.arange(len(dates), dtype=float) + 100.0, index=dates)
+    initial = mock.Mock(positions=pd.Series([0, 1, 1, 1], index=dates))
+    unvisited = mock.Mock()
+    unvisited_positions = mock.PropertyMock(side_effect=AssertionError("scanned past lower bound"))
+    type(unvisited).positions = unvisited_positions
+    backtest = mock.Mock(strategy=mock.Mock(prices=prices, securities=[initial, unvisited]))
+
+    # Trading cannot precede the first date after the bootstrap row.
+    actual = bt.Backtest._compute_stat_prices(backtest)
+
+    pd.testing.assert_series_equal(actual, prices)
+    unvisited_positions.assert_not_called()
+
+
 def test_run_after_date_stats_include_first_transaction():
     dates = pd.date_range("2000-01-01", "2002-12-31", freq=pd.tseries.offsets.BDay())
     prices = pd.DataFrame(index=dates, data={"a": 100.0})

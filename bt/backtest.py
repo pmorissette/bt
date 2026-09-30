@@ -437,6 +437,8 @@ class Backtest:
 
     def _compute_stat_prices(self):
         prices = self.strategy.prices
+        # The bootstrap row cannot contain a trade, so this is the global lower bound.
+        earliest_possible_transaction_date = prices.index[1]
         first_transaction_date = None
         for security in self.strategy.securities:
             positions = security.positions
@@ -445,6 +447,8 @@ class Backtest:
                 transaction_date = positions.index[position_changed][0]
                 if first_transaction_date is None or transaction_date < first_transaction_date:
                     first_transaction_date = transaction_date
+                    if transaction_date == earliest_possible_transaction_date:
+                        break
 
         if first_transaction_date is not None:
             first_transaction_position = prices.index.get_indexer_for([first_transaction_date])[0]
