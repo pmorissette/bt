@@ -1737,7 +1737,9 @@ class SecurityBase(Node):
         q=cy.double,
         update=cy.bint,
         update_self=cy.bint,
+        full_outlay=cy.double,
         outlay=cy.double,
+        fee=cy.double,
         bidoffer=cy.double,
     )
     def transact(self, q, update=True, update_self=True, price=None):
@@ -1748,7 +1750,8 @@ class SecurityBase(Node):
         The amount of shares is explicitly provided, a
         commission will be calculated based on the parent's commission fn, and
         any remaining capital will be passed back up  to parent as an
-        adjustment.
+        adjustment. Derived outlay and cost components must be finite; invalid
+        results are rejected before trade state changes.
 
         Args:
             * amount (float): Amount of adjustment.
@@ -1769,8 +1772,10 @@ class SecurityBase(Node):
         if price is not None and not self._bidoffer_set:
             raise ValueError('Cannot transact at custom prices when "bidoffer" has not been passed during setup to enable bid-offer tracking.')
 
-        # Calculate costs before mutating trade state: commission validation can fail.
+        # A rejected trade must not expose a partial position or accounting update.
         full_outlay, outlay, fee, bidoffer = self.outlay(q, p=price)
+        if not (math.isfinite(full_outlay) and math.isfinite(outlay) and math.isfinite(fee) and math.isfinite(bidoffer)):
+            raise ValueError("Transaction outlay and costs must be finite")
 
         # this security will need an update, even if pos is 0 (for example if
         # we close the positions, value and pos is 0, but still need to do that
