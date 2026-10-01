@@ -3542,6 +3542,30 @@ def test_hedge_risk():
     assert c3.position == pytest.approx(-(100 * 2 - 10 * 5) / 10.0, 13)
 
 
+@pytest.mark.parametrize("missing_measure", ["Risk1", "Risk2"])
+@pytest.mark.parametrize("present_but_none", [False, True])
+def test_hedge_risk_reports_missing_unit_risk(missing_measure, present_but_none):
+    dates = pd.date_range("2020-01-01", periods=1)
+    prices = pd.DataFrame({"hedge": [100.0]}, index=dates)
+    unit_risk = {measure: prices * 0.01 for measure in ("Risk1", "Risk2") if measure != missing_measure}
+    if present_but_none:
+        unit_risk[missing_measure] = None
+    strategy = bt.Strategy("strategy", children=[bt.Security("hedge")])
+    strategy.setup(prices, unit_risk=unit_risk)
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.transact(5.0, "hedge")
+    strategy.update(dates[0])
+    strategy.risk = {"Risk1": 5.0, "Risk2": 10.0}
+    strategy.temp["selected"] = ["hedge"]
+
+    with pytest.raises(ValueError, match=f"unit_risk for {missing_measure} .* on strategy"):
+        algos.HedgeRisks(["Risk1", "Risk2"])(strategy)
+
+    assert strategy["hedge"].position == 5.0
+    assert strategy.capital == 500.0
+
+
 @pytest.mark.parametrize(("hedge_unit_risk", "hedge_multiplier"), [(1, 10), (10, 1)])
 @pytest.mark.parametrize("lazy_add", [False, True])
 def test_hedge_risk_security_multiplier(hedge_unit_risk: int, hedge_multiplier: int, lazy_add: bool):
