@@ -1887,7 +1887,10 @@ class Rebalance(Algo):
 
     Rebalances capital based on temp['weights']. Also closes
     positions if open but not in target_weights. This is typically
-    the last Algo called once the target weights have been set.
+    the last Algo called once the target weights have been set. Direct
+    security targets that require an adjustment are checked for missing prices
+    before mutation. Capital allocations also require a nonzero price;
+    quantity-based fixed-income trades and closing positions allow zero prices.
 
     Requires:
         * weights
@@ -1904,6 +1907,45 @@ class Rebalance(Algo):
 
     def __init__(self):
         super().__init__()
+
+    @staticmethod
+    def _validate_target_prices(target, targets, base, target_scale):
+        """Reject invalid direct target prices before portfolio mutation.
+
+        Mirror StrategyBase.rebalance's effective delta while inspecting lazy and
+        default targets without materializing them.
+        """
+        for cname, target_weight in targets.items():
+            child = target.children.get(cname)
+            if child is None:
+                child = target._lazy_children.get(cname)
+            if child is not None and not isinstance(child, SecurityBase):
+                continue
+
+            current_weight = child._weight if cname in target.children else 0.0
+            scaled_weight = target_weight * target_scale
+            # StrategyBase.rebalance routes zero weights directly to close.
+            if is_zero(scaled_weight):
+                continue
+            if target.fixed_income:
+                delta = scaled_weight * base - current_weight * target.notional_value
+            else:
+                delta = (scaled_weight - current_weight) * base
+            # Zero deltas bypass allocation.
+            if is_zero(delta):
+                continue
+
+            # Idle children may still cache the bootstrap-row price; allocation
+            # would refresh them from the current universe row before trading.
+            if cname in target._universe.columns and (cname not in target.children or child.now != target.now):
+                price = target._universe.loc[target.now, cname]
+            elif cname in target.children:
+                price = child._price
+            else:
+                price = np.nan
+            quantity_trade = target.fixed_income and child is not None and child.fixed_income
+            if pd.isna(price) or (is_zero(price) and not quantity_trade):
+                raise ValueError(f"Cannot allocate capital to {cname} because price is {price} as of {target.now}")
 
     def __call__(self, target):
         if "weights" not in target.temp:
@@ -1922,6 +1964,15 @@ class Rebalance(Algo):
         else:
             base = target.value
 
+        # Child weights describe the investable slice; retain total value as the
+        # stable base so repeated cash-aware rebalances remain idempotent.
+        target_scale = 1.0
+        if "cash" in target.temp and not target.fixed_income:
+            target_scale -= target.temp["cash"]
+
+        # Reject direct target-price failures before holdings or registries change.
+        self._validate_target_prices(target, targets, base, target_scale)
+
         # De-allocate open children that are not in targets.
         for cname in target.children:
             # if this child is in our targets, we don't want to close it out
@@ -1939,12 +1990,6 @@ class Rebalance(Algo):
             zero_value_child = not target.fixed_income and v == 0.0
             if (v != 0.0 and not np.isnan(v)) or zero_value_child:
                 target.close(cname, update=False)
-
-        # Child weights describe the investable slice; retain total value as the
-        # stable base so repeated cash-aware rebalances remain idempotent.
-        target_scale = 1.0
-        if "cash" in target.temp and not target.fixed_income:
-            target_scale -= target.temp["cash"]
 
         # Turn off updating while we rebalance each child
         for item in targets.items():
