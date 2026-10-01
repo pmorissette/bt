@@ -1789,19 +1789,26 @@ class CorporateActions(Algo):
     def __call__(self, target):
         # A split changes positions without a transaction, so invalidate cached tree values.
         if target.now in self.splits.index:
+            split_row = self.splits.loc[target.now]
+            # Mixed-dtype rows can promote scalars and change position arithmetic.
+            if not self.splits.dtypes.eq(split_row.dtype).all():
+                split_row = {c: self.splits.loc[target.now, c] for c in target.children if c in self.splits.columns}
             for c in target.children:
                 if c in self.splits.columns:
-                    spl = self.splits.loc[target.now, c]
+                    spl = split_row[c]
                     if spl != 1.0:
                         target.children[c]._position *= spl
                         target.root.stale = True
 
         # adjust capital due to dividends
         if target.now in self.dividends.index:
+            dividend_row = self.dividends.loc[target.now]
+            if not self.dividends.dtypes.eq(dividend_row.dtype).all():
+                dividend_row = {c: self.dividends.loc[target.now, c] for c in target.children if c in self.dividends.columns}
             div_inflow = 0.0
             for c in target.children:
                 if c in self.dividends.columns:
-                    div = self.dividends.loc[target.now, c]
+                    div = dividend_row[c]
                     if div != 0.0:
                         div_inflow += div * target.children[c]._position
 
