@@ -1888,8 +1888,9 @@ class Rebalance(Algo):
     Rebalances capital based on temp['weights']. Also closes
     positions if open but not in target_weights. This is typically
     the last Algo called once the target weights have been set. Direct
-    security targets that require an adjustment must have a nonzero,
-    non-missing current price; all such targets are checked before mutation.
+    security targets that require an adjustment are checked for missing prices
+    before mutation. Capital allocations also require a nonzero price;
+    quantity-based fixed-income trades and closing positions allow zero prices.
 
     Requires:
         * weights
@@ -1923,11 +1924,14 @@ class Rebalance(Algo):
 
             current_weight = child._weight if cname in target.children else 0.0
             scaled_weight = target_weight * target_scale
+            # StrategyBase.rebalance routes zero weights directly to close.
+            if is_zero(scaled_weight):
+                continue
             if target.fixed_income:
                 delta = scaled_weight * base - current_weight * target.notional_value
             else:
                 delta = (scaled_weight - current_weight) * base
-            # Zero deltas bypass allocation; explicit zero targets can still close at zero price.
+            # Zero deltas bypass allocation.
             if is_zero(delta):
                 continue
 
@@ -1938,8 +1942,9 @@ class Rebalance(Algo):
             elif cname in target.children:
                 price = child._price
             else:
-                price = 0.0
-            if pd.isna(price) or is_zero(price):
+                price = np.nan
+            quantity_trade = target.fixed_income and child is not None and child.fixed_income
+            if pd.isna(price) or (is_zero(price) and not quantity_trade):
                 raise ValueError(f"Cannot allocate capital to {cname} because price is {price} as of {target.now}")
 
     def __call__(self, target):

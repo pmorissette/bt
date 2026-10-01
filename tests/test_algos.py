@@ -770,11 +770,14 @@ def test_rebalance_invalid_direct_target_preserves_state(
         pd.testing.assert_series_equal(strategy[name].outlays, outlays)
 
 
-def test_rebalance_invalid_fixed_income_target_preserves_state():
+@pytest.mark.parametrize("missing_column", [False, True])
+def test_rebalance_invalid_fixed_income_target_preserves_state(missing_column):
     date = pd.Timestamp("2020-01-01")
     data = pd.DataFrame(
         {"held": [100.0], "valid": [100.0], "invalid": [np.nan]}, index=[date]
     )
+    if missing_column:
+        data = data.drop(columns="invalid")
     strategy = bt.FixedIncomeStrategy(
         "strategy",
         children=[
@@ -814,7 +817,51 @@ def test_rebalance_invalid_fixed_income_target_preserves_state():
     assert strategy.notional_value == before_notional_value
 
 
-@pytest.mark.parametrize("target_weight", [None, 0.0], ids=["omitted", "explicit-zero"])
+@pytest.mark.parametrize("security_type", [bt.FixedIncomeSecurity, bt.CouponPayingSecurity])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_rebalance_opens_zero_price_fixed_income_target(security_type, lazy):
+    date = pd.Timestamp("2020-01-01")
+    data = pd.DataFrame({"asset": [0.0]}, index=[date])
+    strategy = bt.FixedIncomeStrategy(
+        "strategy", children=[security_type("asset", lazy_add=lazy)]
+    )
+    strategy.setup(data, coupons=data * 0.0)
+    strategy.update(date)
+    strategy.temp["notional_value"] = 10.0
+    strategy.temp["weights"] = {"asset": 1.0}
+
+    assert algos.Rebalance()(strategy)
+    assert strategy["asset"].position == 10.0
+    assert strategy.notional_value == 10.0
+    assert strategy.capital == 0.0
+    assert strategy.value == 0.0
+
+
+@pytest.mark.parametrize("security_type", [bt.FixedIncomeSecurity, bt.CouponPayingSecurity])
+@pytest.mark.parametrize("position", [10.0, -10.0])
+@pytest.mark.parametrize("target_weight", [0.0, 1e-17, 0.5, 1.5])
+def test_rebalance_adjusts_zero_price_fixed_income_target(security_type, position, target_weight):
+    dates = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 0.0]}, index=dates)
+    strategy = bt.FixedIncomeStrategy("strategy", children=[security_type("asset")])
+    strategy.setup(data, coupons=data * 0.0)
+    strategy.update(dates[0])
+    strategy.transact(position, "asset")
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    before_capital = strategy.capital
+    strategy.temp["notional_value"] = abs(position)
+    strategy.temp["weights"] = {"asset": np.sign(position) * target_weight}
+
+    assert algos.Rebalance()(strategy)
+    expected_position = 0.0 if target_weight < 1e-16 else position * target_weight
+    assert strategy["asset"].position == expected_position
+    assert strategy.notional_value == abs(expected_position)
+    assert strategy.capital == before_capital
+    assert strategy.value == before_capital
+
+
+@pytest.mark.parametrize("target_weight", [None, 0.0, 1e-17], ids=["omitted", "explicit-zero", "near-zero"])
 @pytest.mark.parametrize("amount", [1000.0, -1000.0])
 def test_rebalance_closes_zero_price_position(amount, target_weight):
     dates = pd.date_range("2010-01-01", periods=2)
