@@ -690,8 +690,133 @@ def test_rebalance():
     assert c2.weight == pytest.approx(1.0)
 
 
+def test_rebalance_uses_current_price_for_stale_explicit_child():
+    dates = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"asset": [np.nan, 100.0]}, index=dates)
+    strategy = bt.Strategy("strategy", children=[bt.Security("asset")])
+    strategy.setup(data)
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    security = strategy["asset"]
+
+    # Zero-position children stay on the bootstrap row until allocation.
+    assert security.now == dates[0]
+    assert pd.isna(security._price)
+    strategy.temp["weights"] = {"asset": 1.0}
+
+    assert algos.Rebalance()(strategy)
+    assert security.now == dates[1]
+    assert security.price == 100.0
+    assert security.position == 10.0
+
+
+@pytest.mark.parametrize(
+    ("resolution", "invalid_price"),
+    [
+        pytest.param("existing", 0.0, id="existing-zero"),
+        pytest.param("lazy", np.nan, id="lazy-nan"),
+        pytest.param("default", None, id="default-missing"),
+    ],
+)
+def test_rebalance_invalid_direct_target_preserves_state(
+    resolution, invalid_price
+):
+    date = pd.Timestamp("2020-01-01")
+    data = pd.DataFrame({"held": [100.0], "valid": [100.0]}, index=[date])
+    children = [bt.Security("held"), bt.Security("valid")]
+    if invalid_price is not None:
+        data["invalid"] = invalid_price
+        children.append(bt.Security("invalid", lazy_add=resolution == "lazy"))
+
+    strategy = bt.Strategy("strategy", children=children)
+    strategy.setup(data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+    strategy.allocate(200.0, "held")
+    strategy.update(date)
+    # A valid first target and omitted holding expose any mutation before rejection.
+    strategy.temp["weights"] = {"valid": 0.5, "invalid": 0.5}
+
+    # Child resolution, portfolio state, and histories must remain exact.
+    before_children = tuple(strategy.children)
+    before_lazy_children = tuple(strategy._lazy_children)
+    before_positions = {
+        name: child.position for name, child in strategy.children.items()
+    }
+    before_histories = {
+        name: (child.positions.copy(), child.outlays.copy())
+        for name, child in strategy.children.items()
+    }
+    before_capital = strategy.capital
+    before_value = strategy.value
+    before_weights = strategy.temp["weights"].copy()
+    before_stale = strategy.root.stale
+
+    with pytest.raises(ValueError, match="Cannot allocate capital to invalid"):
+        algos.Rebalance()(strategy)
+
+    assert tuple(strategy.children) == before_children
+    assert tuple(strategy._lazy_children) == before_lazy_children
+    assert {
+        name: child.position for name, child in strategy.children.items()
+    } == before_positions
+    assert strategy.capital == before_capital
+    assert strategy.value == before_value
+    assert strategy.temp["weights"] == before_weights
+    assert strategy.root.stale == before_stale
+    for name, (positions, outlays) in before_histories.items():
+        pd.testing.assert_series_equal(strategy[name].positions, positions)
+        pd.testing.assert_series_equal(strategy[name].outlays, outlays)
+
+
+def test_rebalance_invalid_fixed_income_target_preserves_state():
+    date = pd.Timestamp("2020-01-01")
+    data = pd.DataFrame(
+        {"held": [100.0], "valid": [100.0], "invalid": [np.nan]}, index=[date]
+    )
+    strategy = bt.FixedIncomeStrategy(
+        "strategy",
+        children=[
+            bt.FixedIncomeSecurity("held"),
+            bt.FixedIncomeSecurity("valid"),
+            bt.FixedIncomeSecurity("invalid", lazy_add=True),
+        ],
+    )
+    strategy.setup(data)
+    strategy.update(date)
+    strategy.transact(2.0, "held")
+    strategy.update(date)
+    # Quantity-notional targets use transact but share the direct-price gate.
+    strategy.temp["notional_value"] = 1000.0
+    strategy.temp["weights"] = {"valid": 0.5, "invalid": 0.5}
+
+    # Preserve both quantity-notional and market-value state on rejection.
+    before_children = tuple(strategy.children)
+    before_lazy_children = tuple(strategy._lazy_children)
+    before_positions = {
+        name: child.position for name, child in strategy.children.items()
+    }
+    before_capital = strategy.capital
+    before_value = strategy.value
+    before_notional_value = strategy.notional_value
+
+    with pytest.raises(ValueError, match="Cannot allocate capital to invalid"):
+        algos.Rebalance()(strategy)
+
+    assert tuple(strategy.children) == before_children
+    assert tuple(strategy._lazy_children) == before_lazy_children
+    assert {
+        name: child.position for name, child in strategy.children.items()
+    } == before_positions
+    assert strategy.capital == before_capital
+    assert strategy.value == before_value
+    assert strategy.notional_value == before_notional_value
+
+
+@pytest.mark.parametrize("target_weight", [None, 0.0], ids=["omitted", "explicit-zero"])
 @pytest.mark.parametrize("amount", [1000.0, -1000.0])
-def test_rebalance_closes_omitted_zero_price_position(amount):
+def test_rebalance_closes_zero_price_position(amount, target_weight):
     dates = pd.date_range("2010-01-01", periods=2)
     data = pd.DataFrame({"asset": [100.0, 0.0]}, index=dates)
     strategy = bt.Strategy("strategy", children=["asset"])
@@ -705,7 +830,10 @@ def test_rebalance_closes_omitted_zero_price_position(amount):
     initial_position = security.position
     initial_cash = strategy.capital
     initial_value = strategy.value
-    strategy.temp["weights"] = {}
+    # Omission and an explicit neutral target both close the live position.
+    strategy.temp["weights"] = (
+        {} if target_weight is None else {"asset": target_weight}
+    )
 
     assert algos.Rebalance()(strategy)
 
