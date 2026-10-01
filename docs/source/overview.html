@@ -401,7 +401,10 @@ what you want to examine within curly braces ( { } )</p>
 <p>Rebalances capital based on temp[‘weights’]</p>
 <p>Rebalances capital based on temp[‘weights’]. Also closes
 positions if open but not in target_weights. This is typically
-the last Algo called once the target weights have been set.</p>
+the last Algo called once the target weights have been set. Direct
+security targets that require an adjustment are checked for missing prices
+before mutation. Capital allocations also require a nonzero price;
+quantity-based fixed-income trades and closing positions allow zero prices.</p>
 <dl class="simple">
 <dt>Requires:</dt><dd><ul class="simple">
 <li><p>weights</p></li>

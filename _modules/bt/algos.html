@@ -2487,7 +2487,10 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Rebalances capital based on temp['weights']. Also closes</span>
 <span class="sd">    positions if open but not in target_weights. This is typically</span>
-<span class="sd">    the last Algo called once the target weights have been set.</span>
+<span class="sd">    the last Algo called once the target weights have been set. Direct</span>
+<span class="sd">    security targets that require an adjustment are checked for missing prices</span>
+<span class="sd">    before mutation. Capital allocations also require a nonzero price;</span>
+<span class="sd">    quantity-based fixed-income trades and closing positions allow zero prices.</span>
 
 <span class="sd">    Requires:</span>
 <span class="sd">        * weights</span>
@@ -2504,6 +2507,45 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_target_prices</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">target_scale</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Reject invalid direct target prices before portfolio mutation.</span>
+
+<span class="sd">        Mirror StrategyBase.rebalance's effective delta while inspecting lazy and</span>
+<span class="sd">        default targets without materializing them.</span>
+<span class="sd">        """</span>
+        <span class="k">for</span> <span class="n">cname</span><span class="p">,</span> <span class="n">target_weight</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">child</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">_lazy_children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">SecurityBase</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">current_weight</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">_weight</span> <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">scaled_weight</span> <span class="o">=</span> <span class="n">target_weight</span> <span class="o">*</span> <span class="n">target_scale</span>
+            <span class="c1"># StrategyBase.rebalance routes zero weights directly to close.</span>
+            <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">scaled_weight</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="n">scaled_weight</span> <span class="o">*</span> <span class="n">base</span> <span class="o">-</span> <span class="n">current_weight</span> <span class="o">*</span> <span class="n">target</span><span class="o">.</span><span class="n">notional_value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">scaled_weight</span> <span class="o">-</span> <span class="n">current_weight</span><span class="p">)</span> <span class="o">*</span> <span class="n">base</span>
+            <span class="c1"># Zero deltas bypass allocation.</span>
+            <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">delta</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Idle children may still cache the bootstrap-row price; allocation</span>
+            <span class="c1"># would refresh them from the current universe row before trading.</span>
+            <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">_universe</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="p">(</span><span class="n">cname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="ow">or</span> <span class="n">child</span><span class="o">.</span><span class="n">now</span> <span class="o">!=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">):</span>
+                <span class="n">price</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">_universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">cname</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">price</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">_price</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">price</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">quantity_trade</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span> <span class="ow">and</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">fixed_income</span>
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">is_zero</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">quantity_trade</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot allocate capital to </span><span class="si">{</span><span class="n">cname</span><span class="si">}</span><span class="s2"> because price is </span><span class="si">{</span><span class="n">price</span><span class="si">}</span><span class="s2"> as of </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="k">if</span> <span class="s2">"weights"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
@@ -2522,6 +2564,15 @@ window.runMermaid = runMermaid;</script>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">base</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">value</span>
 
+        <span class="c1"># Child weights describe the investable slice; retain total value as the</span>
+        <span class="c1"># stable base so repeated cash-aware rebalances remain idempotent.</span>
+        <span class="n">target_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
+            <span class="n">target_scale</span> <span class="o">-=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">]</span>
+
+        <span class="c1"># Reject direct target-price failures before holdings or registries change.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_target_prices</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">target_scale</span><span class="p">)</span>
+
         <span class="c1"># De-allocate open children that are not in targets.</span>
         <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
             <span class="c1"># if this child is in our targets, we don't want to close it out</span>
@@ -2539,12 +2590,6 @@ window.runMermaid = runMermaid;</script>
             <span class="n">zero_value_child</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">==</span> <span class="mf">0.0</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="ow">or</span> <span class="n">zero_value_child</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-        <span class="c1"># Child weights describe the investable slice; retain total value as the</span>
-        <span class="c1"># stable base so repeated cash-aware rebalances remain idempotent.</span>
-        <span class="n">target_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
-            <span class="n">target_scale</span> <span class="o">-=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">]</span>
 
         <span class="c1"># Turn off updating while we rebalance each child</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
