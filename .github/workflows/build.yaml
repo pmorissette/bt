@@ -61,7 +61,7 @@ jobs:
           version: ${{ matrix.python.version }}
 
       - name: Setup compiler
-        uses: actions-ext/cpp/setup@22ebafc6f57971978e964f9977333ac98a7c49d9
+        uses: actions-ext/cpp/setup@7de57593fbcba72d513072bfb4b30b5a344aa547
         with:
           clang_format: 'false'
 
