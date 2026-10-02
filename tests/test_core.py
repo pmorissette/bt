@@ -3456,6 +3456,200 @@ def test_couponpayingsecurity_carry():
     assert c1.holding_costs.iloc[1] == pytest.approx(50.0)
 
 
+def _coupon_update_case(position, coupon, nested=False, price=100.0):
+    """Build a coupon security with one prospective coupon observation."""
+    dates = pd.date_range("2010-01-01", periods=3)
+    prices = pd.DataFrame({"c1": [price, price + 1.0, price + 2.0]}, index=dates)
+    coupons = pd.DataFrame({"c1": [0.0, coupon, 0.0]}, index=dates)
+    security = CouponPayingSecurity("c1")
+    if nested:
+        strategy = StrategyBase("p", [StrategyBase("child", [security])])
+    else:
+        strategy = StrategyBase("p", [security])
+    strategy.setup(prices, coupons=coupons)
+    strategy.update(dates[0])
+    strategy.adjust(1_000.0)
+    if nested:
+        strategy.allocate(1_000.0, child="child")
+    security = strategy.securities[0]
+    security.transact(position)
+    strategy.update(dates[0])
+    return dates, strategy, security
+
+
+@pytest.mark.parametrize(
+    ("position", "coupon", "price"),
+    [
+        pytest.param(2.0, np.nan, 100.0, id="long-nan"),
+        pytest.param(-2.0, np.inf, 100.0, id="short-infinity"),
+        pytest.param(2.0, pd.NA, 100.0, id="long-nullable"),
+        pytest.param(1e308, 1e308, 0.0, id="finite-overflow"),
+    ],
+)
+def test_couponpayingsecurity_rejects_nonfinite_coupon_before_state_mutation(position, coupon, price):
+    dates, _, security = _coupon_update_case(position, coupon, price=price)
+
+    # Snapshot every surface owned by the first-mutation operation.
+    state = (
+        security.now,
+        security._price,
+        security._value,
+        security._notl_value,
+        security._last_pos,
+        security._needupdate,
+        security._coupon,
+        security._holding_cost,
+        security._capital,
+        security.data.copy(deep=True),
+        security._prices.copy(deep=True),
+    )
+
+    with pytest.raises(ValueError, match="Coupon payment must be finite"), np.errstate(all="raise"):
+        security.update(dates[1])
+
+    assert security.now == state[0]
+    assert security._price == state[1]
+    assert security._value == state[2]
+    assert security._notl_value == state[3]
+    assert security._last_pos == state[4]
+    assert security._needupdate == state[5]
+    assert security._coupon == state[6]
+    assert security._holding_cost == state[7]
+    assert security._capital == state[8]
+    pd.testing.assert_frame_equal(security.data, state[9])
+    pd.testing.assert_series_equal(security._prices, state[10])
+
+
+@pytest.mark.parametrize("nested", [False, True], ids=["flat", "nested"])
+def test_strategy_update_rejects_nonfinite_coupon_without_contamination(nested):
+    dates, strategy, security = _coupon_update_case(2.0, np.nan, nested=nested)
+    strategy_nodes = [node for node in strategy.members if isinstance(node, StrategyBase)]
+    strategy.stale = True
+    root_stale = strategy.stale
+    strategy_state = [
+        (
+            node.now,
+            node._value,
+            node._price,
+            node._last_value,
+            node._last_price,
+            node._last_notl_value,
+            node._net_flows,
+            node._last_fee,
+            node._capital,
+            node.data.copy(deep=True),
+        )
+        for node in strategy_nodes
+    ]
+    security_data = security.data.copy(deep=True)
+
+    # The caller must reject before either its own or the Security's clock advances.
+    with pytest.raises(ValueError, match="Coupon payment must be finite"), np.errstate(all="raise"):
+        strategy.update(dates[1])
+
+    assert strategy.stale is root_stale
+    for node, state in zip(strategy_nodes, strategy_state, strict=True):
+        assert node.now == state[0]
+        assert node._value == state[1]
+        assert node._price == state[2]
+        assert node._last_value == state[3]
+        assert node._last_price == state[4]
+        assert node._last_notl_value == state[5]
+        assert node._net_flows == state[6]
+        assert node._last_fee == state[7]
+        assert node._capital == state[8]
+        pd.testing.assert_frame_equal(node.data, state[9])
+    pd.testing.assert_frame_equal(security.data, security_data)
+
+    # Correcting the same observation must permit a retry with the original position.
+    security._coupons.loc[dates[1]] = 1.0
+    strategy.update(dates[1])
+    assert security.coupon == pytest.approx(2.0)
+    assert np.isfinite(security.data.loc[dates[1]]).all()
+    assert np.isfinite(strategy.data.loc[dates[1]]).all()
+
+    strategy.update(dates[2])
+    assert np.isfinite(strategy.prices).all()
+    assert np.isfinite(strategy.prices.pct_change().dropna()).all()
+
+
+def test_strategy_update_preflights_coupon_on_paper_portfolio():
+    dates = pd.date_range("2010-01-01", periods=3)
+    prices = pd.DataFrame({"asset": 100.0}, index=dates)
+    coupons = pd.DataFrame({"asset": [0.0, np.nan, 0.0]}, index=dates)
+    child = Strategy(
+        "child",
+        [bt.algos.RunOnce(), bt.algos.WeighSpecified(asset=1.0), bt.algos.Rebalance()],
+        children=[CouponPayingSecurity("asset", fixed_income=False)],
+    )
+    root = Strategy("root", children=[child])
+    root.setup(prices, coupons=coupons)
+    root.adjust(1_000.0)
+    root.update(dates[0])
+    child = root["child"]
+    nodes = root.members + child._paper.members
+    state = [(node.now, node._capital, node._value, node.data.copy(deep=True)) for node in nodes]
+
+    # The paper position is the only active consumer of the missing coupon.
+    assert child["asset"].position == 0.0
+    assert child._paper["asset"].position > 0.0
+    with pytest.raises(ValueError, match="Coupon payment must be finite"):
+        root.update(dates[1])
+
+    for node, previous in zip(nodes, state, strict=True):
+        assert (node.now, node._capital, node._value) == previous[:3]
+        pd.testing.assert_frame_equal(node.data, previous[3])
+
+    child._paper["asset"]._coupons.loc[dates[1]] = 0.25
+    root.update(dates[1])
+    assert child._paper["asset"].coupon == pytest.approx(child._paper["asset"].position * 0.25)
+    assert np.isfinite(root.data.loc[dates[1]]).all()
+
+
+def test_strategy_update_preflights_all_coupons_before_updating_a_sibling():
+    dates = pd.date_range("2010-01-01", periods=2)
+    prices = pd.DataFrame({"first": 100.0, "second": 100.0}, index=dates)
+    coupons = pd.DataFrame({"first": [0.0, 0.25], "second": [0.0, np.nan]}, index=dates)
+    strategy = StrategyBase(
+        "p",
+        [CouponPayingSecurity("first"), CouponPayingSecurity("second")],
+    )
+    strategy.setup(prices, coupons=coupons)
+    strategy.update(dates[0])
+    strategy.adjust(1_000.0)
+    for security in strategy.securities:
+        security.transact(1.0)
+    strategy.update(dates[0])
+    state = [(node.now, node._capital, node.data.copy(deep=True)) for node in strategy.members]
+
+    # A bad later sibling must be found before the valid first child pays its coupon.
+    with pytest.raises(ValueError, match="Coupon payment must be finite"), np.errstate(all="raise"):
+        strategy.update(dates[1])
+
+    for node, previous in zip(strategy.members, state, strict=True):
+        assert node.now == previous[0]
+        assert node._capital == previous[1]
+        pd.testing.assert_frame_equal(node.data, previous[2])
+
+    strategy["second"]._coupons.loc[dates[1]] = 0.5
+    strategy.update(dates[1])
+    assert strategy["first"].coupon == pytest.approx(0.25)
+    assert strategy["second"].coupon == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize("coupon", [np.nan, pd.NA, np.inf, -np.inf])
+def test_couponpayingsecurity_ignores_unapplied_nonfinite_coupon(coupon):
+    dates, _, security = _coupon_update_case(0.0, coupon)
+
+    # With no position, no coupon arithmetic should consume the observation.
+    with np.errstate(all="raise"):
+        security.update(dates[1])
+
+    assert security.coupon == pytest.approx(0.0)
+    assert security.coupons.loc[dates[1]] == pytest.approx(0.0)
+    assert security._capital == pytest.approx(0.0)
+
+
 def _holding_cost_update_case(position, cost_long, cost_short, price=100.0, nested=False):
     """Build an open coupon security with a prospective carrying-cost observation."""
     dates = pd.date_range("2010-01-01", periods=3)

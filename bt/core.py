@@ -740,7 +740,7 @@ class StrategyBase(Node):
         """
         Update strategy. Updates prices, values, weight, etc.
         """
-        if self._has_strat_children or "cost_long" in self._setup_kwargs or "cost_short" in self._setup_kwargs:
+        if self._has_strat_children or "coupons" in self._setup_kwargs or "cost_long" in self._setup_kwargs or "cost_short" in self._setup_kwargs:
             if inow is None:
                 if date == 0:
                     inow = 0
@@ -757,6 +757,7 @@ class StrategyBase(Node):
                         pending.append(child)
                     elif isinstance(child, CouponPayingSecurity) and child._needupdate:
                         child._holding_cost_for_update(date, inow)
+                        child._coupon_for_update(date, inow)
                 if strategy._paper_trade and (strategy.now == 0 or strategy.now != date):
                     pending.append(strategy._paper)
 
@@ -1905,7 +1906,8 @@ class CouponPayingSecurity(FixedIncomeSecurity):
 
     Represents a coupon-paying security, where coupon payments adjust
     the capital of the parent. Coupons and costs must be passed in during setup.
-    Applicable holding-cost observations and derived costs must be finite.
+    Applicable coupon payments, holding-cost observations, and derived costs
+    must be finite. Coupons are not applied while the position is zero.
     """
 
     _coupon = cy.declare(cy.double)
@@ -2002,6 +2004,29 @@ class CouponPayingSecurity(FixedIncomeSecurity):
 
         return holding_cost
 
+    @cy.locals(coupon=cy.double, coupon_payment=cy.double)
+    def _coupon_for_update(self, date, inow):
+        """Return the applicable finite coupon payment without changing state."""
+        if self._coupons is None:
+            raise RuntimeError(f"coupons have not been set for security {self.name}")
+
+        # Missing or otherwise unusable observations are irrelevant without a position.
+        if is_zero(self._position):
+            return 0.0
+
+        try:
+            coupon = float(self._coupons.iloc[inow])
+        except (TypeError, ValueError):
+            raise ValueError(f"Coupon payment must be finite for security {self.name} on {date}. Cannot update node value.") from None
+        if not math.isfinite(coupon):
+            raise ValueError(f"Coupon payment must be finite for security {self.name} on {date}. Cannot update node value.")
+
+        coupon_payment = float(self._position) * coupon
+        if not math.isfinite(coupon_payment):
+            raise ValueError(f"Coupon payment must be finite for security {self.name} on {date}. Cannot update node value.")
+
+        return coupon_payment
+
     @cy.locals(coupon=cy.double, holding_cost=cy.double)
     def update(self, date, data=None, inow=None):
         """
@@ -2014,28 +2039,18 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             else:
                 inow = self._index.get_loc(date)
 
-        if self._coupons is None:
-            raise RuntimeError(f"coupons have not been set for security {self.name}")
-
         # Validate the applicable carry before the base update changes state.
         holding_cost = self._holding_cost_for_update(date, inow)
+        coupon = self._coupon_for_update(date, inow)
 
         # Standard update
         super().update(date, data, inow)
 
-        coupon = self._coupons.iloc[inow]
         # If we were to call self.parent.adjust, then all the child weights would
         # need to be updated. If each security pays a coupon, then this happens for
         # each child. Instead, we store the coupon on self._capital, and it gets
         # swept up as part of the strategy update
-
-        if np.isnan(coupon):
-            if is_zero(self._position):
-                self._coupon = 0.0
-            else:
-                raise ValueError(f"Position is open (non-zero) and latest coupon is NaN for security {self.name} on {date}. Cannot update node value.")
-        else:
-            self._coupon = self._position * coupon
+        self._coupon = coupon
 
         self._holding_cost = holding_cost
 
