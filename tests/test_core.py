@@ -3181,6 +3181,87 @@ def test_securitybase_transact():
     assert np.isclose(s.outlays[c1.name].iloc[0], 3 * amount, rtol=0.0)
 
 
+def test_securitybase_transaction_accepts_finite_cost_components():
+    dates = pd.date_range("2026-01-01", periods=1)
+    security = SecurityBase("asset")
+    strategy = StrategyBase("strategy", [security])
+    strategy.setup(pd.DataFrame({"asset": [100.0]}, index=dates), bidoffer=pd.DataFrame({"asset": [0.0]}, index=dates))
+    strategy.set_commissions(lambda quantity, price: 1.0)
+    strategy.update(dates[0])
+    strategy.adjust(1_000.0)
+    security = strategy["asset"]
+
+    security.transact(1.0)
+
+    assert security.position == 1.0
+    assert security._outlay == 100.0
+    assert security._bidoffer_paid == 0.0
+    assert strategy.capital == 899.0
+    assert strategy._last_fee == 1.0
+
+
+@pytest.mark.parametrize(
+    ("commission", "bidoffer", "trade_price", "quantity"),
+    [
+        pytest.param(np.nan, 0.0, None, 1.0, id="nan-commission"),
+        pytest.param(0.0, np.inf, None, 1.0, id="infinite-bidoffer"),
+        pytest.param(0.0, 0.0, np.inf, 1.0, id="infinite-custom-price"),
+        pytest.param(
+            np.finfo(float).max,
+            0.0,
+            None,
+            np.finfo(float).max / 100.0,
+            id="finite-component-overflow",
+        ),
+    ],
+)
+def test_securitybase_transaction_rejects_nonfinite_cost_before_state_mutation(
+    commission,
+    bidoffer,
+    trade_price,
+    quantity,
+):
+    dates = pd.date_range("2026-01-01", periods=1)
+    security = SecurityBase("asset")
+    strategy = StrategyBase("strategy", [security])
+    strategy.setup(
+        pd.DataFrame({"asset": [100.0]}, index=dates),
+        bidoffer=pd.DataFrame({"asset": [bidoffer]}, index=dates),
+    )
+    strategy.set_commissions(lambda q, p: commission)
+    strategy.update(dates[0])
+    strategy.adjust(1_000.0)
+    strategy.stale = False
+    security = strategy["asset"]
+    state = (
+        security._position,
+        security._outlay,
+        security._bidoffer_paid,
+        security._needupdate,
+        strategy._capital,
+        strategy._last_fee,
+        strategy._net_flows,
+        strategy.stale,
+        security.data.copy(deep=True),
+        strategy.data.copy(deep=True),
+    )
+
+    # The leaf owns every mutation below; rejection must preserve all of them.
+    with pytest.raises(ValueError, match="Transaction outlay and costs must be finite"), np.errstate(all="ignore"):
+        security.transact(quantity, price=trade_price)
+
+    assert security._position == state[0]
+    assert security._outlay == state[1]
+    assert security._bidoffer_paid == state[2]
+    assert security._needupdate == state[3]
+    assert strategy._capital == state[4]
+    assert strategy._last_fee == state[5]
+    assert strategy._net_flows == state[6]
+    assert strategy.stale is state[7]
+    pd.testing.assert_frame_equal(security.data, state[8])
+    pd.testing.assert_frame_equal(strategy.data, state[9])
+
+
 def test_security_setup_positions():
     c1 = SecurityBase("c1")
     c2 = SecurityBase("c2")
