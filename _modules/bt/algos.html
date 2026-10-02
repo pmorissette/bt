@@ -2982,10 +2982,64 @@ window.runMermaid = runMermaid;</script>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_transaction_security</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">security</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Resolve a declared or market-backed security for transaction dispatch."""</span>
-    <span class="k">if</span> <span class="n">security</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="ow">and</span> <span class="n">security</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">_lazy_children</span> <span class="ow">and</span> <span class="n">security</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_transaction_security</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">security</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Validate a declared or market-backed transaction target without creating it."""</span>
+    <span class="k">if</span> <span class="n">security</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">security</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">security</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">_lazy_children</span><span class="p">:</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">_lazy_children</span><span class="p">[</span><span class="n">security</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">security</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">security</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">SecurityBase</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Transaction target </span><span class="si">{</span><span class="n">security</span><span class="si">!r}</span><span class="s2"> is not a security"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_transaction_quantity_is_noop</span><span class="p">(</span><span class="n">quantity</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Validate a transaction quantity and report whether dispatch is a no-op."""</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">quantity</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Transaction quantity must be real"</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">quantity</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">quantity</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Transaction quantity must be finite"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Transaction quantity must be numeric"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_transaction_price</span><span class="p">(</span><span class="n">price</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Validate a custom transaction price used by an actionable quantity."""</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">price</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Transaction price must be real"</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">finite</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">price</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Transaction price must be numeric"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">finite</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Transaction price must be finite"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_preflight_transactions</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">transactions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Validate a complete transaction batch before dispatch can mutate state."""</span>
+    <span class="n">prepared</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">security</span><span class="p">),</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">transactions</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">_validate_transaction_security</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">security</span><span class="p">)</span>
+        <span class="n">quantity</span> <span class="o">=</span> <span class="n">transaction</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">]</span>
+        <span class="n">price</span> <span class="o">=</span> <span class="n">transaction</span><span class="p">[</span><span class="s2">"price"</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_transaction_quantity_is_noop</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span> <span class="ow">and</span> <span class="n">price</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_validate_transaction_price</span><span class="p">(</span><span class="n">price</span><span class="p">)</span>
+            <span class="n">price</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">price</span><span class="p">)</span>
+        <span class="n">prepared</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">security</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">quantity</span><span class="p">),</span> <span class="n">price</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">prepared</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_transaction_security</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">security</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Resolve a preflighted security for transaction dispatch."""</span>
+    <span class="n">_validate_transaction_security</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">security</span><span class="p">)</span>
 
     <span class="n">target</span><span class="o">.</span><span class="n">_create_child_if_needed</span><span class="p">(</span><span class="n">security</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">target</span><span class="p">[</span><span class="n">security</span><span class="p">]</span>
@@ -3001,6 +3055,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    In particular, one can replay the outputs of backtest.Result.get_transactions.</span>
 <span class="sd">    Securities may be existing children, lazily declared children, or available</span>
 <span class="sd">    columns in the target's market-data universe.</span>
+<span class="sd">    The selected batch is validated before dispatch so an invalid target,</span>
+<span class="sd">    actionable quantity, or required custom price cannot partially replay it.</span>
 
 <span class="sd">    Note that this allows the timestamps and prices of the reported transactions</span>
 <span class="sd">    to be completely arbitrary, so while the strategy may track performance</span>
@@ -3032,9 +3088,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">all_transactions</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transactions</span><span class="p">)</span>
         <span class="n">timestamps</span> <span class="o">=</span> <span class="n">all_transactions</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="s2">"Date"</span><span class="p">)</span>
         <span class="n">transactions</span> <span class="o">=</span> <span class="n">all_transactions</span><span class="p">[(</span><span class="n">timestamps</span> <span class="o">&gt;</span> <span class="n">start</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">timestamps</span> <span class="o">&lt;=</span> <span class="n">end</span><span class="p">)]</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">security</span><span class="p">),</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">transactions</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">security</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">price</span> <span class="ow">in</span> <span class="n">_preflight_transactions</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">transactions</span><span class="p">):</span>
             <span class="n">c</span> <span class="o">=</span> <span class="n">_resolve_transaction_security</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">security</span><span class="p">)</span>
-            <span class="n">c</span><span class="o">.</span><span class="n">transact</span><span class="p">(</span><span class="n">transaction</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">],</span> <span class="n">price</span><span class="o">=</span><span class="n">transaction</span><span class="p">[</span><span class="s2">"price"</span><span class="p">],</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">transact</span><span class="p">(</span><span class="n">quantity</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">price</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Now update</span>
         <span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
@@ -3053,6 +3109,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    RFQ or the receiver.</span>
 <span class="sd">    Transaction securities may be existing children, lazily declared children, or</span>
 <span class="sd">    available columns in the target's market-data universe.</span>
+<span class="sd">    Returned batches are validated before dispatch so an invalid target,</span>
+<span class="sd">    actionable quantity, or required custom price cannot partially execute them.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * rfqs (str): name of a dataframe with columns</span>
@@ -3085,9 +3143,9 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># Turn the RFQs into transactions</span>
         <span class="n">transactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">rfqs</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">security</span><span class="p">),</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">transactions</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">security</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">price</span> <span class="ow">in</span> <span class="n">_preflight_transactions</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">transactions</span><span class="p">):</span>
             <span class="n">c</span> <span class="o">=</span> <span class="n">_resolve_transaction_security</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">security</span><span class="p">)</span>
-            <span class="n">c</span><span class="o">.</span><span class="n">transact</span><span class="p">(</span><span class="n">transaction</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">],</span> <span class="n">price</span><span class="o">=</span><span class="n">transaction</span><span class="p">[</span><span class="s2">"price"</span><span class="p">],</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">transact</span><span class="p">(</span><span class="n">quantity</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">price</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Now update</span>
         <span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
