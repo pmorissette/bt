@@ -2374,6 +2374,8 @@ def _validate_transaction_security(target, security):
 
 def _transaction_quantity_is_noop(quantity):
     """Validate a transaction quantity and report whether dispatch is a no-op."""
+    if np.iscomplexobj(quantity):
+        raise ValueError("Transaction quantity must be real")
     try:
         if math.isnan(quantity):
             return True
@@ -2386,6 +2388,8 @@ def _transaction_quantity_is_noop(quantity):
 
 def _validate_transaction_price(price):
     """Validate a custom transaction price used by an actionable quantity."""
+    if np.iscomplexobj(price):
+        raise ValueError("Transaction price must be real")
     try:
         finite = math.isfinite(price)
     except (TypeError, ValueError, OverflowError) as exc:
@@ -2401,9 +2405,10 @@ def _preflight_transactions(target, transactions):
         _validate_transaction_security(target, security)
         quantity = transaction["quantity"]
         price = transaction["price"]
-        if not _transaction_quantity_is_noop(quantity):
+        if not _transaction_quantity_is_noop(quantity) and price is not None:
             _validate_transaction_price(price)
-        prepared.append((security, quantity, price))
+            price = float(price)
+        prepared.append((security, float(quantity), price))
     return prepared
 
 

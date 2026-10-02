@@ -3458,6 +3458,8 @@ def test_replayed_transactions_reject_unknown_securities(algo_name):
         pytest.param("y", 1.0, "bad", ValueError, "numeric", id="nonnumeric-price"),
         pytest.param("y", np.inf, 99.0, ValueError, "finite", id="infinite-quantity"),
         pytest.param("y", "bad", 99.0, ValueError, "numeric", id="nonnumeric-quantity"),
+        pytest.param("y", np.complex128(1 + 2j), 99.0, ValueError, "real", id="complex-quantity"),
+        pytest.param("y", 1.0, np.complex128(99 + 2j), ValueError, "real", id="complex-price"),
     ],
 )
 def test_replayed_transactions_preflight_complete_batch(
@@ -3468,6 +3470,7 @@ def test_replayed_transactions_preflight_complete_batch(
     transactions = pd.DataFrame(
         [(date, "x", 1.0, 99.0), (date, security, quantity, price)],
         columns=["Date", "Security", "quantity", "price"],
+        dtype=object,
     ).set_index(["Date", "Security"])
 
     if algo_name == "replay":
@@ -3500,6 +3503,41 @@ def test_replayed_transactions_preflight_complete_batch(
     assert set(strategy._lazy_children) == {"x", "y"}
     assert strategy.capital == 1000.0
     assert strategy.value == 1000.0
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+@pytest.mark.parametrize("input_kind", ["market-price", "decimal-quantity", "decimal-price"])
+def test_replayed_transactions_normalize_numeric_inputs(algo_name, input_kind):
+    from decimal import Decimal
+
+    date = pd.Timestamp("2010-01-01")
+    quantity = Decimal("1") if input_kind == "decimal-quantity" else 1.0
+    price = None if input_kind == "market-price" else Decimal("99") if input_kind == "decimal-price" else 99.0
+    transactions = pd.DataFrame(
+        [(date, "x", 1.0, 99.0), (date, "y", quantity, price)],
+        columns=["Date", "Security", "quantity", "price"],
+        dtype=object,
+    ).set_index(["Date", "Security"])
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions("rfqs", lambda rfqs, target: transactions)
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    strategy = bt.Strategy("strategy")
+    strategy.setup(pd.DataFrame(100.0, index=[date], columns=["x", "y"]), bidoffer={}, **additional_data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+
+    assert algo(strategy)
+    assert strategy["x"].position == 1.0
+    assert strategy["y"].position == 1.0
+    expected_price = 100.0 if price is None else 99.0
+    assert strategy.capital == 1000.0 - 99.0 - expected_price
+    assert strategy.value == strategy.capital + 200.0
+    assert strategy["x"].bidoffer_paid == -1.0
+    assert strategy["y"].bidoffer_paid == expected_price - 100.0
 
 
 @pytest.mark.parametrize("algo_name", ["replay", "rfq"])
