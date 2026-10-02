@@ -134,7 +134,7 @@ jobs:
         if: matrix.platform == 'windows-latest'
 
       - name: Test wheel
-        uses: actions-ext/python/test-wheel@ec67f82b3bd863948308a41ecb9e70547cbb19c7
+        uses: actions-ext/python/test-wheel@c8228d827a81b9f8c808825328af361c45461ba3
         with:
           module: bt
         if: runner.os == 'Linux'
