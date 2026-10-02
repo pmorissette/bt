@@ -3050,7 +3050,8 @@ buy/sell the security for a given quantity.</p>
 <p>The amount of shares is explicitly provided, a
 commission will be calculated based on the parent’s commission fn, and
 any remaining capital will be passed back up  to parent as an
-adjustment.</p>
+adjustment. Derived outlay and cost components must be finite; invalid
+results are rejected before trade state changes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
