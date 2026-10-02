@@ -2357,10 +2357,64 @@ class SelectActive(Algo):
         return True
 
 
-def _resolve_transaction_security(target, security):
-    """Resolve a declared or market-backed security for transaction dispatch."""
-    if security not in target.children and security not in target._lazy_children and security not in target.universe.columns:
+def _validate_transaction_security(target, security):
+    """Validate a declared or market-backed transaction target without creating it."""
+    if security in target.children:
+        child = target.children[security]
+    elif security in target._lazy_children:
+        child = target._lazy_children[security]
+    elif security in target.universe.columns:
+        return
+    else:
         raise KeyError(security)
+
+    if not isinstance(child, SecurityBase):
+        raise TypeError(f"Transaction target {security!r} is not a security")
+
+
+def _transaction_quantity_is_noop(quantity):
+    """Validate a transaction quantity and report whether dispatch is a no-op."""
+    if np.iscomplexobj(quantity):
+        raise ValueError("Transaction quantity must be real")
+    try:
+        if math.isnan(quantity):
+            return True
+        if not math.isfinite(quantity):
+            raise ValueError("Transaction quantity must be finite")
+        return is_zero(quantity)
+    except (TypeError, OverflowError) as exc:
+        raise ValueError("Transaction quantity must be numeric") from exc
+
+
+def _validate_transaction_price(price):
+    """Validate a custom transaction price used by an actionable quantity."""
+    if np.iscomplexobj(price):
+        raise ValueError("Transaction price must be real")
+    try:
+        finite = math.isfinite(price)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Transaction price must be numeric") from exc
+    if not finite:
+        raise ValueError("Transaction price must be finite")
+
+
+def _preflight_transactions(target, transactions):
+    """Validate a complete transaction batch before dispatch can mutate state."""
+    prepared = []
+    for (_, security), transaction in transactions.iterrows():
+        _validate_transaction_security(target, security)
+        quantity = transaction["quantity"]
+        price = transaction["price"]
+        if not _transaction_quantity_is_noop(quantity) and price is not None:
+            _validate_transaction_price(price)
+            price = float(price)
+        prepared.append((security, float(quantity), price))
+    return prepared
+
+
+def _resolve_transaction_security(target, security):
+    """Resolve a preflighted security for transaction dispatch."""
+    _validate_transaction_security(target, security)
 
     target._create_child_if_needed(security)
     return target[security]
@@ -2374,6 +2428,8 @@ class ReplayTransactions(Algo):
     In particular, one can replay the outputs of backtest.Result.get_transactions.
     Securities may be existing children, lazily declared children, or available
     columns in the target's market-data universe.
+    The selected batch is validated before dispatch so an invalid target,
+    actionable quantity, or required custom price cannot partially replay it.
 
     Note that this allows the timestamps and prices of the reported transactions
     to be completely arbitrary, so while the strategy may track performance
@@ -2405,9 +2461,9 @@ class ReplayTransactions(Algo):
         all_transactions = target.get_data(self.transactions)
         timestamps = all_transactions.index.get_level_values("Date")
         transactions = all_transactions[(timestamps > start) & (timestamps <= end)]
-        for (_, security), transaction in transactions.iterrows():
+        for security, quantity, price in _preflight_transactions(target, transactions):
             c = _resolve_transaction_security(target, security)
-            c.transact(transaction["quantity"], price=transaction["price"], update=False)
+            c.transact(quantity, price=price, update=False)
 
         # Now update
         target.root.update(target.now)
@@ -2423,6 +2479,8 @@ class SimulateRFQTransactions(Algo):
     RFQ or the receiver.
     Transaction securities may be existing children, lazily declared children, or
     available columns in the target's market-data universe.
+    Returned batches are validated before dispatch so an invalid target,
+    actionable quantity, or required custom price cannot partially execute them.
 
     Args:
         * rfqs (str): name of a dataframe with columns
@@ -2455,9 +2513,9 @@ class SimulateRFQTransactions(Algo):
         # Turn the RFQs into transactions
         transactions = self.model(rfqs, target)
 
-        for (_, security), transaction in transactions.iterrows():
+        for security, quantity, price in _preflight_transactions(target, transactions):
             c = _resolve_transaction_security(target, security)
-            c.transact(transaction["quantity"], price=transaction["price"], update=False)
+            c.transact(quantity, price=price, update=False)
 
         # Now update
         target.root.update(target.now)

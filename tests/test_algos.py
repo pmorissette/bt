@@ -3384,6 +3384,39 @@ def test_replayed_transactions_resolve_lazy_securities(
 
 
 @pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+def test_replayed_transactions_preserve_fixed_income_dispatch(algo_name):
+    date = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame({"bond": [101.0]}, index=[date])
+    transactions = pd.DataFrame(
+        [(date, "bond", 5.0, 99.0)],
+        columns=["Date", "Security", "quantity", "price"],
+    ).set_index(["Date", "Security"])
+
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions(
+            "rfqs", lambda rfqs, target: transactions.loc[rfqs.index]
+        )
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    strategy = bt.FixedIncomeStrategy(
+        "strategy", children=[bt.FixedIncomeSecurity("bond")]
+    )
+    strategy.setup(data, bidoffer={}, **additional_data)
+    strategy.update(date)
+
+    assert algo(strategy)
+
+    # Fixed-income dispatch keeps quantity-based notional and price P&L semantics.
+    assert strategy["bond"].position == 5.0
+    assert strategy.notional_value == 5.0
+    assert strategy.value == 10.0
+    assert strategy.capital == -495.0
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
 def test_replayed_transactions_reject_unknown_securities(algo_name):
     date = pd.Timestamp("2010-01-01")
     data = pd.DataFrame({"x": [100.0]}, index=[date])
@@ -3411,6 +3444,162 @@ def test_replayed_transactions_reject_unknown_securities(algo_name):
         algo(strategy)
 
     assert "missing" not in strategy.children
+    assert strategy.capital == 1000.0
+    assert strategy.value == 1000.0
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+@pytest.mark.parametrize(
+    ("security", "quantity", "price", "error", "match"),
+    [
+        pytest.param("missing", 1.0, 99.0, KeyError, "missing", id="unknown-security"),
+        pytest.param("y", 1.0, np.nan, ValueError, "finite", id="nan-price"),
+        pytest.param("y", 1.0, np.inf, ValueError, "finite", id="infinite-price"),
+        pytest.param("y", 1.0, "bad", ValueError, "numeric", id="nonnumeric-price"),
+        pytest.param("y", np.inf, 99.0, ValueError, "finite", id="infinite-quantity"),
+        pytest.param("y", "bad", 99.0, ValueError, "numeric", id="nonnumeric-quantity"),
+        pytest.param("y", np.complex128(1 + 2j), 99.0, ValueError, "real", id="complex-quantity"),
+        pytest.param("y", 1.0, np.complex128(99 + 2j), ValueError, "real", id="complex-price"),
+    ],
+)
+def test_replayed_transactions_preflight_complete_batch(
+    algo_name, security, quantity, price, error, match
+):
+    date = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame({"x": [100.0], "y": [100.0]}, index=[date])
+    transactions = pd.DataFrame(
+        [(date, "x", 1.0, 99.0), (date, security, quantity, price)],
+        columns=["Date", "Security", "quantity", "price"],
+        dtype=object,
+    ).set_index(["Date", "Security"])
+
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions(
+            "rfqs", lambda rfqs, target: transactions.loc[rfqs.index]
+        )
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    # Keep the first valid target lazy so any partial dispatch is observable.
+    strategy = bt.Strategy(
+        "strategy",
+        children=[
+            bt.Security("x", lazy_add=True),
+            bt.Security("y", lazy_add=True),
+        ],
+    )
+    strategy.setup(data, bidoffer={}, **additional_data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+    original_lazy_child = strategy._lazy_children["x"]
+
+    with pytest.raises(error, match=match):
+        algo(strategy)
+
+    assert strategy.children == {}
+    assert strategy._lazy_children["x"] is original_lazy_child
+    assert set(strategy._lazy_children) == {"x", "y"}
+    assert strategy.capital == 1000.0
+    assert strategy.value == 1000.0
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+@pytest.mark.parametrize("input_kind", ["market-price", "decimal-quantity", "decimal-price"])
+def test_replayed_transactions_normalize_numeric_inputs(algo_name, input_kind):
+    from decimal import Decimal
+
+    date = pd.Timestamp("2010-01-01")
+    quantity = Decimal("1") if input_kind == "decimal-quantity" else 1.0
+    price = None if input_kind == "market-price" else Decimal("99") if input_kind == "decimal-price" else 99.0
+    transactions = pd.DataFrame(
+        [(date, "x", 1.0, 99.0), (date, "y", quantity, price)],
+        columns=["Date", "Security", "quantity", "price"],
+        dtype=object,
+    ).set_index(["Date", "Security"])
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions("rfqs", lambda rfqs, target: transactions)
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    strategy = bt.Strategy("strategy")
+    strategy.setup(pd.DataFrame(100.0, index=[date], columns=["x", "y"]), bidoffer={}, **additional_data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+
+    assert algo(strategy)
+    assert strategy["x"].position == 1.0
+    assert strategy["y"].position == 1.0
+    expected_price = 100.0 if price is None else 99.0
+    assert strategy.capital == 1000.0 - 99.0 - expected_price
+    assert strategy.value == strategy.capital + 200.0
+    assert strategy["x"].bidoffer_paid == -1.0
+    assert strategy["y"].bidoffer_paid == expected_price - 100.0
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+@pytest.mark.parametrize("quantity", [0.0, np.nan], ids=["zero", "nan"])
+def test_replayed_transactions_preserve_noop_quantity_with_unused_price(
+    algo_name, quantity
+):
+    date = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame({"x": [100.0]}, index=[date])
+    transactions = pd.DataFrame(
+        [(date, "x", quantity, np.nan)],
+        columns=["Date", "Security", "quantity", "price"],
+    ).set_index(["Date", "Security"])
+
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions(
+            "rfqs", lambda rfqs, target: transactions.loc[rfqs.index]
+        )
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    strategy = bt.Strategy("strategy")
+    strategy.setup(data, bidoffer={}, **additional_data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+
+    # The transaction owner ignores price when quantity cannot move the position.
+    assert algo(strategy)
+    assert strategy["x"].position == 0.0
+    assert strategy.capital == 1000.0
+    assert strategy.value == 1000.0
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+def test_replayed_transactions_reject_strategy_targets(algo_name):
+    date = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame({"x": [100.0], "nested": [100.0]}, index=[date])
+    transactions = pd.DataFrame(
+        [(date, "nested", 1.0, 99.0)],
+        columns=["Date", "Security", "quantity", "price"],
+    ).set_index(["Date", "Security"])
+
+    if algo_name == "replay":
+        algo = algos.ReplayTransactions("transactions")
+        additional_data = {"transactions": transactions}
+    else:
+        algo = algos.SimulateRFQTransactions(
+            "rfqs", lambda rfqs, target: transactions.loc[rfqs.index]
+        )
+        additional_data = {"rfqs": transactions.drop(columns="price")}
+
+    strategy = bt.Strategy("strategy")
+    strategy.setup(data, bidoffer={}, **additional_data)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+    strategy.children["nested"] = bt.Strategy("nested")
+
+    with pytest.raises(TypeError, match="not a security"):
+        algo(strategy)
+
     assert strategy.capital == 1000.0
     assert strategy.value == 1000.0
 
