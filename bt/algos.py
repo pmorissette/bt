@@ -1770,6 +1770,10 @@ class CorporateActions(Algo):
     the `ex` date given as input, since payment date information is not
     easily obtainable.
 
+    Applicable split ratios and dividends must be finite. Nonfinite values
+    raise ValueError before either action changes portfolio state. Missing
+    values retain the no-action meanings described below.
+
     This Algo must run at every iteration to be able to change security
     positions as required by splits. All dates in the `dividends`and
     `splits` dataframes must exist in the price data for the calculations
@@ -1790,12 +1794,26 @@ class CorporateActions(Algo):
         self.splits = splits.fillna(1.0)
 
     def __call__(self, target):
-        # A split changes positions without a transaction, so invalidate cached tree values.
+        split_row = dividend_row = None
         if target.now in self.splits.index:
             split_row = self.splits.loc[target.now]
             # Mixed-dtype rows can promote scalars and change position arithmetic.
             if not self.splits.dtypes.eq(split_row.dtype).all():
                 split_row = {c: self.splits.loc[target.now, c] for c in target.children if c in self.splits.columns}
+        if target.now in self.dividends.index:
+            dividend_row = self.dividends.loc[target.now]
+            if not self.dividends.dtypes.eq(dividend_row.dtype).all():
+                dividend_row = {c: self.dividends.loc[target.now, c] for c in target.children if c in self.dividends.columns}
+
+        # Check both action sets before the first split can change portfolio state.
+        for c in target.children:
+            if split_row is not None and c in self.splits.columns and not math.isfinite(split_row[c]):
+                raise ValueError("Corporate action split ratio must be finite")
+            if dividend_row is not None and c in self.dividends.columns and not math.isfinite(dividend_row[c]):
+                raise ValueError("Corporate action dividend must be finite")
+
+        # A split changes positions without a transaction, so invalidate cached tree values.
+        if split_row is not None:
             for c in target.children:
                 if c in self.splits.columns:
                     spl = split_row[c]
@@ -1804,10 +1822,7 @@ class CorporateActions(Algo):
                         target.root.stale = True
 
         # adjust capital due to dividends
-        if target.now in self.dividends.index:
-            dividend_row = self.dividends.loc[target.now]
-            if not self.dividends.dtypes.eq(dividend_row.dtype).all():
-                dividend_row = {c: self.dividends.loc[target.now, c] for c in target.children if c in self.dividends.columns}
+        if dividend_row is not None:
             div_inflow = 0.0
             for c in target.children:
                 if c in self.dividends.columns:

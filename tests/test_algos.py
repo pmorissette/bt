@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import random
+import pickle
 
 import bt
 import bt.algos as algos
@@ -4220,6 +4221,37 @@ def test_corporate_actions():
     assert s["c1"].position == 100
     assert s["c2"].position == 100 * 10.0
     assert s["c3"].position == 100
+
+
+@pytest.mark.parametrize("action", ["split", "dividend"])
+@pytest.mark.parametrize("amount", [np.inf, -np.inf])
+@pytest.mark.parametrize("dtype", ["float64", "float32", "Float32"])
+@pytest.mark.parametrize("nested", [False, True])
+def test_corporate_actions_rejects_nonfinite_before_mutation(action, amount, dtype, nested):
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"first": [100.0, 50.0], "bad": [100.0, 100.0]}, index=dates)
+    target = bt.Strategy("target", children=[bt.Security("first"), bt.Security("bad")])
+    root = bt.Strategy("root", children=[target]) if nested else target
+    # Strategy copies supplied children; exercise the installed target.
+    target = root["target"] if nested else root
+    root.use_integer_positions(False)
+    root.setup(data)
+    root.adjust(1000.0)
+    root.update(dates[0])
+    if nested:
+        root.allocate(1000.0, "target")
+    target["first"].transact(2.0)
+    target["bad"].transact(2.0)
+    root.update(dates[0])
+    root.update(dates[1])
+    splits = pd.DataFrame({"first": [2.0], "bad": pd.Series([amount if action == "split" else 1.0], dtype=dtype).values}, index=dates[1:])
+    dividends = pd.DataFrame({"first": [1.0], "bad": pd.Series([amount if action == "dividend" else 0.0], dtype=dtype).values}, index=dates[1:])
+    algo = algos.CorporateActions(dividends, splits)
+    # A later invalid action must not leave the first valid split applied.
+    before = pickle.dumps(root)
+    with pytest.raises(ValueError, match="Corporate action .* must be finite"):
+        algo(target)
+    assert pickle.dumps(root) == before
 
 
 def test_corporate_actions_reads_each_action_row_once():
