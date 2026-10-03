@@ -3650,6 +3650,35 @@ def test_couponpayingsecurity_ignores_unapplied_nonfinite_coupon(coupon):
     assert security._capital == pytest.approx(0.0)
 
 
+@pytest.mark.parametrize("direction", [1.0, -1.0], ids=["long", "short"])
+@pytest.mark.parametrize("coupon", [1e17, -1e17], ids=["positive-coupon", "negative-coupon"])
+def test_couponpayingsecurity_preserves_finite_coupon_on_small_position(direction, coupon):
+    dates = pd.date_range("2010-01-01", periods=3)
+    prices = pd.DataFrame({"asset": 1e17}, index=dates)
+    coupons = pd.DataFrame({"asset": [0.0, coupon, 0.0]}, index=dates)
+    strategy = StrategyBase("p", [CouponPayingSecurity("asset", fixed_income=False)])
+    strategy.setup(prices, coupons=coupons)
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    security = strategy["asset"]
+
+    # Two actionable trades can leave a nonzero position below the zero tolerance.
+    security.transact(direction * 1e-15)
+    strategy.update(dates[0])
+    security.transact(direction * -9.5e-16)
+    strategy.update(dates[0])
+    assert 0.0 < abs(security.position) < 1e-16
+    expected_payment = security.position * coupon
+    before_capital = strategy.capital
+
+    strategy.update(dates[1])
+    assert security.coupon == expected_payment
+    assert security.coupons.loc[dates[1]] == expected_payment
+    assert security._capital == expected_payment
+    strategy.update(dates[2])
+    assert strategy.capital == before_capital + expected_payment
+
+
 def _holding_cost_update_case(position, cost_long, cost_short, price=100.0, nested=False):
     """Build an open coupon security with a prospective carrying-cost observation."""
     dates = pd.date_range("2010-01-01", periods=3)

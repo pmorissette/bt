@@ -2011,7 +2011,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             raise RuntimeError(f"coupons have not been set for security {self.name}")
 
         # Missing or otherwise unusable observations are irrelevant without a position.
-        if is_zero(self._position):
+        if self._position == 0.0:
             return 0.0
 
         try:
