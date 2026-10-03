@@ -59,6 +59,8 @@ Algo will affect the capital of the target node without affecting returns
 for the node.</p>
 <p>Since this is modeled as an adjustment, the capital will remain in the
 strategy until a re-allocation/rebalancement is made.</p>
+<p>The amount must be finite. Nonfinite amounts raise ValueError when the
+Algo runs, before the target’s accounting state changes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>amount</strong> (<em>*</em>) – Amount of adjustment</p>
@@ -3417,7 +3419,8 @@ of capital will have no effect on the children.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>amount</strong> (<em>*</em>) – Amount to adjust by.</p></li>
+<li><p><strong>amount</strong> (<em>*</em>) – Amount to adjust by. Must be finite when flow=True;
+otherwise ValueError is raised before accounting state changes.</p></li>
 <li><p><strong>update</strong> (<em>*</em>) – Force update?</p></li>
 <li><p><strong>flow</strong> (<em>*</em>) – Is this adjustment a flow? A flow will not have an
 impact on this strategy’s or its ancestors’ performance (price

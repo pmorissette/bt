@@ -2316,6 +2316,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Since this is modeled as an adjustment, the capital will remain in the</span>
 <span class="sd">    strategy until a re-allocation/rebalancement is made.</span>
 
+<span class="sd">    The amount must be finite. Nonfinite amounts raise ValueError when the</span>
+<span class="sd">    Algo runs, before the target's accounting state changes.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        * amount (float): Amount of adjustment</span>
 
