@@ -137,6 +137,9 @@ long) or outflow (when short) given by the size of the position times
 the amount in the <cite>dividends</cite> dataframe. Cash adjustments are made on
 the <cite>ex</cite> date given as input, since payment date information is not
 easily obtainable.</p>
+<p>Applicable split ratios and dividends must be finite. Nonfinite values
+raise ValueError before either action changes portfolio state. Missing
+values retain the no-action meanings described below.</p>
 <p>This Algo must run at every iteration to be able to change security
 positions as required by splits. All dates in the <cite>dividends`and
 `splits</cite> dataframes must exist in the price data for the calculations
