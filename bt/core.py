@@ -927,7 +927,8 @@ class StrategyBase(Node):
         of capital will have no effect on the children.
 
         Args:
-            * amount (float): Amount to adjust by.
+            * amount (float): Amount to adjust by. Must be finite when flow=True;
+              otherwise ValueError is raised before accounting state changes.
             * update (bool): Force update?
             * flow (bool): Is this adjustment a flow? A flow will not have an
               impact on this strategy's or its ancestors' performance (price
@@ -938,6 +939,9 @@ class StrategyBase(Node):
               dividend.
 
         """
+        if flow and not math.isfinite(amount):
+            raise ValueError("Capital flow amount must be finite")
+
         # adjust capital
         self._capital += amount
         self._last_fee += fee
