@@ -1728,6 +1728,9 @@ class CapitalFlow(Algo):
     Since this is modeled as an adjustment, the capital will remain in the
     strategy until a re-allocation/rebalancement is made.
 
+    The amount must be finite. Nonfinite amounts raise ValueError when the
+    Algo runs, before the target's accounting state changes.
+
     Args:
         * amount (float): Amount of adjustment
 

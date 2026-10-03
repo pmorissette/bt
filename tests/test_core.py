@@ -410,7 +410,36 @@ def test_strategybase_tree_adjust():
     assert s.flows[dts[0]] == 1000
 
 
-@pytest.mark.parametrize("amount", [100.0, -100.0])
+@pytest.mark.parametrize("amount", [np.nan, np.inf, -np.inf])
+@pytest.mark.parametrize("strategy_type", [StrategyBase, FixedIncomeStrategy])
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("through_algo", [False, True])
+def test_strategybase_rejects_nonfinite_capital_flow(
+    amount, strategy_type, nested, through_algo
+):
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
+    children = [strategy_type("leaf")] if nested else []
+    root = strategy_type("root", children=children)
+    root.setup(data)
+    root.adjust(1000.0)
+    root.update(dates[0])
+    root.update(dates[1])
+    root.adjust(0.0)
+    target = root["leaf"] if nested else root
+
+    # Snapshot the whole tree, including ancestor histories and paper portfolios.
+    # The guard must precede fee/flow writes even when the root is already stale.
+    before = pickle.dumps(root)
+    with pytest.raises(ValueError, match="Capital flow amount must be finite"):
+        if through_algo:
+            bt.algos.CapitalFlow(amount)(target)
+        else:
+            target.adjust(amount, update=False, fee=1.0)
+    assert pickle.dumps(root) == before
+
+
+@pytest.mark.parametrize("amount", [100.0, -100.0, 0.0, np.float32(0.5), np.float64(-0.5)])
 def test_strategybase_adjust_propagates_external_flow_to_ancestors(amount):
     dates = pd.date_range("2024-01-01", periods=2)
     data = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
