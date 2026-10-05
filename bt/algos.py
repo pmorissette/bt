@@ -1863,7 +1863,7 @@ class CloseDead(Algo):
 
         targets = target.temp["weights"]
         for c in target.children:
-            if target.universe[c].loc[target.now] <= 0:
+            if target.universe.at[target.now, c] <= 0:
                 target.close(c)
                 if c in targets:
                     del targets[c]
