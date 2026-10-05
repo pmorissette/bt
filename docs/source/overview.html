@@ -1341,6 +1341,9 @@ It is assumed that target volatility is already annualized by this factor.</p></
 <code class="docutils literal notranslate"><span class="pre">additional_data</span></code> argument on <a class="reference internal" href="#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backtest</span></code></a> must
 have a “unit_risk” key. The value should be a dictionary, keyed
 by risk measure, of DataFrames with a column per security that is sensitive to that measure.</p>
+<p>Infinite unit risk for positions not treated as zero raises ValueError; exposure arithmetic overflow
+raises ValueError or FloatingPointError before current risk or history is changed. NaN risk
+still propagates for downstream handling, and missing security columns still contribute zero.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
