@@ -2558,6 +2558,10 @@ class UpdateRisk(Algo):
     have a "unit_risk" key. The value should be a dictionary, keyed
     by risk measure, of DataFrames with a column per security that is sensitive to that measure.
 
+    Infinite unit risk for positions not treated as zero raises ValueError; exposure arithmetic overflow
+    raises ValueError or FloatingPointError before current risk or history is changed. NaN risk
+    still propagates for downstream handling, and missing security columns still contribute zero.
+
     Args:
         * name (str): the name of the risk measure (IR01, PVBP, IsIndustials, etc).
           The name must coincide with the keys of the dictionary passed to additional_data as the
@@ -2588,17 +2592,7 @@ class UpdateRisk(Algo):
         if set_history:
             target.risks[self.measure] = np.nan
 
-    def _set_risk_recursive(self, target, depth, unit_risk_frame):
-        set_history = depth < self.history
-        # General setup of risk on nodes
-        if not hasattr(target, "risk"):
-            self._setup_risk(target, set_history)
-        # Different measures may track history at different tree depths.
-        if set_history and not hasattr(target, "risks"):
-            target.risks = pd.DataFrame(index=target.data.index)
-        if self.measure not in target.risk:
-            self._setup_measure(target, set_history)
-
+    def _calculate_risk(self, target, depth, unit_risk_frame, risks):
         if isinstance(target, bt.core.SecurityBase):
             # Use target.root.now as non-traded securities may not have been updated yet
             # and there is no need to update them here as we only use position
@@ -2607,20 +2601,40 @@ class UpdateRisk(Algo):
             if is_zero(target.position):
                 risk = 0.0
             else:
+                if not pd.isna(unit_risk) and math.isinf(unit_risk):
+                    raise ValueError(f"Infinite unit risk for {target.name} in {self.measure}")
                 risk = unit_risk * target.position * target.multiplier
         else:
             risk = 0.0
             for child in target.children.values():
-                self._set_risk_recursive(child, depth + 1, unit_risk_frame)
-                risk += child.risk[self.measure]
+                risk += self._calculate_risk(child, depth + 1, unit_risk_frame, risks)
+                if not pd.isna(risk) and math.isinf(risk):
+                    raise ValueError(f"Infinite risk for {target.name} in {self.measure}")
 
-        target.risk[self.measure] = risk
-        if depth < self.history:
-            target.risks.loc[target.now, self.measure] = risk
+        if not pd.isna(risk) and math.isinf(risk):
+            raise ValueError(f"Infinite risk for {target.name} in {self.measure}")
+        risks.append((target, depth, risk))
+        return risk
 
     def __call__(self, target):
         unit_risk_frame = target.get_data("unit_risk")[self.measure]
-        self._set_risk_recursive(target, 0, unit_risk_frame)
+        risks = []
+        # Reject bad leaves and totals before initializing or publishing any risk state.
+        with np.errstate(over="raise"):
+            self._calculate_risk(target, 0, unit_risk_frame, risks)
+
+        for node, depth, risk in risks:
+            set_history = depth < self.history
+            if not hasattr(node, "risk"):
+                self._setup_risk(node, set_history)
+            # Different measures may track history at different tree depths.
+            if set_history and not hasattr(node, "risks"):
+                node.risks = pd.DataFrame(index=node.data.index)
+            if self.measure not in node.risk:
+                self._setup_measure(node, set_history)
+            node.risk[self.measure] = risk
+            if set_history:
+                node.risks.loc[node.now, self.measure] = risk
         return True
 
 

@@ -3652,6 +3652,67 @@ def test_simulate_rfq_transactions():
     assert c2.bidoffer_paid == 150
 
 
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("initialized", [False, True])
+@pytest.mark.parametrize("failure", ["inf", "-inf", "product", "multiplier", "aggregate"])
+def test_update_risk_rejects_infinite_exposure_before_mutation(nested, initialized, failure):
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame(100.0, index=dates, columns=["first", "last"])
+    unit_risk = pd.DataFrame(3.0, index=dates, columns=prices.columns)
+    multiplier = 2 if failure == "multiplier" else 1
+    children = [bt.Security("first"), bt.Security("last", multiplier=multiplier)]
+    sleeve = bt.Strategy("sleeve", children=children)
+    root = bt.Strategy("root", children=[sleeve] if nested else children)
+    root.setup(prices, unit_risk={"Test": unit_risk, "Other": unit_risk.copy()})
+    root.adjust(1000)
+    root.update(dates[0])
+    target = root["sleeve"] if nested else root
+    target.transact(1, "first")
+    target.transact(2 if failure == "product" else 1, "last")
+    algo = algos.UpdateRisk("Test", history=3)
+    if initialized:
+        assert algos.UpdateRisk("Other", history=1)(root)
+        assert algo(root)
+    root.update(dates[1])
+    unit_risk.loc[dates[1], "last"] = {
+        "inf": np.inf,
+        "-inf": -np.inf,
+        "product": 1e308,
+        "multiplier": 1e308,
+        "aggregate": 1e308,
+    }[failure]
+    if failure == "aggregate":
+        unit_risk.loc[dates[1], "first"] = 1e308
+
+    # A later bad leaf or total must not publish even the first valid sibling's risk.
+    before = pickle.dumps(root)
+    with np.errstate(over="raise"), pytest.raises((ValueError, FloatingPointError)):
+        algo(root)
+    assert pickle.dumps(root) == before
+
+
+@pytest.mark.parametrize("dtype, missing", [("float64", np.nan), ("Float64", pd.NA)])
+@pytest.mark.parametrize("history", [0, 2])
+def test_update_risk_preserves_missing_exposure(dtype, missing, history):
+    dates = pd.date_range("2020-01-01", periods=1)
+    prices = pd.DataFrame({"asset": [100.0]}, index=dates)
+    unit_risk = pd.DataFrame({"asset": pd.Series([missing], index=dates, dtype=dtype)})
+    target = bt.Strategy("target", children=[bt.Security("asset")])
+    target.setup(prices, unit_risk={"Test": unit_risk})
+    target.adjust(1000)
+    target.update(dates[0])
+    target.transact(2, "asset")
+
+    # Missing risk remains available to the downstream consumer's existing policy.
+    assert algos.UpdateRisk("Test", history=history)(target)
+    for node in (target, target["asset"]):
+        assert pd.isna(node.risk["Test"])
+        if history:
+            assert pd.isna(node.risks.loc[dates[0], "Test"])
+        else:
+            assert not hasattr(node, "risks")
+
+
 def test_update_risk():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")
