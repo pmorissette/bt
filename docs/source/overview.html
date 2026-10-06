@@ -172,7 +172,9 @@ StrategyBase interface.</p>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algo</span></code></a></p>
 <p>Hedges risk measures with selected instruments.</p>
 <p>Unit risk is scaled by each selected security’s multiplier to obtain its
-per-contract sensitivity.</p>
+per-contract sensitivity. Infinite hedge notionals are rejected before any
+hedge transaction. NaN hedge notionals are also rejected before trading when
+<code class="docutils literal notranslate"><span class="pre">throw_nan</span></code> is True.</p>
 <p>Make sure that the UpdateRisk algo has been called beforehand.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
