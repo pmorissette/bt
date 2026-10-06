@@ -3060,6 +3060,52 @@ def test_close_dead_closes_zero_price_position():
     assert "asset" not in strategy.temp["weights"]
 
 
+@pytest.mark.parametrize("dtype", ["Int64", "Float64", "boolean"])
+def test_close_dead_preserves_missing_prices_in_mixed_dtype_universe(dtype):
+    date = pd.Timestamp("2010-01-01")
+    data = pd.DataFrame(
+        {"missing": [np.nan], "dead": pd.array([0], dtype=dtype), "live": pd.array([1], dtype=dtype)},
+        index=[date],
+    )
+    strategy = bt.Strategy("strategy", children=[bt.Security(name) for name in data.columns])
+    strategy.setup(data)
+    strategy.update(date)
+    strategy.temp["weights"] = {"missing": 0.5, "dead": 0.25, "live": 0.25}
+
+    # A mixed-dtype row can turn NumPy NaN into pd.NA, whose truth value raises.
+    assert algos.CloseDead()(strategy)
+
+    assert strategy.temp["weights"] == {"missing": 0.5, "live": 0.25}
+    assert all(child.position == 0 for child in strategy.children.values())
+
+
+def test_close_dead_observes_price_changes_from_earlier_close():
+    target = mock.Mock()
+    target.now = pd.Timestamp("2010-01-01")
+    target.universe = pd.DataFrame({"first": pd.array([0], dtype="Int64"), "later": [100.0]}, index=[target.now])
+    target.children = {"first": None, "later": None}
+    target.temp = {"weights": {"first": 0.5, "later": 0.5}}
+
+    # Closing one child may change the market data seen by the next child.
+    def close(child):
+        target.universe.at[target.now, "later"] = 0.0
+
+    target.close.side_effect = close
+    assert algos.CloseDead()(target)
+
+    assert target.close.call_args_list == [mock.call("first"), mock.call("later")]
+    assert target.temp["weights"] == {}
+
+
+@pytest.mark.parametrize("temp", [{}, {"weights": {}}])
+def test_close_dead_without_work_does_not_require_market_data(temp):
+    target = mock.Mock(spec=["temp", "children"])
+    target.temp = temp
+    target.children = {}
+
+    assert algos.CloseDead()(target)
+
+
 def test_close_positions_after_date():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")

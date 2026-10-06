@@ -46,6 +46,16 @@ def run_equity_backtest(prices):
     return bt.run(backtest, progress_bar=False)
 
 
+def run_close_dead_backtest(prices):
+    strategy = bt.Strategy(
+        "close-dead",
+        [bt.algos.SelectAll(include_no_data=True), bt.algos.WeighEqually(), bt.algos.CloseDead(), bt.algos.Rebalance()],
+        children=list(prices.columns),
+    )
+    backtest = bt.Backtest(strategy, prices, integer_positions=False)
+    return bt.run(backtest, progress_bar=False)
+
+
 def run_fixed_income_backtest(prices, additional_data, funded=False):
     strategy = bt.FixedIncomeStrategy(
         "fixed-income",
@@ -74,6 +84,17 @@ def test_equity_backtest(benchmark, prices):
     result = benchmark(run_equity_backtest, prices)
 
     assert result.prices.shape[0] == prices.shape[0] + 1
+
+
+@pytest.mark.benchmark(group="backtest")
+def test_close_dead_backtest(benchmark):
+    # A wide, constant-price universe exercises lookups with an independent holdings oracle.
+    data = pd.DataFrame(100.0, index=pd.bdate_range("2010-01-01", periods=252), columns=[f"asset_{i}" for i in range(500)])
+    result = benchmark(run_close_dead_backtest, data)
+    strategy = result.backtests["close-dead"].strategy
+
+    assert strategy.values.iloc[1:].eq(1_000_000.0).all()
+    assert all(child.position == 20.0 for child in strategy.children.values())
 
 
 @pytest.mark.benchmark(group="backtest")
