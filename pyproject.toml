@@ -194,6 +194,7 @@ extensions = ["sphinx.ext.intersphinx"]
 
 [tool.yardang.html-theme-options]
 github = "pmorissette/bt"
+logo = "logo.png"
 
 [tool.yardang.intersphinx-mapping]
 ffn = ["https://pmorissette.github.io/ffn/", "https://pmorissette.github.io/ffn/objects.inv"]
