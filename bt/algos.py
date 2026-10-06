@@ -2389,7 +2389,23 @@ class SelectActive(Algo):
         selected = target.temp["selected"]
         rolled = target.perm.get("rolled", set())
         closed = target.perm.get("closed", set())
-        selected = [s for s in selected if s not in set.union(rolled, closed)]
+        # Avoid rebuilding large exclusion sets for each ordinary selected label.
+        # Keep short selections on the original path: registry label scans cost more
+        # than a few unions. Only inspect label types when that preparation can pay off.
+        # Other containers or label hooks retain per-label evaluation, including no-work calls.
+        if (
+            type(selected) is list
+            and len(selected) >= 32
+            and type(rolled) is set
+            and type(closed) is set
+            and all(type(s) is str for s in selected)
+            and all(type(s) is str for s in rolled)
+            and all(type(s) is str for s in closed)
+        ):
+            excluded = set.union(rolled, closed)
+            selected = [s for s in selected if s not in excluded]
+        else:
+            selected = [s for s in selected if s not in set.union(rolled, closed)]
         target.temp["selected"] = selected
         return True
 
