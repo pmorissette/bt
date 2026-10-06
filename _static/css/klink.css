@@ -1823,6 +1823,7 @@ input:focus {
   color: #777;
 }
 .klink-sidebar > ul > li ul {
+  list-style: none;
   margin: 10px 0 0 0;
   padding-left: 30px;
   font-size: 16px;
@@ -2131,6 +2132,8 @@ div.footer {
   border-radius: 6px;
   font-family: "Droid Sans Mono", monospace, serif;
   font-size: 0.9em;
+  white-space: pre;
+  overflow-x: auto;
 }
 .highlight {
   background: transparent !important;
@@ -2144,6 +2147,8 @@ div.footer {
   border-radius: 6px;
   font-family: "Droid Sans Mono", monospace, serif;
   font-size: 0.9em;
+  white-space: pre;
+  overflow-x: auto;
 }
 .code {
   background: transparent !important;
@@ -2157,6 +2162,8 @@ div.footer {
   border-radius: 6px;
   font-family: "Droid Sans Mono", monospace, serif;
   font-size: 0.9em;
+  white-space: pre;
+  overflow-x: auto;
 }
 .highlight-python > pre {
   background: white;
@@ -2167,6 +2174,8 @@ div.footer {
   border-radius: 6px;
   font-family: "Droid Sans Mono", monospace, serif;
   font-size: 0.9em;
+  white-space: pre;
+  overflow-x: auto;
 }
 .pynb-result > pre {
   background: inherit;
@@ -2199,13 +2208,16 @@ div.pynb-result table,
 div.pynb-result p {
   margin-left: 20px;
 }
-div#searchbox {
+#searchbox {
+  margin: 0 4px;
   padding-top: 10px;
 }
 @media (max-width: 800px) {
   div.documentwrapper {
-    padding-top: 200px;
     margin: 0px 10px;
+  }
+  .klink-has-logo div.documentwrapper {
+    padding-top: 200px;
   }
   h1,
   .section {
