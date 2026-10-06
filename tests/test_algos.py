@@ -4065,6 +4065,90 @@ def test_hedge_risk_security_multiplier(hedge_unit_risk: int, hedge_multiplier: 
     assert vars(strategy)["risk"]["Risk"] == 0
 
 
+@pytest.mark.parametrize(
+    ("quantity", "throw_nan", "message"),
+    [(np.inf, True, "infinite"), (np.inf, False, "infinite"), (-np.inf, True, "infinite"), (-np.inf, False, "infinite"), (np.nan, True, "nan")],
+)
+@pytest.mark.parametrize("lazy_add", [False, True])
+def test_hedge_risk_rejects_invalid_vector_before_trading(quantity, throw_nan, message, lazy_add):
+    dates = pd.date_range("2020-01-01", periods=1)
+    prices = pd.DataFrame(100.0, index=dates, columns=["first", "last"])
+    strategy = bt.Strategy("strategy", children=[bt.Security("first"), bt.HedgeSecurity("last", lazy_add=lazy_add)])
+    strategy.setup(prices, unit_risk={"Risk": prices * 0.01})
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.risk = {"Risk": 10.0}
+    strategy.temp["selected"] = ["first", "last"]
+    children = strategy.children.copy()
+    lazy_children = strategy._lazy_children.copy()
+    state = (strategy.capital, strategy["first"].position, strategy.stale, strategy.risk.copy())
+    history = strategy.data.copy(deep=True)
+
+    # Isolate validation timing from solver numerics: the first hedge is tradable,
+    # but a later invalid result must prevent both fills and lazy-child creation.
+    with (
+        mock.patch.object(algos.np, "matmul", return_value=np.array([[2.0], [quantity]])),
+        mock.patch.object(strategy, "transact", wraps=strategy.transact) as transact,
+        pytest.raises(ValueError, match=f"last has {message} hedge notional"),
+        np.errstate(all="raise"),
+    ):
+        algos.HedgeRisks(["Risk"], pseudo=True, throw_nan=throw_nan)(strategy)
+
+    transact.assert_not_called()
+    assert strategy.children == children
+    assert strategy._lazy_children == lazy_children
+    assert (strategy.capital, strategy["first"].position, strategy.stale, strategy.risk) == state
+    pd.testing.assert_frame_equal(strategy.data, history)
+
+
+@pytest.mark.parametrize("target_risk", [1e308, -1e308])
+@pytest.mark.parametrize("throw_nan", [False, True])
+def test_hedge_risk_rejects_overflow_from_finite_inputs(target_risk, throw_nan):
+    dates = pd.date_range("2020-01-01", periods=1)
+    prices = pd.DataFrame({"hedge": [100.0]}, index=dates)
+    strategy = bt.Strategy("strategy", children=[bt.HedgeSecurity("hedge", lazy_add=True)])
+    strategy.setup(prices, unit_risk={"Risk": pd.DataFrame({"hedge": [1e-320]}, index=dates)})
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.risk = {"Risk": target_risk}
+    strategy.temp["selected"] = ["hedge"]
+
+    # Finite risk divided by subnormal unit risk needs roughly 1e628 contracts,
+    # beyond float64. Reject the real solver result before even registering a child.
+    with pytest.raises(ValueError, match="hedge has infinite hedge notional"), np.errstate(all="raise"):
+        algos.HedgeRisks(["Risk"], throw_nan=throw_nan)(strategy)
+
+    assert not strategy.children
+    assert list(strategy._lazy_children) == ["hedge"]
+    assert strategy.capital == 1000.0
+    assert strategy.risk == {"Risk": target_risk}
+
+
+def test_hedge_risk_preserves_nan_dispatch_when_disabled():
+    dates = pd.date_range("2020-01-01", periods=1)
+    prices = pd.DataFrame(100.0, index=dates, columns=["skipped", "traded"])
+    strategy = bt.Strategy("strategy")
+    strategy.setup(prices, unit_risk={"Risk": prices * 0.01})
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.risk = {"Risk": 10.0}
+    strategy.temp["selected"] = ["skipped", "traded"]
+
+    # False-mode NaN still reaches native dispatch (including child creation),
+    # while a finite sibling trades in the original selection order.
+    with (
+        mock.patch.object(algos.np, "matmul", return_value=np.array([[np.nan], [2.0]])),
+        mock.patch.object(strategy, "transact", wraps=strategy.transact) as transact,
+        np.errstate(all="raise"),
+    ):
+        assert algos.HedgeRisks(["Risk"], pseudo=True, throw_nan=False)(strategy)
+
+    assert [call.args[1] for call in transact.call_args_list] == ["skipped", "traded"]
+    assert strategy["skipped"].position == 0.0
+    assert strategy["traded"].position == 2.0
+    assert strategy.capital == 800.0
+
+
 def test_hedge_risk_nan():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")

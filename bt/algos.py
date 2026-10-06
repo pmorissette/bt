@@ -2667,7 +2667,9 @@ class HedgeRisks(Algo):
     Hedges risk measures with selected instruments.
 
     Unit risk is scaled by each selected security's multiplier to obtain its
-    per-contract sensitivity.
+    per-contract sensitivity. Infinite hedge notionals are rejected before any
+    hedge transaction. NaN hedge notionals are also rejected before trading when
+    ``throw_nan`` is True.
 
     Make sure that the UpdateRisk algo has been called beforehand.
 
@@ -2747,10 +2749,16 @@ class HedgeRisks(Algo):
             inv = np.linalg.inv(hedge_risk).T
         notionals = np.matmul(inv, -target_risk).flatten()
 
-        # Hedge
+        # Validate the whole plan before dispatch: a later invalid quantity must
+        # not leave earlier fills or consume a lazily declared hedge security.
         for notional, security in zip(notionals, securities):
+            if np.isinf(notional):
+                raise ValueError(f"{security} has infinite hedge notional")
             if np.isnan(notional) and self.throw_nan:
                 raise ValueError(f"{security} has nan hedge notional")
+
+        # Preserve native NaN dispatch when throw_nan is disabled.
+        for notional, security in zip(notionals, securities):
             target.transact(notional, security)
         return True
 
