@@ -1570,18 +1570,98 @@ def test_select_types():
         include_types=(bt.Security, bt.HedgeSecurity), exclude_types=()
     )
     assert algo(s)
-    assert set(s.temp.pop("selected")) == set(["c1", "c3"])
+    assert s.temp.pop("selected") == ["c1", "c3"]
 
     algo = algos.SelectTypes(
         include_types=(bt.core.SecurityBase,), exclude_types=(bt.CouponPayingSecurity,)
     )
     assert algo(s)
-    assert set(s.temp.pop("selected")) == set(["c1", "c3", "c5"])
+    assert s.temp.pop("selected") == ["c1", "c3", "c5"]
 
     s.temp["selected"] = ["c1", "c2", "c3"]
     algo = algos.SelectTypes(include_types=(bt.core.SecurityBase,))
     assert algo(s)
-    assert set(s.temp.pop("selected")) == set(["c1", "c2", "c3"])
+    assert s.temp.pop("selected") == ["c1", "c2", "c3"]
+
+
+@pytest.mark.parametrize(
+    "prior,expected",
+    [
+        pytest.param([], [], id="empty-list"),
+        pytest.param(["beta", "missing", "beta"], ["beta"], id="partial-list"),
+        pytest.param(["beta", "alpha"], ["alpha", "beta"], id="reordered-list"),
+        pytest.param(pd.Series(["beta"], index=["alpha"]), ["alpha"], id="series-index-membership"),
+        pytest.param(pd.Index(["beta", "alpha"]), ["alpha", "beta"], id="index"),
+        pytest.param(("beta", "alpha"), ["alpha", "beta"], id="tuple"),
+        pytest.param(["beta", []], ["beta"], id="unhashable-nonmatch"),
+        pytest.param([np.str_("beta")], ["beta"], id="numpy-string"),
+    ],
+)
+def test_select_types_prior_selection(prior, expected):
+    target = bt.Strategy("parent", children=[bt.Security("alpha"), bt.Strategy("sleeve"), bt.Security("beta")])
+    original = prior.copy(deep=True) if isinstance(prior, pd.Series) else list(prior)
+    marker = object()
+    target.temp["other"] = marker
+    selector = algos.SelectThese(prior, include_no_data=True, include_negative=True)
+
+    assert bt.AlgoStack(selector, algos.SelectTypes(include_types=(bt.Security,)))(target)
+
+    assert target.temp["selected"] == expected
+    assert target.temp["other"] is marker
+    assert selector.tickers is prior
+    if isinstance(prior, pd.Series):
+        # Series membership uses its index, not the values produced by iteration.
+        pd.testing.assert_series_equal(prior, original)
+    else:
+        assert list(prior) == original
+
+
+def test_select_types_preserves_custom_membership_and_prior_rereads():
+    target = bt.Strategy("parent", children=[bt.Security("alpha"), bt.Security("beta")])
+
+    class Selection(list):
+        def __contains__(self, name):
+            # Caller-defined membership can replace the selection for the next child.
+            target.temp["selected"] = ["beta"]
+            return name == "alpha"
+
+    prior = Selection(["alpha"])
+    target.temp["selected"] = prior
+
+    assert algos.SelectTypes()(target)
+
+    assert target.temp["selected"] == ["alpha", "beta"]
+    assert prior == ["alpha"]
+
+
+@pytest.mark.parametrize("custom_child", [False, True], ids=["prior-label", "child-label"])
+def test_select_types_preserves_string_subclass_equality(custom_child):
+    class Label(str):
+        __hash__ = str.__hash__
+
+        def __eq__(self, other):
+            # Custom equality need not agree with ordinary string hash membership.
+            return str(self).casefold() == str(other).casefold()
+
+    name = Label("ALPHA") if custom_child else "alpha"
+    prior = ["alpha"] if custom_child else [Label("ALPHA")]
+    target = bt.Strategy("parent", children=[bt.Security(name)])
+    target.temp["selected"] = prior
+
+    assert algos.SelectTypes()(target)
+
+    assert target.temp["selected"] == [name]
+    assert prior == (["alpha"] if custom_child else [Label("ALPHA")])
+
+
+@pytest.mark.parametrize("children", [[], [bt.Strategy("sleeve")]], ids=["no-children", "no-type-matches"])
+def test_select_types_without_eligible_children_does_not_read_prior(children):
+    target = bt.Strategy("parent", children=children)
+    target.temp["selected"] = None
+
+    assert algos.SelectTypes(include_types=(bt.Security,))(target)
+
+    assert target.temp["selected"] == []
 
 
 def test_weight_equally():

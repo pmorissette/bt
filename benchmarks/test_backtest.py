@@ -56,6 +56,17 @@ def run_close_dead_backtest(prices):
     return bt.run(backtest, progress_bar=False)
 
 
+def run_select_types_backtest(prices):
+    strategy = bt.Strategy(
+        "select-types",
+        [bt.algos.SelectAll(), bt.algos.SelectTypes(), bt.algos.RunMonthly(), bt.algos.WeighEqually(), bt.algos.Rebalance()],
+        children=[bt.Security(name) for name in prices.columns],
+    )
+    backtest = bt.Backtest(strategy, prices, integer_positions=False, progress_bar=False)
+    backtest.run()
+    return backtest
+
+
 def run_fixed_income_backtest(prices, additional_data, funded=False):
     strategy = bt.FixedIncomeStrategy(
         "fixed-income",
@@ -95,6 +106,17 @@ def test_close_dead_backtest(benchmark):
 
     assert strategy.values.iloc[1:].eq(1_000_000.0).all()
     assert all(child.position == 20.0 for child in strategy.children.values())
+
+
+@pytest.mark.benchmark(group="backtest")
+def test_select_types_backtest(benchmark):
+    # Daily type filtering followed by monthly allocation exercises a wide typed universe.
+    data = pd.DataFrame(100.0, index=pd.bdate_range("2010-01-01", periods=252), columns=[f"asset_{i}" for i in range(1000)])
+    strategy = benchmark(run_select_types_backtest, data).strategy
+
+    assert strategy.values.iloc[1:].eq(1_000_000.0).all()
+    assert all(np.isclose(child.position, 10.0) for child in strategy.children.values())
+    assert strategy.temp["selected"] == list(data.columns)
 
 
 @pytest.mark.benchmark(group="backtest")
