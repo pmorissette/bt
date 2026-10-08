@@ -265,9 +265,23 @@ class Backtest:
 
     @staticmethod
     def _prepend_missing_row(data):
-        """Prepend an all-missing row, promoting non-nullable column dtypes."""
+        """Prepend an all-missing row without rounding integer observations."""
         # Expand positionally so duplicate date labels retain their existing behavior.
         positional = data.set_axis(pd.RangeIndex(len(data)))
+        columns = [positional] if isinstance(data, pd.Series) else (positional.iloc[:, i] for i in range(len(data.columns)))
+        nullable = {}
+        for i, column in enumerate(columns):
+            dtype = column.dtype
+            # Float promotion is unchanged when every integer is exactly representable.
+            # Python int comparisons avoid overflow or rounding the reference itself.
+            if isinstance(dtype, np.dtype) and dtype.kind in "iu" and (int(column.min()) < -(2**53) or int(column.max()) > 2**53) and any(int(v) != int(float(v)) for v in column):
+                nullable[i] = "UInt64" if dtype.kind == "u" else "Int64"
+        if nullable:
+            if isinstance(data, pd.Series):
+                positional = positional.astype(nullable[0])
+            else:
+                # Address columns by position: auxiliary data may have duplicate labels.
+                positional = positional.set_axis(pd.RangeIndex(len(data.columns)), axis=1).astype(nullable).set_axis(data.columns, axis=1)
         positional = positional.reindex(pd.RangeIndex(-1, len(data)))
         index = data.index.insert(0, data.index[0] - pd.DateOffset(days=1))
         return positional.set_axis(index)
