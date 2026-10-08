@@ -1030,20 +1030,30 @@ def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series)
         assert len(future_warnings) == 0
 
 
+@pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
 @pytest.mark.parametrize(
     ("dtype", "values", "expected_dtype"),
     [
         ("int64", [1, 0, 1, 0, 1], "float64"),
+        ("int64", [2**53, 2**53 + 1, 2**53 + 2, 2**53 + 3, 2**53 + 4], "Int64"),
+        ("int64", [-2**63, -2**63 + 1, -2**53 - 1, 2**63 - 2, 2**63 - 1], "Int64"),
+        ("uint64", [0, 2**53, 2**53 + 1, 2**64 - 2, 2**64 - 1], "UInt64"),
+        ("int64", [2**54, 2**54 + 4, 2**54 + 8, -2**54, -2**54 - 4], "float64"),
         ("Int64", [1, 0, 1, 0, 1], "Int64"),
+        ("Int64", [2**53, pd.NA, 2**53 + 1, 0, 1], "Int64"),
+        ("UInt64", [2**64 - 1, pd.NA, 2**64 - 2, 0, 1], "UInt64"),
         ("boolean", [True, False, True, False, True], "boolean"),
         ("float64", [1, 0, 1, 0, 1], "float64"),
     ],
 )
-def test_additional_data_auxiliary_bootstrap_dtypes(dtype, values, expected_dtype):
+def test_additional_data_auxiliary_bootstrap_dtypes(as_series, dtype, values, expected_dtype):
     """Preserve dated auxiliary values while making the bootstrap row missing."""
     dates = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(100.0, index=dates, columns=["a"])
-    auxiliary = pd.DataFrame({"value": pd.Series(values, index=dates, dtype=dtype)})
+    auxiliary = pd.Series(values, index=dates, dtype=dtype, name="value")
+    if not as_series:
+        auxiliary = auxiliary.to_frame()
+    original = auxiliary.copy(deep=True)
     strategy = bt.Strategy("test", [])
 
     backtest = bt.Backtest(
@@ -1056,9 +1066,57 @@ def test_additional_data_auxiliary_bootstrap_dtypes(dtype, values, expected_dtyp
 
     # The synthetic row may widen dtype, but it must not alter dated observations.
     assert processed.index[0] == dates[0] - pd.DateOffset(days=1)
+    column = processed if as_series else processed["value"]
+    assert pd.isna(column.iloc[0])
+    assert str(column.dtype) == expected_dtype
+    # Compare Python integers: pandas float/int equality can round the oracle too.
+    if pd.api.types.is_integer_dtype(dtype):
+        assert [None if pd.isna(v) else int(v) for v in column.iloc[1:]] == [None if pd.isna(v) else int(v) for v in values]
+    assert_equal = pd.testing.assert_series_equal if as_series else pd.testing.assert_frame_equal
+    assert_equal(processed.iloc[1:], auxiliary, check_dtype=False, check_freq=False)
+    assert_equal(auxiliary, original)
+
+
+def test_additional_data_integer_precision_with_duplicate_columns():
+    dates = pd.date_range("2020-01-01", periods=3, tz="America/New_York")
+    auxiliary = pd.DataFrame({"id": [2**53, 2**53 + 1, 2**53 + 2], "small": [0, 1, 2]})
+    auxiliary.index = dates
+    auxiliary.columns = pd.Index(["value", "value"], name="observations")
+    original = auxiliary.copy(deep=True)
+    backtest = bt.Backtest(bt.Strategy("test"), pd.DataFrame(100.0, index=dates, columns=["a"]), additional_data={"ids": auxiliary})
+    processed = backtest.additional_data["ids"]
+
+    # Duplicate names must not convert the safe column along with the lossy one.
+    pd.testing.assert_index_equal(processed.columns, auxiliary.columns)
     assert processed.iloc[0].isna().all()
-    assert str(processed.dtypes["value"]) == expected_dtype
+    assert [int(v) for v in processed.iloc[1:, 0]] == [2**53, 2**53 + 1, 2**53 + 2]
+    assert str(processed.dtypes.iloc[0]) == "Int64"
+    assert str(processed.dtypes.iloc[1]) == "float64"
     pd.testing.assert_frame_equal(processed.iloc[1:], auxiliary, check_dtype=False, check_freq=False)
+    pd.testing.assert_frame_equal(auxiliary, original)
+
+
+@pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
+def test_additional_data_integer_ids_preserve_allocations(as_series):
+    dates = pd.date_range("2026-10-07", periods=5)
+    base = pd.Timestamp("2026-10-07").value
+    ids = pd.Series([base, base + 1, base, base + 1, base], index=dates, dtype="int64", name="id")
+    auxiliary = ids if as_series else ids.to_frame()
+
+    def lookup_weight(target):
+        observations = target.get_data("ids")
+        event_id = observations.at[target.now] if as_series else observations.at[target.now, "id"]
+        target.temp["weights"] = {"a": {base: 0.0, base + 1: 1.0}[int(event_id)]}
+        return True
+
+    strategy = bt.Strategy("test", [lookup_weight, bt.algos.Rebalance()], children=[bt.Security("a")])
+    backtest = bt.Backtest(strategy, pd.DataFrame(100.0, index=dates, columns=["a"]), initial_capital=100_000.0, additional_data={"ids": auxiliary})
+    backtest.run()
+
+    # With zero fees and constant price 100, each invested bar holds 100000 / 100.
+    assert backtest.strategy.positions["a"].iloc[1:].tolist() == [0.0, 1000.0, 0.0, 1000.0, 0.0]
+    np.testing.assert_allclose(backtest.strategy.values, 100_000.0)
+    pd.testing.assert_series_equal(ids, pd.Series([base, base + 1, base, base + 1, base], index=dates, dtype="int64", name="id"))
 
 
 def _impact_universe(n_periods=60, n_securities=3, seed=0):
