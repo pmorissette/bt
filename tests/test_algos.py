@@ -2826,6 +2826,90 @@ def test_rebalance_over_time_supports_sparse_weigh_target():
     assert backtest.strategy.price == pytest.approx(125.0)
 
 
+@pytest.mark.parametrize(
+    ("cash", "initial_position", "target_weight", "n"),
+    [
+        pytest.param(0.5, 5.0, 1.0, 2, id="matched"),
+        pytest.param(0.5, 2.0, 1.0, 2, id="increase"),
+        pytest.param(0.5, 5.0, 0.4, 2, id="decrease"),
+        pytest.param(0.5, 5.0, None, 2, id="omitted"),
+        pytest.param(0.5, 5.0, 0.0, 2, id="explicit-zero"),
+        pytest.param(0.5, 5.0, 0.4, 1, id="one-period"),
+        pytest.param(0.0, 5.0, 1.0, 2, id="no-reserve"),
+        pytest.param(1.0, 5.0, 1.0, 2, id="full-cash-transition"),
+    ],
+)
+def test_rebalance_over_time_cash_coordinates(cash, initial_position, target_weight, n):
+    dates = pd.date_range("2020-01-01", periods=n + 2)
+    strategy = bt.Strategy("s", children=[bt.Security("x")])
+    strategy.use_integer_positions(False)
+    strategy.setup(pd.DataFrame(100.0, index=dates, columns=["x"]))
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy["x"].transact(initial_position)
+    strategy.update(dates[0])
+    weights = {} if target_weight is None else {"x": target_weight}
+    original_weights = weights.copy()
+    algo = algos.RebalanceOverTime(n=n)
+
+    # Current weights use total NAV; targets use the slice left after reserving cash.
+    initial_weight = initial_position * 100.0 / 1000.0
+    final_weight = (1.0 - cash) * (target_weight or 0.0)
+    for phase in range(1, n + 1):
+        strategy.temp = {"cash": cash}
+        strategy.update(dates[phase])
+        if phase == 1:
+            strategy.temp["weights"] = weights
+        assert algo(strategy)
+        expected = initial_weight + (final_weight - initial_weight) * phase / n
+        # Rebalance's established full-cash path closes immediately, not gradually.
+        if cash == 1.0:
+            expected = 0.0
+        assert strategy["x"].weight == pytest.approx(expected)
+        assert strategy["x"].position == pytest.approx(expected * 10.0)
+        assert strategy.capital == pytest.approx(1000.0 * (1.0 - expected))
+        assert strategy.value == pytest.approx(1000.0)
+        assert weights == original_weights
+
+    strategy.temp = {"cash": cash}
+    strategy.update(dates[-1])
+    assert algo(strategy)
+    assert "weights" not in strategy.temp
+
+
+@pytest.mark.parametrize(("later_price", "fee"), [(100.0, 1.0), (102.0, 0.0), (98.0, 0.0)])
+def test_rebalance_over_time_matched_cash_target_backtest(later_price, fee):
+    class CashPlan(bt.Algo):
+        def __call__(self, target):
+            target.temp["cash"] = 0.5
+            if target.now == dates[0]:
+                target.transact(500.0, "x")
+            elif target.now == dates[1]:
+                target.temp["weights"] = {"x": 1.0}
+            return True
+
+    dates = pd.date_range("2020-01-01", periods=4)
+    prices = pd.DataFrame({"x": [100.0, 100.0, later_price, later_price]}, index=dates)
+    strategy = bt.Strategy("s", [CashPlan(), algos.RebalanceOverTime(n=2)])
+    # Keep the initial holding exactly at its cash-scaled target even with fees enabled.
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        initial_capital=100000.0 + fee,
+        commissions=lambda q, p: fee,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    backtest.run()
+    s = backtest.strategy
+    assert s["x"].positions.loc[dates[1]] == pytest.approx(500.0)
+    assert s.cash.loc[dates[1]] == pytest.approx(50000.0)
+    # This market move occurs before the second phase: 500 shares must stay exposed.
+    assert s.values.loc[dates[2]] == pytest.approx(50000.0 + 500.0 * later_price)
+    assert s.fees.loc[dates[1]] == pytest.approx(0.0)
+    assert s.fees.loc[dates[2]] == pytest.approx(0.0)
+
+
 def test_require():
     target = mock.MagicMock()
     target.temp = {}
