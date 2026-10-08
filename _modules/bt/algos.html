@@ -2632,7 +2632,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Rebalances towards a target weight over a n periods. Splits up the weight</span>
 <span class="sd">    delta over n periods. Current children with nonzero weights omitted from the</span>
 <span class="sd">    targets are phased out over the same periods. Omitted zero-weight hedges</span>
-<span class="sd">    remain untouched.</span>
+<span class="sd">    remain untouched. For ordinary strategies reserving cash, target weights refer</span>
+<span class="sd">    to the investable slice, as in Rebalance. A full cash reserve still closes</span>
+<span class="sd">    positions immediately.</span>
 
 <span class="sd">    This can be useful if we want to make more conservative rebalacing</span>
 <span class="sd">    assumptions. Some strategies can produce large swings in allocations. It</span>
@@ -2655,6 +2657,8 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Requires:</span>
 <span class="sd">        * weights</span>
+<span class="sd">        * cash (optional): fraction to reserve for the current period, as in</span>
+<span class="sd">          Rebalance. Fixed-income strategies ignore this value.</span>
 
 <span class="sd">    """</span>
 
@@ -2673,17 +2677,24 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># if _weights are not None, we have some work to do</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Normalize NAV weights to the investable-slice units Rebalance expects.</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
+                <span class="n">scale</span> <span class="o">-=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">]</span>
+                <span class="c1"># Full cash delegates to Rebalance's immediate close without division.</span>
+                <span class="k">if</span> <span class="n">scale</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c1"># Read mapping entries by key and preserve their supplied order.</span>
             <span class="k">for</span> <span class="n">cname</span><span class="p">,</span> <span class="n">target_weight</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
+                <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="n">scale</span> <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
                 <span class="n">dlt</span> <span class="o">=</span> <span class="p">(</span><span class="n">target_weight</span> <span class="o">-</span> <span class="n">curr</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>
                 <span class="n">tgt</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr</span> <span class="o">+</span> <span class="n">dlt</span>
 
             <span class="c1"># Rebalance would otherwise close omitted holdings immediately.</span>
             <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">cname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">:</span>
-                    <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span>
+                    <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="n">scale</span>
                     <span class="k">if</span> <span class="n">curr</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
                         <span class="k">continue</span>
                     <span class="n">dlt</span> <span class="o">=</span> <span class="o">-</span><span class="n">curr</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>

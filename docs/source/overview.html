@@ -437,7 +437,9 @@ weight over n periods.</p>
 <p>Rebalances towards a target weight over a n periods. Splits up the weight
 delta over n periods. Current children with nonzero weights omitted from the
 targets are phased out over the same periods. Omitted zero-weight hedges
-remain untouched.</p>
+remain untouched. For ordinary strategies reserving cash, target weights refer
+to the investable slice, as in Rebalance. A full cash reserve still closes
+positions immediately.</p>
 <p>This can be useful if we want to make more conservative rebalacing
 assumptions. Some strategies can produce large swings in allocations. It
 might not be reasonable to assume that this rebalancing can occur at the
@@ -461,6 +463,8 @@ want to always run this algo.</p>
 <dl class="simple">
 <dt>Requires:</dt><dd><ul class="simple">
 <li><p>weights</p></li>
+<li><p>cash (optional): fraction to reserve for the current period, as in
+Rebalance. Fixed-income strategies ignore this value.</p></li>
 </ul>
 </dd>
 </dl>
