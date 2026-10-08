@@ -2212,8 +2212,24 @@ class SelectTypes(Algo):
 
     def __call__(self, target):
         selected = [sec_name for sec_name, sec in target.children.items() if isinstance(sec, self.include_types) and not isinstance(sec, self.exclude_types)]
-        if "selected" in target.temp:
-            selected = [s for s in selected if s in target.temp["selected"]]
+        if selected and "selected" in target.temp:
+            prior = target.temp["selected"]
+            # A local set avoids rescanning a long prior list for every child in
+            # wide universes, while filtering still preserves child order.
+            # Keep short or sparse selections on the list path; set construction
+            # costs more than a few membership checks. Only plain strings are interchangeable.
+            if (
+                type(prior) is list
+                and len(selected) >= 32
+                and 32 <= len(prior) <= 4 * len(selected)
+                and all(type(s) is str for s in prior)
+                and all(type(s) is str for s in selected)
+            ):
+                prior = set(prior)
+                selected = [s for s in selected if s in prior]
+            else:
+                # Preserve per-child reads for caller-defined membership.
+                selected = [s for s in selected if s in target.temp["selected"]]
         target.temp["selected"] = selected
         return True
 
