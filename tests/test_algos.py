@@ -3106,6 +3106,70 @@ def test_PTE_Rebalance_security_multiplier(multiplier: int):
     assert not algo(strategy)
 
 
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+@pytest.mark.parametrize("lazy", [False, True], ids=["explicit", "lazy"])
+@pytest.mark.parametrize(
+    ("multiplier", "reverse", "large_weight", "quote_factor", "target_weight", "should_rebalance"),
+    [
+        (1, False, 1.0, 1.0, 1.0, False),
+        (10, False, 1.0, 1.0, 1.0, False),
+        (10, True, 1.0, 1.0, 1.0, False),
+        (10, True, 1.0, 1.0, 0.55, True),
+        (10, False, -10.0, 1.0, -4.5, False),
+        (10, False, 1.0, 1.1, 1.1, False),
+    ],
+)
+def test_PTE_Rebalance_nested_multipliers(covar_method, lazy, multiplier, reverse, large_weight, quote_factor, target_weight, should_rebalance):
+    dates = pd.date_range("2020-01-01", periods=9)
+    quotes = np.array([100, 104, 99, 108, 102, 112, 105, 118, 110], dtype=float)
+    data = pd.DataFrame({"a": quotes}, index=dates)
+    sleeves = [
+        bt.Strategy("small", children=[bt.Security("a", multiplier=1, lazy_add=lazy)]),
+        bt.Strategy("large", children=[bt.Security("a", multiplier=multiplier, lazy_add=lazy)]),
+    ]
+    if reverse:
+        sleeves.reverse()
+    # Retain the underlying quote in the parent's otherwise sleeve-only universe.
+    strategy = bt.Strategy("root", children=sleeves + [bt.Security("a", lazy_add=True)])
+    strategy.use_integer_positions(False)
+    strategy.setup(data)
+    strategy.update(dates[-1])
+    strategy.adjust(100_000)
+    for name in ["small", "large"]:
+        strategy.allocate(50_000, name)
+        strategy[name].rebalance(1.0 if name == "small" else large_weight, "a")
+
+    # Each sleeve owns half the NAV; allocations, not summed contract counts, define exposure.
+    # The short case cancels raw quantities while retaining nonzero economic exposure.
+    assert strategy.value == pytest.approx(100_000)
+    for name, contract_size, weight in [("small", 1, 1.0), ("large", multiplier, large_weight)]:
+        assert strategy[name]["a"].position == pytest.approx(50_000 * weight / (110 * contract_size))
+    quantities = strategy.positions.copy()
+    if quote_factor != 1.0:
+        # PTE reads the current universe quote, even when the leaf's cached value differs.
+        strategy.universe.at[dates[-1], "a"] = 110 * quote_factor
+    target_weights = pd.DataFrame({"a": target_weight}, index=dates)
+    algo = bt.algos.PTE_Rebalance(
+        0.01,
+        target_weights,
+        lookback=pd.DateOffset(days=8),
+        covar_method=covar_method,
+    )
+
+    # One asset makes the covariance oracle elementary: sample variance for standard,
+    # population variance for one-dimensional Ledoit-Wolf (shrinkage has no effect).
+    returns = quotes[1:] / quotes[:-1] - 1
+    variance = np.var(returns, ddof=1 if covar_method == "standard" else 0)
+    expected_weight = 0.5 * (1.0 + large_weight) * quote_factor
+    expected_pte = abs(expected_weight - target_weight) * np.sqrt(252 * variance)
+    assert (expected_pte > 0.01) == should_rebalance
+    with np.errstate(all="raise"):
+        assert bool(algo(strategy)) == should_rebalance
+    pd.testing.assert_frame_equal(strategy.positions, quantities)
+    pd.testing.assert_frame_equal(target_weights, pd.DataFrame({"a": target_weight}, index=dates))
+    assert strategy.value == pytest.approx(100_000)
+
+
 def test_TargetVol_standard_uses_pairwise_covariance():
     s = bt.Strategy("s")
 
