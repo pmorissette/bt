@@ -268,13 +268,15 @@ class Backtest:
         """Prepend an all-missing row without rounding integer observations."""
         # Expand positionally so duplicate date labels retain their existing behavior.
         positional = data.set_axis(pd.RangeIndex(len(data)))
-        columns = [positional] if isinstance(data, pd.Series) else (positional.iloc[:, i] for i in range(len(data.columns)))
+        dtypes = [positional.dtype] if isinstance(data, pd.Series) else positional.dtypes
         nullable = {}
-        for i, column in enumerate(columns):
-            dtype = column.dtype
+        for i, dtype in enumerate(dtypes):
+            if not isinstance(dtype, np.dtype) or dtype.kind not in "iu":
+                continue
+            column = positional if isinstance(data, pd.Series) else positional.iloc[:, i]
             # Float promotion is unchanged when every integer is exactly representable.
             # Python int comparisons avoid overflow or rounding the reference itself.
-            if isinstance(dtype, np.dtype) and dtype.kind in "iu" and (int(column.min()) < -(2**53) or int(column.max()) > 2**53) and any(int(v) != int(float(v)) for v in column):
+            if (int(column.min()) < -(2**53) or int(column.max()) > 2**53) and any(int(v) != int(float(v)) for v in column):
                 nullable[i] = "UInt64" if dtype.kind == "u" else "Int64"
         if nullable:
             if isinstance(data, pd.Series):

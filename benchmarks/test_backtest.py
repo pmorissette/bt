@@ -113,6 +113,21 @@ def completed_strategy(prices):
     return backtest.strategy
 
 
+@pytest.mark.benchmark(group="preprocessing")
+def test_float_auxiliary_preprocessing(benchmark):
+    dates = pd.bdate_range("2020-01-01", periods=252)
+    prices = pd.DataFrame(100.0, index=dates, columns=["asset"])
+    signals = pd.DataFrame(0.25, index=dates, columns=[f"signal_{i}" for i in range(2000)])
+    original = signals.copy(deep=True)
+
+    backtest = benchmark(bt.Backtest, bt.Strategy("signals"), prices, additional_data={"signals": signals})
+
+    processed = backtest.additional_data["signals"]
+    assert processed.iloc[0].isna().all()
+    pd.testing.assert_frame_equal(processed.iloc[1:], original, check_freq=False)
+    pd.testing.assert_frame_equal(signals, original)
+
+
 @pytest.mark.benchmark(group="backtest")
 def test_equity_backtest(benchmark, prices):
     result = benchmark(run_equity_backtest, prices)
