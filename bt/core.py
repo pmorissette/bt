@@ -717,6 +717,8 @@ class StrategyBase(Node):
         self.setup(self.parent._original_data, **all_kwargs)
         if self.name not in self.parent._universe:
             self.parent._universe[self.name] = np.nan
+            # A same-date cached slice does not include newly registered columns.
+            self.parent._last_chk = None
 
     def get_data(self, key):
         """
@@ -902,6 +904,8 @@ class StrategyBase(Node):
             for c in self._strat_children:
                 # TODO: optimize ".loc" here as well
                 self._universe.loc[date, c] = self.children[c].price
+                # Copy-on-write can leave a same-date cached slice at the old price.
+                self._last_chk = None
 
         # Cash should track the unallocated capital at the end of the day, so
         # we should update it every time we call "update".

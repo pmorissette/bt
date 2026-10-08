@@ -2514,6 +2514,85 @@ def test_strategy_tree_paper(restore):
     assert s._paper.prices.iloc[-1] == s._paper.price
 
 
+@pytest.mark.parametrize("existing_column", [False, True], ids=["new-column", "existing-column"])
+def test_dynamic_strategy_universe_cache(existing_column):
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": [100.0, 100.0, 105.0]}, index=dates)
+    if existing_column:
+        data["sleeve"] = 37.0
+    original = data.copy()
+    parent = Strategy("parent")
+    parent.setup(data)
+    parent.adjust(10000.0)
+    parent.update(dates[1])
+    cached = parent.universe
+
+    sleeve = Strategy("sleeve", children=["a"], parent=parent)
+    sleeve.setup_from_parent()
+    expected = data.loc[: dates[1]].copy()
+    if not existing_column:
+        expected["sleeve"] = np.nan
+    # A read between registration and pricing must not leave a stale placeholder.
+    registered = parent.universe
+    pd.testing.assert_frame_equal(registered, expected)
+    if existing_column:
+        assert registered is cached
+    bt.algos.SelectAll()(parent)
+    assert parent.temp["selected"] == (["a", "sleeve"] if existing_column else ["a"])
+
+    sleeve.update(parent.now)
+    parent.allocate(1000.0, "sleeve")
+    parent.update(parent.now)
+    expected.loc[dates[1], "sleeve"] = 100.0
+    pd.testing.assert_frame_equal(parent.universe, expected)
+    bt.algos.SelectAll()(parent)
+    assert parent.temp["selected"] == ["a", "sleeve"]
+    assert parent.universe is parent.universe
+    assert parent.capital == 9000.0
+    assert sleeve.value == 1000.0
+    assert parent.value == parent.capital + sleeve.value == 10000.0
+
+    parent.update(dates[2])
+    assert parent.universe.index.equals(dates)
+    assert parent.universe.columns.tolist() == ["a", "sleeve"]
+    pd.testing.assert_frame_equal(data, original)
+
+
+def test_strategy_universe_cache_between_price_publications():
+    class ObservingStrategy(Strategy):
+        @property
+        def price(self):
+            if getattr(self, "observations", None) is not None:
+                self.observations.append(self.parent.universe.loc[self.now].tolist())
+            return super().price
+
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    original = data.copy()
+    parent = Strategy("parent", children=[Strategy("first"), ObservingStrategy("second")])
+    parent.setup(data)
+    parent.adjust(10000.0)
+    parent.update(dates[1])
+    first, second = parent["first"], parent["second"]
+    assert parent.universe.loc[dates[1]].tolist() == [100.0, 100.0]
+
+    # Non-flow losses on the million-unit paper portfolios imply prices 99 and 98.
+    first._paper.adjust(-10000.0, flow=False)
+    second._paper.adjust(-20000.0, flow=False)
+    first._paper.update(dates[1])
+    second._paper.update(dates[1])
+    second.observations = []
+    parent.update(dates[1])
+
+    # Publication is sequential: the getter sees the first write before the second.
+    assert second.observations == [[99.0, 100.0]]
+    expected = pd.DataFrame({"first": [np.nan, 99.0], "second": [np.nan, 98.0]}, index=dates[:2])
+    pd.testing.assert_frame_equal(parent.universe, expected)
+    assert parent.universe is parent.universe
+    assert parent.value == parent.capital == 10000.0
+    pd.testing.assert_frame_equal(data, original)
+
+
 def test_dynamic_strategy():
     def do_nothing(x):
         return True
