@@ -2030,7 +2030,9 @@ class RebalanceOverTime(Algo):
     Rebalances towards a target weight over a n periods. Splits up the weight
     delta over n periods. Current children with nonzero weights omitted from the
     targets are phased out over the same periods. Omitted zero-weight hedges
-    remain untouched.
+    remain untouched. For ordinary strategies reserving cash, target weights refer
+    to the investable slice, as in Rebalance. A full cash reserve still closes
+    positions immediately.
 
     This can be useful if we want to make more conservative rebalacing
     assumptions. Some strategies can produce large swings in allocations. It
@@ -2053,6 +2055,8 @@ class RebalanceOverTime(Algo):
 
     Requires:
         * weights
+        * cash (optional): fraction to reserve for the current period, as in
+          Rebalance. Fixed-income strategies ignore this value.
 
     """
 
@@ -2071,17 +2075,24 @@ class RebalanceOverTime(Algo):
 
         # if _weights are not None, we have some work to do
         if self._weights is not None:
+            # Normalize NAV weights to the investable-slice units Rebalance expects.
+            scale = 1.0
+            if "cash" in target.temp and not target.fixed_income:
+                scale -= target.temp["cash"]
+                # Full cash delegates to Rebalance's immediate close without division.
+                if scale == 0.0:
+                    scale = 1.0
             tgt = {}
             # Read mapping entries by key and preserve their supplied order.
             for cname, target_weight in self._weights.items():
-                curr = target.children[cname].weight if cname in target.children else 0.0
+                curr = target.children[cname].weight / scale if cname in target.children else 0.0
                 dlt = (target_weight - curr) / self._days_left
                 tgt[cname] = curr + dlt
 
             # Rebalance would otherwise close omitted holdings immediately.
             for cname in target.children:
                 if cname not in tgt:
-                    curr = target.children[cname].weight
+                    curr = target.children[cname].weight / scale
                     if curr == 0.0:
                         continue
                     dlt = -curr / self._days_left
