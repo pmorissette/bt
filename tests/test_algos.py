@@ -1491,6 +1491,101 @@ def test_select_regex():
     assert s.temp["selected"] == ["c1"]
 
 
+@pytest.mark.parametrize("perm, expected", [
+    ({}, ["c", "a", "b", "a"]),
+    ({"rolled": {"b"}}, ["c", "a", "a"]),
+    ({"closed": {"a"}}, ["c", "b"]),
+    ({"rolled": {"a", "b"}, "closed": {"b", "c"}}, []),
+])
+@pytest.mark.parametrize("selected_count", [4, 31, 32])
+def test_select_active_preserves_order_and_registries(perm, expected, selected_count):
+    target = bt.Strategy("s")
+    # Check the short path and both sides of the preparation cutoff with the same oracle.
+    padding = [f"other_{i}" for i in range(selected_count - 4)]
+    selected = ["c", "a", "b", "a"] + padding
+    target.temp = {"selected": selected, "other": 42}
+    target.perm = perm
+    original = {key: value.copy() for key, value in perm.items()}
+    references = perm.copy()
+
+    assert algos.SelectActive()(target)
+    assert target.temp == {"selected": expected + padding, "other": 42}
+    assert selected == ["c", "a", "b", "a"] + padding
+    assert target.perm == original
+    assert all(target.perm[key] is value for key, value in references.items())
+
+
+@pytest.mark.parametrize("representation", ["iterator", "list_subclass", "label_subclass"])
+def test_select_active_observes_registry_updates_during_selection(representation):
+    target = bt.Strategy("s")
+    target.perm["closed"] = set()
+    # Reach the size gate so each hook still challenges snapshot eligibility.
+    padding = [f"other_{i}" for i in range(30)]
+
+    def labels():
+        yield "first"
+        target.perm["closed"].add("second")
+        yield "second"
+        yield from padding
+
+    class UpdatingList(list):
+        def __iter__(self):
+            return labels()
+
+    class UpdatingLabel(str):
+        def __hash__(self):
+            target.perm["closed"].add("second")
+            return super().__hash__()
+
+    selected = {"iterator": labels(), "list_subclass": UpdatingList(["first", "second"] + padding), "label_subclass": [UpdatingLabel("first"), "second"] + padding}[representation]
+    # A snapshot before iteration/hash hooks would incorrectly retain the later label.
+    stack = bt.AlgoStack(algos.SelectThese(selected, include_no_data=True, include_negative=True), algos.SelectActive())
+    assert stack(target)
+    assert target.temp["selected"] == ["first"] + padding
+    assert target.perm["closed"] == {"second"}
+
+
+@pytest.mark.parametrize("registry", ["rolled", "closed"])
+def test_select_active_preserves_registry_label_hooks(registry):
+    target = bt.Strategy("s")
+    target.perm["closed"] = set()
+
+    class ClosingLabel(str):
+        __hash__ = str.__hash__
+
+        def __eq__(self, other):
+            target.perm["closed"].add("second")
+            return super().__eq__(other)
+
+    target.perm[registry] = {ClosingLabel("first")}
+    padding = [f"other_{i}" for i in range(30)]
+    target.temp["selected"] = ["first", "second"] + padding
+    # Registry equality can close a later candidate, even with an ordinary selection list.
+    assert algos.SelectActive()(target)
+    assert target.temp["selected"] == padding
+    assert "second" in target.perm["closed"]
+
+
+def test_select_active_preserves_consumable_registry():
+    target = bt.Strategy("s")
+    target.perm["closed"] = iter(["second"])
+    padding = [f"other_{i}" for i in range(30)]
+    target.temp["selected"] = ["first", "second"] + padding
+    # The first union consumes the registry; the second candidate sees it exhausted.
+    assert algos.SelectActive()(target)
+    assert target.temp["selected"] == ["first", "second"] + padding
+
+
+@pytest.mark.parametrize("container", [list, tuple, iter])
+def test_select_active_no_work_does_not_evaluate_registries(container):
+    target = bt.Strategy("s")
+    target.perm = {"rolled": None, "closed": None}
+    target.temp["selected"] = container([])
+    assert algos.SelectActive()(target)
+    assert target.temp["selected"] == []
+    assert target.perm == {"rolled": None, "closed": None}
+
+
 def test_resolve_on_the_run():
     s = bt.Strategy("s")
     dts = pd.date_range("2010-01-01", periods=3)
