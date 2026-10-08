@@ -1616,6 +1616,19 @@ def test_select_types_prior_selection(prior, expected):
         assert list(prior) == original
 
 
+@pytest.mark.parametrize("extra", [["missing"], [[]], [np.str_("missing")]])
+def test_select_types_large_prior_selection_preserves_child_order(extra):
+    names = [f"asset_{i}" for i in range(100)]
+    target = bt.Strategy("parent", children=[bt.Security(name) for name in names])
+    prior = list(reversed(names[::2])) + [names[0]] + extra
+    target.temp["selected"] = prior
+
+    assert algos.SelectTypes()(target)
+
+    assert target.temp["selected"] == names[::2]
+    assert prior == list(reversed(names[::2])) + [names[0]] + extra
+
+
 def test_select_types_preserves_custom_membership_and_prior_rereads():
     target = bt.Strategy("parent", children=[bt.Security("alpha"), bt.Security("beta")])
 
@@ -1635,7 +1648,8 @@ def test_select_types_preserves_custom_membership_and_prior_rereads():
 
 
 @pytest.mark.parametrize("custom_child", [False, True], ids=["prior-label", "child-label"])
-def test_select_types_preserves_string_subclass_equality(custom_child):
+@pytest.mark.parametrize("filler_count", [0, 40])
+def test_select_types_preserves_string_subclass_equality(custom_child, filler_count):
     class Label(str):
         __hash__ = str.__hash__
 
@@ -1644,14 +1658,15 @@ def test_select_types_preserves_string_subclass_equality(custom_child):
             return str(self).casefold() == str(other).casefold()
 
     name = Label("ALPHA") if custom_child else "alpha"
-    prior = ["alpha"] if custom_child else [Label("ALPHA")]
-    target = bt.Strategy("parent", children=[bt.Security(name)])
+    filler = [f"extra_{i}" for i in range(filler_count)]
+    prior = (["alpha"] if custom_child else [Label("ALPHA")]) + filler
+    target = bt.Strategy("parent", children=[bt.Security(child) for child in [name] + filler])
     target.temp["selected"] = prior
 
     assert algos.SelectTypes()(target)
 
-    assert target.temp["selected"] == [name]
-    assert prior == (["alpha"] if custom_child else [Label("ALPHA")])
+    assert target.temp["selected"] == [name] + filler
+    assert prior == (["alpha"] if custom_child else [Label("ALPHA")]) + filler
 
 
 @pytest.mark.parametrize("children", [[], [bt.Strategy("sleeve")]], ids=["no-children", "no-type-matches"])

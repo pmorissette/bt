@@ -2216,8 +2216,15 @@ class SelectTypes(Algo):
             prior = target.temp["selected"]
             # A local set avoids rescanning a long prior list for every child in
             # wide universes, while filtering still preserves child order.
-            # Only plain strings have interchangeable list/set membership.
-            if type(prior) is list and all(type(s) is str for s in prior) and all(type(s) is str for s in selected):
+            # Keep short or sparse selections on the list path; set construction
+            # costs more than a few membership checks. Only plain strings are interchangeable.
+            if (
+                type(prior) is list
+                and len(selected) >= 32
+                and 32 <= len(prior) <= 4 * len(selected)
+                and all(type(s) is str for s in prior)
+                and all(type(s) is str for s in selected)
+            ):
                 prior = set(prior)
                 selected = [s for s in selected if s in prior]
             else:
