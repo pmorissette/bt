@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>A Simple Strategy Backtest &#8212; bt - Flexible Backtesting for Python v1.3.0</title>
+    <title>A Simple Strategy Backtest &#8212; bt - Flexible Backtesting for Python v1.4.0</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=14220e7b" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -14,7 +14,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/custom.css?v=890fd012" />
-    <script src="../../_static/documentation_options.js?v=1f29e9d3"></script>
+    <script src="../../_static/documentation_options.js?v=9172181d"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -46,7 +46,7 @@
 <section class="tex2jax_ignore mathjax_ignore" id="a-simple-strategy-backtest">
 <h1>A Simple Strategy Backtest<a class="headerlink" href="#a-simple-strategy-backtest" title="Link to this heading">¶</a></h1>
 <p>Let’s create a simple strategy. We will create a monthly rebalanced, long-only strategy where we place equal weights on each asset in our universe of assets.</p>
-<p>First, we will download some data. By default, <a class="reference external" href="https://pmorissette.github.io/ffn/docs/source/ffn.html#ffn.data.get" title="(in ffn v1.3.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></code></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
+<p>First, we will download some data. By default, <a class="reference external" href="https://pmorissette.github.io/ffn/docs/source/ffn.html#ffn.data.get" title="(in ffn v1.4.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bt.get</span> <span class="pre">(alias</span> <span class="pre">for</span> <span class="pre">ffn.get)</span></code></a> downloads the Adjusted Close from Yahoo! Finance. We will download some data starting on January 1, 2010 for the purposes of this demo.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># fetch some data</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'spy,agg'</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">'2010-01-01'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
