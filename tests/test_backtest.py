@@ -104,6 +104,88 @@ def test_run_loop():
     assert s.run.call_count == 5
 
 
+@pytest.mark.parametrize("depth", [1, 2])
+def test_bootstrap_preserves_child_momentum(depth):
+    dates = pd.date_range("2024-01-01", periods=5)
+    prices = pd.DataFrame({"x": [100.0, 110.0, 120.0, 130.0, 140.0], "y": 100.0}, index=dates)
+
+    def child(name, ticker):
+        result = bt.Strategy(
+            name,
+            [bt.algos.RunOnce(), bt.algos.SelectThese([ticker]), bt.algos.WeighEqually(), bt.algos.Rebalance()],
+            children=[ticker],
+        )
+        if depth == 2:
+            result = bt.Strategy(
+                name,
+                [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()],
+                children=[result],
+            )
+        return result
+
+    class ParentWeights(bt.Algo):
+        def __call__(self, target):
+            if target.now == dates[0]:
+                target.temp["weights"] = {"slow": 0.5, "fast": 0.5}
+            else:
+                target.temp["selected"] = ["slow", "fast"]
+                bt.algos.SelectMomentum(1, lookback=pd.DateOffset(days=2))(target)
+                bt.algos.WeighEqually()(target)
+                target.perm["momentum_selection"] = list(target.temp["selected"])
+            return True
+
+    strategy = bt.Strategy(
+        "parent",
+        [bt.algos.RunOnDate(dates[0], dates[2]), ParentWeights(), bt.algos.Rebalance()],
+        children=[child("slow", "y"), child("fast", "x")],
+    )
+    backtest = bt.Backtest(strategy, prices, initial_capital=1000, integer_positions=False, progress_bar=False)
+    backtest.run()
+    parent = backtest.strategy
+    # Child prices must inform selection; a correct real NAV alone can hide a
+    # paper RunOnce consumed before the first available market price.
+    np.testing.assert_allclose(parent["fast"].prices.loc[dates], [100, 110, 120, 130, 140])
+    np.testing.assert_allclose(parent.universe.loc[dates, "fast"], [100, 110, 120, 130, 140])
+    assert parent.perm["momentum_selection"] == ["fast"]
+    # Five shares of each cost 1000. On Jan 3 the 1100 NAV buys 1100/120 x;
+    # the following day's independent cash + quantity * price is 1191 2/3.
+    assert parent.values.loc[dates[2]] == pytest.approx(5 * 120 + 5 * 100)
+    assert parent.positions.loc[dates[3], "x"] == pytest.approx(1100 / 120)
+    assert parent.positions.loc[dates[3], "y"] == pytest.approx(0)
+    assert parent.values.loc[dates[3]] == pytest.approx(1100 * 130 / 120)
+
+
+@pytest.mark.parametrize("missing_first_price", [False, True])
+def test_paper_algos_run_on_every_real_date(missing_first_price):
+    dates = pd.date_range("2024-01-01", periods=3)
+    prices = pd.DataFrame({"x": [100.0, 110.0, 120.0]}, index=dates)
+    if missing_first_price:
+        prices.iloc[0] = np.nan
+
+    class RecordDate(bt.Algo):
+        def __call__(self, target):
+            target.perm.setdefault("dates", []).append(target.now)
+            return True
+
+    child = bt.Strategy("child", [RecordDate()])
+    backtest = bt.Backtest(bt.Strategy("parent", children=[child]), prices, progress_bar=False)
+    backtest.run()
+    # An all-missing real bar is still a trading date, unlike the added row.
+    assert backtest.strategy["child"]._paper.perm["dates"] == list(dates)
+    assert backtest.strategy["child"].perm["dates"] == list(dates)
+
+
+def test_bootstrap_marker_clears_after_update_failure():
+    dates = pd.date_range("2024-01-01", periods=2)
+    backtest = bt.Backtest(bt.Strategy("parent"), pd.DataFrame({"x": 100.0}, index=dates), progress_bar=False)
+    with (
+        mock.patch.object(backtest.strategy, "update", side_effect=ValueError("update failed")),
+        pytest.raises(ValueError, match="update failed"),
+    ):
+        backtest.run()
+    assert backtest.strategy._in_bootstrap is False
+
+
 def test_turnover():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["a", "b"], data=100)

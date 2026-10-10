@@ -633,7 +633,7 @@ class StrategyBase(Node):
 
             paper = deepcopy(self)
             paper.parent = paper
-            paper.root = paper
+            paper._set_root(paper)
             paper._paper_trade = False
             paper.setup(self._original_data, **kwargs)
             paper.adjust(self._paper_amount)
@@ -917,9 +917,17 @@ class StrategyBase(Node):
         # update paper trade if necessary
         if self._paper_trade:
             if newpt:
-                self._paper.update(date)
-                self._paper.run()
-                self._paper.update(date)
+                # Paper portfolios have independent roots, including deeper
+                # paper trees. Propagate only Backtest's explicit reference phase.
+                bootstrap = getattr(self.root, "_in_bootstrap", False)
+                self._paper._in_bootstrap = bootstrap
+                try:
+                    self._paper.update(date)
+                    if not bootstrap:
+                        self._paper.run()
+                    self._paper.update(date)
+                finally:
+                    self._paper._in_bootstrap = False
             # update price
             self._price = self._paper.price
             self._prices_arr[inow] = self._price

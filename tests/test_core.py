@@ -2565,6 +2565,50 @@ def test_strategy_tree_paper(restore):
     assert s._paper.prices.iloc[-1] == s._paper.price
 
 
+@pytest.mark.parametrize("missing_first_price", [False, True])
+def test_direct_first_update_runs_paper_algos(missing_first_price):
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame({"a": [np.nan if missing_first_price else 100.0, 110.0]}, index=dates)
+    child = Strategy("child", [bt.algos.RunOnce()])
+    parent = Strategy("parent", children=[child])
+    parent.setup(prices)
+    parent.update(dates[0])
+    # Core cannot infer Backtest's reference row from position or missingness.
+    assert parent["child"]._paper.stack.algos[0].has_run
+
+
+def test_paper_bootstrap_marker_clears_after_update_failure():
+    dates = pd.date_range("2024-01-01", periods=2)
+    parent = Strategy("parent", children=[Strategy("child")])
+    parent.setup(pd.DataFrame({"a": 100.0}, index=dates))
+    parent._in_bootstrap = True
+    paper = parent["child"]._paper
+    with (
+        mock.patch.object(paper, "update", side_effect=ValueError("paper update failed")),
+        pytest.raises(ValueError, match="paper update failed"),
+    ):
+        parent.update(dates[0])
+    assert paper._in_bootstrap is False
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_paper_descendants_share_their_own_root(nested):
+    child = Strategy("child", children=[bt.Security("a")])
+    if nested:
+        child = Strategy("sleeve", children=[child])
+    parent = Strategy("parent", children=[child])
+    parent.setup(pd.DataFrame({"a": [100.0, 110.0]}, index=pd.date_range("2024-01-01", periods=2)))
+
+    def check_roots(tree):
+        # Correct values alone can hide descendants rooted in a copied ancestor.
+        assert all(node.root is tree for node in tree.members)
+        for node in tree.members:
+            if isinstance(node, StrategyBase) and node._paper_trade:
+                check_roots(node._paper)
+
+    check_roots(parent)
+
+
 @pytest.mark.parametrize("existing_column", [False, True], ids=["new-column", "existing-column"])
 def test_dynamic_strategy_universe_cache(existing_column):
     dates = pd.date_range("2020-01-01", periods=3)
