@@ -769,7 +769,8 @@ class RandomBenchmarkResult(Result):
         statistic.
 
         This helps you determine if your strategy is statistically 'better'
-        than the random versions.
+        than the random versions. The KDE curve is omitted when the
+        nonmissing random statistics have only one distinct value.
 
         Args:
             * statistic (str): Statistic - any numeric statistic in
@@ -793,7 +794,9 @@ class RandomBenchmarkResult(Result):
         ax = ser.hist(bins=bins, figsize=figsize, density=True, **kwargs)
         ax.set_title(title)
         plt.axvline(self.b_stats[statistic], linewidth=4, color="r")
-        ser.plot(kind="kde")
+        # Singleton/constant samples have no KDE; leave empty-sample handling to pandas.
+        if ser.nunique() != 1:
+            ser.plot(kind="kde")
 
 
 class RenormalizedFixedIncomeResult(Result):
