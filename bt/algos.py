@@ -2680,7 +2680,8 @@ class UpdateRisk(Algo):
                 self._setup_measure(node, set_history)
             node.risk[self.measure] = risk
             if set_history:
-                node.risks.loc[node.now, self.measure] = risk
+                # Idle securities can retain an older clock; risk is calculated at root.now.
+                node.risks.loc[node.root.now, self.measure] = risk
         return True
 
 
