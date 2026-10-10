@@ -639,9 +639,6 @@ class StrategyBase(Node):
             paper.adjust(self._paper_amount)
             self._paper = paper
 
-        # setup universe
-        funiverse = universe.copy()
-
         # filter only if the node has any children specified as input,
         # otherwise we use the full universe. If all children are strategies,
         # funiverse will be empty, to signal that no other ticker should be
@@ -660,6 +657,9 @@ class StrategyBase(Node):
 
             # must create to avoid pandas warning
             funiverse = pd.DataFrame(funiverse)
+        else:
+            # Copy the full universe only when retained, avoiding a discarded allocation.
+            funiverse = universe.copy()
 
         self._universe = funiverse
         # holds filtered universe
