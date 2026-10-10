@@ -4309,6 +4309,72 @@ def test_update_risk_history_starts_when_deeper_measure_is_first_tracked():
         assert node.risks.loc[dts[1], "DV01"] == 28.0
 
 
+@pytest.mark.parametrize("nested", [False, True])
+def test_update_risk_history_uses_observation_date(nested):
+    dates = pd.date_range("2024-01-01", periods=7, tz="America/New_York")
+    prices = pd.DataFrame(100.0, index=dates, columns=["closed", "never", "live"])
+    unit_risk = pd.DataFrame(
+        {name: np.arange(3.0, 10.0) for name in prices.columns}, index=dates
+    )
+    children = [bt.Security(name) for name in prices.columns]
+    root = bt.Strategy(
+        "root", children=[bt.Strategy("sleeve", children=children)] if nested else children
+    )
+    root.setup(prices, unit_risk={"IR01": unit_risk})
+    owner = root["sleeve"] if nested else root
+    root.adjust(1000)
+    root.update(dates[0])
+    owner.transact(2, "closed")
+    owner.transact(1, "live")
+    update = algos.UpdateRisk("IR01", history=3 if nested else 2)
+
+    for i, date in enumerate(dates[:6]):
+        root.update(date)
+        if i == 1:
+            owner.close("closed")
+        # Reading price/position histories would refresh idle clocks and hide the defect.
+        clocks = [child.now for child in owner.children.values()]
+        assert update(root)
+        assert [child.now for child in owner.children.values()] == clocks
+
+    # Quantity times unit risk: two units on day one, then zero after closure.
+    expected = {"closed": [6.0, 0, 0, 0, 0, 0], "never": [0.0] * 6, "live": list(range(3, 9))}
+    for name, values in expected.items():
+        child = owner[name]
+        pd.testing.assert_series_equal(
+            child.risks["IR01"],
+            pd.Series(values + [np.nan], index=dates, name="IR01", dtype=float),
+        )
+        assert child.risk["IR01"] == values[-1]
+    assert owner["closed"].risks["IR01"].mean() == 1.0
+    assert owner["closed"].now < dates[5]
+    assert owner["never"].now == dates[0]
+
+
+@pytest.mark.parametrize("initialized", [False, True])
+def test_update_risk_idle_history_starts_at_observation_date(initialized):
+    dates = pd.date_range("2024-01-01", periods=7)
+    prices = pd.DataFrame(100.0, index=dates, columns=["idle"])
+    unit_risk = pd.DataFrame(7.0, index=dates, columns=prices.columns)
+    root = bt.Strategy("root", children=[bt.Security("idle")])
+    root.setup(prices, unit_risk={"IR01": unit_risk, "DV01": unit_risk})
+    root.update(dates[0])
+    if initialized:
+        assert algos.UpdateRisk("IR01", history=0)(root)
+    root.update(dates[5])
+    idle = root["idle"]
+    clock = idle.now
+    assert clock < dates[5]
+
+    assert algos.UpdateRisk("DV01", history=2)(root)
+    # Tracking starts now; neither unobserved past nor future rows are fabricated.
+    expected = pd.Series([np.nan] * 5 + [0.0, np.nan], index=dates, name="DV01")
+    for node in (root, idle):
+        pd.testing.assert_series_equal(node.risks["DV01"], expected)
+        assert node.risk["DV01"] == 0.0
+    assert idle.now == clock
+
+
 def test_hedge_risk():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")
