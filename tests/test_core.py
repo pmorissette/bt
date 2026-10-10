@@ -2401,6 +2401,57 @@ def test_strategy_tree_proper_universes():
     assert len(parent._strat_children) == 2
 
 
+@pytest.mark.parametrize("children, columns", [(None, ["a", "b", "c"]), ([], ["a", "b", "c"]), (["b", "a", "missing"], ["a", "b"]), (["missing"], [])])
+def test_strategy_setup_owns_retained_universe(children, columns):
+    dates = pd.date_range("2020-01-01", periods=2, name="date")
+    data = pd.DataFrame({"a": [100.0, np.nan], "b": pd.array([2, None], dtype="Int64"), "c": [True, False]}, index=dates)
+    data.columns.name = "asset"
+    strategy = Strategy("strategy", children=children)
+    strategy.setup(data)
+    expected = data[columns].copy()
+
+    pd.testing.assert_frame_equal(strategy._universe, expected)
+    # Keep the intentional reconstruction reference while isolating retained prices and axes.
+    assert strategy._original_data is data
+    data.iloc[0, 0] = 999.0
+    data.index.name = "changed date"
+    data.columns.name = "changed asset"
+    pd.testing.assert_frame_equal(strategy._universe, expected)
+
+    # Isolation must also hold in the other direction, including the no-filter path.
+    changed_source = data.copy()
+    if "a" in columns:
+        strategy._universe.iloc[0, 0] = 123.0
+    strategy._universe.index.name = "owned date"
+    strategy._universe.columns.name = "owned asset"
+    pd.testing.assert_frame_equal(data, changed_source)
+
+
+def test_nested_and_dynamic_setup_own_real_and_paper_universes():
+    dates = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"a": [100.0, 101.0], "b": [200.0, 202.0]}, index=dates)
+    parent = Strategy("parent", children=[Strategy("initial", children=["b"])])
+    parent.setup(data)
+    dynamic = Strategy("dynamic", children=["a"], parent=parent)
+    dynamic.setup_from_parent()
+    initial = parent["initial"]
+    nodes = [initial, initial._paper, dynamic, dynamic._paper]
+    expected = [data[[name]].copy() for name in ["b", "b", "a", "a"]]
+
+    data.iloc[0] = [-1.0, -2.0]
+    for node, frame in zip(nodes, expected):
+        pd.testing.assert_frame_equal(node._universe, frame)
+        assert node._original_data is data
+
+    # A real sleeve's mutation must not leak into its independently rooted paper portfolio.
+    initial._universe.iloc[0, 0] = 777.0
+    dynamic._universe.iloc[0, 0] = 888.0
+    pd.testing.assert_frame_equal(initial._paper._universe, expected[1])
+    pd.testing.assert_frame_equal(dynamic._paper._universe, expected[3])
+    assert parent._universe.columns.tolist() == ["initial", "dynamic"]
+    assert parent._universe.isna().all().all()
+
+
 def test_explicit_children_preserve_universe_order_for_seeded_results():
     """Keep seeded selection and results stable after restricting the universe."""
 
