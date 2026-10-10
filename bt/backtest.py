@@ -426,9 +426,13 @@ class Backtest:
         if self.progress_bar:
             bar = pyprind.ProgBar(len(self.dates), title=self.name, stream=1)
 
-        # since there is a dummy row at time 0, start backtest at date 1.
-        # we must still update for t0
-        self.strategy.update(self.dates[0])
+        # Initialize the synthetic reference row without consuming a nested
+        # paper strategy's first trading call before market prices exist.
+        self.strategy._in_bootstrap = True
+        try:
+            self.strategy.update(self.dates[0])
+        finally:
+            self.strategy._in_bootstrap = False
 
         # and for the backtest loop, start at date 1
         for dt in self.dates[1:]:
