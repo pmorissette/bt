@@ -397,6 +397,9 @@ def test_random_benchmark_histogram_effective_sample(samples, expected_kde):
     from matplotlib.colors import to_rgba
     from scipy.stats import gaussian_kde
 
+    # Render without depending on a GUI toolkit being available on CI runners.
+    plt.switch_backend("Agg")
+
     # Isolate the plotting owner with known statistics, independently of ffn's estimators.
     result = bt.backtest.RandomBenchmarkResult.__new__(bt.backtest.RandomBenchmarkResult)
     result.r_stats = pd.DataFrame([samples], index=["total_return"], dtype=float)
@@ -430,6 +433,9 @@ def test_random_benchmark_histogram_effective_sample(samples, expected_kde):
 @pytest.mark.parametrize("samples", [[], [np.nan, np.nan]])
 def test_random_benchmark_histogram_preserves_empty_sample_error(samples):
     from matplotlib import pyplot as plt
+
+    # Render without depending on a GUI toolkit being available on CI runners.
+    plt.switch_backend("Agg")
 
     result = bt.backtest.RandomBenchmarkResult.__new__(bt.backtest.RandomBenchmarkResult)
     result.r_stats = pd.DataFrame([samples], index=["total_return"], dtype=float)
