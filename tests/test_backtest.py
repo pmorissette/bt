@@ -381,6 +381,73 @@ def _make_benchmark_rebalance_strategy(name: str) -> bt.Strategy:
     )
 
 
+@pytest.mark.parametrize(
+    "samples, expected_kde",
+    [
+        ([0.1], False),
+        ([0.1, 0.1], False),
+        ([np.nan, 0.1], False),
+        ([np.nan, 0.1, 0.1], False),
+        ([0.1, 0.2], True),
+        ([np.nan, 0.1, 0.2], True),
+    ],
+)
+def test_random_benchmark_histogram_effective_sample(samples, expected_kde):
+    from matplotlib import pyplot as plt
+    from matplotlib.colors import to_rgba
+    from scipy.stats import gaussian_kde
+
+    # Render without depending on a GUI toolkit being available on CI runners.
+    plt.switch_backend("Agg")
+
+    # Isolate the plotting owner with known statistics, independently of ffn's estimators.
+    result = bt.backtest.RandomBenchmarkResult.__new__(bt.backtest.RandomBenchmarkResult)
+    result.r_stats = pd.DataFrame([samples], index=["total_return"], dtype=float)
+    result.b_stats = pd.Series({"total_return": 0.15})
+    original_stats = result.r_stats.copy(deep=True)
+    finite_samples = [value for value in samples if not np.isnan(value)]
+    expected_heights, expected_edges = np.histogram(finite_samples, bins=4, density=True)
+
+    try:
+        assert result.plot_histogram("total_return", bins=4, title="Comparison", color="green") is None
+        ax = plt.gca()
+        # Drawing the canvas catches failures that artist creation can defer.
+        ax.figure.canvas.draw()
+        assert ax.get_title() == "Comparison"
+        np.testing.assert_allclose([patch.get_height() for patch in ax.patches], expected_heights)
+        np.testing.assert_allclose([patch.get_x() for patch in ax.patches], expected_edges[:-1])
+        np.testing.assert_allclose([patch.get_width() for patch in ax.patches], np.diff(expected_edges))
+        assert all(patch.get_facecolor() == to_rgba("green") for patch in ax.patches)
+        np.testing.assert_allclose(ax.lines[0].get_xdata(), [0.15, 0.15])
+        assert ax.lines[0].get_color() == "r"
+        assert len(ax.lines) == (2 if expected_kde else 1)
+        if expected_kde:
+            # Check the actual density curve, not just the presence of another line.
+            line = ax.lines[1]
+            np.testing.assert_allclose(line.get_ydata(), gaussian_kde(finite_samples)(line.get_xdata()))
+        pd.testing.assert_frame_equal(result.r_stats, original_stats)
+    finally:
+        plt.close("all")
+
+
+@pytest.mark.parametrize("samples", [[], [np.nan, np.nan]])
+def test_random_benchmark_histogram_preserves_empty_sample_error(samples):
+    from matplotlib import pyplot as plt
+
+    # Render without depending on a GUI toolkit being available on CI runners.
+    plt.switch_backend("Agg")
+
+    result = bt.backtest.RandomBenchmarkResult.__new__(bt.backtest.RandomBenchmarkResult)
+    result.r_stats = pd.DataFrame([samples], index=["total_return"], dtype=float)
+    result.b_stats = pd.Series({"total_return": 0.15})
+    try:
+        # No observations is distinct from a constant sample; retain pandas' rejection.
+        with pytest.raises(ValueError):
+            result.plot_histogram("total_return")
+    finally:
+        plt.close("all")
+
+
 @pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
 def test_benchmark_random_preserves_additional_data(as_series: bool):
     dates = pd.date_range("2020-01-01", periods=3)
