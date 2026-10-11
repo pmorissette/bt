@@ -1027,10 +1027,26 @@ class StatMultiPeriodReturn(Algo):
     def __call__(self, target):
         selected = target.temp["selected"]
         t0 = target.now - self.lag
-        if target.universe[selected].index[0] > t0:
+        universe = target.universe
+        prices = universe[selected]
+        if prices.index[0] > t0:
             return False
 
-        returns = [target.universe.loc[t0 - lookback : t0, selected].calc_total_return() for lookback in self.lookbacks]
+        # Reuse selected columns to avoid repeating wide-universe indexing for each
+        # lookback. Other inputs retain observable selector, offset, and universe reads.
+        # Metadata-bearing columns also retain per-lookup pandas warnings.
+        if (
+            type(target) in (bt.Strategy, bt.FixedIncomeStrategy)
+            and type(universe) is pd.DataFrame
+            and not isinstance(universe.columns, (pd.MultiIndex, pd.CategoricalIndex))
+            and type(selected) is list
+            and all(type(label) is str for label in selected)
+            and type(self.lookbacks) is list
+            and all(type(lookback) is pd.DateOffset for lookback in self.lookbacks)
+        ):
+            returns = [prices.loc[t0 - lookback : t0].calc_total_return() for lookback in self.lookbacks]
+        else:
+            returns = [target.universe.loc[t0 - lookback : t0, selected].calc_total_return() for lookback in self.lookbacks]
         target.temp["stat"] = pd.concat(returns, axis=1).dot(self.weights)
         return True
 

@@ -2,6 +2,7 @@ from __future__ import division
 from datetime import datetime, timedelta
 from typing import ClassVar
 from unittest import mock
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -2374,6 +2375,137 @@ def test_stat_multi_period_return():
     assert algo(strategy)
     assert strategy.temp["stat"]["c1"] == pytest.approx(0.3)
     assert strategy.temp["stat"]["c2"] == pytest.approx(0.65)
+
+
+@pytest.mark.parametrize("strategy_type", [bt.Strategy, bt.FixedIncomeStrategy])
+@pytest.mark.parametrize("dtype", ["float64", "Float64"])
+def test_stat_multi_period_return_weighted_lagged_endpoints(strategy_type, dtype):
+    dates = pd.date_range("2020-01-01", periods=6)
+    data = pd.DataFrame({"a": [100.0, 110.0, 120.0, 130.0, 150.0, 999.0], "b": [50.0, 60.0, 70.0, np.nan, 90.0, 999.0]}, index=dates, dtype=dtype)
+    original = data.copy(deep=True)
+    strategy = strategy_type("s")
+    strategy.setup(data)
+    strategy.update(dates[-1])
+    strategy.temp["selected"] = ["b", "a"]
+    algo = algos.StatMultiPeriodReturn([pd.DateOffset(days=1), pd.DateOffset(days=4)], weights=[1, 3], lag=pd.DateOffset(days=1))
+
+    assert algo(strategy)
+    # The lag excludes 999; missing endpoints stay missing, without filling or reordering.
+    expected = pd.Series([pd.NA if dtype == "Float64" else np.nan, (150 / 130 - 1) / 4 + 3 * (150 / 100 - 1) / 4], index=["b", "a"], dtype=object if dtype == "Float64" else float)
+    pd.testing.assert_series_equal(strategy.temp["stat"], expected)
+    pd.testing.assert_frame_equal(data, original)
+
+
+@pytest.mark.parametrize("selection", ["callable", "boolean"])
+def test_stat_multi_period_return_nonstandard_selection(selection):
+    dates = pd.date_range("2020-01-01", periods=4)
+    data = pd.DataFrame(np.arange(16).reshape(4, 4) + 100.0, index=dates, columns=list("abcd"))
+    strategy = bt.Strategy("s")
+    strategy.setup(data)
+    strategy.update(dates[-1])
+    calls = []
+
+    def alternating(frame):
+        calls.append(None)
+        return ["a"] if len(calls) % 2 else ["b"]
+
+    strategy.temp["selected"] = alternating if selection == "callable" else [True, False, True, False]
+    algo = algos.StatMultiPeriodReturn([pd.DateOffset(days=1), pd.DateOffset(days=3)])
+    assert algo(strategy)
+    # [] and .loc interpret boolean masks differently; callables run for every lookup.
+    if selection == "callable":
+        assert len(calls) == 3
+        assert list(strategy.temp["stat"].index) == ["b", "a"]
+        assert strategy.temp["stat"].isna().all()
+    else:
+        expected = pd.Series([(112 / 108 - 1 + 112 / 100 - 1) / 2, (114 / 110 - 1 + 114 / 102 - 1) / 2], index=["a", "c"])
+        pd.testing.assert_series_equal(strategy.temp["stat"], expected)
+
+
+@pytest.mark.parametrize("column_kind", ["hierarchical", "categorical"])
+def test_stat_multi_period_return_column_metadata(column_kind):
+    dates = pd.date_range("2020-01-01", periods=4)
+    columns = pd.MultiIndex.from_tuples([("a", "x"), ("a", "y"), ("b", "x")]) if column_kind == "hierarchical" else pd.CategoricalIndex(["a", "b", "c"])
+    data = pd.DataFrame(np.arange(12).reshape(4, 3) + 100.0, index=dates, columns=columns)
+    original = data.copy(deep=True)
+    selected = ["b", "a"]
+    strategy = bt.Strategy("s")
+    strategy.setup(data)
+    strategy.update(dates[-1])
+    strategy.temp["selected"] = selected
+
+    # Native categorical selections warn per lookup on older pandas; preserve that
+    # behavior without requiring a warning that newer supported versions removed.
+    with warnings.catch_warnings(record=True) as expected_warnings:
+        warnings.simplefilter("always")
+        data[selected]
+        data.loc[dates[-2] : dates[-1], selected]
+        data.loc[dates[0] : dates[-1], selected]
+    with warnings.catch_warnings(record=True) as actual_warnings:
+        warnings.simplefilter("always")
+        assert algos.StatMultiPeriodReturn([pd.DateOffset(days=1), pd.DateOffset(days=3)])(strategy)
+
+    assert [(w.category, str(w.message)) for w in actual_warnings] == [(w.category, str(w.message)) for w in expected_warnings]
+    if column_kind == "hierarchical":
+        expected = pd.Series([(111 / 108 - 1 + 111 / 102 - 1) / 2, (109 / 106 - 1 + 109 / 100 - 1) / 2, (110 / 107 - 1 + 110 / 101 - 1) / 2], index=columns.take([2, 0, 1]))
+    else:
+        expected = pd.Series([(110 / 107 - 1 + 110 / 101 - 1) / 2, (109 / 106 - 1 + 109 / 100 - 1) / 2], index=columns.take([1, 0]))
+    pd.testing.assert_series_equal(strategy.temp["stat"], expected)
+    pd.testing.assert_frame_equal(data, original)
+
+
+def test_stat_multi_period_return_observable_universe():
+    dates = pd.date_range("2020-01-01", periods=3)
+
+    class ChangingUniverse:
+        now = dates[-1]
+
+        def __init__(self):
+            self.temp = {"selected": ["a"]}
+            self.reads = 0
+
+        @property
+        def universe(self):
+            self.reads += 1
+            return pd.DataFrame({"a": [100.0, 100.0, 100.0 + self.reads]}, index=dates)
+
+    target = ChangingUniverse()
+    assert algos.StatMultiPeriodReturn([pd.DateOffset(days=1), pd.DateOffset(days=2)])(target)
+    # A caller-owned universe may publish new prices on each read.
+    assert target.reads == 3
+    assert target.temp["stat"]["a"] == pytest.approx((0.02 + 0.03) / 2)
+
+
+def test_stat_multi_period_return_offset_publication():
+    dates = pd.date_range("2020-01-01", periods=3)
+    strategy = bt.Strategy("s")
+    strategy.setup(pd.DataFrame({"a": [100.0, 100.0, 100.0]}, index=dates))
+    strategy.update(dates[-1])
+    strategy.temp["selected"] = ["a"]
+
+    class PublishingOffset:
+        def __rsub__(self, stamp):
+            strategy.universe.loc[dates[-1], "a"] = 120.0
+            return stamp - pd.DateOffset(days=2)
+
+    algo = algos.StatMultiPeriodReturn([pd.DateOffset(days=1), PublishingOffset()])
+    assert algo(strategy)
+    # The second offset publishes after the first reduction, before its own price read.
+    assert strategy.temp["stat"]["a"] == pytest.approx(0.1)
+
+
+def test_stat_multi_period_return_preserves_first_failure():
+    dates = pd.date_range("2020-01-01", periods=3)
+    strategy = bt.Strategy("s")
+    strategy.setup(pd.DataFrame({"a": 100.0}, index=dates))
+    strategy.update(dates[-1])
+    strategy.temp.update(selected=["a"], stat="previous")
+    algo = algos.StatMultiPeriodReturn([pd.DateOffset(days=-1), pd.DateOffset(years=10000)])
+
+    # The empty first window fails before evaluating the invalid later offset.
+    with pytest.raises(IndexError):
+        algo(strategy)
+    assert strategy.temp["stat"] == "previous"
 
 
 def test_stat_multi_period_return_validation():
