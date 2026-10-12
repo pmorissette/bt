@@ -172,6 +172,52 @@ def test_node_tree1():
     assert m == c1.root
 
 
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("stale", [False, True])
+def test_node_registration_preserves_root_stale(nested, stale):
+    root = Node("root")
+    parent = Node("parent", parent=root) if nested else root
+    root.stale = stale
+
+    # Registration changes membership, not the owner's pending update marker.
+    child = Node("registered", parent=parent, children=[Node("leaf")])
+
+    assert root.stale is stale
+    assert child.root is root
+    assert child["leaf"].root is root
+    assert Node("independent").stale is False
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_strategy_registration_preserves_pending_accounting(nested):
+    securities = [bt.Security("held"), bt.Security("next")]
+    children = [Strategy("parent", children=securities)] if nested else securities
+    root = Strategy("root", children=children)
+    root.use_integer_positions(False)
+    root.set_commissions(lambda q, p: 7.0 if q else 0.0)
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"held": 100.0, "next": 50.0}, index=dates)
+    root.setup(data)
+    root.adjust(1000.0)
+    root.update(dates[0])
+    target = root["parent"] if nested else root
+    if nested:
+        root.allocate(1000.0, "parent")
+        root.update(dates[0])
+
+    target.transact(1.0, "held", update=False)
+    assert root.stale
+    registered = Strategy("registered", parent=target)
+    registered.setup_from_parent()
+
+    # Cash 893 plus the 100 holding gives 993, even before an explicit update.
+    # Using the stale 1000 instead would buy 9.86 rather than 9.79 shares.
+    assert root.value == pytest.approx(993.0)
+    target.rebalance(0.5, "next")
+    assert target["next"].position == pytest.approx(9.79)
+    assert root.value == pytest.approx(986.0)
+
+
 def test_node_tree2():
     # Just like test_node_tree1, but using the dictionary constructor
     c = Node("template")

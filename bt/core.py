@@ -100,12 +100,10 @@ class Node:
 
         # set default value for now
         self.now = 0
-        # make sure root has stale flag
-        # used to avoid unnecessary update
-        # sometimes we change values in the tree and we know that we will need
-        # to update if another node tries to access a given value (say weight).
-        # This avoid calling the update until it is actually needed.
-        self.root.stale = False
+        # A new root starts clean. Registering a child must preserve pending
+        # updates from earlier trades so later value and weight reads refresh it.
+        if parent is None:
+            self.root.stale = False
 
         # helper vars
         self._price = 0
