@@ -203,6 +203,44 @@ def test_strategy_prices(benchmark, prices, completed_strategy):
     assert result.index[-1] == prices.index[-1]
 
 
+@pytest.mark.benchmark(group="backtest")
+@pytest.mark.parametrize(
+    "assets,selected_count,lookback_count,trade",
+    [
+        (10, 10, 1, True),
+        (10, 10, 2, True),
+        (500, 1, 8, True),
+        (500, 500, 8, False),
+        (100, 100, 8, True),
+    ],
+    ids=["single", "small", "sparse", "wide-signal", "trading"],
+)
+def test_multi_period_return_backtest(benchmark, assets, selected_count, lookback_count, trade):
+    # Vary selection size separately from reductions, including small and sparse neighbors.
+    data = pd.DataFrame(100.0, index=pd.bdate_range("2020-01-01", periods=252), columns=[f"asset_{i}" for i in range(assets)])
+    selected = list(data.columns[:selected_count])
+    lookbacks = [pd.DateOffset(days=days) for days in [5, 10, 21, 42, 63, 84, 126, 252][:lookback_count]]
+
+    def run():
+        stack = [bt.algos.SelectThese(selected), bt.algos.StatMultiPeriodReturn(lookbacks)]
+        if trade:
+            stack += [bt.algos.WeighEqually(), bt.algos.Rebalance()]
+        backtest = bt.Backtest(bt.Strategy("multi-period", stack), data, integer_positions=False, progress_bar=False)
+        backtest.run()
+        return backtest
+
+    strategy = benchmark(run).strategy
+    # Constant prices independently fix signals, value, and equal-weight holdings.
+    assert strategy.temp["stat"].eq(0.0).all()
+    assert list(strategy.temp["stat"].index) == selected
+    assert np.allclose(strategy.values.iloc[1:], 1_000_000.0)
+    if trade:
+        assert len(strategy.children) == selected_count
+        assert all(np.isclose(child.position, 10000.0 / selected_count) for child in strategy.children.values())
+    else:
+        assert not strategy.children
+
+
 @pytest.mark.benchmark(group="history")
 def test_strategy_data(benchmark, prices, completed_strategy):
     result = benchmark(getattr, completed_strategy, "data")
