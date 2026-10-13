@@ -2534,7 +2534,9 @@ class ReplayTransactions(Algo):
         index = timeline.get_loc(target.now)
         end = target.now
         if index == 0:
-            start = pd.Timestamp.min
+            # UTC makes the minimum comparable to aware clocks without underflowing
+            # when their local timezone has a positive offset.
+            start = pd.Timestamp.min if getattr(end, "tzinfo", None) is None else pd.Timestamp.min.tz_localize("UTC")
         else:
             start = timeline[index - 1]
         # Get the transactions since the last update
@@ -2582,7 +2584,9 @@ class SimulateRFQTransactions(Algo):
         index = timeline.get_loc(target.now)
         end = target.now
         if index == 0:
-            start = pd.Timestamp.min
+            # UTC makes the minimum comparable to aware clocks without underflowing
+            # when their local timezone has a positive offset.
+            start = pd.Timestamp.min if getattr(end, "tzinfo", None) is None else pd.Timestamp.min.tz_localize("UTC")
         else:
             start = timeline[index - 1]
         # Get the RFQs since the last update

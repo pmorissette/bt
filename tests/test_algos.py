@@ -3837,6 +3837,86 @@ def test_replay_transactions_consistency():
 
 @pytest.mark.parametrize("algo_name", ["replay", "rfq"])
 @pytest.mark.parametrize(
+    ("timezone", "numpy_clock"),
+    [(None, False), (None, True), ("UTC", False), ("America/New_York", False), ("Asia/Tokyo", False)],
+    ids=["naive", "numpy-clock", "utc", "new-york", "tokyo"],
+)
+def test_replayed_transactions_timezone_windows(algo_name, timezone, numpy_clock):
+    # New York crosses DST here; elapsed-day arithmetic is not the interval oracle.
+    dates = pd.date_range("2024-03-09", periods=3, tz=timezone)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    transactions = pd.DataFrame(
+        [
+            (dates[2] + pd.Timedelta(minutes=1), "a", 19.0, 100.0),
+            (dates[0], "a", 2.0, 100.0),
+            (dates[1], "a", 11.0, 100.0),
+            (dates[0] - pd.Timedelta(minutes=1), "a", 1.0, 100.0),
+            (dates[0] + pd.Timedelta(minutes=1), "a", 7.0, 100.0),
+            (dates[1] + pd.Timedelta(minutes=1), "a", 13.0, 100.0),
+            (dates[2], "a", 17.0, 100.0),
+        ],
+        columns=["Date", "Security", "quantity", "price"],
+    ).set_index(["Date", "Security"])
+    original = transactions.copy(deep=True)
+    calls = []
+
+    def model(rfqs, target):
+        calls.append(rfqs.copy(deep=True))
+        return rfqs.copy()
+
+    algo = algos.ReplayTransactions("orders") if algo_name == "replay" else algos.SimulateRFQTransactions("orders", model)
+    strategy = bt.Strategy("s", children=[bt.Security("a")])
+    strategy.setup(data, bidoffer={}, orders=transactions)
+    strategy.adjust(1000.0)
+
+    # Literal due rows protect row order and (previous, current] endpoints independently
+    # of the production mask: first 2+1, then 11+7, then 13+17; the future 19 stays out.
+    for i, (date, position, due_rows) in enumerate(zip(dates, [3.0, 21.0, 51.0], [[1, 3], [2, 4], [5, 6]])):
+        strategy.update(date.to_datetime64() if numpy_clock else date)
+        assert algo(strategy)
+        assert strategy["a"].position == position
+        assert strategy.capital == 1000.0 - 100.0 * position
+        assert strategy.value == 1000.0
+        if algo_name == "rfq":
+            assert len(calls) == i + 1
+            pd.testing.assert_frame_equal(calls[-1], transactions.iloc[due_rows])
+    pd.testing.assert_frame_equal(transactions, original)
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+@pytest.mark.parametrize("timezone", [None, "UTC", "Asia/Tokyo"])
+def test_replayed_transactions_preserve_minimum_boundary(algo_name, timezone):
+    date = pd.Timestamp("2024-01-01", tz=timezone)
+    minimum = pd.Timestamp.min if timezone is None else pd.Timestamp.min.tz_localize("UTC").tz_convert(timezone)
+    transactions = pd.DataFrame(
+        [(minimum, "ignored", 99.0, 100.0), (minimum + pd.Timedelta(1, "ns"), "a", 1.0, 100.0), (date, "a", 2.0, 100.0)],
+        columns=["Date", "Security", "quantity", "price"],
+    ).set_index(["Date", "Security"])
+    calls = []
+
+    def model(rfqs, target):
+        calls.append(rfqs.copy(deep=True))
+        return rfqs.copy()
+
+    algo = algos.ReplayTransactions("orders") if algo_name == "replay" else algos.SimulateRFQTransactions("orders", model)
+    strategy = bt.Strategy("s", children=[bt.Security("a")])
+    strategy.setup(pd.DataFrame({"a": [100.0]}, index=[date]), bidoffer={}, orders=transactions)
+    strategy.adjust(1000.0)
+    strategy.update(date)
+
+    # The existing floor is exclusive: even an invalid security at that boundary is
+    # outside the batch, while the next representable instant and current date trade.
+    assert algo(strategy)
+    assert strategy["a"].position == 3.0
+    assert strategy.capital == 700.0
+    assert strategy.value == 1000.0
+    if algo_name == "rfq":
+        assert len(calls) == 1
+        pd.testing.assert_frame_equal(calls[0], transactions.iloc[[1, 2]])
+
+
+@pytest.mark.parametrize("algo_name", ["replay", "rfq"])
+@pytest.mark.parametrize(
     ("construction", "expected_multiplier"),
     [
         ("absent", 1),
