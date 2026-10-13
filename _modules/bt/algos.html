@@ -3160,7 +3160,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">index</span> <span class="o">=</span> <span class="n">timeline</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
         <span class="n">end</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
         <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">min</span>
+            <span class="c1"># UTC makes the minimum comparable to aware clocks without underflowing</span>
+            <span class="c1"># when their local timezone has a positive offset.</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">min</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="s2">"tzinfo"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span><span class="s2">"UTC"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start</span> <span class="o">=</span> <span class="n">timeline</span><span class="p">[</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
         <span class="c1"># Get the transactions since the last update</span>
@@ -3211,7 +3213,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">index</span> <span class="o">=</span> <span class="n">timeline</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
         <span class="n">end</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
         <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">min</span>
+            <span class="c1"># UTC makes the minimum comparable to aware clocks without underflowing</span>
+            <span class="c1"># when their local timezone has a positive offset.</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">min</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="s2">"tzinfo"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span><span class="s2">"UTC"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start</span> <span class="o">=</span> <span class="n">timeline</span><span class="p">[</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
         <span class="c1"># Get the RFQs since the last update</span>
