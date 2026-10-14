@@ -1196,7 +1196,11 @@ class WeighInvVol(Algo):
     volatility estimate uses its own available returns.
 
     Args:
-        * lookback (DateOffset): lookback period for estimating volatility
+        * lookback (DateOffset or int): volatility estimation window. Defaults
+          to three calendar months. A positive integer counts price rows
+          (N rows give at most N-1 returns), ending at the last row on or before
+          now minus lag. Uses all available rows if fewer than N exist.
+        * lag (DateOffset): offset from now to the window's end (default zero).
 
     Sets:
         * weights
@@ -1208,6 +1212,8 @@ class WeighInvVol(Algo):
 
     def __init__(self, lookback=_DEFAULT_LOOKBACK, lag=_DEFAULT_LAG):
         super().__init__()
+        if isinstance(lookback, (bool, np.bool_)) or (isinstance(lookback, (int, np.integer)) and lookback <= 0):
+            raise ValueError("lookback must be a positive integer when counting price rows")
         self.lookback = lookback
         self.lag = lag
 
@@ -1223,7 +1229,10 @@ class WeighInvVol(Algo):
             return True
 
         t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback : t0, selected]
+        if isinstance(self.lookback, (int, np.integer)):
+            prc = target.universe.loc[:t0, selected].iloc[-int(self.lookback) :]
+        else:
+            prc = target.universe.loc[t0 - self.lookback : t0, selected]
         returns = prc.to_returns()
         # Explicit axis=0 to compute per-column std and avoid FutureWarning
         # from pandas (axis=None will reduce over both axes in a future version)
