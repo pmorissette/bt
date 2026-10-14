@@ -656,6 +656,86 @@ def test_benchmark_random_preserves_cost_model_configuration():
     pd.testing.assert_frame_equal(volatility, original_volatility)
 
 
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_backtest_weight_reports_stay_current_during_run(nested, lazy):
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": [100.0, 120.0, 80.0]}, index=dates)
+    holder = {}
+    observations = []
+
+    class Observe(bt.Algo):
+        def __init__(self, phase):
+            super().__init__()
+            self.phase = phase
+
+        def __call__(self, target):
+            backtest = holder["backtest"]
+            # Paper sleeves run separately; only the real portfolio is being observed.
+            if target.root is not backtest.strategy:
+                return True
+            observations.append(
+                (target.name, self.phase, target.now, backtest.weights, backtest.security_weights)
+            )
+            return True
+
+    def make_backtest(observe):
+        def trading_algos():
+            algos = [
+                bt.algos.RunOnce(),
+                bt.algos.SelectAll(),
+                bt.algos.WeighEqually(),
+                bt.algos.Rebalance(),
+            ]
+            if observe:
+                algos = [Observe("before"), *algos, bt.algos.run_always(Observe("after"))]
+            return algos
+
+        children = ["a"] if lazy else [bt.Security("a")]
+        if nested:
+            children = [bt.Strategy("sleeve", trading_algos(), children=children)]
+        algos = trading_algos()
+        return bt.Backtest(bt.Strategy("root", algos, children=children), data, initial_capital=1000.0)
+
+    observed = make_backtest(True)
+    holder["backtest"] = observed
+    result = bt.run(observed)
+    control = make_backtest(False)
+    bt.run(control)
+
+    # Observing reports must not change trades: 1000 / 100 buys ten shares.
+    pd.testing.assert_frame_equal(observed.positions, control.positions)
+    pd.testing.assert_series_equal(observed.strategy.values, control.strategy.values)
+    np.testing.assert_allclose(observed.strategy.values, [1000.0, 1000.0, 1200.0, 800.0])
+    assert observed.strategy.securities[0].position == 10.0
+    assert len(observations) == (12 if nested else 6)
+    for owner, phase, date, weights, security_weights in observations:
+        expected_dates = observed.dates[:observed.dates.get_loc(date) + 1]
+        pd.testing.assert_index_equal(weights.index, expected_dates)
+        pd.testing.assert_index_equal(security_weights.index, expected_dates)
+        # A parent's stack finishes before its children trade. On the first date,
+        # only the leaf owner's post-rebalance read has exposure: 10*p / (10*p) = 1.
+        before_first_trade = date == dates[0] and (phase == "before" or (nested and owner == "root"))
+        expected_weight = 0.0 if before_first_trade else 1.0
+        component = "root>sleeve>a" if nested else "root>a"
+        if component in weights:
+            assert weights.loc[date, component] == pytest.approx(expected_weight)
+        else:
+            assert expected_weight == 0.0
+        if "a" in security_weights:
+            assert security_weights.loc[date, "a"] == pytest.approx(expected_weight)
+        else:
+            assert expected_weight == 0.0
+
+    pd.testing.assert_frame_equal(observed.weights, control.weights)
+    pd.testing.assert_frame_equal(observed.security_weights, control.security_weights)
+    pd.testing.assert_frame_equal(result.get_weights(), control.weights)
+    pd.testing.assert_frame_equal(result.get_security_weights(), control.security_weights)
+    # Completed reports still reuse the same cached objects through Result delegation.
+    assert result.get_weights() is observed.weights
+    assert result.get_security_weights() is observed.security_weights
+
+
 def test_Results_helper_functions():
 
     names = ["foo", "bar"]
