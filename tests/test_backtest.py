@@ -1507,6 +1507,54 @@ def test_backtest_copies_dynamic_cost_model_setup_hook():
     pd.testing.assert_frame_equal(leaf._paper.data, paper_before)
 
 
+@pytest.mark.parametrize("entry", ["setup", "setup_from_parent"])
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_backtest_repeated_setup_preserves_paper_cost_model(entry, nested, lazy):
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+    leaf = bt.Strategy("leaf", children=["A" if lazy else bt.Security("A")])
+    child = bt.Strategy("branch", children=[leaf]) if nested else leaf
+    backtest = bt.Backtest(
+        bt.Strategy("root", children=[child]), prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.02),
+        volume=prices * 10_000, volatility=prices * 0.0002,
+    )
+    backtest.strategy.setup(backtest.data)
+    backtest.strategy.adjust(1_000.0)
+    backtest.strategy.update(dates[0])
+
+    for repeated in [False, True]:
+        if repeated:
+            if entry == "setup":
+                backtest.strategy.setup(backtest.data)
+            else:
+                backtest.strategy[child.name].setup_from_parent()
+            backtest.strategy.update(dates[0])
+
+        pending = [backtest.strategy]
+        paper_leaves = []
+        while pending:
+            strategy = pending.pop()
+            if strategy.name == "leaf":
+                strategy._create_child_if_needed("A")
+                assert strategy["A"].commission(2.0, 100.0) == pytest.approx(4.0)
+                if strategy.parent is strategy:
+                    paper_leaves.append(strategy)
+            pending.extend(node for node in strategy._childrenv if isinstance(node, bt.core.StrategyBase))
+            if strategy._paper_trade:
+                pending.append(strategy._paper)
+
+        assert len(paper_leaves) == (2 if nested else 1)
+        if repeated:
+            for paper in paper_leaves:
+                before = paper.capital
+                paper.transact(2.0, "A")
+                paper.update(dates[0])
+                assert paper.capital == pytest.approx(before - 204.0)
+                assert paper.fees.sum() == pytest.approx(4.0)
+
+
 def test_backtest_cost_model_runs_and_charges_fees():
     prices, volume, volatility = _impact_universe()
     bkt = bt.Backtest(

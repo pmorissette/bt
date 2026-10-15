@@ -320,10 +320,17 @@ class Backtest:
             result = original_setup(*args, **kwargs)
             strategy = self.strategy
             assert isinstance(strategy, bt.core.StrategyBase)
-            self._wire_strategy_tree(strategy)
+            self._wire_after_setup(strategy)
             return result
 
         self.strategy.setup = _CostModelHook(original_setup, hooked_setup)
+
+    def _wire_after_setup(self, strategy: bt.core.StrategyBase):
+        self._wire_strategy_tree(strategy)
+        # Setup recreates paper trees even when the real tree is already wired.
+        for node in strategy.members:
+            if isinstance(node, bt.core.StrategyBase) and node._paper_trade:
+                self._wire_strategy_tree(node._paper)
 
     def _wire_strategy_tree(self, strategy: bt.core.StrategyBase):
         """Wire direct securities and lazy creation in a strategy tree."""
@@ -379,7 +386,7 @@ class Backtest:
 
         def hooked_setup_from_parent(*args, **kwargs):
             result = original_setup_from_parent(*args, **kwargs)
-            self._wire_nested_strategy(strategy)
+            self._wire_after_setup(strategy)
             return result
 
         strategy.setup_from_parent = _CostModelHook(original_setup_from_parent, hooked_setup_from_parent)
