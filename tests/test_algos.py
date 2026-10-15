@@ -4349,6 +4349,71 @@ def test_update_risk():
     assert not hasattr(c2, "risks")
 
 
+@pytest.mark.parametrize("representation", ["float", "nullable", "duplicate-dates", "duplicate-measures"])
+def test_update_risk_preserves_history_assignment(representation):
+    dates = pd.date_range("2020-01-01", periods=3, tz="US/Eastern")
+    prices = pd.DataFrame(100.0, index=dates, columns=["asset"])
+    root = bt.Strategy("root", children=[bt.Security("asset", multiplier=2)])
+    root.setup(prices, unit_risk={"delta": prices * 0.03})
+    root.adjust(1000)
+    root.update(dates[0])
+    root.transact(2, "asset")
+    root.risk = {"delta": 0.0}
+    index = dates[[0, 0, 2]] if representation == "duplicate-dates" else dates
+    columns = ["delta", "delta"] if representation == "duplicate-measures" else ["delta"]
+    dtype = "Float64" if representation == "nullable" else "float64"
+    root.risks = pd.DataFrame(np.nan, index=index, columns=columns, dtype=dtype)
+    before = root.risks.copy()
+
+    assert algos.UpdateRisk("delta", history=1)(root)
+
+    # Two units, multiplier two, and unit risk three give twelve. Duplicate
+    # labels retain native broadcasting; unobserved rows must stay missing.
+    expected = before.copy()
+    expected.loc[dates[0], "delta"] = 12.0
+    pd.testing.assert_frame_equal(root.risks, expected)
+    assert root.risk["delta"] == 12.0
+    assert not hasattr(root["asset"], "risks")
+
+
+@pytest.mark.parametrize("representation", ["custom-frame", "integer", "tuple", "callable"])
+def test_update_risk_preserves_history_loc_fallback(monkeypatch, representation):
+    class HistoryFrame(pd.DataFrame):
+        @property
+        def loc(self):
+            accesses.append("loc")
+            return super().loc
+
+    accesses = []
+    measure = {"custom-frame": "delta", "integer": 7, "tuple": ("delta", "duration"), "callable": lambda frame: "delta"}[representation]
+    column = "delta" if representation == "callable" else measure
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame(100.0, index=dates, columns=["asset"])
+    root = bt.Strategy("root", children=[bt.Security("asset", multiplier=2)])
+    root.setup(prices, unit_risk={measure: prices * 0.03})
+    root.adjust(1000)
+    root.update(dates[0])
+    root.transact(2, "asset")
+    root.risk = {measure: 0.0}
+    frame_type = HistoryFrame if representation == "custom-frame" else pd.DataFrame
+    # A full hierarchical label exercises loc's supported tuple-key dispatch.
+    columns = pd.MultiIndex.from_tuples([column]) if representation == "tuple" else pd.Index([column])
+    root.risks = frame_type(np.nan, index=dates, columns=columns)
+
+    def forbid_scalar_access(frame):
+        raise AssertionError("Nonstandard histories and measures must retain loc dispatch")
+
+    # Callable labels are evaluated by loc, and custom frames own their indexer.
+    # Neither may be silently reinterpreted as ordinary scalar publication.
+    monkeypatch.setattr(pd.DataFrame, "at", property(forbid_scalar_access))
+    assert algos.UpdateRisk(measure, history=1)(root)
+    assert root.risk[measure] == 12.0
+    assert root.risks.iloc[0, 0] == 12.0
+    assert pd.isna(root.risks.iloc[1, 0])
+    if representation == "custom-frame":
+        assert accesses == ["loc"]
+
+
 def test_update_risk_history_1():
     c1 = bt.Security("c1")
     c2 = bt.Security("c2")

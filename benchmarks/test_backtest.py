@@ -246,3 +246,30 @@ def test_strategy_data(benchmark, prices, completed_strategy):
     result = benchmark(getattr, completed_strategy, "data")
 
     assert result.index[-1] == prices.index[-1]
+
+
+@pytest.mark.benchmark(group="backtest")
+@pytest.mark.parametrize("periods, assets", [(21, 4), (756, 100)])
+@pytest.mark.parametrize("history", [0, 2])
+def test_update_risk_backtest(benchmark, periods, assets, history):
+    dates = pd.bdate_range("2021-01-04", periods=periods)
+    data = pd.DataFrame(100.0, index=dates, columns=[f"asset_{i}" for i in range(assets)])
+    unit_risk = pd.DataFrame(1.0, index=dates, columns=data.columns)
+
+    def run():
+        # Allocate once, but record risk daily even after RunOnce stops trading.
+        risk = bt.algos.run_always(bt.algos.UpdateRisk("delta", history=history))
+        strategy = bt.Strategy("risk-history", [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance(), risk])
+        backtest = bt.Backtest(strategy, data, additional_data={"unit_risk": {"delta": unit_risk}}, integer_positions=False, progress_bar=False)
+        return bt.run(backtest, progress_bar=False)
+
+    strategy = benchmark(run).backtests["risk-history"].strategy
+    # Constant prices and unit risk independently fix values, holdings and exposure.
+    np.testing.assert_allclose(strategy.values.loc[dates], 1_000_000.0)
+    for node in [strategy, *strategy.children.values()]:
+        expected = 10_000.0 if node is strategy else 10_000.0 / assets
+        assert np.isclose(node.risk["delta"], expected)
+        if history:
+            np.testing.assert_allclose(node.risks.loc[dates, "delta"], expected)
+        else:
+            assert not hasattr(node, "risks")

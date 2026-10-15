@@ -2701,7 +2701,13 @@ class UpdateRisk(Algo):
             node.risk[self.measure] = risk
             if set_history:
                 # Idle securities can retain an older clock; risk is calculated at root.now.
-                node.risks.loc[node.root.now, self.measure] = risk
+                # Scalar writes avoid general selection for each tracked node; other
+                # history representations retain their original indexer semantics.
+                history = node.risks
+                if type(history) is pd.DataFrame and isinstance(self.measure, str):
+                    history.at[node.root.now, self.measure] = risk
+                else:
+                    history.loc[node.root.now, self.measure] = risk
         return True
 
 
