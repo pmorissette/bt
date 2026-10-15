@@ -3333,7 +3333,13 @@ window.runMermaid = runMermaid;</script>
             <span class="n">node</span><span class="o">.</span><span class="n">risk</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk</span>
             <span class="k">if</span> <span class="n">set_history</span><span class="p">:</span>
                 <span class="c1"># Idle securities can retain an older clock; risk is calculated at root.now.</span>
-                <span class="n">node</span><span class="o">.</span><span class="n">risks</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk</span>
+                <span class="c1"># Scalar writes avoid general selection for each tracked node; other</span>
+                <span class="c1"># history representations retain their original indexer semantics.</span>
+                <span class="n">history</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">risks</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">history</span><span class="p">)</span> <span class="ow">is</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">history</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">history</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">]</span> <span class="o">=</span> <span class="n">risk</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
 
