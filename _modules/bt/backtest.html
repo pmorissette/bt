@@ -977,7 +977,10 @@ window.runMermaid = runMermaid;</script>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">full_name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">members</span><span class="p">})</span>
                 <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">vals</span>
+            <span class="c1"># has_run is set before trading; only the end-of-loop price capture</span>
+            <span class="c1"># makes this history stable enough to reuse on later reads.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_original_prices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">vals</span>
             <span class="k">return</span> <span class="n">vals</span>
 
     <span class="nd">@property</span>
@@ -1017,8 +1020,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="c1"># save for future use</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sweights</span> <span class="o">=</span> <span class="n">vals</span>
+            <span class="c1"># Live reads must include later trades and newly created securities.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_original_prices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sweights</span> <span class="o">=</span> <span class="n">vals</span>
 
             <span class="k">return</span> <span class="n">vals</span>
 
