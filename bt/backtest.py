@@ -522,7 +522,10 @@ class Backtest:
             else:
                 vals = pd.DataFrame({x.full_name: x.values for x in self.strategy.members})
                 vals = vals.div(self.strategy.values, axis=0)
-            self._weights = vals
+            # has_run is set before trading; only the end-of-loop price capture
+            # makes this history stable enough to reuse on later reads.
+            if self._original_prices is not None:
+                self._weights = vals
             return vals
 
     @property
@@ -562,8 +565,9 @@ class Backtest:
             else:
                 vals = vals.div(self.strategy.values, axis=0)
 
-            # save for future use
-            self._sweights = vals
+            # Live reads must include later trades and newly created securities.
+            if self._original_prices is not None:
+                self._sweights = vals
 
             return vals
 
