@@ -120,6 +120,24 @@ def benchmark_random(backtest, random_strategy, nsim=100):
     return res
 
 
+class _CostModelHook:
+    """Keep Backtest-owned bindings out of copied strategy templates."""
+
+    def __init__(self, original, hooked):
+        self.original = original
+        self.hooked = hooked
+
+    def __call__(self, *args, **kwargs):
+        return self.hooked(*args, **kwargs)
+
+    def __deepcopy__(self, memo):
+        # Functions retain their closures under deepcopy, including the source
+        # Backtest and node. Restore the caller's callable instead: native method
+        # copying rebinds its owner through memo, and a new Backtest can wire its
+        # own market inputs. Paper copies follow the same ownership boundary.
+        return deepcopy(self.original, memo)
+
+
 class Backtest:
     """
     A Backtest combines a Strategy with data to
@@ -302,14 +320,21 @@ class Backtest:
             result = original_setup(*args, **kwargs)
             strategy = self.strategy
             assert isinstance(strategy, bt.core.StrategyBase)
-            self._wire_strategy_tree(strategy)
+            self._wire_after_setup(strategy)
             return result
 
-        self.strategy.setup = hooked_setup
+        self.strategy.setup = _CostModelHook(original_setup, hooked_setup)
+
+    def _wire_after_setup(self, strategy: bt.core.StrategyBase):
+        self._wire_strategy_tree(strategy)
+        # Setup recreates paper trees even when the real tree is already wired.
+        for node in strategy.members:
+            if isinstance(node, bt.core.StrategyBase) and node._paper_trade:
+                self._wire_strategy_tree(node._paper)
 
     def _wire_strategy_tree(self, strategy: bt.core.StrategyBase):
         """Wire direct securities and lazy creation in a strategy tree."""
-        if getattr(strategy, "_cost_model_tree_wired", False):
+        if isinstance(getattr(strategy, "_cost_model_tree_wired", None), _CostModelHook):
             return
 
         original_create = strategy._create_child_if_needed
@@ -334,9 +359,11 @@ class Backtest:
                 self._wire_nested_strategy(node)
             return result
 
-        strategy._add_children = hooked_add
-        strategy._create_child_if_needed = hooked_create
-        strategy._cost_model_tree_wired = True
+        strategy._add_children = _CostModelHook(original_add, hooked_add)
+        strategy._create_child_if_needed = _CostModelHook(original_create, hooked_create)
+        # The marker loses its hook type along with the callable when copied;
+        # a plain boolean would incorrectly suppress wiring in the new owner.
+        strategy._cost_model_tree_wired = strategy._add_children
         for child in strategy._childrenv:
             if isinstance(child, bt.core.SecurityBase):
                 self._wire_security(child)
@@ -344,23 +371,28 @@ class Backtest:
                 self._wire_nested_strategy(child)
 
     def _wire_nested_strategy(self, strategy: bt.core.StrategyBase):
+        # A copied dynamic child becomes part of the initial tree. Restore its
+        # post-setup wiring too, so later setup_from_parent recreates costed paper.
+        self._install_dynamic_strategy_hook(strategy)
         self._wire_strategy_tree(strategy)
         # Nested strategies price themselves through a separate paper tree.
         if strategy._paper_trade:
             self._wire_strategy_tree(strategy._paper)
 
     def _install_dynamic_strategy_hook(self, strategy: bt.core.StrategyBase):
+        if isinstance(strategy.setup_from_parent, _CostModelHook):
+            return
         original_setup_from_parent = strategy.setup_from_parent
 
         def hooked_setup_from_parent(*args, **kwargs):
             result = original_setup_from_parent(*args, **kwargs)
-            self._wire_nested_strategy(strategy)
+            self._wire_after_setup(strategy)
             return result
 
-        strategy.setup_from_parent = hooked_setup_from_parent
+        strategy.setup_from_parent = _CostModelHook(original_setup_from_parent, hooked_setup_from_parent)
 
     def _wire_security(self, security):
-        if getattr(security, "_cost_model_wired", False):
+        if isinstance(getattr(security, "_cost_model_wired", None), _CostModelHook):
             return
         cost_model = self.cost_model
         V_df = self.volume
@@ -371,8 +403,8 @@ class Backtest:
             name = security.name
             return cost_model.cost(q, p, V_df.at[dt, name], S_df.at[dt, name])
 
-        security.commission = commission
-        security._cost_model_wired = True
+        security.commission = _CostModelHook(security.commission, commission)
+        security._cost_model_wired = security.commission
 
     def _process_data(self, data, additional_data):
         # add virtual row at t0-1day with NaNs
