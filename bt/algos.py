@@ -1230,7 +1230,7 @@ class WeighInvVol(Algo):
 
         t0 = target.now - self.lag
         if isinstance(self.lookback, (int, np.integer)):
-            prc = target.universe.loc[:t0, selected].iloc[-int(self.lookback) :]
+            prc = target.universe.loc[:t0].iloc[-int(self.lookback) :].loc[:, selected]
         else:
             prc = target.universe.loc[t0 - self.lookback : t0, selected]
         returns = prc.to_returns()
