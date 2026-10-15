@@ -656,6 +656,86 @@ def test_benchmark_random_preserves_cost_model_configuration():
     pd.testing.assert_frame_equal(volatility, original_volatility)
 
 
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_backtest_weight_reports_stay_current_during_run(nested, lazy):
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": [100.0, 120.0, 80.0]}, index=dates)
+    holder = {}
+    observations = []
+
+    class Observe(bt.Algo):
+        def __init__(self, phase):
+            super().__init__()
+            self.phase = phase
+
+        def __call__(self, target):
+            backtest = holder["backtest"]
+            # Paper sleeves run separately; only the real portfolio is being observed.
+            if target.root is not backtest.strategy:
+                return True
+            observations.append(
+                (target.name, self.phase, target.now, backtest.weights, backtest.security_weights)
+            )
+            return True
+
+    def make_backtest(observe):
+        def trading_algos():
+            algos = [
+                bt.algos.RunOnce(),
+                bt.algos.SelectAll(),
+                bt.algos.WeighEqually(),
+                bt.algos.Rebalance(),
+            ]
+            if observe:
+                algos = [Observe("before"), *algos, bt.algos.run_always(Observe("after"))]
+            return algos
+
+        children = ["a"] if lazy else [bt.Security("a")]
+        if nested:
+            children = [bt.Strategy("sleeve", trading_algos(), children=children)]
+        algos = trading_algos()
+        return bt.Backtest(bt.Strategy("root", algos, children=children), data, initial_capital=1000.0)
+
+    observed = make_backtest(True)
+    holder["backtest"] = observed
+    result = bt.run(observed)
+    control = make_backtest(False)
+    bt.run(control)
+
+    # Observing reports must not change trades: 1000 / 100 buys ten shares.
+    pd.testing.assert_frame_equal(observed.positions, control.positions)
+    pd.testing.assert_series_equal(observed.strategy.values, control.strategy.values)
+    np.testing.assert_allclose(observed.strategy.values, [1000.0, 1000.0, 1200.0, 800.0])
+    assert observed.strategy.securities[0].position == 10.0
+    assert len(observations) == (12 if nested else 6)
+    for owner, phase, date, weights, security_weights in observations:
+        expected_dates = observed.dates[:observed.dates.get_loc(date) + 1]
+        pd.testing.assert_index_equal(weights.index, expected_dates)
+        pd.testing.assert_index_equal(security_weights.index, expected_dates)
+        # A parent's stack finishes before its children trade. On the first date,
+        # only the leaf owner's post-rebalance read has exposure: 10*p / (10*p) = 1.
+        before_first_trade = date == dates[0] and (phase == "before" or (nested and owner == "root"))
+        expected_weight = 0.0 if before_first_trade else 1.0
+        component = "root>sleeve>a" if nested else "root>a"
+        if component in weights:
+            assert weights.loc[date, component] == pytest.approx(expected_weight)
+        else:
+            assert expected_weight == 0.0
+        if "a" in security_weights:
+            assert security_weights.loc[date, "a"] == pytest.approx(expected_weight)
+        else:
+            assert expected_weight == 0.0
+
+    pd.testing.assert_frame_equal(observed.weights, control.weights)
+    pd.testing.assert_frame_equal(observed.security_weights, control.security_weights)
+    pd.testing.assert_frame_equal(result.get_weights(), control.weights)
+    pd.testing.assert_frame_equal(result.get_security_weights(), control.security_weights)
+    # Completed reports still reuse the same cached objects through Result delegation.
+    assert result.get_weights() is observed.weights
+    assert result.get_security_weights() is observed.security_weights
+
+
 def test_Results_helper_functions():
 
     names = ["foo", "bar"]
@@ -1348,6 +1428,211 @@ def test_backtest_integer_volume_matches_float_volume(cost_model_type):
     # Cost-model accounting must match for numerically equivalent volume inputs.
     np.testing.assert_allclose(integer_backtest.strategy.prices, float_backtest.strategy.prices)
     np.testing.assert_allclose(integer_backtest.strategy.fees, float_backtest.strategy.fees)
+
+
+@pytest.mark.parametrize("source_run", [False, True], ids=["unrun", "completed"])
+@pytest.mark.parametrize("cost_model", [False, True], ids=["callable", "cost-model"])
+@pytest.mark.parametrize("tree", ["flat", "nested", "nested-lazy"])
+def test_backtest_copies_cost_model_strategy_without_changing_source(source_run, cost_model, tree):
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+
+    def trade(target):
+        # Use the current owner's dates so this logic is reusable on a new universe.
+        if target.now == target._original_data.index[1]:
+            target.transact(2.0, "A")
+        elif target.now == target._original_data.index[-1]:
+            target.close("A")
+        return True
+
+    def fund(target):
+        if target.now == target._original_data.index[1]:
+            target.allocate(1_000.0, "leaf")
+        return True
+
+    security = "A" if tree == "nested-lazy" else bt.Security("A")
+    leaf = bt.Strategy("leaf", [trade], children=[security])
+    strategy = leaf if tree == "flat" else bt.Strategy("root", [fund], children=[leaf])
+    source = bt.Backtest(
+        strategy, prices, initial_capital=10_000.0,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.01),
+        volume=prices * 10_000, volatility=prices * 0.0002,
+    )
+    source.strategy.perm["observer"] = {"labels": ["source"]}
+    if source_run:
+        source.run()
+    source_setup = source.strategy.setup
+    source_nodes = source.strategy.members[:]
+    if source_run and tree != "flat":
+        source_nodes += source.strategy["leaf"]._paper.members
+    snapshots = [node.data.copy(deep=True) for node in source_nodes] if source_run else []
+
+    new_prices = prices.set_axis(dates + pd.DateOffset(years=1))
+    kwargs = {"commissions": lambda quantity, price: abs(quantity) * price * 0.02}
+    if cost_model:
+        kwargs = {
+            "commissions": bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.02),
+            "volume": new_prices * 20_000, "volatility": new_prices * 0.0003,
+        }
+    copied = bt.Backtest(source.strategy, new_prices, initial_capital=10_000.0, **kwargs)
+    copied.run()
+
+    copied_leaf = copied.strategy if tree == "flat" else copied.strategy["leaf"]
+    # Two shares at 100 cost 4 per trade at the destination's 2% rate, not 2
+    # at the source's 1% rate. Buy and liquidation independently total 8.
+    assert copied_leaf.fees.sum() == pytest.approx(8.0)
+    assert copied_leaf["A"].commission(2.0, 100.0) == pytest.approx(4.0)
+    if tree != "flat":
+        assert copied_leaf._paper.fees.sum() == pytest.approx(8.0)
+    assert copied.strategy.data.index.equals(copied.dates)
+    assert copied_leaf["A"].position == 0
+
+    # Active mutations expose shared ownership that passive equality can hide.
+    copied.strategy.perm["observer"]["labels"][0] = "copy"
+    copied.strategy.data.iloc[0, 0] = -1.0
+    copied.strategy.data.index = copied.strategy.data.index + pd.DateOffset(days=1)
+    assert source.strategy.perm["observer"] == {"labels": ["source"]}
+    assert source.strategy.setup is source_setup
+    if source_run:
+        for node, before in zip(source_nodes, snapshots):
+            pd.testing.assert_frame_equal(node.data, before)
+    else:
+        assert not hasattr(source.strategy, "_setup_kwargs")
+
+
+def test_backtest_copied_cost_model_preserves_caller_hooks():
+    class CustomStrategy(bt.Strategy):
+        def setup(self, universe, **kwargs):
+            self.setup_calls = getattr(self, "setup_calls", 0) + 1
+            return super().setup(universe, **kwargs)
+
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+    security = bt.Security("A")
+    security.commission = lambda quantity, price: 13.0
+    strategy = CustomStrategy("s", children=[security])
+    strategy.set_commissions(lambda quantity, price: 17.0)
+    source = bt.Backtest(
+        strategy, prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.01),
+        volume=prices * 10_000, volatility=prices * 0.0002,
+    )
+    source.strategy.setup(source.data)
+    source.strategy.update(dates[0])
+    before = source.strategy.data.copy(deep=True)
+    copied = bt.Backtest(source.strategy, prices)
+    copied.strategy.setup(copied.data)
+
+    # Omitting commissions preserves the template's original caller callables;
+    # only the source Backtest's market-data-dependent binding is discarded.
+    assert copied.strategy.setup_calls == 2
+    assert source.strategy.setup_calls == 1
+    assert copied.strategy.commission_fn(1.0, 100.0) == 17.0
+    assert copied.strategy["A"].commission(1.0, 100.0) == 13.0
+    assert source.strategy["A"].commission(1.0, 100.0) == 1.0
+    pd.testing.assert_frame_equal(source.strategy.data, before)
+
+    # Existing repeated wiring must not overwrite a later caller fee override.
+    source.strategy["A"].commission = lambda quantity, price: 19.0
+    source._wire_strategy_tree(source.strategy)
+    source._wire_security(source.strategy["A"])
+    assert source.strategy["A"].commission(1.0, 100.0) == 19.0
+
+
+def test_backtest_copies_dynamic_cost_model_setup_hook():
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+    source = bt.Backtest(
+        bt.Strategy("root"), prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.01),
+        volume=prices * 10_000, volatility=prices * 0.0002,
+    )
+    source.strategy.setup(source.data)
+    leaf = bt.Strategy("leaf", children=["A"], parent=source.strategy)
+    leaf.setup_from_parent()
+    original_setup = leaf.setup_from_parent
+    before = leaf.data.copy(deep=True)
+    paper_before = leaf._paper.data.copy(deep=True)
+
+    new_prices = prices.set_axis(dates + pd.DateOffset(years=1))
+    copied = bt.Backtest(
+        source.strategy, new_prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.02),
+        volume=new_prices * 20_000, volatility=new_prices * 0.0003,
+    )
+    copied.strategy.setup(copied.data)
+    copied_leaf = copied.strategy["leaf"]
+    copied_setup = copied_leaf.setup_from_parent
+    copied._wire_nested_strategy(copied_leaf)
+    assert copied_leaf.setup_from_parent is copied_setup
+    # Calling the copied dynamic setup entry must operate on its new parent,
+    # never replace the source leaf's real or paper history.
+    copied_leaf.setup_from_parent()
+    assert copied_leaf.data.index.equals(copied.dates)
+    assert copied_leaf._paper.data.index.equals(copied.dates)
+    copied.strategy.adjust(1_000.0)
+    copied.strategy.update(new_prices.index[0])
+    copied.strategy.allocate(1_000.0, "leaf")
+    copied_leaf.transact(2.0, "A")
+    copied_leaf._paper.transact(2.0, "A")
+    # Recreating a paper tree must retain the destination's 2% cost binding,
+    # not silently fall back to the default zero commission.
+    assert copied_leaf["A"].commission(2.0, 100.0) == pytest.approx(4.0)
+    assert copied_leaf._paper["A"].commission(2.0, 100.0) == pytest.approx(4.0)
+    copied.strategy.update(new_prices.index[0])
+    assert copied_leaf.fees.sum() == pytest.approx(4.0)
+    assert copied_leaf._paper.fees.sum() == pytest.approx(4.0)
+    assert leaf.setup_from_parent is original_setup
+    pd.testing.assert_frame_equal(leaf.data, before)
+    pd.testing.assert_frame_equal(leaf._paper.data, paper_before)
+
+
+@pytest.mark.parametrize("entry", ["setup", "setup_from_parent"])
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_backtest_repeated_setup_preserves_paper_cost_model(entry, nested, lazy):
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"A": 100.0}, index=dates)
+    leaf = bt.Strategy("leaf", children=["A" if lazy else bt.Security("A")])
+    child = bt.Strategy("branch", children=[leaf]) if nested else leaf
+    backtest = bt.Backtest(
+        bt.Strategy("root", children=[child]), prices,
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0.02),
+        volume=prices * 10_000, volatility=prices * 0.0002,
+    )
+    backtest.strategy.setup(backtest.data)
+    backtest.strategy.adjust(1_000.0)
+    backtest.strategy.update(dates[0])
+
+    for repeated in [False, True]:
+        if repeated:
+            if entry == "setup":
+                backtest.strategy.setup(backtest.data)
+            else:
+                backtest.strategy[child.name].setup_from_parent()
+            backtest.strategy.update(dates[0])
+
+        pending = [backtest.strategy]
+        paper_leaves = []
+        while pending:
+            strategy = pending.pop()
+            if strategy.name == "leaf":
+                strategy._create_child_if_needed("A")
+                assert strategy["A"].commission(2.0, 100.0) == pytest.approx(4.0)
+                if strategy.parent is strategy:
+                    paper_leaves.append(strategy)
+            pending.extend(node for node in strategy._childrenv if isinstance(node, bt.core.StrategyBase))
+            if strategy._paper_trade:
+                pending.append(strategy._paper)
+
+        assert len(paper_leaves) == (2 if nested else 1)
+        if repeated:
+            for paper in paper_leaves:
+                before = paper.capital
+                paper.transact(2.0, "A")
+                paper.update(dates[0])
+                assert paper.capital == pytest.approx(before - 204.0)
+                assert paper.fees.sum() == pytest.approx(4.0)
 
 
 def test_backtest_cost_model_runs_and_charges_fees():
