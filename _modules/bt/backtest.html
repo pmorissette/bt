@@ -570,6 +570,24 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">_CostModelHook</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Keep Backtest-owned bindings out of copied strategy templates."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">original</span><span class="p">,</span> <span class="n">hooked</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="n">original</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hooked</span> <span class="o">=</span> <span class="n">hooked</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hooked</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
+        <span class="c1"># Functions retain their closures under deepcopy, including the source</span>
+        <span class="c1"># Backtest and node. Restore the caller's callable instead: native method</span>
+        <span class="c1"># copying rebinds its owner through memo, and a new Backtest can wire its</span>
+        <span class="c1"># own market inputs. Paper copies follow the same ownership boundary.</span>
+        <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="Backtest">
 <a class="viewcode-back" href="../../docs/source/overview.html#bt.backtest.Backtest">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Backtest</span><span class="p">:</span>
@@ -754,14 +772,21 @@ window.runMermaid = runMermaid;</script>
             <span class="n">result</span> <span class="o">=</span> <span class="n">original_setup</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">strategy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wire_after_setup</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">setup</span> <span class="o">=</span> <span class="n">hooked_setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">setup</span> <span class="o">=</span> <span class="n">_CostModelHook</span><span class="p">(</span><span class="n">original_setup</span><span class="p">,</span> <span class="n">hooked_setup</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wire_after_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+        <span class="c1"># Setup recreates paper trees even when the real tree is already wired.</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">strategy</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">)</span> <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">_paper_trade</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">_paper</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_wire_strategy_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Wire direct securities and lazy creation in a strategy tree."""</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="s2">"_cost_model_tree_wired"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="s2">"_cost_model_tree_wired"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">_CostModelHook</span><span class="p">):</span>
             <span class="k">return</span>
 
         <span class="n">original_create</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_create_child_if_needed</span>
@@ -786,9 +811,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_wire_nested_strategy</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span>
 
-        <span class="n">strategy</span><span class="o">.</span><span class="n">_add_children</span> <span class="o">=</span> <span class="n">hooked_add</span>
-        <span class="n">strategy</span><span class="o">.</span><span class="n">_create_child_if_needed</span> <span class="o">=</span> <span class="n">hooked_create</span>
-        <span class="n">strategy</span><span class="o">.</span><span class="n">_cost_model_tree_wired</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">strategy</span><span class="o">.</span><span class="n">_add_children</span> <span class="o">=</span> <span class="n">_CostModelHook</span><span class="p">(</span><span class="n">original_add</span><span class="p">,</span> <span class="n">hooked_add</span><span class="p">)</span>
+        <span class="n">strategy</span><span class="o">.</span><span class="n">_create_child_if_needed</span> <span class="o">=</span> <span class="n">_CostModelHook</span><span class="p">(</span><span class="n">original_create</span><span class="p">,</span> <span class="n">hooked_create</span><span class="p">)</span>
+        <span class="c1"># The marker loses its hook type along with the callable when copied;</span>
+        <span class="c1"># a plain boolean would incorrectly suppress wiring in the new owner.</span>
+        <span class="n">strategy</span><span class="o">.</span><span class="n">_cost_model_tree_wired</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_add_children</span>
         <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_childrenv</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">SecurityBase</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_wire_security</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
@@ -796,23 +823,28 @@ window.runMermaid = runMermaid;</script>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_wire_nested_strategy</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_wire_nested_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+        <span class="c1"># A copied dynamic child becomes part of the initial tree. Restore its</span>
+        <span class="c1"># post-setup wiring too, so later setup_from_parent recreates costed paper.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_install_dynamic_strategy_hook</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
         <span class="c1"># Nested strategies price themselves through a separate paper tree.</span>
         <span class="k">if</span> <span class="n">strategy</span><span class="o">.</span><span class="n">_paper_trade</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_wire_strategy_tree</span><span class="p">(</span><span class="n">strategy</span><span class="o">.</span><span class="n">_paper</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_install_dynamic_strategy_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">bt</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">StrategyBase</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strategy</span><span class="o">.</span><span class="n">setup_from_parent</span><span class="p">,</span> <span class="n">_CostModelHook</span><span class="p">):</span>
+            <span class="k">return</span>
         <span class="n">original_setup_from_parent</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">setup_from_parent</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">hooked_setup_from_parent</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">original_setup_from_parent</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_wire_nested_strategy</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wire_after_setup</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span>
 
-        <span class="n">strategy</span><span class="o">.</span><span class="n">setup_from_parent</span> <span class="o">=</span> <span class="n">hooked_setup_from_parent</span>
+        <span class="n">strategy</span><span class="o">.</span><span class="n">setup_from_parent</span> <span class="o">=</span> <span class="n">_CostModelHook</span><span class="p">(</span><span class="n">original_setup_from_parent</span><span class="p">,</span> <span class="n">hooked_setup_from_parent</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_wire_security</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">security</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">security</span><span class="p">,</span> <span class="s2">"_cost_model_wired"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">security</span><span class="p">,</span> <span class="s2">"_cost_model_wired"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">_CostModelHook</span><span class="p">):</span>
             <span class="k">return</span>
         <span class="n">cost_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_model</span>
         <span class="n">V_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume</span>
@@ -823,8 +855,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">name</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">name</span>
             <span class="k">return</span> <span class="n">cost_model</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">V_df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">dt</span><span class="p">,</span> <span class="n">name</span><span class="p">],</span> <span class="n">S_df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">dt</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span>
 
-        <span class="n">security</span><span class="o">.</span><span class="n">commission</span> <span class="o">=</span> <span class="n">commission</span>
-        <span class="n">security</span><span class="o">.</span><span class="n">_cost_model_wired</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">security</span><span class="o">.</span><span class="n">commission</span> <span class="o">=</span> <span class="n">_CostModelHook</span><span class="p">(</span><span class="n">security</span><span class="o">.</span><span class="n">commission</span><span class="p">,</span> <span class="n">commission</span><span class="p">)</span>
+        <span class="n">security</span><span class="o">.</span><span class="n">_cost_model_wired</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">commission</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_process_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">):</span>
         <span class="c1"># add virtual row at t0-1day with NaNs</span>
