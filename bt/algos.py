@@ -1619,13 +1619,14 @@ class TargetVol(Algo):
 
         vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
 
+        # Series iteration yields values; target lookup and scaling require labels.
         if isinstance(self.target_volatility, (float, int)):
-            target_volatility = {k: self.target_volatility for k in target.temp["weights"]}
+            target_volatility = {k: self.target_volatility for k in selected}
         else:
             target_volatility = self.target_volatility
 
         # A target mapping may intentionally omit some or all current weights.
-        applicable_target_volatilities: list[float] = [target_volatility[k] for k in target.temp["weights"] if k in target_volatility]
+        applicable_target_volatilities: list[float] = [target_volatility[k] for k in selected if k in target_volatility]
         if not applicable_target_volatilities:
             return True
 
@@ -1641,7 +1642,7 @@ class TargetVol(Algo):
                 raise ValueError("Cannot target a non-zero volatility from a zero-volatility portfolio")
             return True
 
-        for k in target.temp["weights"]:
+        for k in selected:
             if k in target_volatility:
                 target.temp["weights"][k] = target.temp["weights"][k] * target_volatility[k] / vol
 
