@@ -1445,7 +1445,13 @@ are proportional to the inverse of their volatility. Each asset’s
 volatility estimate uses its own available returns.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>lookback</strong> (<em>*</em>) – lookback period for estimating volatility</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lookback</strong> (<em>*</em>) – volatility estimation window. Defaults
+to three calendar months. A positive integer counts price rows
+(N rows give at most N-1 returns), ending at the last row on or before
+now minus lag. Uses all available rows if fewer than N exist.</p></li>
+<li><p><strong>lag</strong> (<em>*</em>) – offset from now to the window’s end (default zero).</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="simple">

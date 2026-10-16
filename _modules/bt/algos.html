@@ -1759,7 +1759,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    volatility estimate uses its own available returns.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        * lookback (DateOffset): lookback period for estimating volatility</span>
+<span class="sd">        * lookback (DateOffset or int): volatility estimation window. Defaults</span>
+<span class="sd">          to three calendar months. A positive integer counts price rows</span>
+<span class="sd">          (N rows give at most N-1 returns), ending at the last row on or before</span>
+<span class="sd">          now minus lag. Uses all available rows if fewer than N exist.</span>
+<span class="sd">        * lag (DateOffset): offset from now to the window's end (default zero).</span>
 
 <span class="sd">    Sets:</span>
 <span class="sd">        * weights</span>
@@ -1771,6 +1775,8 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookback</span><span class="o">=</span><span class="n">_DEFAULT_LOOKBACK</span><span class="p">,</span> <span class="n">lag</span><span class="o">=</span><span class="n">_DEFAULT_LAG</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lookback</span><span class="p">,</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">lookback</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">and</span> <span class="n">lookback</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"lookback must be a positive integer when counting price rows"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lag</span> <span class="o">=</span> <span class="n">lag</span>
 
@@ -1786,7 +1792,10 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="kc">True</span>
 
         <span class="n">t0</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lag</span>
-        <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="p">:</span> <span class="n">t0</span><span class="p">,</span> <span class="n">selected</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+            <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">t0</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lookback</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">selected</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="p">:</span> <span class="n">t0</span><span class="p">,</span> <span class="n">selected</span><span class="p">]</span>
         <span class="n">returns</span> <span class="o">=</span> <span class="n">prc</span><span class="o">.</span><span class="n">to_returns</span><span class="p">()</span>
         <span class="c1"># Explicit axis=0 to compute per-column std and avoid FutureWarning</span>
         <span class="c1"># from pandas (axis=None will reduce over both axes in a future version)</span>

@@ -122,6 +122,19 @@ the “sets” and the “requires”. See the docstrings of
 <a class="reference internal" href="overview.html#bt.algos.WeighEqually" title="bt.algos.WeighEqually"><code class="xref py py-class docutils literal notranslate"><span class="pre">bt.algos.WeighEqually</span></code></a> for an example.</p>
 </div>
 </section>
+<section id="inverse-volatility-lookbacks">
+<h2>Inverse-volatility lookbacks<a class="headerlink" href="#inverse-volatility-lookbacks" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="overview.html#bt.algos.WeighInvVol" title="bt.algos.WeighInvVol"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeighInvVol</span></code></a> accepts either a calendar window
+(the default is <code class="docutils literal notranslate"><span class="pre">pd.DateOffset(months=3)</span></code>) or a positive integer counting price
+rows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">WeighInvVol</span><span class="p">(</span><span class="n">lookback</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">lag</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This uses the last 21 price rows on or before yesterday, giving up to 20 returns
+per asset. Weekends and holidays without rows do not count toward the lookback.
+If fewer rows are available, it uses that shorter history. The lag remains a
+<code class="docutils literal notranslate"><span class="pre">DateOffset</span></code>; calendar lookbacks keep their existing behavior.</p>
+</section>
 <section id="implementation">
 <h2>Implementation<a class="headerlink" href="#implementation" title="Link to this heading">¶</a></h2>
 <p>In most cases, Algos must preserve some kind of state. In this case, it is
@@ -267,6 +280,7 @@ can be added by placing those algos at the head of the relevant stack.</p>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Algorithms</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#data-passing">Data Passing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inverse-volatility-lookbacks">Inverse-volatility lookbacks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a></li>
 </ul>
