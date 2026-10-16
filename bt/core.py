@@ -21,6 +21,14 @@ def is_zero(x):
     return abs(x) < TOL
 
 
+def _carry_observation(series, inow):
+    """Use faster scalar indexing while retaining custom iloc and invalid-index behavior."""
+    # Keep integer subclasses' comparison hooks on the native iloc path.
+    if type(series) is pd.Series and type(inow) is int and -len(series) <= inow < len(series):
+        return series.iat[inow]
+    return series.iloc[inow]
+
+
 class Node:
     """
     The Node is the main building block in bt's tree structure design.
@@ -1995,10 +2003,10 @@ class CouponPayingSecurity(FixedIncomeSecurity):
     def _holding_cost_for_update(self, date, inow):
         """Return the applicable finite holding cost without changing state."""
         if self._position > 0 and self._cost_long is not None:
-            raw_cost = self._cost_long.iloc[inow]
+            raw_cost = _carry_observation(self._cost_long, inow)
             has_holding_cost = True
         elif self._position < 0 and self._cost_short is not None:
-            raw_cost = self._cost_short.iloc[inow]
+            raw_cost = _carry_observation(self._cost_short, inow)
             has_holding_cost = True
         else:
             has_holding_cost = False
@@ -2029,7 +2037,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
             return 0.0
 
         try:
-            coupon = float(self._coupons.iloc[inow])
+            coupon = float(_carry_observation(self._coupons, inow))
         except (TypeError, ValueError):
             raise ValueError(f"Coupon payment must be finite for security {self.name} on {date}. Cannot update node value.") from None
         if not math.isfinite(coupon):

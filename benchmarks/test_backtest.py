@@ -299,3 +299,18 @@ def test_update_risk_backtest(benchmark, periods, assets, history):
             np.testing.assert_allclose(node.risks.loc[dates, "delta"], expected)
         else:
             assert not hasattr(node, "risks")
+
+
+@pytest.mark.benchmark(group="backtest")
+def test_scalar_carry_observation_backtest(benchmark):
+    # One funded bond portfolio exercises daily carry, including validation rereads.
+    dates = pd.bdate_range("2021-01-04", periods=756)
+    rng = np.random.default_rng(20261013)
+    data = pd.DataFrame(100.0 * np.exp(rng.normal(0.0001, 0.007, (756, 50)).cumsum(axis=0)), index=dates, columns=[f"bond_{i}" for i in range(50)])
+    additional = {"coupons": data * 0.0 + 0.01, "cost_long": data * 0.0 + 0.002, "notional": pd.Series(1_000_000.0, index=dates)}
+    result = benchmark(run_fixed_income_backtest, data, additional, True)
+    strategy = result.backtests["fixed-income"].strategy
+    for security in strategy.securities:
+        positions = security.positions
+        np.testing.assert_allclose(security.coupons, positions * 0.01)
+        np.testing.assert_allclose(security.holding_costs, positions.abs() * 0.002)
