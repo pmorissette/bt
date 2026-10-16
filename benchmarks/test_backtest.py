@@ -248,6 +248,32 @@ def test_strategy_data(benchmark, prices, completed_strategy):
     assert result.index[-1] == prices.index[-1]
 
 
+@pytest.mark.benchmark(group="inverse-volatility")
+@pytest.mark.parametrize("periods", [252, 20_000])
+def test_weigh_inv_vol_bar_lookback(benchmark, periods):
+    rng = np.random.default_rng(42)
+    returns = rng.normal(0.0, 0.01, size=(periods, 200))
+    prices = pd.DataFrame(
+        100.0 * np.cumprod(1.0 + returns, axis=0),
+        index=pd.bdate_range("1940-01-01", periods=periods),
+        columns=[f"asset_{i}" for i in range(200)],
+    )
+    # Irregular column selection exposes copies made before limiting the rows.
+    selected = np.sort(rng.choice(200, 20, replace=False))
+    strategy = bt.Strategy("inverse-volatility")
+    strategy.setup(prices)
+    strategy.update(prices.index[-1])
+    strategy.temp["selected"] = list(prices.columns[selected])
+    algo = bt.algos.WeighInvVol(lookback=21)
+
+    assert benchmark(algo, strategy)
+
+    # Twenty-one prices contain the final twenty independently generated returns.
+    expected = 1.0 / returns[-20:, selected].std(axis=0, ddof=1)
+    expected /= expected.sum()
+    np.testing.assert_allclose(strategy.temp["weights"].to_numpy(), expected)
+
+
 @pytest.mark.benchmark(group="backtest")
 @pytest.mark.parametrize("periods, assets", [(21, 4), (756, 100)])
 @pytest.mark.parametrize("history", [0, 2])

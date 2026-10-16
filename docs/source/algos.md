@@ -95,6 +95,21 @@ the "sets" and the "requires". See the docstrings of
 {py:class}`bt.algos.WeighEqually` for an example.
 :::
 
+## Inverse-volatility lookbacks
+
+{py:class}`WeighInvVol <bt.algos.WeighInvVol>` accepts either a calendar window
+(the default is `pd.DateOffset(months=3)`) or a positive integer counting price
+rows:
+
+```python
+bt.algos.WeighInvVol(lookback=21, lag=pd.DateOffset(days=1))
+```
+
+This uses the last 21 price rows on or before yesterday, giving up to 20 returns
+per asset. Weekends and holidays without rows do not count toward the lookback.
+If fewer rows are available, it uses that shorter history. The lag remains a
+`DateOffset`; calendar lookbacks keep their existing behavior.
+
 ## Implementation
 
 In most cases, Algos must preserve some kind of state. In this case, it is

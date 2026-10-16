@@ -2095,6 +2095,101 @@ def test_weigh_inv_vol():
     assert weights["c2"] == pytest.approx(0.980, 3)
 
 
+def _make_inv_vol_bar_prices() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "A": [50, 100, 110, 99, 108.9, 98.01, 999, 9999],
+            "B": [500, 100, 140, 98, 99.96, 97.9608, 777, 888],
+        },
+        index=pd.to_datetime(
+            [
+                "2023-12-22",
+                "2023-12-25",
+                "2023-12-26",
+                "2023-12-27",
+                "2023-12-28",
+                "2023-12-29",
+                "2024-01-02",
+                "2024-01-03",
+            ]
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "lookback, return_samples",
+    [
+        (5, [[0.1, -0.1, 0.1, -0.1], [0.4, -0.3, 0.02, -0.02]]),
+        (np.int64(5), [[0.1, -0.1, 0.1, -0.1], [0.4, -0.3, 0.02, -0.02]]),
+        (np.uint64(5), [[0.1, -0.1, 0.1, -0.1], [0.4, -0.3, 0.02, -0.02]]),
+        (pd.DateOffset(days=5), [[0.1, -0.1], [0.02, -0.02]]),
+    ],
+)
+def test_weigh_inv_vol_lagged_lookback_reaches_rebalance(lookback, return_samples):
+    prices = _make_inv_vol_bar_prices()
+    date = pd.Timestamp("2024-01-02")
+    strategy = bt.Strategy(
+        "s",
+        [
+            algos.RunOnDate(date),
+            algos.SelectAll(),
+            algos.WeighInvVol(lookback=lookback, lag=pd.DateOffset(days=1)),
+            algos.Rebalance(),
+        ],
+    )
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        initial_capital=1_000_000,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    backtest.run()
+
+    # The Jan 1 cutoff is a holiday: five rows use Dec 25-29, five days Dec 27-29.
+    expected = 1.0 / np.array([np.std(sample, ddof=1) for sample in return_samples])
+    expected /= expected.sum()
+    np.testing.assert_allclose(backtest.security_weights.loc[date, ["A", "B"]], expected)
+    np.testing.assert_allclose(
+        [backtest.strategy[name].positions.loc[date] for name in ("A", "B")],
+        expected * 1_000_000 / prices.loc[date, ["A", "B"]].to_numpy(),
+    )
+
+
+def test_weigh_inv_vol_bar_lookback_uses_short_available_history():
+    prices = _make_inv_vol_bar_prices().iloc[2:]
+    strategy = bt.Strategy("s")
+    strategy.setup(prices)
+    strategy.update(pd.Timestamp("2024-01-02"))
+    strategy.temp["selected"] = ["A", "B"]
+
+    assert algos.WeighInvVol(lookback=10, lag=pd.DateOffset(days=1))(strategy)
+
+    # Only Dec 26-29 are available before the cutoff.
+    samples = [[-0.1, 0.1, -0.1], [-0.3, 0.02, -0.02]]
+    expected = 1.0 / np.array([np.std(sample, ddof=1) for sample in samples])
+    expected /= expected.sum()
+    np.testing.assert_allclose(strategy.temp["weights"].loc[["A", "B"]], expected)
+
+
+@pytest.mark.parametrize("selected, expected", [([], {}), (["A"], {"A": 1.0}), (["A", "B"], {})])
+def test_weigh_inv_vol_one_bar_and_selection_shortcuts(selected, expected):
+    prices = _make_inv_vol_bar_prices()
+    strategy = bt.Strategy("s")
+    strategy.setup(prices)
+    strategy.update(prices.index[-1])
+    strategy.temp["selected"] = selected
+
+    assert algos.WeighInvVol(lookback=1)(strategy)
+    assert dict(strategy.temp["weights"]) == expected
+
+
+@pytest.mark.parametrize("lookback", [True, False, np.bool_(True), np.bool_(False), 0, -1, np.int64(0), np.int64(-2)])
+def test_weigh_inv_vol_rejects_invalid_bar_counts(lookback):
+    with pytest.raises(ValueError, match="positive integer"):
+        algos.WeighInvVol(lookback=lookback)
+
+
 def _make_inv_vol_missing_data() -> pd.DataFrame:
     dates = pd.date_range("2020-01-01", periods=9)
     returns = pd.DataFrame(
@@ -2115,14 +2210,15 @@ def _make_inv_vol_missing_data() -> pd.DataFrame:
 
 
 @pytest.mark.parametrize("dtype", ["float64", "Float64"])
-def test_weigh_inv_vol_missing_data_is_column_local(dtype: str):
+@pytest.mark.parametrize("lookback", [pd.DateOffset(days=20), 9])
+def test_weigh_inv_vol_missing_data_is_column_local(dtype: str, lookback):
     prices = _make_inv_vol_missing_data().astype(dtype)
     strategy = bt.Strategy("s")
     strategy.setup(prices)
     strategy.update(prices.index[-1])
     strategy.temp["selected"] = list(prices.columns)
 
-    algo = algos.WeighInvVol(lookback=pd.DateOffset(days=20), lag=pd.DateOffset(days=0))
+    algo = algos.WeighInvVol(lookback=lookback, lag=pd.DateOffset(days=0))
     assert algo(strategy)
 
     # Calculate the sample volatility from each asset's explicit valid returns.
