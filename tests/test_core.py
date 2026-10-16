@@ -3705,6 +3705,93 @@ def test_couponpayingsecurity_carry():
     assert c1.holding_costs.iloc[1] == pytest.approx(50.0)
 
 
+@pytest.mark.parametrize("dtype", ["float64", "Float64", "Int64", object])
+@pytest.mark.parametrize("position", [2.0, -2.0])
+def test_couponpayingsecurity_scalar_carry_observations(dtype, position):
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame({"asset": 100.0}, index=dates)
+    strategy = StrategyBase("s", [CouponPayingSecurity("asset")])
+    strategy.setup(
+        prices,
+        coupons=pd.DataFrame({"asset": [0, 2]}, index=dates).astype(dtype),
+        cost_long=pd.DataFrame({"asset": [0, 3]}, index=dates).astype(dtype),
+        cost_short=pd.DataFrame({"asset": [0, 4]}, index=dates).astype(dtype),
+    )
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    security = strategy["asset"]
+    security.transact(position)
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+
+    # Coupons retain signed quantity; either holding-cost side uses its magnitude.
+    assert security.coupons.loc[dates[1]] == pytest.approx(position * 2)
+    assert security.holding_costs.loc[dates[1]] == pytest.approx(abs(position) * (3 if position > 0 else 4))
+
+
+class ObservedCarrySeries(pd.Series):
+    @property
+    def iloc(self):
+        return self.attrs["reader"]
+
+
+@pytest.mark.parametrize("position, cost_field", [(2.0, "_cost_long"), (-2.0, "_cost_short")])
+def test_couponpayingsecurity_rereads_custom_carry_after_preflight(position, cost_field):
+    dates = pd.date_range("2024-01-01", periods=2)
+    prices = pd.DataFrame({"asset": 100.0}, index=dates)
+    strategy = StrategyBase("s", [CouponPayingSecurity("asset")])
+    strategy.setup(prices, coupons=prices * 0.0)
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    security = strategy["asset"]
+    security.transact(position)
+    strategy.update(dates[0])
+    readers = []
+    for field, values in [("_coupons", [2.0, 3.0]), (cost_field, [4.0, 5.0])]:
+        observations = ObservedCarrySeries([0.0, 0.0], index=dates)
+        reader = mock.MagicMock()
+        reader.__getitem__.side_effect = values
+        observations.attrs["reader"] = reader
+        setattr(security, field, observations)
+        readers.append(reader)
+
+    strategy.update(dates[1])
+
+    # Preflight must not cache a custom observation: payment uses the later read.
+    assert security.coupon == pytest.approx(position * 3.0)
+    assert security.holding_cost == pytest.approx(abs(position) * 5.0)
+    for reader in readers:
+        assert reader.__getitem__.call_args_list == [mock.call(1), mock.call(1)]
+
+
+@pytest.mark.parametrize("index_type", [int, np.int64, np.uint64])
+@pytest.mark.parametrize("position", [2.0, -2.0])
+def test_couponpayingsecurity_preserves_custom_index_comparisons(index_type, position):
+    comparisons = []
+
+    class Position(index_type):
+        def __ge__(self, other):
+            comparisons.append(("ge", other))
+            if other < 0:
+                raise RuntimeError("custom index lower-bound comparison")
+            return super().__ge__(other)
+
+        def __lt__(self, other):
+            comparisons.append(("lt", other))
+            return super().__lt__(other)
+
+    dates, _, security = _coupon_update_case(position, 2.0)
+    security._cost_long = pd.Series([0.0, 3.0, 0.0], index=dates)
+    security._cost_short = pd.Series([0.0, 4.0, 0.0], index=dates)
+
+    security.update(dates[1], inow=Position(1))
+
+    # Native iloc checks the upper bound first; custom indices own those comparisons.
+    assert comparisons == [("ge", 3), ("lt", -3)] * 2
+    assert security._coupon == pytest.approx(position * 2.0)
+    assert security._holding_cost == pytest.approx(abs(position) * (3.0 if position > 0 else 4.0))
+
+
 def _coupon_update_case(position, coupon, nested=False, price=100.0):
     """Build a coupon security with one prospective coupon observation."""
     dates = pd.date_range("2010-01-01", periods=3)
