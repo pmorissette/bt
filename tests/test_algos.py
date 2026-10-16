@@ -3244,6 +3244,68 @@ def test_or():
     assert orAlgo(target)
 
 
+def _target_vol_label_prices():
+    returns = np.array([[0.10, 0.02], [-0.10, -0.04], [0.20, 0.06], [-0.20, -0.02], [0.10, 0.04], [-0.10, -0.06]])
+    return pd.DataFrame(
+        100 * np.cumprod(np.vstack([np.ones(2), 1 + returns]), axis=0),
+        index=pd.date_range("2024-01-01", periods=7),
+        columns=["a", "b"],
+    )
+
+
+@pytest.mark.parametrize("use_series", [False, True])
+@pytest.mark.parametrize(
+    "target, targets_by_position",
+    [(0.1, [0.1, 0.1]), ({"a": 0.1, "b": 0.1}, [0.1, 0.1]), ({"a": 0.05}, [0.05, None]), ({"absent": np.inf}, [None, None])],
+)
+def test_TargetVol_uses_weight_labels(use_series, target, targets_by_position):
+    prices = _target_vol_label_prices()
+    strategy = bt.Strategy("s")
+    strategy.setup(prices)
+    strategy.update(prices.index[-1])
+    strategy.temp["selected"] = ["a", "b"]
+    assert algos.WeighInvVol()(strategy)
+    weights = strategy.temp["weights"]
+    strategy.temp["weights"] = weights if use_series else weights.to_dict()
+    owned_weights = strategy.temp["weights"]
+
+    # The six return pairs have zero means. Their product sums divided by five
+    # give this sample covariance, independently of the production estimator.
+    covariance = [[0.024, 0.0064], [0.0064, 0.00224]]
+    inverse_vols = [1 / np.sqrt(covariance[i][i]) for i in range(2)]
+    initial = [value / sum(inverse_vols) for value in inverse_vols]
+    volatility = np.sqrt(252 * sum(initial[i] * covariance[i][j] * initial[j] for i in range(2) for j in range(2)))
+    expected = [initial[i] if value is None else initial[i] * value / volatility for i, value in enumerate(targets_by_position)]
+    assert algos.TargetVol(target)(strategy)
+    assert strategy.temp["weights"] is owned_weights
+    np.testing.assert_allclose([owned_weights[key] for key in ["a", "b"]], expected, rtol=1e-12)
+
+
+@pytest.mark.parametrize("target", [0.1, {"a": 0.1, "b": 0.1}])
+def test_TargetVol_native_series_reaches_rebalance(target):
+    prices = _target_vol_label_prices()
+    strategy = bt.Strategy(
+        "s",
+        [
+            algos.RunOnDate(prices.index[-1]),
+            algos.SelectAll(),
+            algos.WeighInvVol(),
+            algos.TargetVol(target),
+            algos.Rebalance(),
+        ],
+    )
+    backtest = bt.Backtest(strategy, prices, initial_capital=1000.0, integer_positions=False, progress_bar=False)
+    result = bt.run(backtest)
+    # Independently derived from the six observed returns: inverse-vol weights
+    # .23401291874675292/.7659870812532471 have annual risk 1.1138192514017269.
+    expected = np.array([0.02100995457317251, 0.06877121941367619])
+    np.testing.assert_allclose(result.get_security_weights().loc[prices.index[-1], ["a", "b"]], expected, rtol=1e-12)
+    np.testing.assert_allclose(backtest.positions.loc[prices.index[-1], ["a", "b"]], expected * 1000 / prices.iloc[-1], rtol=1e-12)
+    covariance = np.array([[0.024, 0.0064], [0.0064, 0.00224]])
+    assert np.sqrt(252 * expected @ covariance @ expected) == pytest.approx(0.1)
+    assert backtest.strategy.value == pytest.approx(1000.0)
+
+
 @pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
 def test_TargetVol(covar_method):
 
