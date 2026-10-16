@@ -463,6 +463,7 @@ def _make_benchmark_rebalance_strategy(name: str) -> bt.Strategy:
     )
 
 
+@pytest.mark.parametrize("supplied_axes", [False, True])
 @pytest.mark.parametrize(
     "samples, expected_kde",
     [
@@ -474,7 +475,7 @@ def _make_benchmark_rebalance_strategy(name: str) -> bt.Strategy:
         ([np.nan, 0.1, 0.2], True),
     ],
 )
-def test_random_benchmark_histogram_effective_sample(samples, expected_kde):
+def test_random_benchmark_histogram_effective_sample(samples, expected_kde, supplied_axes):
     from matplotlib import pyplot as plt
     from matplotlib.colors import to_rgba
     from scipy.stats import gaussian_kde
@@ -491,8 +492,25 @@ def test_random_benchmark_histogram_effective_sample(samples, expected_kde):
     expected_heights, expected_edges = np.histogram(finite_samples, bins=4, density=True)
 
     try:
-        assert result.plot_histogram("total_return", bins=4, title="Comparison", color="green") is None
-        ax = plt.gca()
+        kwargs = {}
+        if supplied_axes:
+            figure, (ax, neighbor) = plt.subplots(1, 2)
+            (sentinel,) = neighbor.plot([0, 1], [2, 3])
+            # The caller's subplot need not belong to pyplot's current figure.
+            unrelated = plt.figure()
+            kwargs["ax"] = ax
+        figures_before = set(plt.get_fignums())
+        assert result.plot_histogram("total_return", bins=4, title="Comparison", color="green", **kwargs) is None
+        if supplied_axes:
+            assert set(plt.get_fignums()) == figures_before
+            assert ax.figure is figure
+            assert not neighbor.patches
+            assert list(neighbor.lines) == [sentinel]
+            assert not unrelated.axes
+        else:
+            ax = plt.gca()
+            assert len(set(plt.get_fignums()) - figures_before) == 1
+        np.testing.assert_allclose(ax.figure.get_size_inches(), [15, 5])
         # Drawing the canvas catches failures that artist creation can defer.
         ax.figure.canvas.draw()
         assert ax.get_title() == "Comparison"
@@ -508,6 +526,41 @@ def test_random_benchmark_histogram_effective_sample(samples, expected_kde):
             line = ax.lines[1]
             np.testing.assert_allclose(line.get_ydata(), gaussian_kde(finite_samples)(line.get_xdata()))
         pd.testing.assert_frame_equal(result.r_stats, original_stats)
+    finally:
+        plt.close("all")
+
+
+@pytest.mark.parametrize("grouped", [False, True])
+def test_random_benchmark_histogram_completed_result_axes(grouped):
+    from matplotlib import pyplot as plt
+
+    plt.switch_backend("Agg")
+    backtests = []
+    for name, final_price in [("benchmark", 105.0), ("random_a", 103.0), ("random_b", 100.0)]:
+        strategy = _make_benchmark_rebalance_strategy(name)
+        data = pd.DataFrame({"a": [100.0, final_price]}, index=pd.date_range("2024-01-01", periods=2))
+        backtest = bt.Backtest(strategy, data, initial_capital=1000.0, progress_bar=False)
+        backtest.run()
+        backtests.append(backtest)
+    result = bt.backtest.RandomBenchmarkResult(*backtests)
+    # Each portfolio buys ten shares at 100: returns are .05, .03 and zero.
+    np.testing.assert_allclose(result.r_stats.loc["total_return"].astype(float), [0.03, 0.0], atol=1e-15)
+    assert result.b_stats["total_return"] == pytest.approx(0.05)
+    try:
+        figure, ax = plt.subplots()
+        unrelated = plt.figure()
+        figures_before = set(plt.get_fignums())
+        # pandas' grouped histogram already owns its supplied figure; do not
+        # pass its ungrouped-only figure keyword down that separate branch.
+        kwargs = {"by": ["one", "one"]} if grouped else {}
+        assert result.plot_histogram("total_return", ax=ax, bins=4, **kwargs) is None
+        figure.canvas.draw()
+        assert set(plt.get_fignums()) == figures_before
+        assert not unrelated.axes
+        assert len(ax.patches) == 4
+        assert ax.get_title() == "total_return histogram"
+        np.testing.assert_allclose(ax.lines[0].get_xdata(), [0.05, 0.05])
+        assert len(ax.lines) == 2
     finally:
         plt.close("all")
 

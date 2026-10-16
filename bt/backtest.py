@@ -827,16 +827,20 @@ class RandomBenchmarkResult(Result):
         if title is None:
             title = f"{statistic} histogram"
 
-        plt.figure(figsize=figsize)
+        if kwargs.get("ax") is None:
+            plt.figure(figsize=figsize)
+        elif kwargs.get("by") is None:
+            # pandas' ungrouped histogram requires the axes' figure explicitly.
+            kwargs.setdefault("figure", kwargs["ax"].get_figure())
 
         ser = self.r_stats.loc[statistic]
 
         ax = ser.hist(bins=bins, figsize=figsize, density=True, **kwargs)
         ax.set_title(title)
-        plt.axvline(self.b_stats[statistic], linewidth=4, color="r")
+        ax.axvline(self.b_stats[statistic], linewidth=4, color="r")
         # Singleton/constant samples have no KDE; leave empty-sample handling to pandas.
         if ser.nunique() != 1:
-            ser.plot(kind="kde")
+            ser.plot(kind="kde", ax=ax)
 
 
 class RenormalizedFixedIncomeResult(Result):
