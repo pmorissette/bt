@@ -1935,8 +1935,8 @@ class Rebalance(Algo):
     Rebalances capital based on temp['weights']. Also closes
     positions if open but not in target_weights. This is typically
     the last Algo called once the target weights have been set. Direct
-    security targets that require an adjustment are checked for missing prices
-    before mutation. Capital allocations also require a nonzero price;
+    security targets that require an adjustment are checked for missing or infinite
+    prices before mutation. Capital allocations also require a nonzero price;
     quantity-based fixed-income trades and closing positions allow zero prices.
 
     Requires:
@@ -1991,7 +1991,7 @@ class Rebalance(Algo):
             else:
                 price = np.nan
             quantity_trade = target.fixed_income and child is not None and child.fixed_income
-            if pd.isna(price) or (is_zero(price) and not quantity_trade):
+            if pd.isna(price) or math.isinf(price) or (is_zero(price) and not quantity_trade):
                 raise ValueError(f"Cannot allocate capital to {cname} because price is {price} as of {target.now}")
 
     def __call__(self, target):
