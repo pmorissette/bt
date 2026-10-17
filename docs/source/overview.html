@@ -2996,8 +2996,11 @@ price.  Uses the parent’s commission_fn.</p>
 <dt class="sig sig-object py" id="bt.core.SecurityBase.outlay">
 <span class="sig-name descname"><span class="pre">outlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bt.core.SecurityBase.outlay" title="Link to this definition">¶</a></dt>
 <dd><p>Determines the complete cash outlay (including commission) necessary
-given a quantity q.
-Second returning parameter is a commission itself.</p>
+given a quantity q.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">(full_outlay,</span> <span class="pre">outlay,</span> <span class="pre">fee,</span> <span class="pre">bidoffer)</span></code> in monetary units.
+<code class="docutils literal notranslate"><span class="pre">outlay</span></code> includes the bid-offer cost or signed custom-price adjustment;
+<code class="docutils literal notranslate"><span class="pre">fee</span></code> is the commission, and <code class="docutils literal notranslate"><span class="pre">full_outlay</span></code> is <code class="docutils literal notranslate"><span class="pre">outlay</span> <span class="pre">+</span> <span class="pre">fee</span></code>.
+<code class="docutils literal notranslate"><span class="pre">bidoffer</span></code> is the bid-offer or custom-price component included in <code class="docutils literal notranslate"><span class="pre">outlay</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
