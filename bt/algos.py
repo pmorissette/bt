@@ -1551,6 +1551,22 @@ class LimitWeights(Algo):
         return True
 
 
+def _estimate_covariance(algo, returns):
+    """Share pairwise and complete-case sampling policy between volatility Algos."""
+    # Keep branch-local selector reads observable to Algo subclasses.
+    if algo.covar_method == "ledoit-wolf":
+        covar = pd.DataFrame(
+            sklearn.covariance.ledoit_wolf(returns.dropna())[0],
+            index=returns.columns,
+            columns=returns.columns,
+        )
+    elif algo.covar_method == "standard":
+        covar = returns.cov()
+    else:
+        raise NotImplementedError("covar_method not implemented")
+    return covar
+
+
 class TargetVol(Algo):
     """
     Updates temp['weights'] based on the target annualized volatility desired.
@@ -1603,17 +1619,7 @@ class TargetVol(Algo):
         prc = target.universe.loc[t0 - self.lookback : t0, selected]
         returns = bt.ffn.to_returns(prc)
 
-        # calc covariance matrix
-        if self.covar_method == "ledoit-wolf":
-            covar = pd.DataFrame(
-                sklearn.covariance.ledoit_wolf(returns.dropna())[0],
-                index=returns.columns,
-                columns=returns.columns,
-            )
-        elif self.covar_method == "standard":
-            covar = returns.cov()
-        else:
-            raise NotImplementedError("covar_method not implemented")
+        covar = _estimate_covariance(self, returns)
 
         weights = pd.Series([current_weights[x] for x in covar.columns], index=covar.columns)
 
@@ -1723,17 +1729,7 @@ class PTE_Rebalance(Algo):
         prc = target.universe.loc[t0 - self.lookback : t0, cols]
         returns = bt.ffn.to_returns(prc)
 
-        # calc covariance matrix
-        if self.covar_method == "ledoit-wolf":
-            covar = pd.DataFrame(
-                sklearn.covariance.ledoit_wolf(returns.dropna())[0],
-                index=returns.columns,
-                columns=returns.columns,
-            )
-        elif self.covar_method == "standard":
-            covar = returns.cov()
-        else:
-            raise NotImplementedError("covar_method not implemented")
+        covar = _estimate_covariance(self, returns)
 
         PTE_vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
 

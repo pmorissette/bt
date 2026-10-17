@@ -3657,35 +3657,67 @@ def test_PTE_Rebalance_nested_multipliers(covar_method, lazy, multiplier, revers
     assert strategy.value == pytest.approx(100_000)
 
 
-def test_TargetVol_standard_uses_pairwise_covariance():
-    s = bt.Strategy("s")
-
-    dts = pd.date_range("2010-01-01", periods=8)
+@pytest.mark.parametrize("algo_type", [algos.TargetVol, algos.PTE_Rebalance])
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize(
+    "method,volatility",
+    [("standard", 0.6817351331395756), ("ledoit-wolf", 0.6384028967120595), ("unknown", None)],
+)
+def test_volatility_algos_preserve_covariance_policy(algo_type, reverse, method, volatility):
+    dates = pd.date_range("2020-01-01", periods=9)
     data = pd.DataFrame(
-        {
-            "c1": [100, 110, 99, 115, 103, 120, 108, 125],
-            "c2": [100, 102, 104, np.nan, 107, 109, 111, 114],
-        },
-        index=dts,
+        {"a": [100, 104, 99, 108, 102, 112, 105, 118, 110],
+         "b": [90, 92, 94, np.nan, 97, 95, 99, 101, 103]},
+        index=dates,
     )
+    labels = ["b", "a"] if reverse else ["a", "b"]
+    strategy = bt.Strategy("s", children=[bt.Security("a", multiplier=2), bt.Security("b")])
+    strategy.use_integer_positions(False)
+    strategy.setup(data[labels])
+    strategy.adjust(1000.0)
+    strategy.update(dates[-1])
+    initial_weights = {label: {"a": 0.6, "b": 0.4}[label] for label in labels}
+    for label, weight in initial_weights.items():
+        strategy.rebalance(weight, label)
+    strategy.update(dates[-1])
+    strategy.temp["weights"] = initial_weights.copy()
+    owned_weights = strategy.temp["weights"]
+    positions = strategy.positions.copy()
+    reads = []
 
-    targetVolAlgo = algos.TargetVol(
-        0.1,
-        lookback=pd.DateOffset(days=7),
-        covar_method="standard",
-        annualization_factor=1,
+    # Sharing estimation must preserve observable selector reads on subclasses.
+    class ObservedAlgo(algo_type):
+        def __getattribute__(self, name):
+            if name == "covar_method":
+                reads.append(name)
+            return super().__getattribute__(name)
+
+    kwargs = {"lookback": pd.DateOffset(days=8), "lag": pd.DateOffset(days=1), "covar_method": method}
+    algo = ObservedAlgo(0.1, **kwargs) if algo_type is algos.TargetVol else ObservedAlgo(
+        (volatility or 1.0) * 0.99, pd.DataFrame(0.0, index=dates, columns=labels), **kwargs
     )
+    calls = 1
+    if volatility is None:
+        with pytest.raises(NotImplementedError, match="^covar_method not implemented$"):
+            algo(strategy)
+    else:
+        # Independent centered moments over the first eight prices give the two
+        # volatilities above: pairwise ddof=1 versus complete-case Ledoit-Wolf.
+        assert algo(strategy)
+        if algo_type is algos.TargetVol:
+            for label, weight in initial_weights.items():
+                assert owned_weights[label] == pytest.approx(weight * 0.1 / volatility)
+        else:
+            algo.PTE_volatility_cap = volatility * 1.01
+            assert not algo(strategy)
+            calls = 2
 
-    s.setup(data)
-    s.update(dts[-1])
-    s.temp["weights"] = {"c1": 0.5, "c2": 0.5}
-
-    returns = bt.ffn.to_returns(data)
-    weights = np.array([0.5, 0.5])
-    expected_vol = np.sqrt(weights.T @ returns.cov().values @ weights)
-
-    assert targetVolAlgo(s)
-    assert s.temp["weights"]["c1"] == pytest.approx(0.5 * 0.1 / expected_vol)
+    assert len(reads) == calls * (1 if method == "ledoit-wolf" else 2)
+    assert strategy.temp["weights"] is owned_weights
+    if volatility is None or algo_type is algos.PTE_Rebalance:
+        assert owned_weights == initial_weights
+    pd.testing.assert_frame_equal(strategy.positions, positions)
+    assert strategy.value == pytest.approx(1000.0)
 
 
 def test_close_dead_closes_zero_price_position():
