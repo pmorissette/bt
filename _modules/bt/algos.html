@@ -2130,6 +2130,22 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_estimate_covariance</span><span class="p">(</span><span class="n">algo</span><span class="p">,</span> <span class="n">returns</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Share pairwise and complete-case sampling policy between volatility Algos."""</span>
+    <span class="c1"># Keep branch-local selector reads observable to Algo subclasses.</span>
+    <span class="k">if</span> <span class="n">algo</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">==</span> <span class="s2">"ledoit-wolf"</span><span class="p">:</span>
+        <span class="n">covar</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="n">sklearn</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">ledoit_wolf</span><span class="p">(</span><span class="n">returns</span><span class="o">.</span><span class="n">dropna</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">returns</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+            <span class="n">columns</span><span class="o">=</span><span class="n">returns</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">algo</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">==</span> <span class="s2">"standard"</span><span class="p">:</span>
+        <span class="n">covar</span> <span class="o">=</span> <span class="n">returns</span><span class="o">.</span><span class="n">cov</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"covar_method not implemented"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">covar</span>
+
+
 <div class="viewcode-block" id="TargetVol">
 <a class="viewcode-back" href="../../docs/source/overview.html#bt.algos.TargetVol">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TargetVol</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
@@ -2184,17 +2200,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="p">:</span> <span class="n">t0</span><span class="p">,</span> <span class="n">selected</span><span class="p">]</span>
         <span class="n">returns</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">to_returns</span><span class="p">(</span><span class="n">prc</span><span class="p">)</span>
 
-        <span class="c1"># calc covariance matrix</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">==</span> <span class="s2">"ledoit-wolf"</span><span class="p">:</span>
-            <span class="n">covar</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                <span class="n">sklearn</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">ledoit_wolf</span><span class="p">(</span><span class="n">returns</span><span class="o">.</span><span class="n">dropna</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">index</span><span class="o">=</span><span class="n">returns</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
-                <span class="n">columns</span><span class="o">=</span><span class="n">returns</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">==</span> <span class="s2">"standard"</span><span class="p">:</span>
-            <span class="n">covar</span> <span class="o">=</span> <span class="n">returns</span><span class="o">.</span><span class="n">cov</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"covar_method not implemented"</span><span class="p">)</span>
+        <span class="n">covar</span> <span class="o">=</span> <span class="n">_estimate_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">returns</span><span class="p">)</span>
 
         <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="n">current_weights</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">covar</span><span class="o">.</span><span class="n">columns</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">covar</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
 
@@ -2307,17 +2313,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">prc</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">t0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="p">:</span> <span class="n">t0</span><span class="p">,</span> <span class="n">cols</span><span class="p">]</span>
         <span class="n">returns</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">ffn</span><span class="o">.</span><span class="n">to_returns</span><span class="p">(</span><span class="n">prc</span><span class="p">)</span>
 
-        <span class="c1"># calc covariance matrix</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">==</span> <span class="s2">"ledoit-wolf"</span><span class="p">:</span>
-            <span class="n">covar</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                <span class="n">sklearn</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">ledoit_wolf</span><span class="p">(</span><span class="n">returns</span><span class="o">.</span><span class="n">dropna</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">index</span><span class="o">=</span><span class="n">returns</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
-                <span class="n">columns</span><span class="o">=</span><span class="n">returns</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">covar_method</span> <span class="o">==</span> <span class="s2">"standard"</span><span class="p">:</span>
-            <span class="n">covar</span> <span class="o">=</span> <span class="n">returns</span><span class="o">.</span><span class="n">cov</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"covar_method not implemented"</span><span class="p">)</span>
+        <span class="n">covar</span> <span class="o">=</span> <span class="n">_estimate_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">returns</span><span class="p">)</span>
 
         <span class="n">PTE_vol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">covar</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">values</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">annualization_factor</span><span class="p">)</span>
 
