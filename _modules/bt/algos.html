@@ -2534,8 +2534,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Rebalances capital based on temp['weights']. Also closes</span>
 <span class="sd">    positions if open but not in target_weights. This is typically</span>
 <span class="sd">    the last Algo called once the target weights have been set. Direct</span>
-<span class="sd">    security targets that require an adjustment are checked for missing prices</span>
-<span class="sd">    before mutation. Capital allocations also require a nonzero price;</span>
+<span class="sd">    security targets that require an adjustment are checked for missing or infinite</span>
+<span class="sd">    prices before mutation. Capital allocations also require a nonzero price;</span>
 <span class="sd">    quantity-based fixed-income trades and closing positions allow zero prices.</span>
 
 <span class="sd">    Requires:</span>
@@ -2590,7 +2590,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">price</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
             <span class="n">quantity_trade</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span> <span class="ow">and</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">fixed_income</span>
-            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">is_zero</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">quantity_trade</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">is_zero</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">quantity_trade</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot allocate capital to </span><span class="si">{</span><span class="n">cname</span><span class="si">}</span><span class="s2"> because price is </span><span class="si">{</span><span class="n">price</span><span class="si">}</span><span class="s2"> as of </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
