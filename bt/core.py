@@ -1833,7 +1833,11 @@ class SecurityBase(Node):
         """
         Determines the complete cash outlay (including commission) necessary
         given a quantity q.
-        Second returning parameter is a commission itself.
+
+        Returns ``(full_outlay, outlay, fee, bidoffer)`` in monetary units.
+        ``outlay`` includes the bid-offer cost or signed custom-price adjustment;
+        ``fee`` is the commission, and ``full_outlay`` is ``outlay + fee``.
+        ``bidoffer`` is the bid-offer or custom-price component included in ``outlay``.
 
         Args:
             * q (float): quantity
