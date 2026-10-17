@@ -719,24 +719,33 @@ def test_rebalance_uses_current_price_for_stale_explicit_child():
         pytest.param("existing", 0.0, id="existing-zero"),
         pytest.param("lazy", np.nan, id="lazy-nan"),
         pytest.param("default", None, id="default-missing"),
+        pytest.param("existing", np.inf, id="existing-positive-infinity"),
+        pytest.param("existing", -np.inf, id="existing-negative-infinity"),
+        pytest.param("lazy", np.inf, id="lazy-positive-infinity"),
+        pytest.param("lazy", -np.inf, id="lazy-negative-infinity"),
+        pytest.param("default", np.inf, id="default-positive-infinity"),
+        pytest.param("default", -np.inf, id="default-negative-infinity"),
     ],
 )
 def test_rebalance_invalid_direct_target_preserves_state(
     resolution, invalid_price
 ):
-    date = pd.Timestamp("2020-01-01")
-    data = pd.DataFrame({"held": [100.0], "valid": [100.0]}, index=[date])
+    dates = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"held": [100.0, 100.0], "valid": [100.0, 100.0]}, index=dates)
     children = [bt.Security("held"), bt.Security("valid")]
     if invalid_price is not None:
-        data["invalid"] = invalid_price
+        data["invalid"] = [100.0, invalid_price]
         children.append(bt.Security("invalid", lazy_add=resolution == "lazy"))
 
-    strategy = bt.Strategy("strategy", children=children)
+    # Default creation needs the full universe rather than a restricted child list.
+    strategy = bt.Strategy("strategy", children=None if resolution == "default" else children)
     strategy.setup(data)
     strategy.adjust(1000.0)
-    strategy.update(date)
+    strategy.update(dates[0])
     strategy.allocate(200.0, "held")
-    strategy.update(date)
+    strategy.update(dates[0])
+    # Idle children refresh the later price only when allocation reaches them.
+    strategy.update(dates[1])
     # A valid first target and omitted holding expose any mutation before rejection.
     strategy.temp["weights"] = {"valid": 0.5, "invalid": 0.5}
 
@@ -746,16 +755,16 @@ def test_rebalance_invalid_direct_target_preserves_state(
     before_positions = {
         name: child.position for name, child in strategy.children.items()
     }
+    # Reading positions/outlays would refresh an idle child's invalid price.
     before_histories = {
-        name: (child.positions.copy(), child.outlays.copy())
-        for name, child in strategy.children.items()
+        name: child.data.copy() for name, child in strategy.children.items()
     }
     before_capital = strategy.capital
     before_value = strategy.value
     before_weights = strategy.temp["weights"].copy()
     before_stale = strategy.root.stale
 
-    with pytest.raises(ValueError, match="Cannot allocate capital to invalid"):
+    with pytest.raises(ValueError) as error:
         algos.Rebalance()(strategy)
 
     assert tuple(strategy.children) == before_children
@@ -767,31 +776,42 @@ def test_rebalance_invalid_direct_target_preserves_state(
     assert strategy.value == before_value
     assert strategy.temp["weights"] == before_weights
     assert strategy.root.stale == before_stale
-    for name, (positions, outlays) in before_histories.items():
-        pd.testing.assert_series_equal(strategy[name].positions, positions)
-        pd.testing.assert_series_equal(strategy[name].outlays, outlays)
+    for name, history in before_histories.items():
+        pd.testing.assert_frame_equal(strategy[name].data, history)
+    assert "Cannot allocate capital to invalid" in str(error.value)
 
 
-@pytest.mark.parametrize("missing_column", [False, True])
-def test_rebalance_invalid_fixed_income_target_preserves_state(missing_column):
-    date = pd.Timestamp("2020-01-01")
+@pytest.mark.parametrize(
+    ("resolution", "invalid_price"),
+    [
+        pytest.param("lazy", np.nan, id="lazy-nan"),
+        pytest.param("lazy", None, id="lazy-missing"),
+        pytest.param("existing", np.inf, id="existing-positive-infinity"),
+        pytest.param("existing", -np.inf, id="existing-negative-infinity"),
+        pytest.param("lazy", np.inf, id="lazy-positive-infinity"),
+        pytest.param("lazy", -np.inf, id="lazy-negative-infinity"),
+    ],
+)
+def test_rebalance_invalid_fixed_income_target_preserves_state(resolution, invalid_price):
+    dates = pd.date_range("2020-01-01", periods=2)
     data = pd.DataFrame(
-        {"held": [100.0], "valid": [100.0], "invalid": [np.nan]}, index=[date]
+        {"held": [100.0, 100.0], "valid": [100.0, 100.0], "invalid": [100.0, invalid_price]}, index=dates
     )
-    if missing_column:
+    if invalid_price is None:
         data = data.drop(columns="invalid")
     strategy = bt.FixedIncomeStrategy(
         "strategy",
         children=[
             bt.FixedIncomeSecurity("held"),
             bt.FixedIncomeSecurity("valid"),
-            bt.FixedIncomeSecurity("invalid", lazy_add=True),
+            bt.FixedIncomeSecurity("invalid", lazy_add=resolution == "lazy"),
         ],
     )
     strategy.setup(data)
-    strategy.update(date)
+    strategy.update(dates[0])
     strategy.transact(2.0, "held")
-    strategy.update(date)
+    strategy.update(dates[0])
+    strategy.update(dates[1])
     # Quantity-notional targets use transact but share the direct-price gate.
     strategy.temp["notional_value"] = 1000.0
     strategy.temp["weights"] = {"valid": 0.5, "invalid": 0.5}
@@ -806,7 +826,7 @@ def test_rebalance_invalid_fixed_income_target_preserves_state(missing_column):
     before_value = strategy.value
     before_notional_value = strategy.notional_value
 
-    with pytest.raises(ValueError, match="Cannot allocate capital to invalid"):
+    with pytest.raises(ValueError) as error:
         algos.Rebalance()(strategy)
 
     assert tuple(strategy.children) == before_children
@@ -817,6 +837,7 @@ def test_rebalance_invalid_fixed_income_target_preserves_state(missing_column):
     assert strategy.capital == before_capital
     assert strategy.value == before_value
     assert strategy.notional_value == before_notional_value
+    assert "Cannot allocate capital to invalid" in str(error.value)
 
 
 @pytest.mark.parametrize("security_type", [bt.FixedIncomeSecurity, bt.CouponPayingSecurity])
