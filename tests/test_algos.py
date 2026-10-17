@@ -1277,6 +1277,24 @@ def test_select_randomly():
     assert s.temp.pop("selected") == ["c2"]
 
 
+def test_select_randomly_after_select_all_with_all_includes():
+    s = bt.Strategy("s")
+
+    dts = pd.date_range("2010-01-01", periods=3)
+    data = pd.DataFrame(index=dts, columns=["c1", "c2", "c3"], data=100.0)
+
+    s.setup(data)
+    s.update(dts[0])
+
+    # With both include flags, SelectAll stores the universe columns as an Index
+    assert algos.SelectAll(include_no_data=True, include_negative=True)(s)
+    algo = algos.SelectRandomly(n=2, include_no_data=True, include_negative=True)
+    assert algo(s)
+    selected = s.temp.pop("selected")
+    assert len(selected) == 2
+    assert set(selected) <= {"c1", "c2", "c3"}
+
+
 def test_select_these():
     s = bt.Strategy("s")
 
