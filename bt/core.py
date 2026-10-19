@@ -29,6 +29,19 @@ def _carry_observation(series, inow):
     return series.iloc[inow]
 
 
+def _aggregate_security_history(securities, field):
+    """Collect owned histories and sum securities sharing a name."""
+    # Copy the first history before later getters can change it. Building a
+    # dict and using add avoids chained column writes under pandas Copy-on-Write.
+    cols: dict[str, pd.Series] = {}
+    for x in securities:
+        if x.name in cols:
+            cols[x.name] = cols[x.name].add(getattr(x, field), fill_value=0)
+        else:
+            cols[x.name] = getattr(x, field).copy()
+    return pd.DataFrame(cols)
+
+
 class Node:
     """
     The Node is the main building block in bt's tree structure design.
@@ -579,15 +592,7 @@ class StrategyBase(Node):
         """
         if self.root.stale:
             self.root.update(self.root.now, None)
-        # See the `positions` property below for why this builds a dict of
-        # Series first rather than accumulating columns on `outlays` directly.
-        cols: dict[str, pd.Series] = {}
-        for x in self.securities:
-            if x.name in cols:
-                cols[x.name] = cols[x.name].add(x.outlays, fill_value=0)
-            else:
-                cols[x.name] = x.outlays.copy()
-        return pd.DataFrame(cols)
+        return _aggregate_security_history(self.securities, "outlays")
 
     @property
     def positions(self):
@@ -598,21 +603,7 @@ class StrategyBase(Node):
         if self.root.stale:
             self.root.update(self.root.now, None)
 
-        # Built as a plain dict of Series, not column-by-column on a
-        # DataFrame: `x.positions` returns a `.loc[]` slice, and assigning
-        # or += a slice into an existing DataFrame column is exactly the
-        # pattern pandas' Copy-on-Write flags as ChainedAssignmentError - it
-        # still produces the right answer today, but only because both
-        # `vals` and the slice happen to be freshly allocated each call.
-        # This isn't dependent on that.
-        cols: dict[str, pd.Series] = {}
-        for x in self.members:
-            if isinstance(x, SecurityBase):
-                if x.name in cols:
-                    cols[x.name] = cols[x.name].add(x.positions, fill_value=0)
-                else:
-                    cols[x.name] = x.positions.copy()
-        vals = pd.DataFrame(cols)
+        vals = _aggregate_security_history((x for x in self.members if isinstance(x, SecurityBase)), "positions")
         self._positions = vals.fillna(0.0)
         return vals
 
@@ -1208,16 +1199,8 @@ class StrategyBase(Node):
         # series
         prc = pd.DataFrame({x.name: x.prices for x in self.securities}).unstack()
 
-        # get security positions - see StrategyBase.positions for why this
-        # builds a dict of Series first rather than accumulating columns
-        # directly on `positions`.
-        cols: dict[str, pd.Series] = {}
-        for x in self.securities:
-            if x.name in cols:
-                cols[x.name] = cols[x.name].add(x.positions, fill_value=0)
-            else:
-                cols[x.name] = x.positions.copy()
-        positions = pd.DataFrame(cols)
+        # Keep position reads after all prices: history getters may refresh state.
+        positions = _aggregate_security_history(self.securities, "positions")
         # trades are diff
         trades = positions.diff()
         # must adjust first row
