@@ -2337,6 +2337,76 @@ def test_weigh_mean_var(mock_mv):
     assert weights["c2"] == pytest.approx(0.7)
 
 
+@pytest.mark.parametrize("bounds", [(0.0, 0.6), (1.2, 2.0), (None, 0.6), (1.2, None)])
+def test_weigh_mean_var_rejects_infeasible_single_asset_bounds(bounds):
+    strategy = bt.Strategy("s")
+    strategy.temp["selected"] = ["a"]
+    original_weights = {"old": 0.5}
+    strategy.temp["weights"] = original_weights
+
+    # Full investment fixes the only weight at one; neither bound may exclude it.
+    with pytest.raises(ValueError, match="include 1"):
+        algos.WeighMeanVar(bounds=bounds)(strategy)
+
+    assert strategy.temp["weights"] is original_weights
+    assert original_weights == {"old": 0.5}
+
+
+@pytest.mark.parametrize(
+    "bounds",
+    [(0.0, 1.0), (1.0, 1.0), (-1.0, 2.0), (None, 1.0), (1.0, None), (None, None), None, ("0", "1"), (np.array([0.0]), np.array([1.0]))],
+)
+def test_weigh_mean_var_preserves_feasible_single_asset_without_history(bounds):
+    strategy = bt.Strategy("s")
+    strategy.temp["selected"] = ["a"]
+
+    # Feasibility needs no estimator or price history, including native scalar coercions.
+    assert algos.WeighMeanVar(bounds=bounds)(strategy)
+    assert strategy.temp["weights"] == {"a": 1.0}
+
+
+def test_weigh_mean_var_preserves_empty_selection_with_infeasible_bounds():
+    strategy = bt.Strategy("s")
+    strategy.temp["selected"] = []
+
+    assert algos.WeighMeanVar(bounds=(0.0, 0.6))(strategy)
+    assert strategy.temp["weights"] == {}
+
+
+def test_weigh_mean_var_rejection_prevents_single_asset_rebalance():
+    dates = pd.date_range("2024-01-01", periods=7)
+    prices = pd.DataFrame(
+        {"a": [100.0, 101.0, 100.5, 102.0, 101.5, 103.0, 102.5], "b": [100.0, 99.5, 100.5, 99.0, 100.0, 99.5, 100.5]},
+        index=dates,
+    )
+    signal = pd.DataFrame(True, index=dates, columns=prices.columns)
+    signal.loc[dates[-1], "b"] = False
+    strategy = bt.Strategy("s", children=["a", "b"])
+    strategy.use_integer_positions(False)
+    strategy.setup(prices)
+    strategy.update(dates[3])
+    strategy.adjust(1000.0)
+    stack = bt.AlgoStack(algos.SelectWhere(signal), algos.WeighMeanVar(bounds=(0.0, 0.6), covar_method="standard"), algos.Rebalance())
+
+    assert stack(strategy)
+    assert sum(strategy.temp["weights"].values) == pytest.approx(1.0)
+    for name in prices:
+        assert 0.4 - 1e-8 <= strategy[name].position * prices.loc[dates[3], name] / strategy.value <= 0.6 + 1e-8
+
+    # A later signal leaves one asset. Rejection must precede selling the other holding.
+    strategy.update(dates[-1])
+    original_weights = strategy.temp["weights"]
+    positions = {name: strategy[name].position for name in prices}
+    cash = strategy.capital
+    with pytest.raises(ValueError, match="include 1"):
+        stack(strategy)
+
+    assert strategy.temp["selected"] == ["a"]
+    assert strategy.temp["weights"] is original_weights
+    assert {name: strategy[name].position for name in prices} == positions
+    assert strategy.capital == cash
+
+
 def test_weigh_randomly():
     s = bt.Strategy("s")
     s.temp["selected"] = ["c1", "c2", "c3"]
