@@ -314,3 +314,30 @@ def test_scalar_carry_observation_backtest(benchmark):
         positions = security.positions
         np.testing.assert_allclose(security.coupons, positions * 0.01)
         np.testing.assert_allclose(security.holding_costs, positions.abs() * 0.002)
+
+
+@pytest.mark.benchmark(group="backtest")
+def test_nested_strategy_price_publication_backtest(benchmark):
+    dates = pd.bdate_range("2015-01-02", periods=1260)
+    data = pd.DataFrame(100.0, index=dates, columns=[f"asset_{i}" for i in range(100)])
+    original = data.copy()
+
+    def run():
+        sleeves = [
+            bt.Strategy(
+                f"sleeve_{i}",
+                [bt.algos.RunMonthly(), bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()],
+                children=list(data.columns[i * 20 : (i + 1) * 20]),
+            )
+            for i in range(5)
+        ]
+        strategy = bt.Strategy("nested", [bt.algos.RunMonthly(), bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()], children=sleeves)
+        backtest = bt.Backtest(strategy, data, integer_positions=False, progress_bar=False)
+        result = bt.run(backtest, progress_bar=False)
+        return result, backtest.strategy.positions
+
+    result, positions = benchmark(run)
+    # Constant prices fix the funded tree's NAV and each asset's 1% allocation.
+    np.testing.assert_allclose(result.backtests["nested"].strategy.values.loc[dates], 1_000_000.0)
+    np.testing.assert_allclose(positions.loc[dates], 100.0)
+    pd.testing.assert_frame_equal(data, original)

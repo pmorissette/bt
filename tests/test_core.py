@@ -3,6 +3,7 @@ from __future__ import division
 import copy
 import pickle
 import random
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -2730,6 +2731,100 @@ def test_strategy_universe_cache_between_price_publications():
     expected = pd.DataFrame({"first": [np.nan, 99.0], "second": [np.nan, 98.0]}, index=dates[:2])
     pd.testing.assert_frame_equal(parent.universe, expected)
     assert parent.universe is parent.universe
+    assert parent.value == parent.capital == 10000.0
+    pd.testing.assert_frame_equal(data, original)
+
+
+@pytest.mark.parametrize("dtype", ["float64", "float32", "Float64", "object"])
+@pytest.mark.parametrize("price", [99.0, 1e100])
+def test_strategy_price_publication_preserves_native_assignment(dtype, price):
+    class PricedStrategy(Strategy):
+        @property
+        def price(self):
+            return getattr(self, "published_price", super().price)
+
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    original = data.copy()
+    parent = Strategy("parent", children=[PricedStrategy("sleeve")])
+    parent.setup(data)
+    parent.adjust(10000.0)
+    parent.update(dates[1])
+    parent._universe["sleeve"] = parent._universe["sleeve"].astype(dtype)
+    parent["sleeve"].published_price = price
+    expected = parent._universe.copy()
+    # Native assignment owns casting and warnings, including float32 overflow.
+    native_error = None
+    with warnings.catch_warnings(record=True) as native:
+        warnings.simplefilter("always")
+        try:
+            expected.loc[dates[1], "sleeve"] = price
+        except TypeError as error:
+            native_error = error
+    with warnings.catch_warnings(record=True) as actual:
+        warnings.simplefilter("always")
+        if native_error is None:
+            parent.update(dates[1])
+        else:
+            with pytest.raises(TypeError) as error:
+                parent.update(dates[1])
+            assert str(error.value) == str(native_error)
+
+    pd.testing.assert_frame_equal(parent._universe, expected, check_exact=True)
+    assert [(w.category, str(w.message)) for w in actual] == [(w.category, str(w.message)) for w in native]
+    pd.testing.assert_frame_equal(parent.universe, expected.loc[: dates[1]], check_exact=True)
+    assert parent.value == parent.capital == 10000.0
+    pd.testing.assert_frame_equal(data, original)
+
+
+def test_strategy_price_getter_changes_next_column_dtype():
+    class SwitchingStrategy(Strategy):
+        @property
+        def price(self):
+            if getattr(self, "switch_column", False):
+                self.parent._universe["second"] = self.parent._universe["second"].astype("float32")
+                self.switch_column = False
+            return super().price
+
+    dates = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    original = data.copy()
+    parent = Strategy("parent", children=[SwitchingStrategy("first"), Strategy("second")])
+    parent.setup(data)
+    parent.adjust(10000.0)
+    parent.update(dates[1])
+    first, second = parent["first"], parent["second"]
+    first._paper.adjust(-10000.0, flow=False)
+    second._paper.adjust(1e104, flow=False)
+    first._paper.update(dates[1])
+    second._paper.update(dates[1])
+    expected = parent._universe.copy()
+    expected["second"] = expected["second"].astype("float32")
+    expected.loc[dates[1], "first"] = 99.0
+    # The real child takes its paper price during the parent's update, not before it.
+    second_price = float(100.0 * ((1_000_000.0 + 1e104) / 1_000_000.0))
+    native_error = None
+    with warnings.catch_warnings(record=True) as native:
+        warnings.simplefilter("always")
+        try:
+            expected.loc[dates[1], "second"] = second_price
+        except TypeError as error:
+            native_error = error
+    first.switch_column = True
+    # A dtype captured before the first getter would bypass native overflow behavior.
+    with warnings.catch_warnings(record=True) as actual:
+        warnings.simplefilter("always")
+        if native_error is None:
+            parent.update(dates[1])
+        else:
+            with pytest.raises(TypeError) as error:
+                parent.update(dates[1])
+            assert str(error.value) == str(native_error)
+
+    pd.testing.assert_frame_equal(parent._universe, expected, check_exact=True)
+    assert [(w.category, str(w.message)) for w in actual] == [(w.category, str(w.message)) for w in native]
+    assert parent.universe.loc[dates[1], "first"] == 99.0
+    pd.testing.assert_frame_equal(parent.universe, expected.loc[: dates[1]], check_exact=True)
     assert parent.value == parent.capital == 10000.0
     pd.testing.assert_frame_equal(data, original)
 
