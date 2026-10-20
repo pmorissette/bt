@@ -192,7 +192,7 @@ data, and to instantiate the backtest with this named data:</p>
         <span class="k">return</span> <span class="kc">True</span>
 
 <span class="c1"># create the strategy</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">'s1'</span><span class="p">,</span> <span class="p">[</span><span class="n">bt</span><span class="o">.</span><span class="n">algos</span><span class="o">.</span><span class="n">MyAlgo</span><span class="p">(</span> <span class="s1">'my_signal'</span> <span class="p">)])</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Strategy</span><span class="p">(</span><span class="s1">'s1'</span><span class="p">,</span> <span class="p">[</span><span class="n">MyAlgo</span><span class="p">(</span> <span class="s1">'my_signal'</span> <span class="p">)])</span>
 
 <span class="c1"># create a backtest and run it</span>
 <span class="n">test</span> <span class="o">=</span> <span class="n">bt</span><span class="o">.</span><span class="n">Backtest</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">additional_data</span><span class="o">=</span><span class="p">{</span><span class="s1">'my_signal'</span><span class="p">:</span><span class="n">signal_df</span><span class="p">})</span>
