@@ -216,6 +216,9 @@ affecting the market.</p>
 security, and the weighing Algo sets the new weight to 0%, but we
 use this Algo with a limit of 0.1, the new target weight will
 be 90% instead of 0%.</p>
+<p>For ordinary strategies reserving cash, targets and limits are relative to
+the investable portion, as in Rebalance. Fixed-income strategies ignore cash.
+A full cash reserve still closes positions immediately when rebalanced.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>limit</strong> (<em>*</em>) – Weight delta limit. If float, this will be a

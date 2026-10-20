@@ -2045,6 +2045,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    use this Algo with a limit of 0.1, the new target weight will</span>
 <span class="sd">    be 90% instead of 0%.</span>
 
+<span class="sd">    For ordinary strategies reserving cash, targets and limits are relative to</span>
+<span class="sd">    the investable portion, as in Rebalance. Fixed-income strategies ignore cash.</span>
+<span class="sd">    A full cash reserve still closes positions immediately when rebalanced.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        * limit (float, dict): Weight delta limit. If float, this will be a</span>
 <span class="sd">          global limit for all securities. If dict, you may specify by-ticker</span>
@@ -2070,9 +2074,17 @@ window.runMermaid = runMermaid;</script>
         <span class="n">tw</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
         <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">tw</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
 
+        <span class="c1"># Use the same investable-slice coordinates as RebalanceOverTime.</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="s2">"cash"</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">-=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"cash"</span><span class="p">]</span>
+            <span class="c1"># Rebalance handles full cash by closing positions immediately.</span>
+            <span class="k">if</span> <span class="n">scale</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_keys</span><span class="p">:</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-            <span class="n">cur</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="n">scale</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
             <span class="n">delta</span> <span class="o">=</span> <span class="n">tgt</span> <span class="o">-</span> <span class="n">cur</span>
 
             <span class="c1"># check if we need to limit</span>
