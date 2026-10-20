@@ -1274,15 +1274,20 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        * base_name (str): Name of backtest being benchmarked</span>
-<span class="sd">        * r_stats (Result): Stats for random strategies</span>
-<span class="sd">        * b_stats (Result): Stats for benchmarked strategy</span>
+<span class="sd">        * r_stats (DataFrame): Current stats for random strategies</span>
+<span class="sd">        * b_stats (Series): Current stats for benchmarked strategy</span>
 
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">backtests</span><span class="p">):</span>
+        <span class="c1"># GroupStats refreshes during construction, but must own empty-input rejection.</span>
+        <span class="k">if</span> <span class="n">backtests</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">base_name</span> <span class="o">=</span> <span class="n">backtests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">backtests</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">base_name</span> <span class="o">=</span> <span class="n">backtests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
-        <span class="c1"># seperate stats to make</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_update_stats</span><span class="p">()</span>
+        <span class="c1"># GroupStats uses this hook during construction and date/risk-free updates.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_name</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">b_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">base_name</span><span class="p">]</span>
 
