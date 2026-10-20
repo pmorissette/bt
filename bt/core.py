@@ -899,8 +899,27 @@ class StrategyBase(Node):
         # if we have strategy children, we will need to update them in universe
         if self._has_strat_children:
             for c in self._strat_children:
-                # TODO: optimize ".loc" here as well
-                self._universe.loc[date, c] = self.children[c].price
+                # Avoid general indexing overhead for ordinary float64 prices.
+                # Qualify after each getter: hooks can change later columns.
+                price = self.children[c].price
+                universe = self._universe
+                scalar = (
+                    type(universe) is pd.DataFrame
+                    and type(universe.index) is pd.DatetimeIndex
+                    and type(universe.columns) is pd.Index
+                    and type(date) is pd.Timestamp
+                    and type(c) is str
+                    and type(price) in (float, np.float64)
+                    and universe.columns.is_unique
+                    and c in universe.columns
+                )
+                if scalar:
+                    dtype = universe[c].dtype
+                    scalar = isinstance(dtype, np.dtype) and dtype == np.dtype("float64")
+                if scalar:
+                    universe.at[date, c] = price
+                else:
+                    universe.loc[date, c] = price
                 # Copy-on-write can leave a same-date cached slice at the old price.
                 self._last_chk = None
 
