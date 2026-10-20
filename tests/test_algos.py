@@ -3012,6 +3012,101 @@ def test_limit_deltas():
     assert w["c2"] == pytest.approx(-0.6)
 
 
+@pytest.mark.parametrize("limit", [0.1, {"a": 0.1}, 0.0, {"a": 0.0}])
+def test_limit_deltas_preserves_matched_cash_target(limit):
+    dates = pd.date_range("2024-01-01", periods=3)
+    data = pd.DataFrame({"a": [100.0] * 3}, index=dates)
+    strategy = bt.Strategy("s")
+    strategy.use_integer_positions(False)
+    strategy.setup(data)
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.temp["cash"] = 0.5
+    strategy.temp["weights"] = {"a": 1.0}
+    assert algos.Rebalance()(strategy)
+
+    for date in dates[1:]:
+        strategy.update(date)
+        strategy.temp["cash"] = 0.5
+        strategy.temp["weights"] = {"a": 1.0}
+        assert algos.LimitDeltas(limit)(strategy)
+        assert algos.Rebalance()(strategy)
+        assert strategy["a"].position == pytest.approx(5.0)
+        assert strategy.capital == pytest.approx(500.0)
+        assert strategy.value == pytest.approx(1000.0)
+
+
+@pytest.mark.parametrize("limit, constrained", [(0.1, True), ({"a": 0.1}, True), ({"b": 0.1}, False)])
+@pytest.mark.parametrize(
+    "cash, initial_weight, weights, expected",
+    [
+        pytest.param(None, 0.5, {"a": 1.0}, {"a": 0.6}, id="absent-cash"),
+        pytest.param(0.0, 0.5, {"a": 1.0}, {"a": 0.6}, id="zero-cash"),
+        pytest.param(0.5, 0.2, {"a": 1.0}, {"a": 0.5}, id="increase"),
+        pytest.param(0.5, 0.5, {"a": 0.4}, {"a": 0.9}, id="decrease"),
+        pytest.param(0.5, 0.0, {"a": 1.0}, {"a": 0.1}, id="new-holding"),
+        pytest.param(0.5, 0.5, {"a": 0.0}, {"a": 0.9}, id="zero-target"),
+        pytest.param(0.5, 0.5, {}, {"a": 0.9}, id="omitted-holding"),
+        pytest.param(0.5, 0.025, {}, {}, id="omitted-within-limit"),
+        pytest.param(1.0, 0.5, {"a": 1.0}, {"a": 0.6}, id="full-cash"),
+        pytest.param(0.5, -0.2, {"a": -1.0}, {"a": -0.5}, id="short-holding"),
+        pytest.param(0.25, 0.3, {"a": 0.7}, {"a": 0.5}, id="quarter-cash"),
+    ],
+)
+def test_limit_deltas_cash_reserve(limit, constrained, cash, initial_weight, weights, expected):
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"a": [100.0, 100.0]}, index=dates)
+    strategy = bt.Strategy("s")
+    strategy.use_integer_positions(False)
+    strategy.setup(data)
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    if initial_weight:
+        strategy.temp["weights"] = {"a": initial_weight}
+        assert algos.Rebalance()(strategy)
+        assert strategy["a"].weight == pytest.approx(initial_weight)
+
+    strategy.update(dates[1])
+    if cash is not None:
+        strategy.temp["cash"] = cash
+    strategy.temp["weights"] = weights.copy()
+    assert algos.LimitDeltas(limit)(strategy)
+    expected_weights = expected if constrained else weights
+    assert strategy.temp["weights"] == pytest.approx(expected_weights)
+    assert algos.Rebalance()(strategy)
+    scale = 1.0 if cash is None else 1.0 - cash
+    expected_position = expected_weights.get("a", 0.0) * scale * 1000.0 / 100.0
+    assert strategy["a"].position == pytest.approx(expected_position)
+    assert strategy.capital == pytest.approx(1000.0 - expected_position * 100.0)
+    assert strategy.value == pytest.approx(1000.0)
+
+
+@pytest.mark.parametrize("limit", [0.1, {"a": 0.1}])
+@pytest.mark.parametrize("cash", [None, 0.5, 1.0])
+def test_limit_deltas_fixed_income_ignores_cash(limit, cash):
+    dates = pd.date_range("2024-01-01", periods=2)
+    data = pd.DataFrame({"a": [1.0, 1.0], "b": [1.0, 1.0]}, index=dates)
+    strategy = bt.FixedIncomeStrategy("s", children=[bt.FixedIncomeSecurity("a"), bt.FixedIncomeSecurity("b")])
+    strategy.use_integer_positions(False)
+    strategy.setup(data)
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.temp["notional_value"] = 1000.0
+    strategy.temp["weights"] = {"a": 0.3, "b": 0.7}
+    assert algos.Rebalance()(strategy)
+    assert strategy["a"].weight == pytest.approx(0.3)
+
+    strategy.update(dates[1])
+    if cash is not None:
+        strategy.temp["cash"] = cash
+    strategy.temp["weights"] = {"a": 0.5, "b": 0.7}
+    assert algos.LimitDeltas(limit)(strategy)
+    assert strategy.temp["weights"] == pytest.approx({"a": 0.4, "b": 0.7})
+    assert algos.Rebalance()(strategy)
+    assert strategy["a"].position == pytest.approx(400.0)
+    assert strategy["b"].position == pytest.approx(700.0)
+
+
 def test_rebalance_over_time():
     target = mock.MagicMock()
     rb = mock.MagicMock()

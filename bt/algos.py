@@ -1470,6 +1470,10 @@ class LimitDeltas(Algo):
     use this Algo with a limit of 0.1, the new target weight will
     be 90% instead of 0%.
 
+    For ordinary strategies reserving cash, targets and limits are relative to
+    the investable portion, as in Rebalance. Fixed-income strategies ignore cash.
+    A full cash reserve still closes positions immediately when rebalanced.
+
     Args:
         * limit (float, dict): Weight delta limit. If float, this will be a
           global limit for all securities. If dict, you may specify by-ticker
@@ -1495,9 +1499,17 @@ class LimitDeltas(Algo):
         tw = target.temp["weights"]
         all_keys = set(list(target.children.keys()) + list(tw.keys()))
 
+        # Use the same investable-slice coordinates as RebalanceOverTime.
+        scale = 1.0
+        if "cash" in target.temp and not target.fixed_income:
+            scale -= target.temp["cash"]
+            # Rebalance handles full cash by closing positions immediately.
+            if scale == 0.0:
+                scale = 1.0
+
         for k in all_keys:
             tgt = tw.get(k, 0.0)
-            cur = target.children[k].weight if k in target.children else 0.0
+            cur = target.children[k].weight / scale if k in target.children else 0.0
             delta = tgt - cur
 
             # check if we need to limit
