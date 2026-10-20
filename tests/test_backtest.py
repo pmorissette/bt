@@ -463,6 +463,113 @@ def _make_benchmark_rebalance_strategy(name: str) -> bt.Strategy:
     )
 
 
+def _make_random_benchmark_result(tz=None):
+    dates = pd.date_range("2024-01-01", periods=4, tz=tz)
+    backtests = []
+    for name, prices in [
+        ("benchmark", [100.0, 200.0, 100.0, 110.0]),
+        ("random_a", [100.0, 50.0, 100.0, 120.0]),
+        ("random_b", [100.0, 100.0, 120.0, 90.0]),
+    ]:
+        backtest = bt.Backtest(
+            _make_benchmark_rebalance_strategy(name),
+            pd.DataFrame({"a": prices}, index=dates),
+            initial_capital=1000.0,
+            integer_positions=False,
+            progress_bar=False,
+        )
+        backtest.run()
+        backtests.append(backtest)
+    return dates, bt.backtest.RandomBenchmarkResult(*backtests)
+
+
+def test_random_benchmark_result_preserves_empty_input_error():
+    # Let GroupStats reject empty input before preparing any benchmark split.
+    with pytest.raises(ValueError, match="No objects to concatenate"):
+        bt.backtest.RandomBenchmarkResult()
+
+
+@pytest.mark.parametrize("tz", [None, "UTC"])
+def test_random_benchmark_statistics_follow_date_range(tz):
+    from matplotlib import pyplot as plt
+
+    plt.switch_backend("Agg")
+    dates, result = _make_random_benchmark_result(tz)
+    histories = [backtest.strategy.prices.copy(deep=True) for backtest in result.backtest_list]
+    # Ten shares per strategy give these endpoint ratios, independent of ffn's calculations.
+    for start, end, expected in [
+        (dates[1], dates[-1], [-0.45, 1.4, -0.1]),
+        (dates[0], dates[2], [0.0, 0.0, 0.2]),
+        (dates[-1], dates[-1], [np.nan, np.nan, np.nan]),
+        (None, None, [0.1, 0.2, -0.1]),
+    ]:
+        result.set_date_range(start=start, end=end)
+        np.testing.assert_allclose(result.b_stats["total_return"], expected[0], atol=1e-15)
+        np.testing.assert_allclose(
+            result.r_stats.loc["total_return"].astype(float), expected[1:], atol=1e-15
+        )
+        pd.testing.assert_series_equal(result.b_stats, result.stats["benchmark"])
+        pd.testing.assert_frame_equal(result.r_stats, result.stats[["random_a", "random_b"]])
+        if start == dates[1]:
+            # Check the actual comparison, not merely refreshed tables feeding a stale plot.
+            try:
+                figure, ax = plt.subplots()
+                result.plot_histogram("total_return", ax=ax, bins=4)
+                figure.canvas.draw()
+                heights, edges = np.histogram([1.4, -0.1], bins=4, density=True)
+                np.testing.assert_allclose(ax.lines[0].get_xdata(), [-0.45, -0.45])
+                np.testing.assert_allclose([patch.get_height() for patch in ax.patches], heights)
+                np.testing.assert_allclose([patch.get_x() for patch in ax.patches], edges[:-1])
+            finally:
+                plt.close("all")
+    for backtest, history in zip(result.backtest_list, histories):
+        pd.testing.assert_series_equal(backtest.strategy.prices, history)
+
+
+@pytest.mark.parametrize("riskfree_kind", ["annual", "prices"])
+def test_random_benchmark_statistics_follow_riskfree_rate(riskfree_kind):
+    _, result = _make_random_benchmark_result()
+    # Include the unchanged bootstrap-to-first-trade return of zero in each sample.
+    returns = np.array(
+        [[0.0, 1.0, -0.5, 0.1], [0.0, -0.5, 1.0, 0.2], [0.0, 0.0, 0.2, -0.25]]
+    )
+    if riskfree_kind == "annual":
+        riskfree = 0.06
+        excess = returns - ((1.06 ** (1.0 / 252)) - 1)
+    else:
+        riskfree = pd.Series([100.0, 100.1, 100.2, 100.3, 100.4], index=result.prices.index)
+        excess = returns - np.array(
+            [100.1 / 100 - 1, 100.2 / 100.1 - 1, 100.3 / 100.2 - 1, 100.4 / 100.3 - 1]
+        )
+    for rate, sample in [(riskfree, excess), (0.0, returns)]:
+        result.set_riskfree_rate(rate)
+        expected = sample.mean(axis=1) / sample.std(axis=1, ddof=1) * np.sqrt(252)
+        np.testing.assert_allclose(result.b_stats["daily_sharpe"], expected[0])
+        np.testing.assert_allclose(result.r_stats.loc["daily_sharpe"].astype(float), expected[1:])
+        pd.testing.assert_series_equal(result.b_stats, result.stats["benchmark"])
+        pd.testing.assert_frame_equal(result.r_stats, result.stats[["random_a", "random_b"]])
+
+
+def test_benchmark_random_statistics_follow_analysis_updates():
+    dates = pd.date_range("2024-01-01", periods=4)
+    backtest = bt.Backtest(
+        _make_benchmark_rebalance_strategy("original"),
+        pd.DataFrame({"a": [100.0, 200.0, 100.0, 110.0]}, index=dates),
+        initial_capital=1000.0,
+        integer_positions=False,
+        progress_bar=False,
+    )
+    result = bt.backtest.benchmark_random(backtest, _make_benchmark_rebalance_strategy("random"), nsim=2)
+    result.set_date_range(start=dates[1])
+    # The public wrapper renames controls; all three still hold the same ten shares.
+    assert result.b_stats["total_return"] == pytest.approx(-0.45)
+    np.testing.assert_allclose(result.r_stats.loc["total_return"].astype(float), [-0.45, -0.45])
+    assert list(result.r_stats.columns) == ["random_0", "random_1"]
+    result.set_riskfree_rate(0.06)
+    assert result.b_stats["rf"] == 0.06
+    np.testing.assert_allclose(result.r_stats.loc["rf"].astype(float), [0.06, 0.06])
+
+
 @pytest.mark.parametrize("supplied_axes", [False, True])
 @pytest.mark.parametrize(
     "samples, expected_kde",

@@ -789,15 +789,20 @@ class RandomBenchmarkResult(Result):
 
     Attributes:
         * base_name (str): Name of backtest being benchmarked
-        * r_stats (Result): Stats for random strategies
-        * b_stats (Result): Stats for benchmarked strategy
+        * r_stats (DataFrame): Current stats for random strategies
+        * b_stats (Series): Current stats for benchmarked strategy
 
     """
 
     def __init__(self, *backtests):
+        # GroupStats refreshes during construction, but must own empty-input rejection.
+        if backtests:
+            self.base_name = backtests[0].name
         super().__init__(*backtests)
-        self.base_name = backtests[0].name
-        # seperate stats to make
+
+    def _update_stats(self):
+        super()._update_stats()
+        # GroupStats uses this hook during construction and date/risk-free updates.
         self.r_stats = self.stats.drop(self.base_name, axis=1)
         self.b_stats = self.stats[self.base_name]
 
