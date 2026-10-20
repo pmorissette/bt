@@ -2944,6 +2944,110 @@ def test_outlays():
     assert c2.data["outlay"][dts[1]] == 100
 
 
+@pytest.mark.parametrize("strategy_type,security_type", [(Strategy, bt.Security), (FixedIncomeStrategy, FixedIncomeSecurity)])
+@pytest.mark.parametrize("spread", [0.0, 2.0])
+def test_security_history_aggregation_preserves_nested_trades(strategy_type, security_type, spread):
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"a": [100.0, 110.0, 120.0]}, index=dates)
+    root = strategy_type("root", children=[strategy_type("left", children=[security_type("a")]), strategy_type("right", children=[security_type("a")])])
+    root.setup(prices, bidoffer=prices * 0 + spread)
+    root.adjust(1000)
+    root.update(dates[0])
+    root.allocate(600, "left")
+    root.allocate(400, "right")
+    for date, quantities in zip(dates, [(5, -2), (4, -1), (0, 0)]):
+        root.update(date)
+        for sleeve, quantity in zip(["left", "right"], quantities):
+            security = root[sleeve]["a"]
+            security.transact(quantity - security.position)
+        root.update(date)
+    # Same-name sleeves net quantities, while outlays include each execution's spread.
+    expected_positions = pd.DataFrame({"a": [3.0, 3.0, 0.0]}, index=dates)
+    expected_outlays = pd.DataFrame({"a": [300 + 3.5 * spread, spread, -360 + 2.5 * spread]}, index=dates)
+    pd.testing.assert_frame_equal(root.positions, expected_positions)
+    pd.testing.assert_frame_equal(root.outlays, expected_outlays)
+    transactions = root.get_transactions()
+    expected = pd.DataFrame(
+        {"price": [100 + spread / 3, 120 - spread / 6], "quantity": [3.0, -3.0]}, index=pd.MultiIndex.from_tuples([(dates[0], "a"), (dates[2], "a")], names=["Date", "Security"])
+    )
+    # Export keeps the last same-name spread history; the middle net-zero trade is absent.
+    pd.testing.assert_frame_equal(transactions, expected)
+    assert root.value == pytest.approx(1060 - 7 * spread)
+
+
+@pytest.mark.parametrize("dtype", ["float64", "Float64", "Int64"])
+@pytest.mark.parametrize("field", ["positions", "outlays"])
+def test_security_history_aggregation_preserves_ragged_ownership(dtype, field):
+    dates = pd.date_range("2020-01-01", periods=3, tz="UTC", name="observation")
+    missing = np.nan if dtype == "float64" else pd.NA
+    trace = []
+    copy_challenge = False
+
+    class HistorySecurity(SecurityBase):
+        def __init__(self, name, history, price, parent):
+            super().__init__(name)
+            self.history = history
+            self.history_price = pd.Series(price, index=dates)
+            parent._add_children([self], dc=False)
+
+        def _read_history(self, field):
+            trace.append((self.name, field))
+            if copy_challenge and self is a2:
+                a1.history.iloc[-1] = 99
+            return self.history
+
+        @property
+        def positions(self):
+            return self._read_history("positions")
+
+        @property
+        def outlays(self):
+            return self._read_history("outlays")
+
+        @property
+        def prices(self):
+            trace.append((self.name, "prices"))
+            return self.history_price
+
+    root = StrategyBase("root")
+    left = StrategyBase("left", parent=root)
+    right = StrategyBase("right", parent=root)
+    a1 = HistorySecurity("a", pd.Series([missing, 7], index=dates[[0, 2]], dtype=dtype), 90.0, left)
+    a2 = HistorySecurity("a", pd.Series([-3, missing], index=dates[[1, 2]], dtype=dtype), 100.0, right)
+    b = HistorySecurity("b", pd.Series([0, 2, 2], index=dates, dtype=dtype), 50.0, right)
+    original = [leaf.history.copy(deep=True) for leaf in [a1, a2, b]]
+    result = getattr(root, field)
+    expected = pd.DataFrame({"a": pd.Series([missing, -3, 7], index=dates, dtype=dtype), "b": pd.Series([0, 2, 2], index=dates, dtype=dtype)})
+    # Native ragged alignment does not retain a regular frequency marker.
+    expected.index = pd.DatetimeIndex(list(dates), name=dates.name)
+    pd.testing.assert_frame_equal(result, expected)
+    assert trace == [("a", field), ("a", field), ("b", field)]
+    if field == "positions":
+        pd.testing.assert_frame_equal(root._positions, expected.fillna(0.0))
+    # Both mutation directions protect snapshots, not just initial numerical equality.
+    result.loc[dates[1], "b"] = 99
+    result.index.name = "changed"
+    for leaf, snapshot in zip([a1, a2, b], original):
+        pd.testing.assert_series_equal(leaf.history, snapshot)
+    earlier = getattr(root, field)
+    b.history.iloc[1] = 42
+    pd.testing.assert_frame_equal(earlier, expected)
+    b.history.iloc[1] = 2
+    trace.clear()
+    trades = root.get_transactions()
+    # Prices are all read first; repeated-name prices intentionally use the last provider.
+    assert trace == [("a", "prices"), ("a", "prices"), ("b", "prices"), ("a", "positions"), ("a", "positions"), ("b", "positions")]
+    index = pd.MultiIndex.from_tuples([(dates[1], "b"), (dates[2], "a")], names=["Date", "Security"])
+    expected_trades = pd.DataFrame({"price": [50.0, 100.0], "quantity": pd.Series([2, 10], index=index, dtype=dtype)}, index=index)
+    pd.testing.assert_frame_equal(trades, expected_trades)
+
+    # A later provider can mutate an earlier source before aggregation finishes.
+    # The first copied history must still represent its value at the original read.
+    copy_challenge = True
+    pd.testing.assert_frame_equal(getattr(root, field), expected)
+    assert a1.history.iloc[-1] == 99
+
+
 def test_child_weight_above_1():
     # check for child weights not exceeding 1
     s = StrategyBase("s")
