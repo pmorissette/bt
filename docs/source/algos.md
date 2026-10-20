@@ -174,7 +174,7 @@ class MyAlgo(bt.Algo):
         return True
 
 # create the strategy
-s = bt.Strategy('s1', [bt.algos.MyAlgo( 'my_signal' )])
+s = bt.Strategy('s1', [MyAlgo( 'my_signal' )])
 
 # create a backtest and run it
 test = bt.Backtest(s, data, additional_data={'my_signal':signal_df})
