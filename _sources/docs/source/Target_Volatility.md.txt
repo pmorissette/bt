@@ -131,7 +131,7 @@ height: 277px
 ---
 ```
 
-If we plot the total risk contribution of each asset class and divide by the total volatility, then we can see that both asset's contribute roughly similar amounts of volatility.
+Each asset's contribution to annualized portfolio volatility is `w[i] * (cov @ w)[i] / portfolio_volatility`, where `cov` is the annualized covariance matrix and `portfolio_volatility = sqrt(w @ cov @ w)`. The contributions sum to the portfolio's annualized volatility. Both assets contribute roughly similar amounts in this example.
 
 ```python
 weights = res.get_security_weights()
@@ -144,20 +144,20 @@ trc = pd.DataFrame(
     columns = weights.columns
 )
 for dt in pdf.index:
-    trc.loc[dt,:] = weights.loc[dt,:].values*rolling_cov.loc[dt,:].values@weights.loc[dt,:].values/np.sqrt(weights.loc[dt,:].values@rolling_cov.loc[dt,:].values@weights.loc[dt,:].values)
+    trc.loc[dt,:] = weights.loc[dt,:].values*(rolling_cov.loc[dt,:].values@weights.loc[dt,:].values)/np.sqrt(weights.loc[dt,:].values@rolling_cov.loc[dt,:].values@weights.loc[dt,:].values)
 
 
 fig, ax = plt.subplots(nrows=1,ncols=1)
 trc.plot(ax=ax)
-ax.set_title('% Total Risk Contribution')
+ax.set_title('Annualized Volatility Contribution')
 ax.plot();
 ```
 
 ```{image} _static/Target_Volatility_13_0.png
 ---
 class: pynb
-width: 380px
-height: 277px
+width: 566px
+height: 453px
 ---
 ```
 
