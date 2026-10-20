@@ -1355,6 +1355,9 @@ class WeighMeanVar(Algo):
     Requires:
         * selected
 
+    Raises:
+        * ValueError: If a single selected asset cannot satisfy the weight bounds.
+
     """
 
     def __init__(
@@ -1380,6 +1383,12 @@ class WeighMeanVar(Algo):
             return True
 
         if len(selected) == 1:
+            if self.bounds is not None:
+                # Match the solver's scalar bounds; a fully invested singleton must
+                # weigh one even when no return history is available.
+                lower, upper = (float(bound.item() if isinstance(bound, np.ndarray) else bound) if bound is not None else None for bound in self.bounds)
+                if (lower is not None and lower > 1.0) or (upper is not None and upper < 1.0):
+                    raise ValueError("Weight bounds must include 1 for a single selected asset.")
             target.temp["weights"] = {selected[0]: 1.0}
             return True
 
