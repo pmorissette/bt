@@ -2526,6 +2526,7 @@ def test_set_stat_legacy():
     stat.loc[dts[1], "c2"] = 6.0
 
     algo = algos.SetStat(stat)
+    assert algo.name == "SetStat"
 
     s.setup(data)
     s.update(dts[0])
