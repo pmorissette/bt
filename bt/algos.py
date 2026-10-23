@@ -922,6 +922,7 @@ class SetStat(Algo):
     """
 
     def __init__(self, stat, lag=_DEFAULT_LAG):
+        super().__init__()
         self.lag = lag
         if isinstance(stat, pd.DataFrame):
             self.stat_name = None
