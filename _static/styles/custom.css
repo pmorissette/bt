@@ -1,18 +1,5 @@
-/* Wide main page */
-.content {
-    flex: 3;
-}
-aside.sidebar-drawer {
-    width: unset;
-}
-aside.toc-drawer {
-    flex: 1;
-}
-
-/* Left-align tables */
-article table.align-default {
-    margin-left: 0;
-}
+/* Generic defaults applied for every theme. Theme-specific overrides live in a
+   bundled `{theme}.css` and are appended after this file. */
 
 /* Handle logo switching for light/dark themes */
 /* Put in code like:
@@ -23,19 +10,8 @@ article table.align-default {
   <img src="https://github.com/nbprint/nbprint/raw/main/docs/img/logo-dark.png?raw=true#gh-dark-mode-only" alt="nbprint" width="400"></a>
 </a>
 */
-body[data-theme="light"] .logo-light {
-    display: inline;
-}
-body[data-theme="light"] .logo-dark {
-    display: none;
-}
-body[data-theme="dark"] .logo-light {
-    display: none;
-}
-body[data-theme="dark"] .logo-dark {
-    display: inline;
-}
-
+/* Themes that toggle the color scheme with their own attribute add matching
+   rules on top of this file. */
 @media (prefers-color-scheme: dark) {
     .logo-light {
         display: none;
@@ -50,18 +26,6 @@ body[data-theme="dark"] .logo-dark {
 
 
 /* Handle mermaid diagrams in dark mode */
-body[data-theme="light"] .mermaid-container {
-    background-color: #fafafa;
-}
-body[data-theme="light"] pre.mermaid svg path {
-    stroke: black !important;
-}
-body[data-theme="dark"] .mermaid-container {
-    background-color: #222;
-}
-body[data-theme="dark"] pre.mermaid svg path {
-    stroke: white !important;
-}
 @media (prefers-color-scheme: dark) {
     .mermaid-container {
         background-color: #222;
@@ -73,8 +37,5 @@ body[data-theme="dark"] pre.mermaid svg path {
 @media (prefers-color-scheme: light) {
     .mermaid-container {
         background-color: #fafafa;
-    }
-    body[data-theme="dark"] pre.mermaid svg path {
-        stroke: black !important;
     }
 }
