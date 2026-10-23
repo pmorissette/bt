@@ -1176,10 +1176,20 @@ class WeighTarget(Algo):
             weights = target.get_data(self.weights_name)
 
         if target.now in weights.index:
-            w = weights.loc[target.now]
+            w = weights.loc[target.now].dropna()
 
-            # dropna and save
-            target.temp["weights"] = w.dropna()
+            # Promote the contiguous exact-integer range for fractional modifiers.
+            # Python-int bounds avoid rounding uint64 comparisons in NumPy.
+            if (
+                type(weights) is pd.DataFrame
+                and type(w) is pd.Series
+                and pd.api.types.is_integer_dtype(w.dtype)
+                and not w.empty
+                and -(2**53) <= int(w.min())
+                and int(w.max()) <= 2**53
+            ):
+                w = w.astype(float)
+            target.temp["weights"] = w
 
             return True
         else:
