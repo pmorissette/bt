@@ -710,7 +710,49 @@ def test_run_after_days():
     assert not algo(target)
     assert not algo(target)
     assert not algo(target)
+    target.now = pd.to_datetime("2010-01-02")
+    assert not algo(target)
+    target.now = pd.to_datetime("2010-01-03")
+    assert not algo(target)
+    assert not algo(target)
+    target.now = pd.to_datetime("2010-01-04")
     assert algo(target)
+    assert algo(target)
+
+
+@pytest.mark.parametrize("days", [-1, 0, 1, 3])
+def test_run_after_days_counts_each_warmup_date_once(days):
+    target = bt.Strategy("s")
+    algo = algos.RunAfterDays(days)
+    if days <= 0:
+        target.now = None
+        assert algo(target)
+        assert algo(target)
+
+    for offset, date in enumerate(pd.bdate_range("2024-01-01", periods=max(days, 0) + 3)):
+        target.now = date
+        expected = offset >= days
+        for _ in range(3):
+            assert algo(target) is expected
+
+
+@pytest.mark.parametrize("days", [1, 3])
+@pytest.mark.parametrize("nested", [False, True])
+def test_run_after_days_shared_gate_preserves_warmup(days, nested):
+    dates = pd.bdate_range("2024-01-01", periods=days + 2)
+    data = pd.DataFrame({"asset": 100.0}, index=dates)
+    gate = algos.RunAfterDays(days)
+    strategy = bt.Strategy("sleeve", [algos.Or([gate, gate]), algos.WeighSpecified(asset=1), algos.Rebalance()])
+    if nested:
+        strategy = bt.Strategy("root", [algos.RunOnce(), algos.WeighSpecified(sleeve=1), algos.Rebalance()], children=[strategy])
+    backtest = bt.Backtest(strategy, data, initial_capital=1000.0, progress_bar=False)
+    backtest.run()
+
+    node = backtest.strategy["sleeve"] if nested else backtest.strategy
+    expected = pd.Series([0.0] * days + [10.0, 10.0], index=dates, name="position")
+    pd.testing.assert_series_equal(node["asset"].positions.loc[dates], expected, check_freq=False)
+    assert node.capital == 0.0
+    assert backtest.strategy.value == 1000.0
 
 
 def test_set_notional():

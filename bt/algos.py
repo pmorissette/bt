@@ -362,6 +362,8 @@ class RunAfterDays(Algo):
     """
     Returns True after a specific number of 'warmup' trading days have passed
 
+    Repeated calls on the same date count as one trading day.
+
     Args:
         * days (int): Number of trading days to wait before starting
 
@@ -378,12 +380,15 @@ class RunAfterDays(Algo):
         """
         super().__init__()
         self.days = days
+        self.last_date = None
 
     def __call__(self, target):
         if self.days > 0:
-            self.days -= 1
+            if target.now != self.last_date:
+                self.days -= 1
+                self.last_date = target.now
             return False
-        return True
+        return self.last_date is None or bool(target.now != self.last_date)
 
 
 class RunIfOutOfBounds(Algo):
