@@ -150,6 +150,17 @@ class Backtest:
         backtests. To access the backtested strategy, simply access
         the strategy attribute.
 
+        After running, statistics start one price row before the earliest
+        recorded change in any security's position. If no position changes
+        are recorded, statistics use the full history. This can exclude an
+        initial warmup period from the reported start date and annualized
+        statistics.
+
+        The complete price history, including the initial reference row and
+        warmup, remains available as ``backtest.strategy.prices``. For
+        full-history statistics, use
+        ``backtest.strategy.prices.calc_perf_stats()``.
+
     Args:
         * strategy (Strategy, Node, StrategyBase): The Strategy to be tested.
         * data (DataFrame): DataFrame containing data used in backtest. The
@@ -624,6 +635,11 @@ class Backtest:
 class Result(ffn.GroupStats):
     """
     Based on ffn's GroupStats with a few extra helper methods.
+
+    Note:
+        Completed backtests supply the statistics price windows described in
+        :class:`Backtest`, rather than their full strategy price histories.
+        GroupStats handles alignment when comparing backtests.
 
     Args:
         * backtests (list): List of backtests
