@@ -2339,6 +2339,14 @@ transact on a sparse set of children.</p></li>
 the capital of the parent. Coupons and costs must be passed in during setup.
 Applicable coupon payments, holding-cost observations, and derived costs
 must be finite. Coupons are not applied while the position is zero.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Coupons and holding costs are recorded on the observation date.
+Their net amount is swept into the parent strategy’s cash when the
+parent next updates to a new date. Consequently, carry recorded on
+the final backtest date can remain pending rather than appearing in
+ending cash or value.</p>
+</div>
 <dl class="py property">
 <dt class="sig sig-object py" id="bt.core.CouponPayingSecurity.coupon">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">coupon</span></span><a class="headerlink" href="#bt.core.CouponPayingSecurity.coupon" title="Link to this definition">¶</a></dt>
@@ -2348,7 +2356,7 @@ must be finite. Coupons are not applied while the position is zero.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="bt.core.CouponPayingSecurity.coupons">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">coupons</span></span><a class="headerlink" href="#bt.core.CouponPayingSecurity.coupons" title="Link to this definition">¶</a></dt>
-<dd><p>TimeSeries of coupons paid (scaled by position)</p>
+<dd><p>TimeSeries of coupon amounts observed (scaled by position).</p>
 </dd></dl>
 
 <dl class="py property">
@@ -2360,7 +2368,7 @@ must be finite. Coupons are not applied while the position is zero.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="bt.core.CouponPayingSecurity.holding_costs">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">holding_costs</span></span><a class="headerlink" href="#bt.core.CouponPayingSecurity.holding_costs" title="Link to this definition">¶</a></dt>
-<dd><p>TimeSeries of coupons paid (scaled by position)</p>
+<dd><p>TimeSeries of holding costs observed (scaled by absolute position).</p>
 </dd></dl>
 
 <dl class="py method">
