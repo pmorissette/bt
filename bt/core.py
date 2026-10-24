@@ -1936,6 +1936,13 @@ class CouponPayingSecurity(FixedIncomeSecurity):
     the capital of the parent. Coupons and costs must be passed in during setup.
     Applicable coupon payments, holding-cost observations, and derived costs
     must be finite. Coupons are not applied while the position is zero.
+
+    Note:
+        Coupons and holding costs are recorded on the observation date.
+        Their net amount is swept into the parent strategy's cash when the
+        parent next updates to a new date. Consequently, carry recorded on
+        the final backtest date can remain pending rather than appearing in
+        ending cash or value.
     """
 
     _coupon = cy.declare(cy.double)
@@ -2098,7 +2105,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
     @property
     def coupons(self):
         """
-        TimeSeries of coupons paid (scaled by position)
+        TimeSeries of coupon amounts observed (scaled by position).
         """
         if self.root.stale:  # Stale check needed because coupon paid depends on position
             self.root.update(self.root.now, None)
@@ -2116,7 +2123,7 @@ class CouponPayingSecurity(FixedIncomeSecurity):
     @property
     def holding_costs(self):
         """
-        TimeSeries of coupons paid (scaled by position)
+        TimeSeries of holding costs observed (scaled by absolute position).
         """
         if self.root.stale:  # Stale check needed because coupon paid depends on position
             self.root.update(self.root.now, None)
