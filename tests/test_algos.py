@@ -2099,7 +2099,78 @@ def test_weigh_target():
     assert weights["c2"] == pytest.approx(0.0)
 
     s.update(dts[2])
+    previous = s.temp["weights"]
     assert not algo(s)
+    assert s.temp["weights"] is previous
+
+
+@pytest.mark.parametrize("dtype", ["int64", "uint64", "Int64"])
+@pytest.mark.parametrize("named", [False, True])
+@pytest.mark.parametrize("modifier", ["target-vol", "limit-deltas"])
+def test_weigh_target_integer_weights_reach_fractional_rebalance(dtype, named, modifier):
+    dates = pd.date_range("2024-01-01", periods=7)
+    returns = [0.1, -0.1, 0.2, -0.2, 0.15, -0.05]
+    prices = pd.DataFrame({"a": 100 * np.cumprod([1.0] + [1 + r for r in returns]), "b": 100.0}, index=dates)
+    targets = pd.DataFrame([[1, 0]], index=dates[-1:], columns=prices.columns, dtype=dtype)
+    original = pickle.loads(pickle.dumps(targets))
+    adjustment = algos.TargetVol(0.1) if modifier == "target-vol" else algos.LimitDeltas(0.1)
+    strategy = bt.Strategy("s", [algos.RunOnDate(dates[-1]), algos.WeighTarget("targets" if named else targets), adjustment, algos.Rebalance()])
+    backtest = bt.Backtest(
+        strategy, prices, initial_capital=1000.0, integer_positions=False,
+        additional_data={"targets": targets} if named else None, progress_bar=False,
+    )
+
+    backtest.run()
+
+    # The six literal returns have sample variance 37/1500. With one unit
+    # target, annual risk is sqrt(252 * 37/1500); the delta limit instead
+    # permits 10% of a previously uninvested portfolio.
+    weight = 0.1 / np.sqrt(252 * 37 / 1500) if modifier == "target-vol" else 0.1
+    expected_position = weight * 1000.0 / prices.at[dates[-1], "a"]
+    assert backtest.strategy["a"].position == pytest.approx(expected_position, rel=1e-12)
+    assert backtest.strategy.capital == pytest.approx(1000.0 * (1 - weight))
+    assert backtest.strategy.value == pytest.approx(1000.0)
+    pd.testing.assert_frame_equal(targets, original)
+
+
+@pytest.mark.parametrize(
+    "dtype, values, expected_dtype",
+    [
+        ("int64", [-(2**53), 2**53], "float64"),
+        ("uint64", [0, 2**53], "float64"),
+        ("Int64", [pd.NA, 1], "float64"),
+        ("int64", [1, 2**53 + 1], "int64"),
+        ("int64", [-(2**53) - 1, 1], "int64"),
+        ("uint64", [1, 2**53 + 1], "uint64"),
+        ("uint64", [1, 2**64 - 1], "uint64"),
+        ("Int64", [pd.NA, 2**53 + 1], "Int64"),
+        ("Int64", [pd.NA, pd.NA], "Int64"),
+        ("float32", [0.25, np.nan], "float32"),
+        ("float64", [0.25, np.nan], "float64"),
+        ("boolean", [True, pd.NA], "boolean"),
+        ("object", [1, 0], "object"),
+    ],
+)
+def test_weigh_target_preserves_precision_and_row_metadata(dtype, values, expected_dtype):
+    date = pd.Timestamp("2024-01-01")
+    targets = pd.DataFrame([values], index=[date], columns=pd.Index(["b", "a"], name="Security"), dtype=dtype)
+    targets.attrs = {"purpose": "allocation"}
+    original = pickle.loads(pickle.dumps(targets))
+    strategy = bt.Strategy("s")
+    strategy.now = date
+
+    assert algos.WeighTarget(targets)(strategy)
+
+    # Expected dtypes are explicit: adjacent out-of-range integers must keep
+    # their exact values, rather than passing a rounded float comparison.
+    expected = original.loc[date].dropna().astype(expected_dtype)
+    expected.attrs = {"purpose": "allocation"}
+    weights = strategy.temp["weights"]
+    pd.testing.assert_series_equal(weights, expected)
+    assert weights.attrs == expected.attrs
+    if expected_dtype == "float64" and len(weights):
+        weights.iloc[0] = 0.125
+    pd.testing.assert_frame_equal(targets, original)
 
 
 def test_weigh_inv_vol():
