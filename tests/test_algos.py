@@ -631,6 +631,11 @@ def test_run_after_days():
     assert not algo(target)
     assert not algo(target)
     assert not algo(target)
+    target.now = pd.to_datetime("2010-01-02")
+    assert not algo(target)
+    target.now = pd.to_datetime("2010-01-03")
+    assert not algo(target)
+    target.now = pd.to_datetime("2010-01-04")
     assert algo(target)
 
 
