@@ -134,6 +134,85 @@ def test_run_period():
     assert not algo(target)
 
 
+@pytest.mark.parametrize(
+    "scheduler,dates",
+    [
+        (algos.RunDaily, ["2024-01-30 09:00", "2024-01-30 16:00", "2024-01-31 09:00"]),
+        (algos.RunWeekly, ["2015-12-31", "2016-01-01", "2016-01-04"]),
+        (algos.RunMonthly, ["2024-01-30", "2024-01-31", "2024-02-01"]),
+        (algos.RunQuarterly, ["2024-03-27", "2024-03-28", "2024-04-01"]),
+        (algos.RunYearly, ["2023-12-28", "2023-12-29", "2024-01-02"]),
+    ],
+)
+@pytest.mark.parametrize(
+    "last,end,expected",
+    [
+        (False, False, [False, False]),
+        (True, False, [True, True]),
+        (None, False, [False, True]),
+        (False, True, [False, False]),
+        (True, True, [True, True]),
+        (None, True, [False, False]),
+    ],
+)
+@pytest.mark.parametrize("timezone", [None, "America/New_York"])
+def test_run_period_last_date_policy(scheduler, dates, last, end, expected, timezone):
+    # Two supplied bars end within a period; the third starts the next one.
+    # The weekly pair spans New Year within the same ISO week.
+    data = pd.DataFrame({"asset": 100.0}, index=pd.DatetimeIndex(dates, tz=timezone))
+    actual = []
+    for stop in [2, 3]:
+        backtest = bt.Backtest(bt.Strategy("s"), data.iloc[:stop])
+        target = mock.Mock(data=backtest.data, now=data.index[stop - 1])
+        algo = scheduler(run_on_first_date=False, run_on_end_of_period=end, run_on_last_date=last)
+        actual.append(algo(target))
+    assert actual == expected
+
+
+@pytest.mark.parametrize("first", [False, True])
+@pytest.mark.parametrize("last", [False, True, None])
+@pytest.mark.parametrize("end", [False, True])
+def test_run_period_single_supplied_date_keeps_first_date_precedence(first, last, end):
+    data = pd.DataFrame({"asset": [100.0]}, index=pd.to_datetime(["2024-02-01"]))
+    backtest = bt.Backtest(bt.Strategy("s"), data)
+    target = mock.Mock(data=backtest.data, now=data.index[0])
+    algo = algos.RunMonthly(run_on_first_date=first, run_on_end_of_period=end, run_on_last_date=last)
+    assert algo(target) is first
+
+
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("last,expected_units", [(False, 0), (True, 10), (None, 10)])
+def test_run_period_last_boundary_rebalance(nested, last, expected_units):
+    class RecordDates(bt.Algo):
+        def __init__(self):
+            self.dates = []
+
+        def __call__(self, target):
+            self.dates.append(target.now)
+            return True
+
+    dates = pd.to_datetime(["2024-01-29", "2024-01-30", "2024-01-31", "2024-02-01"])
+    data = pd.DataFrame({"asset": 100.0}, index=dates)
+    strategy = bt.Strategy(
+        "sleeve",
+        [algos.RunMonthly(run_on_first_date=False, run_on_last_date=last), RecordDates(), algos.WeighSpecified(asset=1), algos.Rebalance()],
+    )
+    if nested:
+        strategy = bt.Strategy(
+            "root", [algos.RunOnce(), algos.SelectThese(["sleeve"]), algos.WeighEqually(), algos.Rebalance()], children=[strategy]
+        )
+    backtest = bt.Backtest(strategy, data, initial_capital=1000.0, progress_bar=False)
+    backtest.run()
+
+    node = backtest.strategy["sleeve"] if nested else backtest.strategy
+    assert node.stack.algos[1].dates == ([dates[-1]] if expected_units else [])
+    # A single all-in rebalance at price 100 buys ten units from 1000 cash.
+    asset = node.children.get("asset")
+    assert (asset.position if asset is not None else 0) == expected_units
+    assert node.capital == 1000.0 - 100.0 * expected_units
+    assert backtest.strategy.value == 1000.0
+
+
 def test_run_daily():
     target = mock.MagicMock()
 

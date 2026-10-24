@@ -135,6 +135,15 @@ class RunOnce(Algo):
 
 
 class RunPeriod(Algo):
+    """
+    Schedule from period boundaries in the supplied dates.
+
+    The first supplied date uses ``run_on_first_date``, even if it is also
+    the last. On other final dates, ``run_on_last_date=False`` skips execution
+    and ``True`` forces it. ``None`` uses the preceding date in beginning-of-period
+    mode, but returns False in end-of-period mode because no following date exists.
+    """
+
     def __init__(self, run_on_first_date=True, run_on_end_of_period=False, run_on_last_date=False):
         super().__init__()
         self._run_on_first_date = run_on_first_date
@@ -165,8 +174,8 @@ class RunPeriod(Algo):
         if index == 1:
             if self._run_on_first_date:
                 result = True
-        # last date
-        elif index == (len(target.data.index) - 1):
+        # None can compare the preceding bar, but cannot infer a missing successor.
+        elif index == (len(target.data.index) - 1) and (self._run_on_last_date is not None or self._run_on_end_of_period):
             if self._run_on_last_date:
                 result = True
         else:
@@ -197,7 +206,9 @@ class RunDaily(RunPeriod):
         * run_on_first_date (bool): determines if it runs the first time the algo is called
         * run_on_end_of_period (bool): determines if it should run at the end of the period
           or the beginning
-        * run_on_last_date (bool): determines if it runs on the last time the algo is called
+        * run_on_last_date (bool or None): False (default) skips the final supplied date;
+          True forces execution; None checks the preceding date, or returns False in
+          end-of-period mode. The first-date override takes precedence (see RunPeriod).
 
     Returns True if the target.now's day has changed
     compared to the last(or next if run_on_end_of_period) date, if not returns False.
@@ -217,7 +228,9 @@ class RunWeekly(RunPeriod):
         * run_on_first_date (bool): determines if it runs the first time the algo is called
         * run_on_end_of_period (bool): determines if it should run at the end of the period
           or the beginning
-        * run_on_last_date (bool): determines if it runs on the last time the algo is called
+        * run_on_last_date (bool or None): False (default) skips the final supplied date;
+          True forces execution; None checks the preceding date, or returns False in
+          end-of-period mode. The first-date override takes precedence (see RunPeriod).
 
     Returns True if the target.now's week has changed
     since relative to the last(or next) date, if not returns False. Useful for
@@ -237,7 +250,9 @@ class RunMonthly(RunPeriod):
         * run_on_first_date (bool): determines if it runs the first time the algo is called
         * run_on_end_of_period (bool): determines if it should run at the end of the period
           or the beginning
-        * run_on_last_date (bool): determines if it runs on the last time the algo is called
+        * run_on_last_date (bool or None): False (default) skips the final supplied date;
+          True forces execution; None checks the preceding date, or returns False in
+          end-of-period mode. The first-date override takes precedence (see RunPeriod).
 
     Returns True if the target.now's month has changed
     since relative to the last(or next) date, if not returns False. Useful for
@@ -257,7 +272,9 @@ class RunQuarterly(RunPeriod):
         * run_on_first_date (bool): determines if it runs the first time the algo is called
         * run_on_end_of_period (bool): determines if it should run at the end of the period
           or the beginning
-        * run_on_last_date (bool): determines if it runs on the last time the algo is called
+        * run_on_last_date (bool or None): False (default) skips the final supplied date;
+          True forces execution; None checks the preceding date, or returns False in
+          end-of-period mode. The first-date override takes precedence (see RunPeriod).
 
     Returns True if the target.now's quarter has changed
     since relative to the last(or next) date, if not returns False. Useful for
@@ -277,7 +294,9 @@ class RunYearly(RunPeriod):
         * run_on_first_date (bool): determines if it runs the first time the algo is called
         * run_on_end_of_period (bool): determines if it should run at the end of the period
           or the beginning
-        * run_on_last_date (bool): determines if it runs on the last time the algo is called
+        * run_on_last_date (bool or None): False (default) skips the final supplied date;
+          True forces execution; None checks the preceding date, or returns False in
+          end-of-period mode. The first-date override takes precedence (see RunPeriod).
 
     Returns True if the target.now's year has changed
     since relative to the last(or next) date, if not returns False. Useful for
