@@ -369,7 +369,7 @@ class RunAfterDays(Algo):
                 self.days -= 1
                 self.last_date = target.now
             return False
-        return True
+        return self.last_date is None or bool(target.now != self.last_date)
 
 
 class RunIfOutOfBounds(Algo):
