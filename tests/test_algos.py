@@ -4423,6 +4423,30 @@ def test_replay_transactions_consistency():
     assert t1.equals(t2)
 
 
+def test_replay_exported_transaction_prices_with_multiplier():
+    dates = pd.date_range("2024-01-02", periods=3)
+    data = pd.DataFrame({"asset": 100.0}, index=dates)
+    fills = pd.DataFrame(
+        {"quantity": [2.0, -1.0], "price": [101.0, 99.0]},
+        index=pd.MultiIndex.from_tuples([(dates[0], "asset"), (dates[1], "asset")], names=["Date", "Security"]),
+    )
+
+    def run(transactions):
+        strategy = bt.Strategy("strategy", [algos.ReplayTransactions("fills")], children=[bt.Security("asset", multiplier=10)])
+        return bt.run(bt.Backtest(strategy, data, initial_capital=10000, additional_data={"bidoffer": {}, "fills": transactions}))
+
+    original = run(fills)
+    exported = original.get_transactions()
+    pd.testing.assert_frame_equal(exported, fills[["price", "quantity"]])
+    replayed = run(exported)
+    for result in [original, replayed]:
+        strategy = result.backtest_list[0].strategy
+        # 2 * 101 * 10 paid, then 1 * 99 * 10 received; one unit remains marked at 100.
+        assert strategy.capital == pytest.approx(8970)
+        assert strategy.value == pytest.approx(9970)
+        assert strategy["asset"].position == 1
+
+
 @pytest.mark.parametrize("algo_name", ["replay", "rfq"])
 @pytest.mark.parametrize(
     ("timezone", "numpy_clock"),
@@ -4560,8 +4584,8 @@ def test_replayed_transactions_resolve_lazy_securities(
     assert security.bidoffer_paid == -1.0 * expected_multiplier
     assert strategy.capital == 1000.0 - 99.0 * expected_multiplier
     assert strategy.value == 1000.0 + expected_multiplier
+    # The supplied fill stays per unit; only its currency cost scales with multiplier.
     expected_transactions = transactions.copy()
-    expected_transactions["price"] = 100.0 + (99.0 - 100.0) * expected_multiplier
     pd.testing.assert_frame_equal(
         strategy.get_transactions().sort_index(axis=1),
         expected_transactions.sort_index(axis=1),
