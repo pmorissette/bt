@@ -599,6 +599,15 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="RunPeriod">
 <a class="viewcode-back" href="../../docs/source/overview.html#bt.algos.RunPeriod">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RunPeriod</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Schedule from period boundaries in the supplied dates.</span>
+
+<span class="sd">    The first supplied date uses ``run_on_first_date``, even if it is also</span>
+<span class="sd">    the last. On other final dates, ``run_on_last_date=False`` skips execution</span>
+<span class="sd">    and ``True`` forces it. ``None`` uses the preceding date in beginning-of-period</span>
+<span class="sd">    mode, but returns False in end-of-period mode because no following date exists.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_on_first_date</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_on_end_of_period</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">run_on_last_date</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_on_first_date</span> <span class="o">=</span> <span class="n">run_on_first_date</span>
@@ -629,8 +638,8 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_on_first_date</span><span class="p">:</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="c1"># last date</span>
-        <span class="k">elif</span> <span class="n">index</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># None can compare the preceding bar, but cannot infer a missing successor.</span>
+        <span class="k">elif</span> <span class="n">index</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_on_last_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_on_end_of_period</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_on_last_date</span><span class="p">:</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
@@ -667,7 +676,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * run_on_first_date (bool): determines if it runs the first time the algo is called</span>
 <span class="sd">        * run_on_end_of_period (bool): determines if it should run at the end of the period</span>
 <span class="sd">          or the beginning</span>
-<span class="sd">        * run_on_last_date (bool): determines if it runs on the last time the algo is called</span>
+<span class="sd">        * run_on_last_date (bool or None): False (default) skips the final supplied date;</span>
+<span class="sd">          True forces execution; None checks the preceding date, or returns False in</span>
+<span class="sd">          end-of-period mode. The first-date override takes precedence (see RunPeriod).</span>
 
 <span class="sd">    Returns True if the target.now's day has changed</span>
 <span class="sd">    compared to the last(or next if run_on_end_of_period) date, if not returns False.</span>
@@ -693,7 +704,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * run_on_first_date (bool): determines if it runs the first time the algo is called</span>
 <span class="sd">        * run_on_end_of_period (bool): determines if it should run at the end of the period</span>
 <span class="sd">          or the beginning</span>
-<span class="sd">        * run_on_last_date (bool): determines if it runs on the last time the algo is called</span>
+<span class="sd">        * run_on_last_date (bool or None): False (default) skips the final supplied date;</span>
+<span class="sd">          True forces execution; None checks the preceding date, or returns False in</span>
+<span class="sd">          end-of-period mode. The first-date override takes precedence (see RunPeriod).</span>
 
 <span class="sd">    Returns True if the target.now's week has changed</span>
 <span class="sd">    since relative to the last(or next) date, if not returns False. Useful for</span>
@@ -719,7 +732,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * run_on_first_date (bool): determines if it runs the first time the algo is called</span>
 <span class="sd">        * run_on_end_of_period (bool): determines if it should run at the end of the period</span>
 <span class="sd">          or the beginning</span>
-<span class="sd">        * run_on_last_date (bool): determines if it runs on the last time the algo is called</span>
+<span class="sd">        * run_on_last_date (bool or None): False (default) skips the final supplied date;</span>
+<span class="sd">          True forces execution; None checks the preceding date, or returns False in</span>
+<span class="sd">          end-of-period mode. The first-date override takes precedence (see RunPeriod).</span>
 
 <span class="sd">    Returns True if the target.now's month has changed</span>
 <span class="sd">    since relative to the last(or next) date, if not returns False. Useful for</span>
@@ -745,7 +760,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * run_on_first_date (bool): determines if it runs the first time the algo is called</span>
 <span class="sd">        * run_on_end_of_period (bool): determines if it should run at the end of the period</span>
 <span class="sd">          or the beginning</span>
-<span class="sd">        * run_on_last_date (bool): determines if it runs on the last time the algo is called</span>
+<span class="sd">        * run_on_last_date (bool or None): False (default) skips the final supplied date;</span>
+<span class="sd">          True forces execution; None checks the preceding date, or returns False in</span>
+<span class="sd">          end-of-period mode. The first-date override takes precedence (see RunPeriod).</span>
 
 <span class="sd">    Returns True if the target.now's quarter has changed</span>
 <span class="sd">    since relative to the last(or next) date, if not returns False. Useful for</span>
@@ -771,7 +788,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * run_on_first_date (bool): determines if it runs the first time the algo is called</span>
 <span class="sd">        * run_on_end_of_period (bool): determines if it should run at the end of the period</span>
 <span class="sd">          or the beginning</span>
-<span class="sd">        * run_on_last_date (bool): determines if it runs on the last time the algo is called</span>
+<span class="sd">        * run_on_last_date (bool or None): False (default) skips the final supplied date;</span>
+<span class="sd">          True forces execution; None checks the preceding date, or returns False in</span>
+<span class="sd">          end-of-period mode. The first-date override takes precedence (see RunPeriod).</span>
 
 <span class="sd">    Returns True if the target.now's year has changed</span>
 <span class="sd">    since relative to the last(or next) date, if not returns False. Useful for</span>

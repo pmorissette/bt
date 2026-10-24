@@ -638,7 +638,9 @@ don’t want to start trading until some amount of data has been built up</p>
 <li><p><strong>run_on_first_date</strong> (<em>*</em>) – determines if it runs the first time the algo is called</p></li>
 <li><p><strong>run_on_end_of_period</strong> (<em>*</em>) – determines if it should run at the end of the period
 or the beginning</p></li>
-<li><p><strong>run_on_last_date</strong> (<em>*</em>) – determines if it runs on the last time the algo is called</p></li>
+<li><p><strong>run_on_last_date</strong> (<em>*</em>) – False (default) skips the final supplied date;
+True forces execution; None checks the preceding date, or returns False in
+end-of-period mode. The first-date override takes precedence (see RunPeriod).</p></li>
 </ul>
 </dd>
 </dl>
@@ -717,7 +719,9 @@ security’s weight deviates by more than 20% could be implemented by:</p>
 <li><p><strong>run_on_first_date</strong> (<em>*</em>) – determines if it runs the first time the algo is called</p></li>
 <li><p><strong>run_on_end_of_period</strong> (<em>*</em>) – determines if it should run at the end of the period
 or the beginning</p></li>
-<li><p><strong>run_on_last_date</strong> (<em>*</em>) – determines if it runs on the last time the algo is called</p></li>
+<li><p><strong>run_on_last_date</strong> (<em>*</em>) – False (default) skips the final supplied date;
+True forces execution; None checks the preceding date, or returns False in
+end-of-period mode. The first-date override takes precedence (see RunPeriod).</p></li>
 </ul>
 </dd>
 </dl>
@@ -761,6 +765,11 @@ where we want to run the logic once (buy and hold for example).</p>
 <dt class="sig sig-object py" id="bt.algos.RunPeriod">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bt.algos.</span></span><span class="sig-name descname"><span class="pre">RunPeriod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_on_first_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_on_end_of_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_on_last_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/algos.html#RunPeriod"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.algos.RunPeriod" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algo</span></code></a></p>
+<p>Schedule from period boundaries in the supplied dates.</p>
+<p>The first supplied date uses <code class="docutils literal notranslate"><span class="pre">run_on_first_date</span></code>, even if it is also
+the last. On other final dates, <code class="docutils literal notranslate"><span class="pre">run_on_last_date=False</span></code> skips execution
+and <code class="docutils literal notranslate"><span class="pre">True</span></code> forces it. <code class="docutils literal notranslate"><span class="pre">None</span></code> uses the preceding date in beginning-of-period
+mode, but returns False in end-of-period mode because no following date exists.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="bt.algos.RunPeriod.compare_dates">
 <em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compare_dates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_to_compare</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/algos.html#RunPeriod.compare_dates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.algos.RunPeriod.compare_dates" title="Link to this definition">¶</a></dt>
@@ -779,7 +788,9 @@ where we want to run the logic once (buy and hold for example).</p>
 <li><p><strong>run_on_first_date</strong> (<em>*</em>) – determines if it runs the first time the algo is called</p></li>
 <li><p><strong>run_on_end_of_period</strong> (<em>*</em>) – determines if it should run at the end of the period
 or the beginning</p></li>
-<li><p><strong>run_on_last_date</strong> (<em>*</em>) – determines if it runs on the last time the algo is called</p></li>
+<li><p><strong>run_on_last_date</strong> (<em>*</em>) – False (default) skips the final supplied date;
+True forces execution; None checks the preceding date, or returns False in
+end-of-period mode. The first-date override takes precedence (see RunPeriod).</p></li>
 </ul>
 </dd>
 </dl>
@@ -804,7 +815,9 @@ quarterly rebalancing strategies.</p>
 <li><p><strong>run_on_first_date</strong> (<em>*</em>) – determines if it runs the first time the algo is called</p></li>
 <li><p><strong>run_on_end_of_period</strong> (<em>*</em>) – determines if it should run at the end of the period
 or the beginning</p></li>
-<li><p><strong>run_on_last_date</strong> (<em>*</em>) – determines if it runs on the last time the algo is called</p></li>
+<li><p><strong>run_on_last_date</strong> (<em>*</em>) – False (default) skips the final supplied date;
+True forces execution; None checks the preceding date, or returns False in
+end-of-period mode. The first-date override takes precedence (see RunPeriod).</p></li>
 </ul>
 </dd>
 </dl>
@@ -829,7 +842,9 @@ weekly rebalancing strategies.</p>
 <li><p><strong>run_on_first_date</strong> (<em>*</em>) – determines if it runs the first time the algo is called</p></li>
 <li><p><strong>run_on_end_of_period</strong> (<em>*</em>) – determines if it should run at the end of the period
 or the beginning</p></li>
-<li><p><strong>run_on_last_date</strong> (<em>*</em>) – determines if it runs on the last time the algo is called</p></li>
+<li><p><strong>run_on_last_date</strong> (<em>*</em>) – False (default) skips the final supplied date;
+True forces execution; None checks the preceding date, or returns False in
+end-of-period mode. The first-date override takes precedence (see RunPeriod).</p></li>
 </ul>
 </dd>
 </dl>
