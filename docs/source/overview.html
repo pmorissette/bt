@@ -615,6 +615,7 @@ don’t want to start trading until some amount of data has been built up</p>
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bt.algos.</span></span><span class="sig-name descname"><span class="pre">RunAfterDays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">days</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/algos.html#RunAfterDays"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.algos.RunAfterDays" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algo</span></code></a></p>
 <p>Returns True after a specific number of ‘warmup’ trading days have passed</p>
+<p>Repeated calls on the same date count as one trading day.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>days</strong> (<em>*</em>) – Number of trading days to wait before starting</p>

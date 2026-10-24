@@ -868,6 +868,8 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns True after a specific number of 'warmup' trading days have passed</span>
 
+<span class="sd">    Repeated calls on the same date count as one trading day.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        * days (int): Number of trading days to wait before starting</span>
 
@@ -884,12 +886,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">days</span> <span class="o">=</span> <span class="n">days</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">days</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">days</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="kc">True</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_date</span><span class="p">)</span></div>
 
 
 
