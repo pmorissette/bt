@@ -1621,6 +1621,15 @@ produce a Result.</p>
 <p>The Strategy will be deepcopied so it is re-usable in other
 backtests. To access the backtested strategy, simply access
 the strategy attribute.</p>
+<p>After running, statistics start one price row before the earliest
+recorded change in any security’s position. If no position changes
+are recorded, statistics use the full history. This can exclude an
+initial warmup period from the reported start date and annualized
+statistics.</p>
+<p>The complete price history, including the initial reference row and
+warmup, remains available as <code class="docutils literal notranslate"><span class="pre">backtest.strategy.prices</span></code>. For
+full-history statistics, use
+<code class="docutils literal notranslate"><span class="pre">backtest.strategy.prices.calc_perf_stats()</span></code>.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1943,6 +1952,12 @@ history and must cover every date after the initial price.</p></li>
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bt.backtest.</span></span><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">backtests</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/backtest.html#Result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.backtest.Result" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://pmorissette.github.io/ffn/docs/source/ffn.html#ffn.core.GroupStats" title="(in ffn v1.4.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">GroupStats</span></code></a></p>
 <p>Based on ffn’s GroupStats with a few extra helper methods.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Completed backtests supply the statistics price windows described in
+<a class="reference internal" href="#bt.backtest.Backtest" title="bt.backtest.Backtest"><code class="xref py py-class docutils literal notranslate"><span class="pre">Backtest</span></code></a>, rather than their full strategy price histories.
+GroupStats handles alignment when comparing backtests.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>backtests</strong> (<em>*</em>) – List of backtests</p>

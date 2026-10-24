@@ -602,6 +602,17 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        backtests. To access the backtested strategy, simply access</span>
 <span class="sd">        the strategy attribute.</span>
 
+<span class="sd">        After running, statistics start one price row before the earliest</span>
+<span class="sd">        recorded change in any security's position. If no position changes</span>
+<span class="sd">        are recorded, statistics use the full history. This can exclude an</span>
+<span class="sd">        initial warmup period from the reported start date and annualized</span>
+<span class="sd">        statistics.</span>
+
+<span class="sd">        The complete price history, including the initial reference row and</span>
+<span class="sd">        warmup, remains available as ``backtest.strategy.prices``. For</span>
+<span class="sd">        full-history statistics, use</span>
+<span class="sd">        ``backtest.strategy.prices.calc_perf_stats()``.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        * strategy (Strategy, Node, StrategyBase): The Strategy to be tested.</span>
 <span class="sd">        * data (DataFrame): DataFrame containing data used in backtest. The</span>
@@ -1082,6 +1093,11 @@ window.runMermaid = runMermaid;</script>
 <span class="k">class</span><span class="w"> </span><span class="nc">Result</span><span class="p">(</span><span class="n">ffn</span><span class="o">.</span><span class="n">GroupStats</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Based on ffn's GroupStats with a few extra helper methods.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Completed backtests supply the statistics price windows described in</span>
+<span class="sd">        :class:`Backtest`, rather than their full strategy price histories.</span>
+<span class="sd">        GroupStats handles alignment when comparing backtests.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * backtests (list): List of backtests</span>
