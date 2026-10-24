@@ -1736,10 +1736,20 @@ window.runMermaid = runMermaid;</script>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights_name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
 
-            <span class="c1"># dropna and save</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="c1"># Promote the contiguous exact-integer range for fractional modifiers.</span>
+            <span class="c1"># Python-int bounds avoid rounding uint64 comparisons in NumPy.</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">type</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="ow">is</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+                <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="ow">is</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
+                <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_integer_dtype</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">w</span><span class="o">.</span><span class="n">empty</span>
+                <span class="ow">and</span> <span class="o">-</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">53</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+                <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">53</span>
+            <span class="p">):</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
 
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
