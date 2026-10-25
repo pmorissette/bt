@@ -262,9 +262,9 @@ regardless of order size or market depth. Passing a <code class="docutils litera
 <code class="docutils literal notranslate"><span class="pre">Backtest</span></code> removes that bias by routing trade quantities through a cost
 model that is sensitive to size, volume, and volatility, while leaving
 existing callable-based usage of the <code class="docutils literal notranslate"><span class="pre">commissions</span></code> argument unchanged.</p>
-<p>For a flat-bps degenerate behaviour, the AC model with
-<code class="docutils literal notranslate"><span class="pre">alpha=0,</span> <span class="pre">beta=0,</span> <span class="pre">epsilon=bps/1e4</span></code> reproduces the legacy commissions
-path bit-for-bit.</p>
+<p>With positive volume, setting <code class="docutils literal notranslate"><span class="pre">alpha=0,</span> <span class="pre">beta=0,</span> <span class="pre">epsilon=bps/1e4</span></code> gives the
+corresponding flat-bps charge. At zero volume, the model returns zero cost,
+including the linear component, so it does not reproduce a nonzero legacy commission.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
