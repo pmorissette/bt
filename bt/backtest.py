@@ -167,10 +167,10 @@ class Backtest:
           index must be monotonic increasing. This will be the Strategy's
           "universe".
 
-          Use unique timestamps for execution. Construction permits monotonic
-          duplicate timestamps, but price lookups can be ambiguous when running
-          the backtest. Resolve duplicate observations according to their meaning
-          before running.
+          Known execution limitation: construction permits monotonic duplicate
+          timestamps, but they can cause price-lookup errors during execution.
+          Use unique timestamps and resolve duplicate observations according
+          to their meaning before running.
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
           Strategy.
