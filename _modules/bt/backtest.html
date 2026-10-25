@@ -618,6 +618,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * data (DataFrame): DataFrame containing data used in backtest. The</span>
 <span class="sd">          index must be monotonic increasing. This will be the Strategy's</span>
 <span class="sd">          "universe".</span>
+
+<span class="sd">          Known execution limitation: construction permits monotonic duplicate</span>
+<span class="sd">          timestamps, but they can cause price-lookup errors during execution.</span>
+<span class="sd">          Use unique timestamps and resolve duplicate observations according</span>
+<span class="sd">          to their meaning before running.</span>
 <span class="sd">        * name (str): Backtest name - defaults to strategy name</span>
 <span class="sd">        * initial_capital (float): Initial amount of capital passed to</span>
 <span class="sd">          Strategy.</span>

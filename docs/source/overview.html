@@ -1651,9 +1651,14 @@ full-history statistics, use
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>strategy</strong> (<em>*</em>) – The Strategy to be tested.</p></li>
-<li><p><strong>data</strong> (<em>*</em>) – DataFrame containing data used in backtest. The
+<li><p><strong>data</strong> (<em>*</em>) – <p>DataFrame containing data used in backtest. The
 index must be monotonic increasing. This will be the Strategy’s
-“universe”.</p></li>
+“universe”.</p>
+<p>Known execution limitation: construction permits monotonic duplicate
+timestamps, but they can cause price-lookup errors during execution.
+Use unique timestamps and resolve duplicate observations according
+to their meaning before running.</p>
+</p></li>
 <li><p><strong>name</strong> (<em>*</em>) – Backtest name - defaults to strategy name</p></li>
 <li><p><strong>initial_capital</strong> (<em>*</em>) – Initial amount of capital passed to
 Strategy.</p></li>
