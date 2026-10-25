@@ -2395,8 +2395,12 @@ class RollPositionsAfterDates(Algo):
             - "target": the security name we are rolling into
             - "factor": the conversion factor. One unit of the original security
               rolls into "factor" units of the new one. Applicable factors and
-              resulting quantities must be finite; invalid due data is rejected
-              before portfolio state changes.
+              resulting quantities must be finite and are validated before
+              portfolio state changes.
+
+    Known execution limitation: roll execution is not atomic. An execution
+    error can leave earlier trades and ``target.perm['rolled']`` entries
+    applied; completed changes are not rolled back.
 
     Sets:
         * target.perm['rolled'] : to keep track of which securities have already rolled
