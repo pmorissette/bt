@@ -579,12 +579,15 @@ rolled as necessary.</p>
 <li><p>”target”: the security name we are rolling into</p></li>
 <li><p>”factor”: the conversion factor. One unit of the original security
 rolls into “factor” units of the new one. Applicable factors and
-resulting quantities must be finite; invalid due data is rejected
-before portfolio state changes.</p></li>
+resulting quantities must be finite and are validated before
+portfolio state changes.</p></li>
 </ul>
 </p>
 </dd>
 </dl>
+<p>Known execution limitation: roll execution is not atomic. An execution
+error can leave earlier trades and <code class="docutils literal notranslate"><span class="pre">target.perm['rolled']</span></code> entries
+applied; completed changes are not rolled back.</p>
 <dl class="simple">
 <dt>Sets:</dt><dd><ul class="simple">
 <li><p>target.perm[‘rolled’] : to keep track of which securities have already rolled</p></li>

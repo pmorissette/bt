@@ -3015,8 +3015,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            - "target": the security name we are rolling into</span>
 <span class="sd">            - "factor": the conversion factor. One unit of the original security</span>
 <span class="sd">              rolls into "factor" units of the new one. Applicable factors and</span>
-<span class="sd">              resulting quantities must be finite; invalid due data is rejected</span>
-<span class="sd">              before portfolio state changes.</span>
+<span class="sd">              resulting quantities must be finite and are validated before</span>
+<span class="sd">              portfolio state changes.</span>
+
+<span class="sd">    Known execution limitation: roll execution is not atomic. An execution</span>
+<span class="sd">    error can leave earlier trades and ``target.perm['rolled']`` entries</span>
+<span class="sd">    applied; completed changes are not rolled back.</span>
 
 <span class="sd">    Sets:</span>
 <span class="sd">        * target.perm['rolled'] : to keep track of which securities have already rolled</span>
