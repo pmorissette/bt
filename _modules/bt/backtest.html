@@ -646,8 +646,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">          This data can be retrieved by Algos using StrategyBase.get_data.</span>
 <span class="sd">          The data may also be used by the Strategy itself, i.e.</span>
 
-<span class="sd">            - ``bidoffer``: A DataFrame with the same format as 'data', will be used</span>
-<span class="sd">              by the strategy for transaction cost modeling</span>
+<span class="sd">            - ``bidoffer``: A DataFrame of bid/offer spreads with the same index</span>
+<span class="sd">              as 'data'. Columns may cover a subset of securities; omitted</span>
+<span class="sd">              securities use zero configured spread. Pass an empty dict to</span>
+<span class="sd">              enable bid/offer tracking without supplying spreads. Custom</span>
+<span class="sd">              execution prices can still produce recorded bid/offer costs.</span>
 <span class="sd">            - ``coupons``: A DataFrame with the same format as 'data', will by used</span>
 <span class="sd">              by :class:`CouponPayingSecurity &lt;bt.core.CouponPayingSecurity&gt;`</span>
 <span class="sd">              to determine cashflows.</span>

@@ -1685,8 +1685,11 @@ This data can be retrieved by Algos using StrategyBase.get_data.
 The data may also be used by the Strategy itself, i.e.</p>
 <blockquote>
 <div><ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">bidoffer</span></code>: A DataFrame with the same format as ‘data’, will be used
-by the strategy for transaction cost modeling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bidoffer</span></code>: A DataFrame of bid/offer spreads with the same index
+as ‘data’. Columns may cover a subset of securities; omitted
+securities use zero configured spread. Pass an empty dict to
+enable bid/offer tracking without supplying spreads. Custom
+execution prices can still produce recorded bid/offer costs.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">coupons</span></code>: A DataFrame with the same format as ‘data’, will by used
 by <a class="reference internal" href="#bt.core.CouponPayingSecurity" title="bt.core.CouponPayingSecurity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CouponPayingSecurity</span></code></a>
 to determine cashflows.</p></li>
@@ -3111,9 +3114,11 @@ to parent).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>universe</strong> (<em>*</em>) – DataFrame of prices with security’s name as
 one of the columns.</p></li>
-<li><p><strong>bidoffer</strong> (<em>*</em>) – Optional argument that represents the
-bid/offer spread on each security across time. If provided, the
-strategy will account for these costs when rebalancing.</p></li>
+<li><p><strong>bidoffer</strong> (<em>*</em>) – Optional bid/offer spreads. A
+DataFrame must have the same index as universe; securities absent
+from its columns use zero configured spread. Pass an empty dict
+to enable bid/offer tracking without supplying spreads. Custom
+execution prices can still produce recorded bid/offer costs.</p></li>
 <li><p><strong>kwargs</strong> (<em>*</em>) – Dictionary of additional information needed by
 the strategy. In particular, often takes the form of a DataFrame
 of security level information (i.e. signals, risk, etc).</p></li>
