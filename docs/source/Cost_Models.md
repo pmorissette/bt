@@ -239,9 +239,9 @@ regardless of order size or market depth. Passing a `CostModel` to
 model that is sensitive to size, volume, and volatility, while leaving
 existing callable-based usage of the `commissions` argument unchanged.
 
-For a flat-bps degenerate behaviour, the AC model with
-`alpha=0, beta=0, epsilon=bps/1e4` reproduces the legacy commissions
-path bit-for-bit.
+With positive volume, setting `alpha=0, beta=0, epsilon=bps/1e4` gives the
+corresponding flat-bps charge. At zero volume, the model returns zero cost,
+including the linear component, so it does not reproduce a nonzero legacy commission.
 
 ## References
 
