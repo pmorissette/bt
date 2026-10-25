@@ -2398,8 +2398,9 @@ class RollPositionsAfterDates(Algo):
               resulting quantities must be finite and are validated before
               portfolio state changes.
 
-    Trades then execute sequentially. An execution error can leave earlier
-    trades and ``target.perm['rolled']`` entries applied.
+    Known execution limitation: roll execution is not atomic. An execution
+    error can leave earlier trades and ``target.perm['rolled']`` entries
+    applied; completed changes are not rolled back.
 
     Sets:
         * target.perm['rolled'] : to keep track of which securities have already rolled
