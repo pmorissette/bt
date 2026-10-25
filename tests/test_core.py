@@ -3063,9 +3063,10 @@ def test_security_history_aggregation_preserves_nested_trades(strategy_type, sec
     pd.testing.assert_frame_equal(root.outlays, expected_outlays)
     transactions = root.get_transactions()
     expected = pd.DataFrame(
-        {"price": [100 + spread / 3, 120 - spread / 6], "quantity": [3.0, -3.0]}, index=pd.MultiIndex.from_tuples([(dates[0], "a"), (dates[2], "a")], names=["Date", "Security"])
+        {"price": [100 + 7 * spread / 6, 120 - 5 * spread / 6], "quantity": [3.0, -3.0]}, index=pd.MultiIndex.from_tuples([(dates[0], "a"), (dates[2], "a")], names=["Date", "Security"])
     )
-    # Export keeps the last same-name spread history; the middle net-zero trade is absent.
+    # Both sleeves pay half-spread on 7 opening and 5 closing units; net quantities remain +/-3.
+    # The middle net-zero trade is still absent from this bar-based report.
     pd.testing.assert_frame_equal(transactions, expected)
     assert root.value == pytest.approx(1060 - 7 * spread)
 
@@ -4691,6 +4692,64 @@ def test_bidoffer_custom():
     assert s.capital == 100000 - 100 * 106 - 100 * 106 + 100 * 107
     assert c1.bidoffers_paid.iloc[i] == c1.bidoffer_paid
     assert s.bidoffers_paid.iloc[i] == s.bidoffer_paid
+
+
+@pytest.mark.parametrize(("multiplier", "quantity"), [(1, 2), (10, 2), (10, -2), (-2, 2), (0, 2)])
+@pytest.mark.parametrize("custom_price", [False, True])
+def test_transaction_prices_use_per_unit_bidoffer(multiplier, quantity, custom_price):
+    dates = pd.date_range("2024-01-02", periods=3)
+    data = pd.DataFrame({"asset": 100.0}, index=dates)
+    strategy = StrategyBase("strategy", children=[SecurityBase("asset", multiplier=multiplier)])
+    strategy.setup(data, bidoffer={} if custom_price else data * 0.02)
+    strategy.set_commissions(lambda q, p: 2.0)
+    strategy.adjust(10000)
+    strategy.update(dates[0])
+    security = strategy["asset"]
+    security.transact(quantity, price=103.0 if custom_price else None)
+    strategy.update(dates[0])
+
+    fill = 103.0 if custom_price else (101.0 if quantity > 0 else 99.0)
+    # A zero multiplier records no currency cost, so its historical report stays at the quote.
+    reported_price = fill if multiplier != 0 else 100.0
+    expected = pd.DataFrame(
+        {"price": [reported_price], "quantity": [float(quantity)]},
+        index=pd.MultiIndex.from_tuples([(dates[0], "asset")], names=["Date", "Security"]),
+    )
+    paid = security.bidoffers_paid.copy()
+    pd.testing.assert_frame_equal(strategy.get_transactions(), expected)
+    pd.testing.assert_series_equal(security.bidoffers_paid, paid)
+    # The report excludes fees and must not change the actual cash or marked position value.
+    assert strategy.capital == pytest.approx(10000 - quantity * fill * multiplier - 2)
+    assert strategy.value == pytest.approx(10000 + quantity * (100 - fill) * multiplier - 2)
+
+
+@pytest.mark.parametrize("multipliers", [(1, 1), (10, 10), (10, -2), (0, 10)])
+def test_transaction_prices_combine_same_named_securities(multipliers):
+    dates = pd.date_range("2024-01-02", periods=3)
+    data = pd.DataFrame({"asset": 100.0}, index=dates)
+    strategy = StrategyBase(
+        "root",
+        children=[StrategyBase(name, children=[SecurityBase("asset", multiplier=m)]) for name, m in zip(["left", "right"], multipliers)],
+    )
+    strategy.setup(data, bidoffer={})
+    strategy.set_commissions(lambda q, p: 2.0)
+    strategy.adjust(40000)
+    strategy.update(dates[0])
+    for name, quantity, fill in [("left", 2, 101.0), ("right", 1, 103.0)]:
+        strategy.allocate(10000, name)
+        strategy[name]["asset"].transact(quantity, price=fill)
+    strategy.update(dates[0])
+
+    # Weight literal per-unit fills by signed quantity, not multiplier-scaled currency costs.
+    first_price = 101.0 if multipliers[0] != 0 else 100.0
+    expected_price = (2 * first_price + 103.0) / 3
+    transactions = strategy.get_transactions()
+    assert transactions.index.names == ["Date", "Security"]
+    assert list(transactions.columns) == ["price", "quantity"]
+    assert list(transactions.index) == [(dates[0], "asset")]
+    assert transactions.loc[(dates[0], "asset"), "quantity"] == 3
+    assert transactions.loc[(dates[0], "asset"), "price"] == pytest.approx(expected_price)
+    assert strategy.value == pytest.approx(40000 - 2 * multipliers[0] - 3 * multipliers[1] - 4)
 
 
 def test_security_notional_value():

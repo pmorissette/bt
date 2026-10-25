@@ -1213,6 +1213,10 @@ class StrategyBase(Node):
             Date, Security | quantity, price
 
         The result is a MultiIndex DataFrame.
+
+        Quantities are net position changes per bar, not individual executions.
+        Prices include per-unit bid/offer adjustments, excluding commissions,
+        aggregated across securities sharing a name.
         """
         # get prices for each security in the strategy & create unstacked
         # series
@@ -1229,7 +1233,18 @@ class StrategyBase(Node):
 
         # Adjust prices for bid/offer paid if needed
         if self._bidoffer_set:
-            bidoffer = pd.DataFrame({x.name: x.bidoffers_paid for x in self.securities}).unstack()
+            adjustments = {}
+            for x in self.securities:
+                paid = x.bidoffers_paid
+                # Costs are in currency units; normalize before summing same-name securities.
+                # A zero multiplier records no currency cost and retains its unadjusted price.
+                if x.multiplier != 0:
+                    paid = paid / x.multiplier
+                if x.name in adjustments:
+                    adjustments[x.name] = adjustments[x.name].add(paid, fill_value=0)
+                else:
+                    adjustments[x.name] = paid.copy()
+            bidoffer = pd.DataFrame(adjustments).unstack()
             prc += bidoffer / trades
 
         res = pd.DataFrame({"price": prc, "quantity": trades}).dropna(subset=["quantity"])
