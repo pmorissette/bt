@@ -114,10 +114,16 @@ def completed_strategy(prices):
 
 
 @pytest.mark.benchmark(group="preprocessing")
-def test_float_auxiliary_preprocessing(benchmark):
+@pytest.mark.parametrize("columns,fragmented", [(1, False), (2000, False), (50, True)], ids=["narrow", "wide", "fragmented"])
+def test_float_auxiliary_preprocessing(benchmark, columns, fragmented):
     dates = pd.bdate_range("2020-01-01", periods=252)
     prices = pd.DataFrame(100.0, index=dates, columns=["asset"])
-    signals = pd.DataFrame(0.25, index=dates, columns=[f"signal_{i}" for i in range(2000)])
+    if fragmented:
+        signals = pd.DataFrame(index=dates)
+        for i in range(columns):
+            signals[f"signal_{i}"] = 0.25
+    else:
+        signals = pd.DataFrame(0.25, index=dates, columns=[f"signal_{i}" for i in range(columns)])
     original = signals.copy(deep=True)
 
     backtest = benchmark(bt.Backtest, bt.Strategy("signals"), prices, additional_data={"signals": signals})
