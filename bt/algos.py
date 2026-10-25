@@ -1803,8 +1803,8 @@ class CapitalFlow(Algo):
 
     This Algo can be used to model capital flows. For example, a pension
     fund might have inflows every month or year due to contributions. This
-    Algo will affect the capital of the target node without affecting returns
-    for the node.
+    Algo adjusts the capital of the target node. External flows are intended
+    to be excluded from investment returns, subject to the limitations below.
 
     Since this is modeled as an adjustment, the capital will remain in the
     strategy until a re-allocation/rebalancement is made.
@@ -1814,6 +1814,21 @@ class CapitalFlow(Algo):
 
     Args:
         * amount (float): Amount of adjustment
+
+    Note:
+        Known calculation defect: In ordinary value-based strategies, external
+        capital flows can incorrectly change reported investment returns.
+        These flows should be return-neutral. Backtest marks prices before
+        running Algos, and the current calculation can misstate returns when
+        capital is added or withdrawn after that mark.
+
+        For example, if 1000 invested grows to 1100, a subsequent contribution
+        of 500 leaves account value at 1600 but reports approximately 6.67%
+        return rather than 10%. Withdrawing the original 1000 instead raises
+        ZeroDivisionError even though account value remains positive at 100.
+
+        Use ``strategy.values`` to inspect account value separately; it does
+        not correct price-based performance statistics.
 
     """
 
