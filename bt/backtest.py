@@ -303,9 +303,24 @@ class Backtest:
     @staticmethod
     def _prepend_missing_row(data):
         """Prepend an all-missing row without rounding integer observations."""
+        # Ordinary float frames can expand in one allocation without dtype conversion.
+        # A single NumPy block establishes homogeneity without inspecting each column.
+        blocks = getattr(data._mgr, "blocks", ()) if type(data) is pd.DataFrame else ()
+        if (
+            type(data) is pd.DataFrame
+            and type(data.index) is pd.DatetimeIndex
+            and not data.attrs
+            and data.flags.allows_duplicate_labels
+            and len(blocks) == 1
+            and blocks[0].dtype == np.dtype("float64")
+        ):
+            # Concatenate in block orientation so NumPy can preserve its memory order.
+            values = np.concatenate((np.full((len(data.columns), 1), np.nan), blocks[0].values), axis=1).T
+            index = data.index.insert(0, data.index[0] + pd.DateOffset(days=-1))
+            return pd.DataFrame(values, index=index, columns=data.columns, copy=False)
+        dtypes = [data.dtype] if isinstance(data, pd.Series) else data.dtypes
         # Expand positionally so duplicate date labels retain their existing behavior.
         positional = data.set_axis(pd.RangeIndex(len(data)))
-        dtypes = [positional.dtype] if isinstance(data, pd.Series) else positional.dtypes
         nullable = {}
         for i, dtype in enumerate(dtypes):
             if not isinstance(dtype, np.dtype) or dtype.kind not in "iu":
