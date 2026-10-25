@@ -511,7 +511,7 @@ class Backtest:
         # loop through dates
         # init progress bar
         if self.progress_bar:
-            bar = pyprind.ProgBar(len(self.dates), title=self.name, stream=1)
+            bar = pyprind.ProgBar(len(self.dates) - 1, title=self.name, stream=1)
 
         # Initialize the synthetic reference row without consuming a nested
         # paper strategy's first trading call before market prices exist.
