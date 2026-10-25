@@ -189,8 +189,11 @@ class Backtest:
           This data can be retrieved by Algos using StrategyBase.get_data.
           The data may also be used by the Strategy itself, i.e.
 
-            - ``bidoffer``: A DataFrame with the same format as 'data', will be used
-              by the strategy for transaction cost modeling
+            - ``bidoffer``: A DataFrame of bid/offer spreads with the same index
+              as 'data'. Columns may cover a subset of securities; omitted
+              securities use zero configured spread. Pass an empty dict to
+              enable bid/offer tracking without supplying spreads. Custom
+              execution prices can still produce recorded bid/offer costs.
             - ``coupons``: A DataFrame with the same format as 'data', will by used
               by :class:`CouponPayingSecurity <bt.core.CouponPayingSecurity>`
               to determine cashflows.
