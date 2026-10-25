@@ -3596,6 +3596,9 @@ to be run against different data sets more easily.</p>
 <div><p>Date, Security | quantity, price</p>
 </div></blockquote>
 <p>The result is a MultiIndex DataFrame.</p>
+<p>Quantities are net position changes per bar, not individual executions.
+Prices include per-unit bid/offer adjustments, excluding commissions,
+aggregated across securities sharing a name.</p>
 </dd></dl>
 
 <dl class="py property">
