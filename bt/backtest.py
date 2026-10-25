@@ -166,6 +166,11 @@ class Backtest:
         * data (DataFrame): DataFrame containing data used in backtest. The
           index must be monotonic increasing. This will be the Strategy's
           "universe".
+
+          Known execution limitation: construction permits monotonic duplicate
+          timestamps, but they can cause price-lookup errors during execution.
+          Use unique timestamps and resolve duplicate observations according
+          to their meaning before running.
         * name (str): Backtest name - defaults to strategy name
         * initial_capital (float): Initial amount of capital passed to
           Strategy.
