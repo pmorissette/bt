@@ -1474,9 +1474,11 @@ class SecurityBase(Node):
         Args:
             * universe (DataFrame): DataFrame of prices with security's name as
               one of the columns.
-            * bidoffer (DataFrame): Optional argument that represents the
-              bid/offer spread on each security across time. If provided, the
-              strategy will account for these costs when rebalancing.
+            * bidoffer (DataFrame or dict): Optional bid/offer spreads. A
+              DataFrame must have the same index as universe; securities absent
+              from its columns use zero configured spread. Pass an empty dict
+              to enable bid/offer tracking without supplying spreads. Custom
+              execution prices can still produce recorded bid/offer costs.
             * kwargs (dict): Dictionary of additional information needed by
               the strategy. In particular, often takes the form of a DataFrame
               of security level information (i.e. signals, risk, etc).
