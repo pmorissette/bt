@@ -958,13 +958,18 @@ class StrategyBase(Node):
             * amount (float): Amount to adjust by. Must be finite when flow=True;
               otherwise ValueError is raised before accounting state changes.
             * update (bool): Force update?
-            * flow (bool): Is this adjustment a flow? A flow will not have an
-              impact on this strategy's or its ancestors' performance (price
-              index). Example of flows are simply capital injections (say a
-              monthly contribution to a portfolio). This should not be
-              reflected in the returns. A non-flow (flow=False) does impact
-              performance. A good example of this is a commission, or a
-              dividend.
+            * flow (bool): Is this adjustment external capital, such as a monthly
+              contribution? Flows are intended to be excluded from this
+              strategy's and its ancestors' performance (price index), subject
+              to the current-bar limitations below. A non-flow (flow=False)
+              does impact performance, for example a commission or dividend.
+
+        Note:
+            The current ordinary-strategy return calculation has known defects:
+            a same-bar external flow can incorrectly change reported returns
+            or cause a zero-base error despite positive remaining value.
+            See :class:`~bt.algos.CapitalFlow` for an example and the distinction
+            between account value and price-based performance statistics.
 
         """
         if flow and not math.isfinite(amount):
