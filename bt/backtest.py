@@ -318,9 +318,9 @@ class Backtest:
             values = np.concatenate((np.full((len(data.columns), 1), np.nan), blocks[0].values), axis=1).T
             index = data.index.insert(0, data.index[0] + pd.DateOffset(days=-1))
             return pd.DataFrame(values, index=index, columns=data.columns, copy=False)
-        dtypes = [data.dtype] if isinstance(data, pd.Series) else data.dtypes
         # Expand positionally so duplicate date labels retain their existing behavior.
         positional = data.set_axis(pd.RangeIndex(len(data)))
+        dtypes = [positional.dtype] if isinstance(data, pd.Series) else positional.dtypes
         nullable = {}
         for i, dtype in enumerate(dtypes):
             if not isinstance(dtype, np.dtype) or dtype.kind not in "iu":
