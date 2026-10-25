@@ -54,8 +54,8 @@ with the <a class="reference internal" href="intro.html"><span class="std std-do
 <p>Used to model capital flows. Flows can either be inflows or outflows.</p>
 <p>This Algo can be used to model capital flows. For example, a pension
 fund might have inflows every month or year due to contributions. This
-Algo will affect the capital of the target node without affecting returns
-for the node.</p>
+Algo adjusts the capital of the target node. External flows are intended
+to be excluded from investment returns, subject to the limitations below.</p>
 <p>Since this is modeled as an adjustment, the capital will remain in the
 strategy until a re-allocation/rebalancement is made.</p>
 <p>The amount must be finite. Nonfinite amounts raise ValueError when the
@@ -65,6 +65,20 @@ Algo runs, before the target’s accounting state changes.</p>
 <dd class="field-odd"><p><strong>amount</strong> (<em>*</em>) – Amount of adjustment</p>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Known calculation defect: In ordinary value-based strategies, external
+capital flows can incorrectly change reported investment returns.
+These flows should be return-neutral. Backtest marks prices before
+running Algos, and the current calculation can misstate returns when
+capital is added or withdrawn after that mark.</p>
+<p>For example, if 1000 invested grows to 1100, a subsequent contribution
+of 500 leaves account value at 1600 but reports approximately 6.67%
+return rather than 10%. Withdrawing the original 1000 instead raises
+ZeroDivisionError even though account value remains positive at 100.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">strategy.values</span></code> to inspect account value separately; it does
+not correct price-based performance statistics.</p>
+</div>
 </dd></dl>
 
 <dl class="py class">
@@ -3503,16 +3517,22 @@ of capital will have no effect on the children.</p>
 <li><p><strong>amount</strong> (<em>*</em>) – Amount to adjust by. Must be finite when flow=True;
 otherwise ValueError is raised before accounting state changes.</p></li>
 <li><p><strong>update</strong> (<em>*</em>) – Force update?</p></li>
-<li><p><strong>flow</strong> (<em>*</em>) – Is this adjustment a flow? A flow will not have an
-impact on this strategy’s or its ancestors’ performance (price
-index). Example of flows are simply capital injections (say a
-monthly contribution to a portfolio). This should not be
-reflected in the returns. A non-flow (flow=False) does impact
-performance. A good example of this is a commission, or a
-dividend.</p></li>
+<li><p><strong>flow</strong> (<em>*</em>) – Is this adjustment external capital, such as a monthly
+contribution? Flows are intended to be excluded from this
+strategy’s and its ancestors’ performance (price index), subject
+to the current-bar limitations below. A non-flow (flow=False)
+does impact performance, for example a commission or dividend.</p></li>
 </ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The current ordinary-strategy return calculation has known defects:
+a same-bar external flow can incorrectly change reported returns
+or cause a zero-base error despite positive remaining value.
+See <a class="reference internal" href="#bt.algos.CapitalFlow" title="bt.algos.CapitalFlow"><code class="xref py py-class docutils literal notranslate"><span class="pre">CapitalFlow</span></code></a> for an example and the distinction
+between account value and price-based performance statistics.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">

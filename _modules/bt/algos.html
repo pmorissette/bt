@@ -2390,8 +2390,8 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    This Algo can be used to model capital flows. For example, a pension</span>
 <span class="sd">    fund might have inflows every month or year due to contributions. This</span>
-<span class="sd">    Algo will affect the capital of the target node without affecting returns</span>
-<span class="sd">    for the node.</span>
+<span class="sd">    Algo adjusts the capital of the target node. External flows are intended</span>
+<span class="sd">    to be excluded from investment returns, subject to the limitations below.</span>
 
 <span class="sd">    Since this is modeled as an adjustment, the capital will remain in the</span>
 <span class="sd">    strategy until a re-allocation/rebalancement is made.</span>
@@ -2401,6 +2401,21 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Args:</span>
 <span class="sd">        * amount (float): Amount of adjustment</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Known calculation defect: In ordinary value-based strategies, external</span>
+<span class="sd">        capital flows can incorrectly change reported investment returns.</span>
+<span class="sd">        These flows should be return-neutral. Backtest marks prices before</span>
+<span class="sd">        running Algos, and the current calculation can misstate returns when</span>
+<span class="sd">        capital is added or withdrawn after that mark.</span>
+
+<span class="sd">        For example, if 1000 invested grows to 1100, a subsequent contribution</span>
+<span class="sd">        of 500 leaves account value at 1600 but reports approximately 6.67%</span>
+<span class="sd">        return rather than 10%. Withdrawing the original 1000 instead raises</span>
+<span class="sd">        ZeroDivisionError even though account value remains positive at 100.</span>
+
+<span class="sd">        Use ``strategy.values`` to inspect account value separately; it does</span>
+<span class="sd">        not correct price-based performance statistics.</span>
 
 <span class="sd">    """</span>
 
