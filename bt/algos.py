@@ -3012,6 +3012,9 @@ class TaxLiabilities(Algo):
     off. It does not build up across periods. To keep cash non-negative, hold a cash buffer,
     for example by using weights that sum to less than 1.
 
+    A credit, such as a deduction of carried-forward losses on a year's first run, is added to
+    cash the same way. It will stay uninvested until the strategy's next ``Rebalance`` run.
+
     Args:
         * short_term_rate (float): tax rate on short-term gains. i.e: 0.35 -> 35%
         * long_term_rate (float): tax rate on long-term gains. i.e: 0.15 -> 15%
