@@ -2982,16 +2982,22 @@ class TaxLiabilities(Algo):
     """
     Model capital gains taxes by charging the portfolio for gains realized since the last run.
 
-    Each run reads the target's transactions since the previous run and matches sales against
-    open tax lots first-in, first-out. A lot held for longer than ``holding_period`` produces a
+    Each run reads net position changes per bar since the previous run and matches sales against
+    each security node's open tax lots first-in, first-out. A lot held for longer than ``holding_period`` produces a
     long-term gain or loss. Otherwise, the result is short-term. Gains from covering short
     positions are always short-term.
 
-    Losses follow US rules. A net loss in one bucket first offsets a net gain in the other. Each
+    This is a simplified calendar-year model. A net loss in one bucket first offsets a net gain in the other. Each
     remaining net gain is taxed at its bucket's rate. A remaining net loss is deducted from
     ordinary income, up to ``loss_deduction_limit`` per calendar year, and earns a credit at
     ``short_term_rate``. Short-term losses are deducted first. Losses beyond the limit carry
-    forward, keep their bucket, and offset later gains. Wash sales are not modeled.
+    forward, keep their bucket, and offset later gains. Each run reconciles the year's cumulative
+    liability, charging or refunding its change. Trades are assigned to their actual calendar
+    years, including when a run spans multiple years. Carryforwards assume sufficient ordinary
+    income to use the annual deduction. Wash sales and commissions are not modeled.
+
+    Net position histories cannot recover individual executions or intrabar round trips.
+    Use split-adjusted prices; tax-basis adjustments for ``CorporateActions`` splits are not modeled.
 
     The tax is charged as a fee, so it reduces performance and appears in ``target.fees``. If the portfolio
     loses money in a period a credit is paid to the portfolio and appears as a negative fee.
@@ -3003,13 +3009,15 @@ class TaxLiabilities(Algo):
         * short_term_rate (float): tax rate on short-term gains. i.e: 0.35 -> 35%
         * long_term_rate (float): tax rate on long-term gains. i.e: 0.15 -> 15%
         * loss_deduction_limit (float): the most net loss per calendar year that can be
-          deducted from ordinary income. Defaults to 3000, the US limit. None removes the
+          deducted from ordinary income. Defaults to 3000. None removes the
           limit, and 0 means losses only offset gains.
         * holding_period (DateOffset): how long a lot must be held before its gain is
           long-term. Defaults to one year.
 
     Attributes:
         * liabilities (DataFrame): realized gains and tax charged on each run, indexed by date.
+          ``deduction`` is the change in ordinary-income deduction; it can be negative when later
+          gains reverse an earlier deduction. Carryforwards are the current year-to-date estimates.
 
     Sets:
         * target.perm['tax_liabilities'] : the same DataFrame as ``liabilities``. Backtests
@@ -3032,10 +3040,15 @@ class TaxLiabilities(Algo):
         self._long_term_carryforward = 0.0
         # calendar year -> loss already deducted from ordinary income
         self._deducted = {}
-        # security name -> list of open lots, oldest first: [date, signed quantity, price]
+        # security node -> list of open lots, oldest first: [date, signed quantity, price]
         self._lots = {}
         self._last_date = None
         self._records = []
+        self._tax_year = None
+        self._year_gains = [0.0, 0.0]
+        self._year_opening_losses = (0.0, 0.0)
+        self._year_tax = 0.0
+        self._year_deduction = 0.0
 
     @property
     def liabilities(self):
@@ -3045,9 +3058,9 @@ class TaxLiabilities(Algo):
         res = pd.DataFrame(self._records).set_index("Date")
         return res[columns]
 
-    def _process_trade(self, name, date, quantity, price, multiplier):
+    def _process_trade(self, security, date, quantity, price, multiplier):
         """Apply one trade to the open lots and return its realized (short_term, long_term) gain."""
-        lots = self._lots.setdefault(name, [])
+        lots = self._lots.setdefault(security, [])
         short_term = 0.0
         long_term = 0.0
         remaining = quantity
@@ -3077,11 +3090,11 @@ class TaxLiabilities(Algo):
 
     def _calculate_tax(self, short_term_gains, long_term_gains):
         """
-        Net this period's realized gains and return ``(tax, net_short_term, net_long_term)``.
+        Net realized gains and return ``(tax, net_short_term, net_long_term)``.
 
         1. Carryover: losses that could not be deducted in earlier periods are subtracted
            from gains in the same bucket (short-term from short-term, long-term from
-           long-term). See https://www.investopedia.com/terms/c/capital-loss-carryover.asp
+           long-term). See https://www.irs.gov/publications/p550
         2. Offset: if one bucket is a net loss and the other a net gain, the loss reduces
            the gain, but never past zero. For example, a -100 short-term and a +300
            long-term become 0 and +200.
@@ -3105,7 +3118,7 @@ class TaxLiabilities(Algo):
         tax = max(st, 0.0) * self.short_term_rate + max(lt, 0.0) * self.long_term_rate
         return tax, st, lt
 
-    def _deduct_losses(self, target, tax, st, lt):
+    def _deduct_losses(self, target, tax, st, lt, year=None):
         """
         Deduct net losses from ordinary income and return ``(tax, deduction)``.
 
@@ -3118,9 +3131,10 @@ class TaxLiabilities(Algo):
         Any loss above the allowance carries over to later periods and keeps its bucket.
         This method replaces the stored carryforward rather than adding to it, because
         ``_calculate_tax`` already used up the previous carryforward. See
-        https://www.investopedia.com/terms/c/capital-loss-carryover.asp
+        https://www.irs.gov/publications/p550
         """
-        year = target.now.year
+        if year is None:
+            year = target.now.year
         allowance = max(self.loss_deduction_limit - self._deducted.get(year, 0.0), 0.0)
         st_loss = max(-st, 0.0)
         lt_loss = max(-lt, 0.0)
@@ -3135,27 +3149,64 @@ class TaxLiabilities(Algo):
 
         return tax, deduction
 
+    def _settle_year(self, target, year, short_term_gains, long_term_gains):
+        """Recompute a year's liability and return changes since its last settlement."""
+        if self._tax_year != year:
+            self._tax_year = year
+            self._year_gains = [0.0, 0.0]
+            self._year_opening_losses = (self._short_term_carryforward, self._long_term_carryforward)
+            self._year_tax = self._year_deduction = 0.0
+
+        self._year_gains[0] += short_term_gains
+        self._year_gains[1] += long_term_gains
+        self._short_term_carryforward, self._long_term_carryforward = self._year_opening_losses
+        self._deducted[year] = 0.0
+        tax, st, lt = self._calculate_tax(*self._year_gains)
+        tax, deduction = self._deduct_losses(target, tax, st, lt, year=year)
+        tax_change = tax - self._year_tax
+        deduction_change = deduction - self._year_deduction
+        self._year_tax, self._year_deduction = tax, deduction
+        return tax_change, deduction_change
+
     def __call__(self, target):
-        short_term_gains = 0.0
-        long_term_gains = 0.0
+        if target.root.stale:
+            target.root.update(target.root.now)
 
-        if target.securities:
-            trades = target.get_transactions()
+        trades = []
+        for security in target.securities:
+            positions = security.positions
+            prices = security.prices
             if self._last_date is not None:
-                trades = trades[trades.index.get_level_values("Date") > self._last_date]
+                # Retain the previous bar to compute the first unprocessed position change.
+                positions = positions.loc[self._last_date :]
+                prices = prices.loc[self._last_date :]
+            if positions.empty:
+                continue
+            quantities = positions.diff()
+            if self._last_date is None:
+                quantities.iloc[0] = positions.iloc[0]
+            changes = pd.DataFrame({"quantity": quantities, "price": prices})
+            changes = changes[changes["quantity"].notna() & changes["quantity"].ne(0)]
+            if security._bidoffer_set and security.multiplier != 0:
+                changes["price"] += security.bidoffers_paid.reindex(changes.index) / (changes["quantity"] * security.multiplier)
+            for date, row in changes.iterrows():
+                trades.append((date, security, row["quantity"], row["price"]))
 
-            multipliers = {s.name: s.multiplier for s in target.securities}
-            for (date, name), row in trades.iterrows():
-                st, lt = self._process_trade(name, date, row["quantity"], row["price"], multipliers[name])
-                short_term_gains += st
-                long_term_gains += lt
+        gains_by_year = {}
+        for date, security, quantity, price in sorted(trades, key=lambda trade: trade[0]):
+            st, lt = self._process_trade(security, date, quantity, price, security.multiplier)
+            gains = gains_by_year.setdefault(date.year, [0.0, 0.0])
+            gains[0] += st
+            gains[1] += lt
 
-        # calculate the tax and st + lt adjusted gains.
-        # short term and long term gains are adjusted by deducting the previous period caryover.
-        tax, offset_st_gains, offset_lt_gains = self._calculate_tax(short_term_gains, long_term_gains)
-
-        # deduct remaining losses from ordinary income, short-term first, up to the annual limit
-        tax, deduction = self._deduct_losses(target, tax, offset_st_gains, offset_lt_gains)
+        first_year = self._tax_year if self._tax_year is not None else min(gains_by_year, default=target.now.year)
+        tax = deduction = 0.0
+        for year in range(first_year, target.now.year + 1):
+            year_tax, year_deduction = self._settle_year(target, year, *gains_by_year.get(year, (0.0, 0.0)))
+            tax += year_tax
+            deduction += year_deduction
+        short_term_gains = sum(gains[0] for gains in gains_by_year.values())
+        long_term_gains = sum(gains[1] for gains in gains_by_year.values())
 
         if not is_zero(tax):
             # if tax is not 0 charge the portfolio a fee to simulate the

@@ -6294,3 +6294,129 @@ def test_tax_liabilities_without_securities_records_zero_tax():
 def test_tax_liabilities_default_holding_period_is_one_year():
     assert _tax_algo().holding_period == pd.DateOffset(years=1)
     assert _tax_algo(holding_period=pd.DateOffset(months=6)).holding_period == pd.DateOffset(months=6)
+
+
+@pytest.mark.parametrize("gain_first", [False, True])
+@pytest.mark.parametrize("limit", [0.0, 3000.0])
+def test_tax_liabilities_reconciles_calendar_year_gains(gain_first, limit):
+    dates = pd.to_datetime(["2019-01-02", "2020-01-02", "2020-02-03", "2020-03-02"])
+    data = pd.DataFrame({"gain": [10.0, 10.0, 20.0 if gain_first else 10.0, 20.0], "loss": [20.0, 20.0, 20.0 if gain_first else 10.0, 10.0]}, index=dates)
+    strategy = bt.Strategy("taxed", children=["gain", "loss"])
+    strategy.setup(data)
+    strategy.adjust(100000.0)
+    strategy.update(dates[0])
+    taxes = _tax_algo(loss_deduction_limit=limit)
+    strategy.transact(100, "gain")
+    taxes(strategy)
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    strategy.transact(100, "loss")
+    taxes(strategy)
+    strategy.update(dates[1])
+    strategy.update(dates[2])
+    strategy.transact(-100, "gain" if gain_first else "loss")
+    taxes(strategy)
+    strategy.update(dates[2])
+    strategy.update(dates[3])
+    strategy.transact(-100, "loss" if gain_first else "gain")
+    taxes(strategy)
+    strategy.update(dates[3])
+
+    # Equal long-term gains and short-term losses leave no annual liability.
+    assert taxes.liabilities["tax"].sum() == pytest.approx(0.0)
+    assert taxes.liabilities["deduction"].sum() == pytest.approx(0.0)
+    assert taxes._short_term_carryforward == pytest.approx(0.0)
+    assert taxes._deducted[2020] == pytest.approx(0.0)
+    assert strategy.fees.sum() == pytest.approx(0.0)
+
+
+def test_tax_liabilities_does_not_offset_previous_year_gains():
+    dates = pd.to_datetime(["2020-01-02", "2020-02-03", "2021-01-04", "2021-02-01"])
+    strategy = _tax_strategy(pd.Series([10.0, 20.0, 20.0, 10.0], index=dates))
+    taxes = _tax_algo(loss_deduction_limit=0)
+    for date, quantity in zip(dates, [100, -100, 100, -100]):
+        _trade(strategy, date, quantity)
+    taxes(strategy)
+
+    # The first tax call must respect the years of the historical sales.
+    assert taxes.liabilities["tax"].sum() == pytest.approx(400.0)
+    assert taxes._short_term_carryforward == pytest.approx(1000.0)
+
+
+def test_tax_liabilities_applies_each_years_loss_allowance():
+    dates = pd.to_datetime(["2020-01-02", "2020-02-03", "2022-01-03"])
+    strategy = _tax_strategy(pd.Series([10.0, 5.0, 5.0], index=dates))
+    taxes = _tax_algo()
+    _trade(strategy, dates[0], 1000)
+    _trade(strategy, dates[1], -1000)
+    _advance(strategy, dates[2])
+    taxes(strategy)
+
+    assert taxes.liabilities["tax"].sum() == pytest.approx(-2000.0)
+    assert taxes._deducted[2020] == pytest.approx(3000.0)
+    assert taxes._deducted[2021] == pytest.approx(2000.0)
+    assert taxes._short_term_carryforward == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("reverse_children", [False, True])
+def test_tax_liabilities_keeps_same_name_security_lots_separate(reverse_children):
+    dates = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"asset": [10.0, 20.0]}, index=dates)
+    children = [bt.Strategy("shares", children=[bt.Security("asset")]), bt.Strategy("contracts", children=[bt.Security("asset", multiplier=10)])]
+    strategy = bt.Strategy("root", children=children[::-1] if reverse_children else children)
+    strategy.setup(data)
+    strategy.adjust(100000.0)
+    strategy.update(dates[0])
+    for name in ["shares", "contracts"]:
+        strategy.allocate(10000.0, name)
+        strategy[name]["asset"].transact(10)
+    taxes = _tax_algo()
+    taxes(strategy)
+    strategy.update(dates[1])
+    strategy["shares"]["asset"].transact(-10)
+    taxes(strategy)
+
+    assert taxes.liabilities["short_term_gain"].sum() == pytest.approx(100.0)
+    assert taxes.liabilities["tax"].sum() == pytest.approx(40.0)
+
+
+@pytest.mark.parametrize("direction", [-1, 1])
+@pytest.mark.parametrize("multiplier", [0.0, 0.1, 10.0])
+def test_tax_liabilities_includes_bid_offer_with_multipliers(direction, multiplier):
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame({"asset": [10.0, 14.0]}, index=dates)
+    strategy = bt.Strategy("taxed", children=[bt.Security("asset", multiplier=multiplier)])
+    strategy.setup(prices, bidoffer=pd.DataFrame(2.0, index=dates, columns=["asset"]))
+    strategy.adjust(100000.0)
+    strategy.update(dates[0])
+    strategy.transact(direction * 10, "asset")
+    taxes = _tax_algo(loss_deduction_limit=None)
+    taxes(strategy)
+    strategy.update(dates[1])
+    strategy.transact(-direction * 10, "asset")
+    taxes(strategy)
+    strategy.update(dates[1])
+
+    gain = (direction * 4.0 - 2.0) * 10 * multiplier
+    assert taxes.liabilities["short_term_gain"].sum() == pytest.approx(gain)
+    assert taxes.liabilities["tax"].sum() == pytest.approx(gain * 0.4)
+    assert strategy.fees.sum() == pytest.approx(gain * 0.4)
+
+
+def test_tax_liabilities_keeps_lot_identity_after_pickle():
+    dates = pd.date_range("2020-01-01", periods=2)
+    taxes = _tax_algo()
+    strategy = bt.Strategy("taxed", algos=[taxes], children=["c1"])
+    strategy.setup(pd.DataFrame({"c1": [10.0, 20.0]}, index=dates))
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.transact(10, "c1")
+    strategy.run()
+    strategy.update(dates[0])
+    restored = pickle.loads(pickle.dumps(strategy))
+    restored.update(dates[1])
+    restored.transact(-10, "c1")
+    restored.run()
+
+    assert restored.perm["tax_liabilities"]["tax"].sum() == pytest.approx(40.0)
+    assert strategy.perm["tax_liabilities"]["tax"].sum() == pytest.approx(0.0)
