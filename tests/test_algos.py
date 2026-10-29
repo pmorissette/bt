@@ -6141,6 +6141,64 @@ def test_tax_liabilities_fully_invested_payable_resets_each_rebalance():
     assert strategy.cash.min() >= -tax.max() - 1e-6
 
 
+def test_tax_liabilities_run_more_often_than_rebalance():
+    # TaxLiabilities runs every bar while Rebalance runs mid-month. A run with no trades does not
+    # change the year's realized gains, so it charges nothing and payables never stack between
+    # rebalances. The exception is a year's first run, which can credit the new year's deduction
+    # of carried-forward losses. That only adds cash.
+
+    # records cash after Rebalance but before the tax. Backtests copy the strategy, so it uses perm.
+    class CashAfterRebalance(bt.core.Algo):
+        def __call__(self, target):
+            target.perm.setdefault("cash_after_rebalance", {})[target.now] = target.capital
+            return True
+
+    dates = pd.bdate_range("2020-01-01", "2023-12-31")
+    steps = np.arange(len(dates))
+    data = pd.DataFrame({"up": 100 + 0.1 * steps, "down": 100 - 0.08 * steps}, index=dates)
+
+    # rebalance mid-month, never on a year's first bar, alternating between the two assets
+    rebalance_dates = pd.bdate_range("2020-01-01", "2023-12-31", freq="BMS") + pd.offsets.BDay(10)
+    in_up = np.arange(len(rebalance_dates)) % 2
+    weights = pd.DataFrame({"up": in_up, "down": 1 - in_up}, index=rebalance_dates, dtype=float)
+
+    taxes = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+    # keep running on bars where RunOnDate stops the stack
+    taxes.run_always = True
+    s = bt.Strategy(
+        "s",
+        [algos.RunOnDate(*rebalance_dates), algos.WeighTarget(weights), algos.Rebalance(), CashAfterRebalance(), taxes],
+    )
+    backtest = bt.Backtest(s, data, initial_capital=100000, integer_positions=False)
+    bt.run(backtest)
+
+    strategy = backtest.strategy
+    tax = strategy.perm["tax_liabilities"]["tax"]
+    cash_after_rebalance = pd.Series(strategy.perm["cash_after_rebalance"])
+
+    # the algo runs on every bar, far more often than Rebalance
+    assert len(tax) == len(dates)
+    assert len(cash_after_rebalance) == len(rebalance_dates)
+    assert len(tax) > len(rebalance_dates)
+
+    # every charge lands on a rebalance bar
+    charges = tax[tax > 1e-9]
+    assert len(charges) > 5
+    assert charges.index.isin(cash_after_rebalance.index).all()
+
+    # off-rebalance runs only pay new-year credits from carried-forward losses
+    off_rebalance = tax[~tax.index.isin(cash_after_rebalance.index) & (tax.abs() > 1e-9)]
+    assert len(off_rebalance) > 0
+    assert (off_rebalance < 0).all()
+    first_bar_of_year = dates.to_series().groupby(dates.year).min()
+    assert off_rebalance.index.isin(first_bar_of_year).all()
+
+    # each Rebalance still pays off the payable, so cash never goes below about one period of tax
+    assert cash_after_rebalance.abs().max() == pytest.approx(0.0, abs=1e-6)
+    assert strategy.cash.min() < 0
+    assert strategy.cash.min() >= -tax.max() - 1e-6
+
+
 @pytest.mark.parametrize("args", [(-0.1, 0.2), (0.3, float("nan")), (0.3, 0.2, -1.0)])
 def test_tax_liabilities_rejects_invalid_args(args):
     with pytest.raises(ValueError):
