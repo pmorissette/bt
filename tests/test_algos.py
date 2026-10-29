@@ -6107,6 +6107,40 @@ def test_tax_liabilities_in_backtest():
     assert res["s"].stats.loc["total_return"] < res["untaxed"].stats.loc["total_return"]
 
 
+def test_tax_liabilities_fully_invested_payable_resets_each_rebalance():
+    # Rebalance reinvests all proceeds, so the tax drives cash negative. That balance is a tax
+    # payable: the next Rebalance sizes to target.value (which includes it) and pays it off,
+    # so it never stacks even when gains are realized every period.
+
+    # records cash after Rebalance but before the tax. Backtests copy the strategy, so it uses perm.
+    class CashAfterRebalance(bt.core.Algo):
+        def __call__(self, target):
+            target.perm.setdefault("cash_after_rebalance", {})[target.now] = target.capital
+            return True
+
+    dates = pd.bdate_range("2020-01-01", periods=2020)
+    steps = np.arange(len(dates))
+    data = pd.DataFrame({"up": 100 + 0.5 * steps, "down": 200 - 0.05 * steps}, index=dates)
+    taxes = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+    s = bt.Strategy("s", [algos.RunMonthly(), algos.SelectAll(), algos.WeighEqually(), algos.Rebalance(), CashAfterRebalance(), taxes])
+    backtest = bt.Backtest(s, data, initial_capital=100000, integer_positions=False)
+    bt.run(backtest)
+
+    strategy = backtest.strategy
+    tax = strategy.perm["tax_liabilities"]["tax"]
+    cash_after_rebalance = pd.Series(strategy.perm["cash_after_rebalance"])
+
+    # tax is charged in many consecutive periods
+    assert (tax > 0).sum() > 12
+
+    # each Rebalance pays off the previous period's payable before the new tax is charged
+    assert cash_after_rebalance.abs().max() == pytest.approx(0.0, abs=1e-6)
+
+    # so cash never goes below about one period of tax
+    assert strategy.cash.min() < 0
+    assert strategy.cash.min() >= -tax.max() - 1e-6
+
+
 @pytest.mark.parametrize("args", [(-0.1, 0.2), (0.3, float("nan")), (0.3, 0.2, -1.0)])
 def test_tax_liabilities_rejects_invalid_args(args):
     with pytest.raises(ValueError):

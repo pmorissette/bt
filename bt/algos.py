@@ -3005,6 +3005,13 @@ class TaxLiabilities(Algo):
     Place this Algo after any Algos that trade on the same bar (for example, after
     ``Rebalance``). Trades made on a bar after this Algo has run are not taxed.
 
+    In a fully invested strategy, ``Rebalance`` reinvests all sale proceeds, so the tax is
+    charged against roughly zero cash and ``target.capital`` goes negative by up to about one
+    period of tax. Treat this balance as a tax payable, not leverage: it is already included
+    in ``target.value``, and the next ``Rebalance`` sizes positions to that value and pays it
+    off. It does not build up across periods. To keep cash non-negative, hold a cash buffer,
+    for example by using weights that sum to less than 1.
+
     Args:
         * short_term_rate (float): tax rate on short-term gains. i.e: 0.35 -> 35%
         * long_term_rate (float): tax rate on long-term gains. i.e: 0.15 -> 15%
