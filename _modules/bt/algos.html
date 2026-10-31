@@ -3038,6 +3038,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Known execution limitation: roll execution is not atomic. An execution</span>
 <span class="sd">    error can leave earlier trades and ``target.perm['rolled']`` entries</span>
 <span class="sd">    applied; completed changes are not rolled back.</span>
+<span class="sd">    If a source close fails with its nonzero position unchanged, the marker</span>
+<span class="sd">    newly added for that close is removed. Other effects are not undone,</span>
+<span class="sd">    and a partially executed roll is not guaranteed to be safe to retry.</span>
 
 <span class="sd">    Sets:</span>
 <span class="sd">        * target.perm['rolled'] : to keep track of which securities have already rolled</span>
@@ -3086,8 +3089,19 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># Apply the validated plan only after every due row has succeeded.</span>
         <span class="k">for</span> <span class="n">sec_name</span> <span class="ow">in</span> <span class="n">due_rolls</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">perm</span><span class="p">[</span><span class="s2">"rolled"</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sec_name</span><span class="p">)</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">sec_name</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">security</span> <span class="o">=</span> <span class="n">target</span><span class="p">[</span><span class="n">sec_name</span><span class="p">]</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">position</span>
+            <span class="n">rolled</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">perm</span><span class="p">[</span><span class="s2">"rolled"</span><span class="p">]</span>
+            <span class="n">already_rolled</span> <span class="o">=</span> <span class="n">sec_name</span> <span class="ow">in</span> <span class="n">rolled</span>
+            <span class="c1"># Keep the marker visible to callbacks that invoke this Algo again.</span>
+            <span class="n">rolled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sec_name</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">sec_name</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="c1"># Do not clear a completed recursive roll or infer rollback after a trade.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">already_rolled</span> <span class="ow">and</span> <span class="n">position</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">security</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="n">position</span><span class="p">:</span>
+                    <span class="n">rolled</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">sec_name</span><span class="p">)</span>
+                <span class="k">raise</span>
 
         <span class="c1"># Do all the new transactions at the end, to do any necessary aggregations first</span>
         <span class="k">for</span> <span class="n">new_sec</span><span class="p">,</span> <span class="n">quantity</span> <span class="ow">in</span> <span class="n">transactions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>

@@ -601,7 +601,10 @@ portfolio state changes.</p></li>
 </dl>
 <p>Known execution limitation: roll execution is not atomic. An execution
 error can leave earlier trades and <code class="docutils literal notranslate"><span class="pre">target.perm['rolled']</span></code> entries
-applied; completed changes are not rolled back.</p>
+applied; completed changes are not rolled back.
+If a source close fails with its nonzero position unchanged, the marker
+newly added for that close is removed. Other effects are not undone,
+and a partially executed roll is not guaranteed to be safe to retry.</p>
 <dl class="simple">
 <dt>Sets:</dt><dd><ul class="simple">
 <li><p>target.perm[‘rolled’] : to keep track of which securities have already rolled</p></li>
