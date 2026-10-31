@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Buy and Hold Strategy &#8212; bt - Flexible Backtesting for Python v1.4.1</title>
+    <title>Monthly Fixed-Weight Rebalancing &#8212; bt - Flexible Backtesting for Python v1.4.1</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/klink.css?v=14220e7b" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,8 +35,10 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section class="tex2jax_ignore mathjax_ignore" id="buy-and-hold-strategy">
-<h1>Buy and Hold Strategy<a class="headerlink" href="#buy-and-hold-strategy" title="Link to this heading">¶</a></h1>
+  <p><a id="buy-and-hold-strategy"></a></p>
+<section class="tex2jax_ignore mathjax_ignore" id="monthly-fixed-weight-rebalancing">
+<h1>Monthly Fixed-Weight Rebalancing<a class="headerlink" href="#monthly-fixed-weight-rebalancing" title="Link to this heading">¶</a></h1>
+<p>This example rebalances monthly to fixed target weights. Share quantities can change at each rebalance, and weights can drift between rebalances. This differs from fixed-share buy-and-hold, which keeps the original quantities.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>

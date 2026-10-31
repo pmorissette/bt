@@ -485,9 +485,11 @@ Win 12m %            68.57%      66.43%      69.29%      91.43%
 <a class="pynb reference internal image-reference" href="../../_images/examples-nb_37_0.png"><img alt="../../_images/examples-nb_37_0.png" class="pynb" src="../../_images/examples-nb_37_0.png" style="width: 888px; height: 289px;" />
 </a>
 <p>So there you have it. Simpler, and more complete.</p>
+<p><a id="buy-and-hold-strategy"></a></p>
 </section>
-<section id="buy-and-hold-strategy">
-<h2>Buy and Hold Strategy<a class="headerlink" href="#buy-and-hold-strategy" title="Link to this heading">¶</a></h2>
+<section id="monthly-fixed-weight-rebalancing">
+<h2>Monthly Fixed-Weight Rebalancing<a class="headerlink" href="#monthly-fixed-weight-rebalancing" title="Link to this heading">¶</a></h2>
+<p>This example rebalances monthly to fixed target weights. Share quantities can change at each rebalance, and weights can drift between rebalances. This differs from fixed-share buy-and-hold, which keeps the original quantities.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
@@ -3873,7 +3875,7 @@ Environments.</em> arXiv:2603.29086. https://arxiv.org/abs/2603.29086</p>
 <li class="toctree-l2"><a class="reference internal" href="#sma-strategy">SMA Strategy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sma-crossover-strategy">SMA Crossover Strategy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#exploring-the-tree-structure">Exploring the Tree Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#buy-and-hold-strategy">Buy and Hold Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#monthly-fixed-weight-rebalancing">Monthly Fixed-Weight Rebalancing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#trend-example-1">Trend Example 1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#trend-example-2">Trend Example 2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#strategy-combination">Strategy Combination</a></li>

@@ -1,4 +1,8 @@
-# Buy and Hold Strategy
+<a id="buy-and-hold-strategy"></a>
+
+# Monthly Fixed-Weight Rebalancing
+
+This example rebalances monthly to fixed target weights. Share quantities can change at each rebalance, and weights can drift between rebalances. This differs from fixed-share buy-and-hold, which keeps the original quantities.
 
 ```python
 import numpy as np
