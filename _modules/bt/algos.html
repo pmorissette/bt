@@ -3620,6 +3620,273 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
+
+
+<div class="viewcode-block" id="TaxLiabilities">
+<a class="viewcode-back" href="../../docs/source/overview.html#bt.algos.TaxLiabilities">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TaxLiabilities</span><span class="p">(</span><span class="n">Algo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Model capital gains taxes by charging the portfolio for gains realized since the last run.</span>
+
+<span class="sd">    Each run reads net position changes per bar since the previous run and matches sales against</span>
+<span class="sd">    each security node's open tax lots first-in, first-out. A lot held for longer than ``holding_period`` produces a</span>
+<span class="sd">    long-term gain or loss. Otherwise, the result is short-term. Gains from covering short</span>
+<span class="sd">    positions are always short-term.</span>
+
+<span class="sd">    This is a simplified calendar-year model. A net loss in one bucket first offsets a net gain in the other. Each</span>
+<span class="sd">    remaining net gain is taxed at its bucket's rate. A remaining net loss is deducted from</span>
+<span class="sd">    ordinary income, up to ``loss_deduction_limit`` per calendar year, and earns a credit at</span>
+<span class="sd">    ``short_term_rate``. Short-term losses are deducted first. Losses beyond the limit carry</span>
+<span class="sd">    forward, keep their bucket, and offset later gains. Each run reconciles the year's cumulative</span>
+<span class="sd">    liability, charging or refunding its change. Trades are assigned to their actual calendar</span>
+<span class="sd">    years, including when a run spans multiple years. Carryforwards assume sufficient ordinary</span>
+<span class="sd">    income to use the annual deduction. Wash sales and commissions are not modeled.</span>
+
+<span class="sd">    Net position histories cannot recover individual executions or intrabar round trips.</span>
+<span class="sd">    Use split-adjusted prices; tax-basis adjustments for ``CorporateActions`` splits are not modeled.</span>
+
+<span class="sd">    The tax is charged as a fee, so it reduces performance and appears in ``target.fees``. If the portfolio</span>
+<span class="sd">    loses money in a period a credit is paid to the portfolio and appears as a negative fee.</span>
+
+<span class="sd">    Place this Algo after any Algos that trade on the same bar (for example, after</span>
+<span class="sd">    ``Rebalance``). Trades made on a bar after this Algo has run are not taxed.</span>
+
+<span class="sd">    Tax charges reduce cash while holdings stay in place. After a full allocation,</span>
+<span class="sd">    ``target.capital`` can become negative, increasing investment exposure relative to</span>
+<span class="sd">    ``target.value`` until cash is replenished. This Algo does not charge financing costs</span>
+<span class="sd">    on that negative balance.</span>
+
+<span class="sd">    With fractional positions and no execution costs, a full value-based ``Rebalance``</span>
+<span class="sd">    whose weights sum to 1 restores cash to zero before the next tax charge by sizing</span>
+<span class="sd">    holdings to the reduced ``target.value``. Hold a sufficient cash buffer if negative</span>
+<span class="sd">    cash is undesirable, for example by using weights that sum to less than 1.</span>
+
+<span class="sd">    A credit, such as a deduction of carried-forward losses on a year's first run, is added</span>
+<span class="sd">    to cash and becomes available for subsequent trading Algos to invest.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        * short_term_rate (float): tax rate on short-term gains. i.e: 0.35 -&gt; 35%</span>
+<span class="sd">        * long_term_rate (float): tax rate on long-term gains. i.e: 0.15 -&gt; 15%</span>
+<span class="sd">        * loss_deduction_limit (float): the most net loss per calendar year that can be</span>
+<span class="sd">          deducted from ordinary income. Defaults to 3000. None removes the</span>
+<span class="sd">          limit, and 0 means losses only offset gains.</span>
+<span class="sd">        * holding_period (DateOffset): how long a lot must be held before its gain is</span>
+<span class="sd">          long-term. Defaults to one year.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        * liabilities (DataFrame): realized gains and tax charged on each run, indexed by date.</span>
+<span class="sd">          ``deduction`` is the change in ordinary-income deduction; it can be negative when later</span>
+<span class="sd">          gains reverse an earlier deduction. Carryforwards are the current year-to-date estimates.</span>
+
+<span class="sd">    Sets:</span>
+<span class="sd">        * target.perm['tax_liabilities'] : the same DataFrame as ``liabilities``. Backtests</span>
+<span class="sd">          copy their strategy, so read it from ``backtest.strategy.perm`` after a run.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_term_rate</span><span class="p">,</span> <span class="n">long_term_rate</span><span class="p">,</span> <span class="n">loss_deduction_limit</span><span class="o">=</span><span class="mf">3000.0</span><span class="p">,</span> <span class="n">holding_period</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">TaxLiabilities</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">rate</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"short_term_rate"</span><span class="p">,</span> <span class="n">short_term_rate</span><span class="p">),</span> <span class="p">(</span><span class="s2">"long_term_rate"</span><span class="p">,</span> <span class="n">long_term_rate</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">rate</span><span class="p">)</span> <span class="ow">or</span> <span class="n">rate</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a finite, non-negative number"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">loss_deduction_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">loss_deduction_limit</span><span class="p">)</span> <span class="ow">or</span> <span class="n">loss_deduction_limit</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"loss_deduction_limit must be None or a non-negative number"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">short_term_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">short_term_rate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">long_term_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">long_term_rate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_deduction_limit</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span> <span class="k">if</span> <span class="n">loss_deduction_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">loss_deduction_limit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">holding_period</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">holding_period</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">holding_period</span>
+        <span class="c1"># unused losses carried forward, stored as non-negative amounts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_term_carryforward</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_long_term_carryforward</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># calendar year -&gt; loss already deducted from ordinary income</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deducted</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># security node -&gt; list of open lots, oldest first: [date, signed quantity, price]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lots</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_records</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tax_year</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year_gains</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year_opening_losses</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year_tax</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year_deduction</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">liabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"short_term_gain"</span><span class="p">,</span> <span class="s2">"long_term_gain"</span><span class="p">,</span> <span class="s2">"deduction"</span><span class="p">,</span> <span class="s2">"tax"</span><span class="p">,</span> <span class="s2">"short_term_carryforward"</span><span class="p">,</span> <span class="s2">"long_term_carryforward"</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">([],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Date"</span><span class="p">))</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"Date"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_trade</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">security</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">price</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Apply one trade to the open lots and return its realized (short_term, long_term) gain."""</span>
+        <span class="n">lots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lots</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">security</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">short_term</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">long_term</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">remaining</span> <span class="o">=</span> <span class="n">quantity</span>
+
+        <span class="c1"># a trade in the opposite direction of the open lots closes them, oldest first</span>
+        <span class="k">while</span> <span class="n">lots</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">lots</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">remaining</span><span class="p">):</span>
+            <span class="n">lot_date</span><span class="p">,</span> <span class="n">lot_qty</span><span class="p">,</span> <span class="n">lot_price</span> <span class="o">=</span> <span class="n">lots</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">closed</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">remaining</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">lot_qty</span><span class="p">))</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">lot_qty</span><span class="p">)</span>
+            <span class="n">gain</span> <span class="o">=</span> <span class="n">closed</span> <span class="o">*</span> <span class="n">direction</span> <span class="o">*</span> <span class="p">(</span><span class="n">price</span> <span class="o">-</span> <span class="n">lot_price</span><span class="p">)</span> <span class="o">*</span> <span class="n">multiplier</span>
+
+            <span class="k">if</span> <span class="n">direction</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">date</span> <span class="o">&gt;</span> <span class="n">lot_date</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">holding_period</span><span class="p">:</span>
+                <span class="n">long_term</span> <span class="o">+=</span> <span class="n">gain</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">short_term</span> <span class="o">+=</span> <span class="n">gain</span>
+
+            <span class="n">lots</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">closed</span>
+            <span class="n">remaining</span> <span class="o">+=</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">closed</span>
+            <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">lots</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">lots</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># whatever is left opens a new lot</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">remaining</span><span class="p">):</span>
+            <span class="n">lots</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">date</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="n">price</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">short_term</span><span class="p">,</span> <span class="n">long_term</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_tax</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_term_gains</span><span class="p">,</span> <span class="n">long_term_gains</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Net realized gains and return ``(tax, net_short_term, net_long_term)``.</span>
+
+<span class="sd">        1. Carryover: losses that could not be deducted in earlier periods are subtracted</span>
+<span class="sd">           from gains in the same bucket (short-term from short-term, long-term from</span>
+<span class="sd">           long-term). See https://www.irs.gov/publications/p550</span>
+<span class="sd">        2. Offset: if one bucket is a net loss and the other a net gain, the loss reduces</span>
+<span class="sd">           the gain, but never past zero. For example, a -100 short-term and a +300</span>
+<span class="sd">           long-term become 0 and +200.</span>
+<span class="sd">        3. Each remaining positive bucket is taxed at its own rate.</span>
+
+<span class="sd">        Negative net amounts are returned so ``_deduct_losses`` can deduct or carry them</span>
+<span class="sd">        forward. This method does not change any state.</span>
+<span class="sd">        """</span>
+        <span class="c1"># apply losses carried forward, then net the two buckets against each other</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">short_term_gains</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_term_carryforward</span>
+        <span class="n">lt</span> <span class="o">=</span> <span class="n">long_term_gains</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_long_term_carryforward</span>
+        <span class="k">if</span> <span class="n">st</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">lt</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="o">-</span><span class="n">st</span><span class="p">,</span> <span class="n">lt</span><span class="p">)</span>
+            <span class="n">st</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="n">lt</span> <span class="o">-=</span> <span class="n">offset</span>
+        <span class="k">elif</span> <span class="n">lt</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">st</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="o">-</span><span class="n">lt</span><span class="p">,</span> <span class="n">st</span><span class="p">)</span>
+            <span class="n">lt</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="n">st</span> <span class="o">-=</span> <span class="n">offset</span>
+
+        <span class="n">tax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">short_term_rate</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">lt</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">long_term_rate</span>
+        <span class="k">return</span> <span class="n">tax</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">lt</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_deduct_losses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">tax</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">lt</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Deduct net losses from ordinary income and return ``(tax, deduction)``.</span>
+
+<span class="sd">        ``st`` and ``lt`` are the net amounts from ``_calculate_tax``. A negative bucket is</span>
+<span class="sd">        a loss that can be deducted from ordinary income, up to ``loss_deduction_limit``</span>
+<span class="sd">        per calendar year ($3,000 in the US). Short-term losses use the allowance first.</span>
+<span class="sd">        Each deducted dollar earns a credit at ``short_term_rate``, so ``tax`` goes down</span>
+<span class="sd">        and can become negative.</span>
+
+<span class="sd">        Any loss above the allowance carries over to later periods and keeps its bucket.</span>
+<span class="sd">        This method replaces the stored carryforward rather than adding to it, because</span>
+<span class="sd">        ``_calculate_tax`` already used up the previous carryforward. See</span>
+<span class="sd">        https://www.irs.gov/publications/p550</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">year</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">year</span>
+        <span class="n">allowance</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_deduction_limit</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deducted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">st_loss</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="n">st</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">lt_loss</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="n">lt</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">st_deduction</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">st_loss</span><span class="p">,</span> <span class="n">allowance</span><span class="p">)</span>
+        <span class="n">lt_deduction</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">lt_loss</span><span class="p">,</span> <span class="n">allowance</span> <span class="o">-</span> <span class="n">st_deduction</span><span class="p">)</span>
+        <span class="n">deduction</span> <span class="o">=</span> <span class="n">st_deduction</span> <span class="o">+</span> <span class="n">lt_deduction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deducted</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deducted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">+</span> <span class="n">deduction</span>
+        <span class="n">tax</span> <span class="o">-=</span> <span class="n">deduction</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">short_term_rate</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_term_carryforward</span> <span class="o">=</span> <span class="n">st_loss</span> <span class="o">-</span> <span class="n">st_deduction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_long_term_carryforward</span> <span class="o">=</span> <span class="n">lt_loss</span> <span class="o">-</span> <span class="n">lt_deduction</span>
+
+        <span class="k">return</span> <span class="n">tax</span><span class="p">,</span> <span class="n">deduction</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_settle_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">short_term_gains</span><span class="p">,</span> <span class="n">long_term_gains</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Recompute a year's liability and return changes since its last settlement."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tax_year</span> <span class="o">!=</span> <span class="n">year</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tax_year</span> <span class="o">=</span> <span class="n">year</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_year_gains</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_year_opening_losses</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_short_term_carryforward</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_long_term_carryforward</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_year_tax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_deduction</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year_gains</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">short_term_gains</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year_gains</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">long_term_gains</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_term_carryforward</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_long_term_carryforward</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_opening_losses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deducted</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">tax</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">lt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_tax</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_year_gains</span><span class="p">)</span>
+        <span class="n">tax</span><span class="p">,</span> <span class="n">deduction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deduct_losses</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">tax</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">lt</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">)</span>
+        <span class="n">tax_change</span> <span class="o">=</span> <span class="n">tax</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_tax</span>
+        <span class="n">deduction_change</span> <span class="o">=</span> <span class="n">deduction</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_deduction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year_tax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_deduction</span> <span class="o">=</span> <span class="n">tax</span><span class="p">,</span> <span class="n">deduction</span>
+        <span class="k">return</span> <span class="n">tax_change</span><span class="p">,</span> <span class="n">deduction_change</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">stale</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+
+        <span class="n">trades</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">security</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">securities</span><span class="p">:</span>
+            <span class="n">positions</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">positions</span>
+            <span class="n">prices</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">prices</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Retain the previous bar to compute the first unprocessed position change.</span>
+                <span class="n">positions</span> <span class="o">=</span> <span class="n">positions</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="p">:]</span>
+                <span class="n">prices</span> <span class="o">=</span> <span class="n">prices</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="p">:]</span>
+            <span class="k">if</span> <span class="n">positions</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">quantities</span> <span class="o">=</span> <span class="n">positions</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">quantities</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">positions</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">changes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"quantity"</span><span class="p">:</span> <span class="n">quantities</span><span class="p">,</span> <span class="s2">"price"</span><span class="p">:</span> <span class="n">prices</span><span class="p">})</span>
+            <span class="n">changes</span> <span class="o">=</span> <span class="n">changes</span><span class="p">[</span><span class="n">changes</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">]</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">changes</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">security</span><span class="o">.</span><span class="n">_bidoffer_set</span> <span class="ow">and</span> <span class="n">security</span><span class="o">.</span><span class="n">multiplier</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">changes</span><span class="p">[</span><span class="s2">"price"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">security</span><span class="o">.</span><span class="n">bidoffers_paid</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">changes</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">changes</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">]</span> <span class="o">*</span> <span class="n">security</span><span class="o">.</span><span class="n">multiplier</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">changes</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+                <span class="n">trades</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="n">security</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">"price"</span><span class="p">]))</span>
+
+        <span class="n">gains_by_year</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">security</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">price</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">trades</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">trade</span><span class="p">:</span> <span class="n">trade</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">st</span><span class="p">,</span> <span class="n">lt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_trade</span><span class="p">(</span><span class="n">security</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">price</span><span class="p">,</span> <span class="n">security</span><span class="o">.</span><span class="n">multiplier</span><span class="p">)</span>
+            <span class="n">gains</span> <span class="o">=</span> <span class="n">gains_by_year</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">gains</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">st</span>
+            <span class="n">gains</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">lt</span>
+
+        <span class="n">first_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tax_year</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tax_year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">gains_by_year</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+        <span class="n">tax</span> <span class="o">=</span> <span class="n">deduction</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">first_year</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">year_tax</span><span class="p">,</span> <span class="n">year_deduction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settle_year</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="o">*</span><span class="n">gains_by_year</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)))</span>
+            <span class="n">tax</span> <span class="o">+=</span> <span class="n">year_tax</span>
+            <span class="n">deduction</span> <span class="o">+=</span> <span class="n">year_deduction</span>
+        <span class="n">short_term_gains</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">gains</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">gains</span> <span class="ow">in</span> <span class="n">gains_by_year</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">long_term_gains</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">gains</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">gains</span> <span class="ow">in</span> <span class="n">gains_by_year</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">tax</span><span class="p">):</span>
+            <span class="c1"># if tax is not 0 charge the portfolio a fee to simulate the</span>
+            <span class="c1"># tax liability</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="o">-</span><span class="n">tax</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fee</span><span class="o">=</span><span class="n">tax</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"Date"</span><span class="p">:</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+                <span class="s2">"short_term_gain"</span><span class="p">:</span> <span class="n">short_term_gains</span><span class="p">,</span>
+                <span class="s2">"long_term_gain"</span><span class="p">:</span> <span class="n">long_term_gains</span><span class="p">,</span>
+                <span class="s2">"deduction"</span><span class="p">:</span> <span class="n">deduction</span><span class="p">,</span>
+                <span class="s2">"tax"</span><span class="p">:</span> <span class="n">tax</span><span class="p">,</span>
+                <span class="s2">"short_term_carryforward"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_term_carryforward</span><span class="p">,</span>
+                <span class="s2">"long_term_carryforward"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_long_term_carryforward</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">perm</span><span class="p">[</span><span class="s2">"tax_liabilities"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">liabilities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_date</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">now</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>

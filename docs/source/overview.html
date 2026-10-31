@@ -1375,6 +1375,79 @@ It is assumed that target volatility is already annualized by this factor.</p></
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="bt.algos.TaxLiabilities">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bt.algos.</span></span><span class="sig-name descname"><span class="pre">TaxLiabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_term_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">long_term_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_deduction_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holding_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/algos.html#TaxLiabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.algos.TaxLiabilities" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algo</span></code></a></p>
+<p>Model capital gains taxes by charging the portfolio for gains realized since the last run.</p>
+<p>Each run reads net position changes per bar since the previous run and matches sales against
+each security node’s open tax lots first-in, first-out. A lot held for longer than <code class="docutils literal notranslate"><span class="pre">holding_period</span></code> produces a
+long-term gain or loss. Otherwise, the result is short-term. Gains from covering short
+positions are always short-term.</p>
+<p>This is a simplified calendar-year model. A net loss in one bucket first offsets a net gain in the other. Each
+remaining net gain is taxed at its bucket’s rate. A remaining net loss is deducted from
+ordinary income, up to <code class="docutils literal notranslate"><span class="pre">loss_deduction_limit</span></code> per calendar year, and earns a credit at
+<code class="docutils literal notranslate"><span class="pre">short_term_rate</span></code>. Short-term losses are deducted first. Losses beyond the limit carry
+forward, keep their bucket, and offset later gains. Each run reconciles the year’s cumulative
+liability, charging or refunding its change. Trades are assigned to their actual calendar
+years, including when a run spans multiple years. Carryforwards assume sufficient ordinary
+income to use the annual deduction. Wash sales and commissions are not modeled.</p>
+<p>Net position histories cannot recover individual executions or intrabar round trips.
+Use split-adjusted prices; tax-basis adjustments for <code class="docutils literal notranslate"><span class="pre">CorporateActions</span></code> splits are not modeled.</p>
+<p>The tax is charged as a fee, so it reduces performance and appears in <code class="docutils literal notranslate"><span class="pre">target.fees</span></code>. If the portfolio
+loses money in a period a credit is paid to the portfolio and appears as a negative fee.</p>
+<p>Place this Algo after any Algos that trade on the same bar (for example, after
+<code class="docutils literal notranslate"><span class="pre">Rebalance</span></code>). Trades made on a bar after this Algo has run are not taxed.</p>
+<p>Tax charges reduce cash while holdings stay in place. After a full allocation,
+<code class="docutils literal notranslate"><span class="pre">target.capital</span></code> can become negative, increasing investment exposure relative to
+<code class="docutils literal notranslate"><span class="pre">target.value</span></code> until cash is replenished. This Algo does not charge financing costs
+on that negative balance.</p>
+<p>With fractional positions and no execution costs, a full value-based <code class="docutils literal notranslate"><span class="pre">Rebalance</span></code>
+whose weights sum to 1 restores cash to zero before the next tax charge by sizing
+holdings to the reduced <code class="docutils literal notranslate"><span class="pre">target.value</span></code>. Hold a sufficient cash buffer if negative
+cash is undesirable, for example by using weights that sum to less than 1.</p>
+<p>A credit, such as a deduction of carried-forward losses on a year’s first run, is added
+to cash and becomes available for subsequent trading Algos to invest.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>short_term_rate</strong> (<em>*</em>) – tax rate on short-term gains. i.e: 0.35 -&gt; 35%</p></li>
+<li><p><strong>long_term_rate</strong> (<em>*</em>) – tax rate on long-term gains. i.e: 0.15 -&gt; 15%</p></li>
+<li><p><strong>loss_deduction_limit</strong> (<em>*</em>) – the most net loss per calendar year that can be
+deducted from ordinary income. Defaults to 3000. None removes the
+limit, and 0 means losses only offset gains.</p></li>
+<li><p><strong>holding_period</strong> (<em>*</em>) – how long a lot must be held before its gain is
+long-term. Defaults to one year.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">\*</span> <span class="pre">liabilities</span></span></dt>
+<dd><p>realized gains and tax charged on each run, indexed by date.
+<code class="docutils literal notranslate"><span class="pre">deduction</span></code> is the change in ordinary-income deduction; it can be negative when later
+gains reverse an earlier deduction. Carryforwards are the current year-to-date estimates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="simple">
+<dt>Sets:</dt><dd><ul class="simple">
+<li><p>target.perm[‘tax_liabilities’] : the same DataFrame as <code class="docutils literal notranslate"><span class="pre">liabilities</span></code>. Backtests
+copy their strategy, so read it from <code class="docutils literal notranslate"><span class="pre">backtest.strategy.perm</span></code> after a run.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="bt.algos.TaxLiabilities.liabilities">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">liabilities</span></span><a class="headerlink" href="#bt.algos.TaxLiabilities.liabilities" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="bt.algos.UpdateRisk">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bt.algos.</span></span><span class="sig-name descname"><span class="pre">UpdateRisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">measure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/bt/algos.html#UpdateRisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bt.algos.UpdateRisk" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bt.core.Algo" title="bt.core.Algo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Algo</span></code></a></p>
