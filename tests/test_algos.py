@@ -5862,3 +5862,653 @@ def test_corporate_actions_refreshes_stale_split_state_before_rebalance(nested: 
     assert target.capital == pytest.approx(0.0)
     assert target.value == pytest.approx(2000.0)
     assert root.value == pytest.approx(2000.0)
+
+
+def _tax_strategy(prices):
+    s = bt.Strategy("s", children=["c1"])
+    s.setup(pd.DataFrame({"c1": prices}))
+    s.adjust(100000)
+    s.update(prices.index[0])
+    return s
+
+
+def _advance(s, date):
+    # step through every bar, as a backtest would, so position history is recorded
+    date = pd.Timestamp(date)
+    for d in s.data.index[(s.data.index > s.now) & (s.data.index <= date)]:
+        s.update(d)
+
+
+def _trade(s, date, quantity):
+    _advance(s, date)
+    s.transact(quantity, "c1")
+    s.update(pd.Timestamp(date))
+
+
+def test_tax_liabilities_short_term_gain():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2020-12-31"))
+    prices.loc["2020-07-01":] = 15.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+
+    _trade(s, "2020-01-01", 100)
+    _trade(s, "2020-07-01", -100)
+    value_before = s.value
+    algo(s)
+    s.update(pd.Timestamp("2020-07-01"))
+
+    assert s.fees.loc["2020-07-01"] == pytest.approx(200.0)
+    assert s.value == pytest.approx(value_before - 200.0)
+    row = algo.liabilities.loc["2020-07-01"]
+    assert row["short_term_gain"] == pytest.approx(500.0)
+    assert row["long_term_gain"] == pytest.approx(0.0)
+
+
+def test_tax_liabilities_long_term_gain():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2021-03-31"))
+    prices.loc["2021-02-01":] = 15.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+
+    _trade(s, "2020-01-01", 100)
+    _trade(s, "2021-02-01", -100)
+    algo(s)
+    s.update(pd.Timestamp("2021-02-01"))
+
+    assert s.fees.loc["2021-02-01"] == pytest.approx(100.0)
+    row = algo.liabilities.loc["2021-02-01"]
+    assert row["long_term_gain"] == pytest.approx(500.0)
+    assert row["short_term_gain"] == pytest.approx(0.0)
+
+
+def test_tax_liabilities_holding_exactly_one_year_is_short_term():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2021-03-31"))
+    prices.loc["2021-01-01":] = 15.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+
+    _trade(s, "2020-01-01", 100)
+    _trade(s, "2021-01-01", -100)
+    algo(s)
+
+    assert algo.liabilities.loc["2021-01-01", "short_term_gain"] == pytest.approx(500.0)
+
+
+def test_tax_liabilities_matches_lots_first_in_first_out():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2021-03-31"))
+    prices.loc["2020-12-01":] = 20.0
+    prices.loc["2021-03-01":] = 30.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+
+    # 10 shares @ 10 held over a year, then 10 shares @ 20 held three months
+    _trade(s, "2020-01-01", 10)
+    _trade(s, "2020-12-01", 10)
+    algo(s)
+    assert algo.liabilities["tax"].iloc[-1] == 0.0
+
+    _trade(s, "2021-03-01", -15)
+    algo(s)
+
+    row = algo.liabilities.loc["2021-03-01"]
+    assert row["long_term_gain"] == pytest.approx(10 * 20.0)
+    assert row["short_term_gain"] == pytest.approx(5 * 10.0)
+    assert row["tax"] == pytest.approx(200.0 * 0.2 + 50.0 * 0.4)
+
+
+def test_tax_liabilities_loss_earns_credit():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2020-12-31"))
+    prices.loc["2020-07-01":] = 5.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+
+    _trade(s, "2020-01-01", 100)
+    _trade(s, "2020-07-01", -100)
+    value_before = s.value
+    algo(s)
+    s.update(pd.Timestamp("2020-07-01"))
+
+    row = algo.liabilities.loc["2020-07-01"]
+    assert row["short_term_gain"] == pytest.approx(-500.0)
+    assert row["deduction"] == pytest.approx(500.0)
+    assert row["tax"] == pytest.approx(-200.0)
+    assert s.fees.loc["2020-07-01"] == pytest.approx(-200.0)
+    assert s.value == pytest.approx(value_before + 200.0)
+
+
+def test_tax_liabilities_nets_losses_against_other_bucket():
+    prices = pd.DataFrame({"c1": 10.0, "c2": 10.0}, index=pd.date_range("2020-01-01", "2021-03-31"))
+    prices.loc["2020-07-01":, "c1"] = 30.0
+    prices.loc["2021-02-01":, "c1"] = 4.0
+    prices.loc["2021-02-01":, "c2"] = 30.0
+    s = bt.Strategy("s", children=["c1", "c2"])
+    s.setup(prices)
+    s.adjust(100000)
+    s.update(prices.index[0])
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+
+    # c2 bought early: 10 x (30 - 10) = 200 long-term gain. c1 bought mid-year: 10 x (4 - 30) = 260 short-term loss.
+    s.transact(10, "c2")
+    s.update(prices.index[0])
+    _advance(s, "2020-07-01")
+    s.transact(10, "c1")
+    s.update(pd.Timestamp("2020-07-01"))
+    _advance(s, "2021-02-01")
+    s.transact(-10, "c1")
+    s.transact(-10, "c2")
+    s.update(pd.Timestamp("2021-02-01"))
+    algo(s)
+
+    row = algo.liabilities.loc["2021-02-01"]
+    assert row["short_term_gain"] == pytest.approx(-260.0)
+    assert row["long_term_gain"] == pytest.approx(200.0)
+    assert row["deduction"] == pytest.approx(60.0)
+    assert row["tax"] == pytest.approx(-60.0 * 0.4)
+
+
+def test_tax_liabilities_carries_forward_losses_above_annual_limit():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2021-12-31"))
+    prices.loc["2020-03-01":] = 5.0
+    prices.loc["2020-06-01":] = 4.0
+    prices.loc["2021-03-01":] = 20.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2, loss_deduction_limit=3000)
+
+    # lose 5000: deduct 3000 this year and carry 2000 forward
+    _trade(s, "2020-01-01", 1000)
+    _trade(s, "2020-03-01", -1000)
+    algo(s)
+    row = algo.liabilities.iloc[-1]
+    assert row["deduction"] == pytest.approx(3000.0)
+    assert row["tax"] == pytest.approx(-1200.0)
+    assert row["short_term_carryforward"] == pytest.approx(2000.0)
+
+    # the annual limit is used up, so another 100 loss this year only adds to the carryforward
+    _trade(s, "2020-03-02", 100)
+    _trade(s, "2020-06-01", -100)
+    algo(s)
+    row = algo.liabilities.iloc[-1]
+    assert row["deduction"] == 0.0
+    assert row["tax"] == 0.0
+    assert row["short_term_carryforward"] == pytest.approx(2100.0)
+
+    # next year a 1600 gain is offset by the 2100 carryforward, leaving 500 to deduct
+    _trade(s, "2021-01-04", 100)
+    _trade(s, "2021-03-01", -100)
+    algo(s)
+    row = algo.liabilities.iloc[-1]
+    assert row["short_term_gain"] == pytest.approx(1600.0)
+    assert row["deduction"] == pytest.approx(500.0)
+    assert row["tax"] == pytest.approx(-200.0)
+    assert row["short_term_carryforward"] == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize(("limit", "expected_tax"), [(0, 0.0), (None, -2000.0)])
+def test_tax_liabilities_loss_deduction_limit(limit, expected_tax):
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2020-12-31"))
+    prices.loc["2020-03-01":] = 5.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2, loss_deduction_limit=limit)
+
+    _trade(s, "2020-01-01", 1000)
+    _trade(s, "2020-03-01", -1000)
+    algo(s)
+
+    assert algo.liabilities["tax"].iloc[-1] == pytest.approx(expected_tax)
+
+def test_tax_liabilities_short_cover_is_short_term():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2021-03-31"))
+    prices.loc["2021-02-01":] = 6.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+
+    _trade(s, "2020-01-01", -100)
+    _trade(s, "2021-02-01", 100)
+    algo(s)
+
+    row = algo.liabilities.loc["2021-02-01"]
+    assert row["short_term_gain"] == pytest.approx(400.0)
+    assert row["long_term_gain"] == pytest.approx(0.0)
+    assert row["tax"] == pytest.approx(160.0)
+
+
+def test_tax_liabilities_only_taxes_trades_since_last_run():
+    prices = pd.Series(10.0, index=pd.date_range("2020-01-01", "2020-12-31"))
+    prices.loc["2020-03-01":] = 12.0
+    s = _tax_strategy(prices)
+    algo = algos.TaxLiabilities(short_term_rate=0.5, long_term_rate=0.2)
+
+    _trade(s, "2020-01-01", 100)
+    _trade(s, "2020-03-01", -50)
+    algo(s)
+    s.update(pd.Timestamp("2020-03-01"))
+    assert algo.liabilities["tax"].iloc[-1] == pytest.approx(50.0)
+
+    _advance(s, "2020-06-01")
+    algo(s)
+    assert algo.liabilities["tax"].iloc[-1] == 0.0
+    assert s.fees.sum() == pytest.approx(50.0)
+
+def test_tax_liabilities_in_backtest():
+    dates = pd.date_range("2020-01-01", "2022-12-31", freq="B")
+    data = pd.DataFrame({"c1": np.linspace(100, 200, len(dates)), "c2": np.linspace(100, 50, len(dates))}, index=dates)
+    taxes = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+    s = bt.Strategy(
+        "s",
+        [algos.RunQuarterly(), algos.SelectAll(), algos.WeighEqually(), algos.Rebalance(), taxes],
+    )
+    untaxed = bt.Strategy("untaxed", [algos.RunQuarterly(), algos.SelectAll(), algos.WeighEqually(), algos.Rebalance()])
+    res = bt.run(bt.Backtest(s, data), bt.Backtest(untaxed, data))
+
+    strategy = res.backtests["s"].strategy
+    liabilities = strategy.perm["tax_liabilities"]
+    assert liabilities["tax"].sum() > 0
+    assert strategy.fees.sum() == pytest.approx(liabilities["tax"].sum())
+    assert res["s"].stats.loc["total_return"] < res["untaxed"].stats.loc["total_return"]
+
+
+def test_tax_liabilities_fully_invested_payable_resets_each_rebalance():
+    # Rebalance reinvests all proceeds, so the tax drives cash negative. That balance is a tax
+    # payable: the next Rebalance sizes to target.value (which includes it) and pays it off,
+    # so it never stacks even when gains are realized every period.
+
+    # records cash after Rebalance but before the tax. Backtests copy the strategy, so it uses perm.
+    class CashAfterRebalance(bt.core.Algo):
+        def __call__(self, target):
+            target.perm.setdefault("cash_after_rebalance", {})[target.now] = target.capital
+            return True
+
+    dates = pd.bdate_range("2020-01-01", periods=2020)
+    steps = np.arange(len(dates))
+    data = pd.DataFrame({"up": 100 + 0.5 * steps, "down": 200 - 0.05 * steps}, index=dates)
+    taxes = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+    s = bt.Strategy("s", [algos.RunMonthly(), algos.SelectAll(), algos.WeighEqually(), algos.Rebalance(), CashAfterRebalance(), taxes])
+    backtest = bt.Backtest(s, data, initial_capital=100000, integer_positions=False)
+    bt.run(backtest)
+
+    strategy = backtest.strategy
+    tax = strategy.perm["tax_liabilities"]["tax"]
+    cash_after_rebalance = pd.Series(strategy.perm["cash_after_rebalance"])
+
+    # tax is charged in many consecutive periods
+    assert (tax > 0).sum() > 12
+
+    # each Rebalance pays off the previous period's payable before the new tax is charged
+    assert cash_after_rebalance.abs().max() == pytest.approx(0.0, abs=1e-6)
+
+    # so cash never goes below about one period of tax
+    assert strategy.cash.min() < 0
+    assert strategy.cash.min() >= -tax.max() - 1e-6
+
+
+def test_tax_liabilities_run_more_often_than_rebalance():
+    # TaxLiabilities runs every bar while Rebalance runs mid-month. A run with no trades does not
+    # change the year's realized gains, so it charges nothing and payables never stack between
+    # rebalances. The exception is a year's first run, which can credit the new year's deduction
+    # of carried-forward losses. That only adds cash.
+
+    # records cash after Rebalance but before the tax. Backtests copy the strategy, so it uses perm.
+    class CashAfterRebalance(bt.core.Algo):
+        def __call__(self, target):
+            target.perm.setdefault("cash_after_rebalance", {})[target.now] = target.capital
+            return True
+
+    dates = pd.bdate_range("2020-01-01", "2023-12-31")
+    steps = np.arange(len(dates))
+    data = pd.DataFrame({"up": 100 + 0.1 * steps, "down": 100 - 0.08 * steps}, index=dates)
+
+    # rebalance mid-month, never on a year's first bar, alternating between the two assets
+    rebalance_dates = pd.bdate_range("2020-01-01", "2023-12-31", freq="BMS") + pd.offsets.BDay(10)
+    in_up = np.arange(len(rebalance_dates)) % 2
+    weights = pd.DataFrame({"up": in_up, "down": 1 - in_up}, index=rebalance_dates, dtype=float)
+
+    taxes = algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2)
+    # keep running on bars where RunOnDate stops the stack
+    taxes.run_always = True
+    s = bt.Strategy(
+        "s",
+        [algos.RunOnDate(*rebalance_dates), algos.WeighTarget(weights), algos.Rebalance(), CashAfterRebalance(), taxes],
+    )
+    backtest = bt.Backtest(s, data, initial_capital=100000, integer_positions=False)
+    bt.run(backtest)
+
+    strategy = backtest.strategy
+    tax = strategy.perm["tax_liabilities"]["tax"]
+    cash_after_rebalance = pd.Series(strategy.perm["cash_after_rebalance"])
+
+    # the algo runs on every bar, far more often than Rebalance
+    assert len(tax) == len(dates)
+    assert len(cash_after_rebalance) == len(rebalance_dates)
+    assert len(tax) > len(rebalance_dates)
+
+    # every charge lands on a rebalance bar
+    charges = tax[tax > 1e-9]
+    assert len(charges) > 5
+    assert charges.index.isin(cash_after_rebalance.index).all()
+
+    # off-rebalance runs only pay new-year credits from carried-forward losses
+    off_rebalance = tax[~tax.index.isin(cash_after_rebalance.index) & (tax.abs() > 1e-9)]
+    assert len(off_rebalance) > 0
+    assert (off_rebalance < 0).all()
+    first_bar_of_year = dates.to_series().groupby(dates.year).min()
+    assert off_rebalance.index.isin(first_bar_of_year).all()
+
+    # each Rebalance still pays off the payable, so cash never goes below about one period of tax
+    assert cash_after_rebalance.abs().max() == pytest.approx(0.0, abs=1e-6)
+    assert strategy.cash.min() < 0
+    assert strategy.cash.min() >= -tax.max() - 1e-6
+
+
+@pytest.mark.parametrize("args", [(-0.1, 0.2), (0.3, float("nan")), (0.3, 0.2, -1.0)])
+def test_tax_liabilities_rejects_invalid_args(args):
+    with pytest.raises(ValueError):
+        algos.TaxLiabilities(*args)
+
+
+def _tax_algo(**kwargs):
+    return algos.TaxLiabilities(short_term_rate=0.4, long_term_rate=0.2, **kwargs)
+
+
+def _tax_target(date="2020-06-01"):
+    # _deduct_losses only reads target.now
+    return mock.Mock(now=pd.Timestamp(date))
+
+
+@pytest.mark.parametrize(
+    ("st_gain", "lt_gain", "expected_st", "expected_lt"),
+    [
+        # both buckets are gains: taxed as-is
+        (100.0, 200.0, 100.0, 200.0),
+        # short-term loss partially offsets a long-term gain
+        (-100.0, 300.0, 0.0, 200.0),
+        # short-term loss exceeds the long-term gain
+        (-300.0, 100.0, -200.0, 0.0),
+        # long-term loss partially offsets a short-term gain
+        (300.0, -100.0, 200.0, 0.0),
+        # long-term loss exceeds the short-term gain
+        (100.0, -300.0, 0.0, -200.0),
+        # both buckets are losses: nothing to net
+        (-100.0, -200.0, -100.0, -200.0),
+        # nothing realized
+        (0.0, 0.0, 0.0, 0.0),
+    ],
+)
+def test_tax_liabilities_calculate_tax_nets_buckets(st_gain, lt_gain, expected_st, expected_lt):
+    algo = _tax_algo()
+
+    tax, st, lt = algo._calculate_tax(st_gain, lt_gain)
+
+    assert st == pytest.approx(expected_st)
+    assert lt == pytest.approx(expected_lt)
+    assert tax == pytest.approx(max(expected_st, 0.0) * 0.4 + max(expected_lt, 0.0) * 0.2)
+
+
+def test_tax_liabilities_calculate_tax_applies_carryforward_per_bucket():
+    algo = _tax_algo()
+    algo._short_term_carryforward = 50.0
+    algo._long_term_carryforward = 30.0
+
+    tax, st, lt = algo._calculate_tax(200.0, 100.0)
+
+    assert st == pytest.approx(150.0)
+    assert lt == pytest.approx(70.0)
+    assert tax == pytest.approx(150.0 * 0.4 + 70.0 * 0.2)
+
+
+def test_tax_liabilities_calculate_tax_nets_carryforward_against_other_bucket():
+    algo = _tax_algo()
+    algo._short_term_carryforward = 150.0
+
+    # 100 short-term gain - 150 carried = -50, which then offsets the long-term gain
+    tax, st, lt = algo._calculate_tax(100.0, 200.0)
+
+    assert st == pytest.approx(0.0)
+    assert lt == pytest.approx(150.0)
+    assert tax == pytest.approx(150.0 * 0.2)
+
+
+def test_tax_liabilities_calculate_tax_does_not_change_state():
+    algo = _tax_algo()
+    algo._short_term_carryforward = 500.0
+    algo._long_term_carryforward = 250.0
+
+    algo._calculate_tax(100.0, 100.0)
+
+    assert algo._short_term_carryforward == 500.0
+    assert algo._long_term_carryforward == 250.0
+    assert algo._deducted == {}
+
+
+def test_tax_liabilities_deduct_losses_with_no_losses():
+    algo = _tax_algo()
+    algo._short_term_carryforward = 999.0
+    algo._long_term_carryforward = 999.0
+
+    tax, deduction = algo._deduct_losses(_tax_target(), 50.0, 100.0, 50.0)
+
+    assert tax == pytest.approx(50.0)
+    assert deduction == 0.0
+    # the carryforward was already consumed by _calculate_tax, so it's reset, not accumulated
+    assert algo._short_term_carryforward == 0.0
+    assert algo._long_term_carryforward == 0.0
+
+
+def test_tax_liabilities_deduct_losses_within_limit():
+    algo = _tax_algo()
+
+    tax, deduction = algo._deduct_losses(_tax_target(), 0.0, -1000.0, 0.0)
+
+    assert deduction == pytest.approx(1000.0)
+    assert tax == pytest.approx(-400.0)
+    assert algo._short_term_carryforward == 0.0
+    assert algo._deducted == {2020: pytest.approx(1000.0)}
+
+
+def test_tax_liabilities_deduct_losses_carries_forward_above_limit():
+    algo = _tax_algo(loss_deduction_limit=3000)
+
+    tax, deduction = algo._deduct_losses(_tax_target(), 0.0, -5000.0, 0.0)
+
+    assert deduction == pytest.approx(3000.0)
+    assert tax == pytest.approx(-1200.0)
+    assert algo._short_term_carryforward == pytest.approx(2000.0)
+    assert algo._long_term_carryforward == 0.0
+
+
+def test_tax_liabilities_deduct_losses_short_term_first():
+    algo = _tax_algo(loss_deduction_limit=3000)
+
+    tax, deduction = algo._deduct_losses(_tax_target(), 0.0, -2000.0, -2000.0)
+
+    assert deduction == pytest.approx(3000.0)
+    # long-term losses are still credited at the short-term rate
+    assert tax == pytest.approx(-3000.0 * 0.4)
+    assert algo._short_term_carryforward == pytest.approx(0.0)
+    assert algo._long_term_carryforward == pytest.approx(1000.0)
+
+
+def test_tax_liabilities_deduct_losses_uses_remaining_annual_allowance():
+    algo = _tax_algo(loss_deduction_limit=3000)
+    algo._deducted = {2020: 2500.0}
+
+    tax, deduction = algo._deduct_losses(_tax_target("2020-11-01"), 0.0, -1000.0, 0.0)
+
+    assert deduction == pytest.approx(500.0)
+    assert tax == pytest.approx(-200.0)
+    assert algo._short_term_carryforward == pytest.approx(500.0)
+    assert algo._deducted[2020] == pytest.approx(3000.0)
+
+
+def test_tax_liabilities_deduct_losses_allowance_resets_each_year():
+    algo = _tax_algo(loss_deduction_limit=3000)
+    algo._deducted = {2020: 3000.0}
+
+    _, deduction = algo._deduct_losses(_tax_target("2021-01-04"), 0.0, -1000.0, 0.0)
+
+    assert deduction == pytest.approx(1000.0)
+    assert algo._deducted == {2020: 3000.0, 2021: pytest.approx(1000.0)}
+
+
+@pytest.mark.parametrize(("limit", "expected_deduction", "expected_carry"), [(None, 10000.0, 0.0), (0, 0.0, 10000.0)])
+def test_tax_liabilities_deduct_losses_limit_extremes(limit, expected_deduction, expected_carry):
+    algo = _tax_algo(loss_deduction_limit=limit)
+
+    tax, deduction = algo._deduct_losses(_tax_target(), 0.0, -10000.0, 0.0)
+
+    assert deduction == pytest.approx(expected_deduction)
+    assert tax == pytest.approx(-expected_deduction * 0.4)
+    assert algo._short_term_carryforward == pytest.approx(expected_carry)
+
+
+def test_tax_liabilities_empty_before_first_run():
+    liabilities = _tax_algo().liabilities
+
+    assert liabilities.empty
+    assert list(liabilities.columns) == ["short_term_gain", "long_term_gain", "deduction", "tax", "short_term_carryforward", "long_term_carryforward"]
+    assert liabilities.index.name == "Date"
+
+
+def test_tax_liabilities_without_securities_records_zero_tax():
+    s = bt.Strategy("s")
+    s.setup(pd.DataFrame({"c1": 10.0}, index=pd.date_range("2020-01-01", periods=3)))
+    s.adjust(1000)
+    s.update(pd.Timestamp("2020-01-01"))
+    algo = _tax_algo()
+
+    assert algo(s)
+
+    row = algo.liabilities.loc["2020-01-01"]
+    assert row["tax"] == 0.0
+    assert row["short_term_gain"] == 0.0
+    assert s.perm["tax_liabilities"].equals(algo.liabilities)
+
+
+def test_tax_liabilities_default_holding_period_is_one_year():
+    assert _tax_algo().holding_period == pd.DateOffset(years=1)
+    assert _tax_algo(holding_period=pd.DateOffset(months=6)).holding_period == pd.DateOffset(months=6)
+
+
+@pytest.mark.parametrize("gain_first", [False, True])
+@pytest.mark.parametrize("limit", [0.0, 3000.0])
+def test_tax_liabilities_reconciles_calendar_year_gains(gain_first, limit):
+    dates = pd.to_datetime(["2019-01-02", "2020-01-02", "2020-02-03", "2020-03-02"])
+    data = pd.DataFrame({"gain": [10.0, 10.0, 20.0 if gain_first else 10.0, 20.0], "loss": [20.0, 20.0, 20.0 if gain_first else 10.0, 10.0]}, index=dates)
+    strategy = bt.Strategy("taxed", children=["gain", "loss"])
+    strategy.setup(data)
+    strategy.adjust(100000.0)
+    strategy.update(dates[0])
+    taxes = _tax_algo(loss_deduction_limit=limit)
+    strategy.transact(100, "gain")
+    taxes(strategy)
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    strategy.transact(100, "loss")
+    taxes(strategy)
+    strategy.update(dates[1])
+    strategy.update(dates[2])
+    strategy.transact(-100, "gain" if gain_first else "loss")
+    taxes(strategy)
+    strategy.update(dates[2])
+    strategy.update(dates[3])
+    strategy.transact(-100, "loss" if gain_first else "gain")
+    taxes(strategy)
+    strategy.update(dates[3])
+
+    # Equal long-term gains and short-term losses leave no annual liability.
+    assert taxes.liabilities["tax"].sum() == pytest.approx(0.0)
+    assert taxes.liabilities["deduction"].sum() == pytest.approx(0.0)
+    assert taxes._short_term_carryforward == pytest.approx(0.0)
+    assert taxes._deducted[2020] == pytest.approx(0.0)
+    assert strategy.fees.sum() == pytest.approx(0.0)
+
+
+def test_tax_liabilities_does_not_offset_previous_year_gains():
+    dates = pd.to_datetime(["2020-01-02", "2020-02-03", "2021-01-04", "2021-02-01"])
+    strategy = _tax_strategy(pd.Series([10.0, 20.0, 20.0, 10.0], index=dates))
+    taxes = _tax_algo(loss_deduction_limit=0)
+    for date, quantity in zip(dates, [100, -100, 100, -100]):
+        _trade(strategy, date, quantity)
+    taxes(strategy)
+
+    # The first tax call must respect the years of the historical sales.
+    assert taxes.liabilities["tax"].sum() == pytest.approx(400.0)
+    assert taxes._short_term_carryforward == pytest.approx(1000.0)
+
+
+def test_tax_liabilities_applies_each_years_loss_allowance():
+    dates = pd.to_datetime(["2020-01-02", "2020-02-03", "2022-01-03"])
+    strategy = _tax_strategy(pd.Series([10.0, 5.0, 5.0], index=dates))
+    taxes = _tax_algo()
+    _trade(strategy, dates[0], 1000)
+    _trade(strategy, dates[1], -1000)
+    _advance(strategy, dates[2])
+    taxes(strategy)
+
+    assert taxes.liabilities["tax"].sum() == pytest.approx(-2000.0)
+    assert taxes._deducted[2020] == pytest.approx(3000.0)
+    assert taxes._deducted[2021] == pytest.approx(2000.0)
+    assert taxes._short_term_carryforward == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("reverse_children", [False, True])
+def test_tax_liabilities_keeps_same_name_security_lots_separate(reverse_children):
+    dates = pd.date_range("2020-01-01", periods=2)
+    data = pd.DataFrame({"asset": [10.0, 20.0]}, index=dates)
+    children = [bt.Strategy("shares", children=[bt.Security("asset")]), bt.Strategy("contracts", children=[bt.Security("asset", multiplier=10)])]
+    strategy = bt.Strategy("root", children=children[::-1] if reverse_children else children)
+    strategy.setup(data)
+    strategy.adjust(100000.0)
+    strategy.update(dates[0])
+    for name in ["shares", "contracts"]:
+        strategy.allocate(10000.0, name)
+        strategy[name]["asset"].transact(10)
+    taxes = _tax_algo()
+    taxes(strategy)
+    strategy.update(dates[1])
+    strategy["shares"]["asset"].transact(-10)
+    taxes(strategy)
+
+    assert taxes.liabilities["short_term_gain"].sum() == pytest.approx(100.0)
+    assert taxes.liabilities["tax"].sum() == pytest.approx(40.0)
+
+
+@pytest.mark.parametrize("direction", [-1, 1])
+@pytest.mark.parametrize("multiplier", [0.0, 0.1, 10.0])
+def test_tax_liabilities_includes_bid_offer_with_multipliers(direction, multiplier):
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame({"asset": [10.0, 14.0]}, index=dates)
+    strategy = bt.Strategy("taxed", children=[bt.Security("asset", multiplier=multiplier)])
+    strategy.setup(prices, bidoffer=pd.DataFrame(2.0, index=dates, columns=["asset"]))
+    strategy.adjust(100000.0)
+    strategy.update(dates[0])
+    strategy.transact(direction * 10, "asset")
+    taxes = _tax_algo(loss_deduction_limit=None)
+    taxes(strategy)
+    strategy.update(dates[1])
+    strategy.transact(-direction * 10, "asset")
+    taxes(strategy)
+    strategy.update(dates[1])
+
+    gain = (direction * 4.0 - 2.0) * 10 * multiplier
+    assert taxes.liabilities["short_term_gain"].sum() == pytest.approx(gain)
+    assert taxes.liabilities["tax"].sum() == pytest.approx(gain * 0.4)
+    assert strategy.fees.sum() == pytest.approx(gain * 0.4)
+
+
+def test_tax_liabilities_keeps_lot_identity_after_pickle():
+    dates = pd.date_range("2020-01-01", periods=2)
+    taxes = _tax_algo()
+    strategy = bt.Strategy("taxed", algos=[taxes], children=["c1"])
+    strategy.setup(pd.DataFrame({"c1": [10.0, 20.0]}, index=dates))
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.transact(10, "c1")
+    strategy.run()
+    strategy.update(dates[0])
+    restored = pickle.loads(pickle.dumps(strategy))
+    restored.update(dates[1])
+    restored.transact(-10, "c1")
+    restored.run()
+
+    assert restored.perm["tax_liabilities"]["tax"].sum() == pytest.approx(40.0)
+    assert strategy.perm["tax_liabilities"]["tax"].sum() == pytest.approx(0.0)
