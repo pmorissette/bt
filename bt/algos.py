@@ -924,6 +924,8 @@ class ResolveOnTheRun(Algo):
         on_the_run = target.get_data(self.on_the_run)
         selected = target.temp["selected"]
         aliases = [s for s in selected if s in on_the_run.columns]
+        if not aliases:
+            return True
         resolved = on_the_run.loc[target.now, aliases].tolist()
         prices = target.universe.loc[target.now]
         resolved = _select_by_price(prices, resolved, self.include_no_data, self.include_negative)
