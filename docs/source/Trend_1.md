@@ -227,11 +227,8 @@ pdf.rolling(window=num_days_per_month*12,center=False).median().tail()
 </div>
 
 ```python
-# target weights
-trend = sma.copy()
-trend[pdf > sma] = True
-trend[pdf <= sma] = False
-trend[sma.isnull()] = False
+# Missing medians leave the initial lookback unselected.
+trend = pdf > sma
 trend.tail()
 ```
 
