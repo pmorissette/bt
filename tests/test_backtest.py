@@ -35,6 +35,126 @@ def test_backtest_dates_set():
     assert actual.dates[-1] == data.index[-1]
 
 
+@pytest.mark.parametrize(
+    "first, fallback_utc",
+    [("2026-03-09 02:30", "2026-03-08 06:30"), ("2026-11-02 01:30", "2026-11-01 06:30")],
+)
+@pytest.mark.parametrize("periods", [2, 3])
+@pytest.mark.parametrize("nanoseconds", [0, 1])
+def test_backtest_dst_bootstrap(first, fallback_utc, periods, nanoseconds):
+    import pytz
+
+    offset = pd.Timedelta(nanoseconds=nanoseconds)
+    dates = pd.date_range(first, periods=periods, tz=pytz.timezone("America/New_York")) + offset
+    prices = pd.DataFrame({"a": [100.0, 101.0, 102.0][:periods]}, index=dates)
+    ids = pd.Series(2**53 + 1, index=dates, name="id")
+    floats = pd.DataFrame(1.0, index=dates, columns=["signal"])
+    volume = pd.DataFrame(1_000_000.0, index=dates, columns=prices.columns)
+    volatility = pd.DataFrame(0.02, index=dates, columns=prices.columns)
+    inputs = [prices, ids, ids.to_frame(), floats, volume, volatility]
+    snapshots = [data.copy(deep=True) for data in inputs]
+
+    # Older pandas already resolves these calendar dates; retain its successful result.
+    try:
+        reference = dates[0] - pd.DateOffset(days=1)
+    except (ValueError, pytz.InvalidTimeError):
+        reference = pd.Timestamp(fallback_utc, tz="UTC").tz_convert(dates.tz) + offset
+    expected_dates = dates.insert(0, reference)
+    strategy = bt.Strategy("s", [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()])
+    backtest = bt.Backtest(
+        strategy,
+        prices,
+        initial_capital=1000.0,
+        additional_data={"ids": ids, "id_frame": inputs[2], "signal": floats},
+        commissions=bt.AlmgrenChrissCostModel(alpha=0, beta=0, epsilon=0),
+        volume=volume,
+        volatility=volatility,
+    )
+    processed = [backtest.data, backtest.additional_data["ids"], backtest.additional_data["id_frame"],
+                 backtest.additional_data["signal"], backtest.volume, backtest.volatility]
+    for result, original in zip(processed, inputs):
+        pd.testing.assert_index_equal(result.index, expected_dates)
+        assert result.index.tz is dates.tz
+        assert np.asarray(result.iloc[:1].isna()).all()
+        # Compare values without float coercion; bootstrap promotion can change storage.
+        np.testing.assert_array_equal(result.iloc[1:].to_numpy(dtype=object), original.to_numpy(dtype=object))
+        if isinstance(original, pd.Series):
+            pd.testing.assert_series_equal(result.iloc[1:].astype(object), original.astype(object), check_freq=False, check_exact=True)
+        else:
+            pd.testing.assert_frame_equal(result.iloc[1:].astype(object), original.astype(object), check_freq=False, check_exact=True)
+
+    backtest.run()
+    assert backtest.strategy["a"].position == 10.0
+    assert backtest.strategy.capital == 0.0
+    assert backtest.strategy.value == 10.0 * prices.iloc[-1, 0]
+    assert backtest.stats.total_return == pytest.approx((periods - 1) / 100.0)
+    for data, snapshot in zip(inputs, snapshots):
+        np.testing.assert_array_equal(data.to_numpy(dtype=object), snapshot.to_numpy(dtype=object))
+        if isinstance(data, pd.Series):
+            pd.testing.assert_series_equal(data, snapshot, check_exact=True)
+        else:
+            pd.testing.assert_frame_equal(data, snapshot, check_exact=True)
+
+
+@pytest.mark.parametrize(
+    "first, fallback_utc",
+    [("2026-03-09 02:30", "2026-03-08 06:30"), ("2026-11-02 01:30", "2026-11-01 06:30")],
+)
+def test_backtest_bootstrap_diagnostic_adds_no_warnings(first, fallback_utc):
+    import warnings
+
+    import pytz
+
+    first = pd.Timestamp(first, tz=pytz.timezone("America/New_York")) + pd.Timedelta(nanoseconds=1)
+    with warnings.catch_warnings(record=True) as native_warnings:
+        warnings.simplefilter("always")
+        try:
+            expected = first - pd.DateOffset(days=1)
+        except (ValueError, pytz.InvalidTimeError):
+            expected = pd.Timestamp(fallback_utc, tz="UTC").tz_convert(first.tz) + pd.Timedelta(nanoseconds=1)
+    with warnings.catch_warnings(record=True) as actual_warnings:
+        warnings.simplefilter("always")
+        actual = bt.backtest._bootstrap_date(first)
+    assert actual == expected
+    # Preserve native warnings while rejecting any added by fallback diagnostics.
+    assert [(w.category, str(w.message)) for w in actual_warnings] == [(w.category, str(w.message)) for w in native_warnings]
+
+
+@pytest.mark.parametrize(
+    "first, timezone",
+    [("2026-03-09 01:30", "America/New_York"), ("2026-11-02 00:30", "America/New_York"),
+     ("2026-03-09 02:30", "zoneinfo"), ("2026-11-02 01:30", "zoneinfo"),
+     ("2026-03-09 02:30", "UTC"), ("2026-03-09 02:30", None)],
+)
+def test_backtest_bootstrap_preserves_working_calendar_dates(first, timezone):
+    from zoneinfo import ZoneInfo
+
+    import pytz
+
+    timezone = ZoneInfo("America/New_York") if timezone == "zoneinfo" else pytz.timezone(timezone) if timezone else None
+    dates = pd.date_range(first, periods=3, tz=timezone)
+    prices = pd.DataFrame(100.0, index=dates, columns=["a"])
+    expected = dates.insert(0, dates[0] - pd.DateOffset(days=1))
+    backtest = bt.Backtest(bt.Strategy("s"), prices, additional_data={"signal": prices})
+    pd.testing.assert_index_equal(backtest.dates, expected)
+    pd.testing.assert_index_equal(backtest.additional_data["signal"].index, expected)
+
+
+@pytest.mark.parametrize("first", ["2026-03-10", "2026-03-09 02:30"])
+def test_backtest_bootstrap_propagates_unrelated_calendar_error(first):
+    import pytz
+
+    error = ValueError("unrelated calendar error")
+    offset = mock.MagicMock()
+    offset.__rsub__.side_effect = error
+    dates = pd.date_range(first, periods=2, tz=pytz.timezone("America/New_York"))
+    prices = pd.DataFrame(100.0, index=dates, columns=["a"])
+    # DST failures also use ValueError on pandas 3; the exception type alone is insufficient.
+    with mock.patch("bt.backtest.pd.DateOffset", side_effect=[offset, pd.DateOffset(days=1)]), pytest.raises(ValueError, match="unrelated calendar error") as raised:
+        bt.Backtest(bt.Strategy("s"), prices)
+    assert raised.value is error
+
+
 def test_backtest_rejects_unsorted_dates():
     s = mock.MagicMock()
     data = pd.DataFrame(

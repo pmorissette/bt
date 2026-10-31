@@ -138,6 +138,34 @@ class _CostModelHook:
         return deepcopy(self.original, memo)
 
 
+def _bootstrap_date(first):
+    """Retain calendar subtraction, resolving only rejected DST reference times."""
+    try:
+        return first - pd.DateOffset(days=1)
+    except Exception as error:
+        # Pandas versions raise different exception types for rejected DST wall times.
+        localize = getattr(getattr(first, "tz", None), "localize", None)
+        if localize is None:
+            raise
+        try:
+            # A naive day has no DST transition; elapsed subtraction avoids conversion warnings.
+            local = first.tz_localize(None) - pd.Timedelta(days=1)
+        except Exception as preparation_error:
+            raise error from preparation_error
+        try:
+            # Pandas localizes sub-microsecond timestamps without converting to datetime.
+            if first.nanosecond:
+                local.tz_localize(first.tz)
+            else:
+                localize(local.to_pydatetime(), is_dst=None)
+        except Exception as localization_error:
+            cause = error.__cause__ or error
+            if type(cause) is type(localization_error) and cause.args == localization_error.args:
+                return first - pd.Timedelta(days=1)
+            raise error from localization_error
+        raise
+
+
 class Backtest:
     """
     A Backtest combines a Strategy with data to
@@ -149,6 +177,10 @@ class Backtest:
         The Strategy will be deepcopied so it is re-usable in other
         backtests. To access the backtested strategy, simply access
         the strategy attribute.
+
+        The initial reference row is one calendar day before the first
+        observation. If pandas rejects that local time at a pytz daylight-saving
+        transition, the reference is 24 elapsed hours earlier instead.
 
         After running, statistics start one price row before the earliest
         recorded change in any security's position. If no position changes
@@ -316,7 +348,7 @@ class Backtest:
         ):
             # Concatenate in block orientation so NumPy can preserve its memory order.
             values = np.concatenate((np.full((len(data.columns), 1), np.nan), blocks[0].values), axis=1).T
-            index = data.index.insert(0, data.index[0] + pd.DateOffset(days=-1))
+            index = data.index.insert(0, _bootstrap_date(data.index[0]))
             return pd.DataFrame(values, index=index, columns=data.columns, copy=False)
         # Expand positionally so duplicate date labels retain their existing behavior.
         positional = data.set_axis(pd.RangeIndex(len(data)))
@@ -337,7 +369,7 @@ class Backtest:
                 # Address columns by position: auxiliary data may have duplicate labels.
                 positional = positional.set_axis(pd.RangeIndex(len(data.columns)), axis=1).astype(nullable).set_axis(data.columns, axis=1)
         positional = positional.reindex(pd.RangeIndex(-1, len(data)))
-        index = data.index.insert(0, data.index[0] - pd.DateOffset(days=1))
+        index = data.index.insert(0, _bootstrap_date(data.index[0]))
         return positional.set_axis(index)
 
     def _align_impact_frame(self, df):
@@ -453,7 +485,7 @@ class Backtest:
                 pd.DataFrame(
                     np.nan,
                     columns=data.columns,
-                    index=[data.index[0] - pd.DateOffset(days=1)],
+                    index=[_bootstrap_date(data.index[0])],
                 ),
                 data,
             ]
