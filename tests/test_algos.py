@@ -4237,6 +4237,140 @@ def test_roll_positions_after_date():
     assert s.perm["rolled"] == set(["c1", "c2"])
 
 
+@pytest.fixture(params=[(bt.Strategy, bt.Security), (bt.FixedIncomeStrategy, bt.FixedIncomeSecurity)], ids=["equity", "fixed-income"])
+def roll_strategy(request):
+    strategy_type, security_type = request.param
+    dates = pd.date_range("2026-01-01", periods=2)
+    strategy = strategy_type("roll", children=[security_type("old_a"), security_type("old_b"), security_type("new", lazy_add=True)])
+    roll = pd.DataFrame({"date": dates[0], "target": "new", "factor": 0.5}, index=["old_a", "old_b"])
+    strategy.setup(pd.DataFrame(100.0, index=dates, columns=["old_a", "old_b", "new"]), roll=roll)
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.transact(2.0, "old_a")
+    strategy.transact(2.0, "old_b")
+    strategy.update(dates[0])
+    return strategy
+
+
+@pytest.mark.parametrize("failed_source", ["old_a", "old_b"])
+@pytest.mark.parametrize("rejection", ["exception", "nonfinite"])
+def test_roll_positions_after_date_clears_rejected_source(roll_strategy, failed_source, rejection):
+    strategy = roll_strategy
+    algo = algos.RollPositionsAfterDates("roll")
+    calls = []
+    error = ValueError("fee unavailable")
+    failed_history = strategy[failed_source].data.copy(deep=True)
+
+    def commission(quantity, price):
+        calls.append((quantity, price))
+        if len(calls) == (1 if failed_source == "old_a" else 2):
+            if rejection == "exception":
+                raise error
+            return np.nan
+        return 0.0
+
+    strategy.set_commissions(commission)
+    with pytest.raises(ValueError) as raised:
+        algo(strategy)
+    if rejection == "exception":
+        assert raised.value is error
+    else:
+        assert "Transaction outlay and costs must be finite" in str(raised.value)
+
+    completed = set() if failed_source == "old_a" else {"old_a"}
+    assert strategy.perm["rolled"] == completed
+    assert strategy[failed_source].position == 2.0
+    assert strategy.capital == (600.0 if failed_source == "old_a" else 800.0)
+    assert "new" not in strategy.children
+    pd.testing.assert_frame_equal(strategy[failed_source].data, failed_history)
+    strategy.temp["selected"] = ["old_a", "old_b"]
+    algos.SelectActive()(strategy)
+    assert strategy.temp["selected"] == (["old_a", "old_b"] if failed_source == "old_a" else ["old_b"])
+
+    if failed_source == "old_a":
+        # With no earlier sale to recover, the next bar can execute the full roll.
+        strategy.set_commissions(lambda quantity, price: 0.0)
+        strategy.update(strategy.data.index[1])
+        algo(strategy)
+        assert strategy["old_a"].position == strategy["old_b"].position == 0.0
+        assert strategy["new"].position == 2.0
+        assert strategy.capital == 800.0  # 600 + two sales of 200 - purchase of 200.
+        assert strategy.value == 1000.0
+        assert strategy.perm["rolled"] == {"old_a", "old_b"}
+
+
+def test_roll_positions_after_date_preserves_recursive_callback(roll_strategy):
+    strategy = roll_strategy
+    strategy.get_data("roll").loc["old_b", "date"] = strategy.data.index[1]
+    algo = algos.RollPositionsAfterDates("roll")
+    calls = []
+
+    def commission(quantity, price):
+        calls.append((quantity, price, frozenset(strategy.perm["rolled"])))
+        if len(calls) == 1:
+            algo(strategy)
+        return 0.0
+
+    strategy.set_commissions(commission)
+    algo(strategy)
+    assert calls == [(-2.0, 100.0, {"old_a"}), (1.0, 100.0, {"old_a"})]
+    assert strategy["old_a"].position == 0.0
+    assert strategy["old_b"].position == 2.0
+    assert strategy["new"].position == 1.0
+    assert strategy.capital == 700.0
+    assert strategy.perm["rolled"] == {"old_a"}
+
+
+def test_roll_positions_after_date_preserves_completed_recursive_marker(roll_strategy):
+    strategy = roll_strategy
+    strategy.get_data("roll").loc["old_b", "target"] = "old_b"
+    algo = algos.RollPositionsAfterDates("roll")
+    calls = []
+    error = ValueError("later close rejected")
+
+    def commission(quantity, price):
+        calls.append((quantity, price))
+        if len(calls) == 4:
+            raise error
+        if len(calls) == 1:
+            algo(strategy)
+        return 0.0
+
+    strategy.set_commissions(commission)
+    with pytest.raises(ValueError) as raised:
+        algo(strategy)
+    assert raised.value is error
+    # The nested roll already closed and reopened old_b before its outer close failed.
+    assert calls == [(-2.0, 100.0), (-2.0, 100.0), (1.0, 100.0), (-1.0, 100.0)]
+    assert strategy["old_a"].position == 0.0
+    assert strategy["old_b"].position == 1.0
+    assert strategy.capital == 900.0
+    assert strategy.perm["rolled"] == {"old_a", "old_b"}
+    assert "new" not in strategy.children
+
+
+@pytest.mark.parametrize(("initial_position", "closed_quantity"), [(2.0, 2.0), (2.0, 1.0), (0.0, 0.0)], ids=["completed", "partial", "initially-empty"])
+def test_roll_positions_after_date_preserves_markers_after_custom_close(roll_strategy, monkeypatch, initial_position, closed_quantity):
+    strategy = roll_strategy
+    if initial_position == 0.0:
+        strategy.close("old_a", update=False)
+    error = ValueError("custom close failed")
+
+    def close(name, update=True):
+        strategy[name].transact(-closed_quantity, update=update)
+        raise error
+
+    monkeypatch.setattr(strategy, "close", close)
+    with pytest.raises(ValueError) as raised:
+        algos.RollPositionsAfterDates("roll")(strategy)
+    assert raised.value is error
+    remaining = initial_position - closed_quantity
+    assert strategy["old_a"].position == remaining
+    assert strategy.capital == 800.0 - 100.0 * remaining
+    assert strategy.perm["rolled"] == {"old_a"}
+    assert "new" not in strategy.children
+
+
 def test_roll_positions_after_date_aggregates_finite_factors():
     dates = pd.date_range("2010-01-01", periods=2)
     data = pd.DataFrame(100.0, index=dates, columns=["old_a", "old_b", "new"])

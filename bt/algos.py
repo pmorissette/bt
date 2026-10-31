@@ -2418,6 +2418,9 @@ class RollPositionsAfterDates(Algo):
     Known execution limitation: roll execution is not atomic. An execution
     error can leave earlier trades and ``target.perm['rolled']`` entries
     applied; completed changes are not rolled back.
+    If a source close fails with its nonzero position unchanged, the marker
+    newly added for that close is removed. Other effects are not undone,
+    and a partially executed roll is not guaranteed to be safe to retry.
 
     Sets:
         * target.perm['rolled'] : to keep track of which securities have already rolled
@@ -2466,8 +2469,19 @@ class RollPositionsAfterDates(Algo):
 
         # Apply the validated plan only after every due row has succeeded.
         for sec_name in due_rolls.index:
-            target.perm["rolled"].add(sec_name)
-            target.close(sec_name, update=False)
+            security = target[sec_name]
+            position = security.position
+            rolled = target.perm["rolled"]
+            already_rolled = sec_name in rolled
+            # Keep the marker visible to callbacks that invoke this Algo again.
+            rolled.add(sec_name)
+            try:
+                target.close(sec_name, update=False)
+            except Exception:
+                # Do not clear a completed recursive roll or infer rollback after a trade.
+                if not already_rolled and position != 0 and security.position == position:
+                    rolled.discard(sec_name)
+                raise
 
         # Do all the new transactions at the end, to do any necessary aggregations first
         for new_sec, quantity in transactions.items():
