@@ -1150,11 +1150,8 @@ Win 12m %            68.57%      66.43%      69.29%      91.43%
   </tbody>
 </table>
 </div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># target weights</span>
-<span class="n">trend</span> <span class="o">=</span> <span class="n">sma</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="n">trend</span><span class="p">[</span><span class="n">pdf</span> <span class="o">&gt;</span> <span class="n">sma</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">trend</span><span class="p">[</span><span class="n">pdf</span> <span class="o">&lt;=</span> <span class="n">sma</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">trend</span><span class="p">[</span><span class="n">sma</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span> <span class="o">=</span> <span class="kc">False</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Missing medians leave the initial lookback unselected.</span>
+<span class="n">trend</span> <span class="o">=</span> <span class="n">pdf</span> <span class="o">&gt;</span> <span class="n">sma</span>
 <span class="n">trend</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
 </pre></div>
 </div>
