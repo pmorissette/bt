@@ -1433,6 +1433,11 @@ def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series)
         ("UInt64", [2**64 - 1, pd.NA, 2**64 - 2, 0, 1], "UInt64"),
         ("boolean", [True, False, True, False, True], "boolean"),
         ("float64", [1, 0, 1, 0, 1], "float64"),
+        (pd.SparseDtype("int64", 0), [0, 2**53 + 1, 0, -2**63 + 1, 0], "Sparse[object, 0]"),
+        (pd.SparseDtype("uint64", 1), [1, 2**53 + 1, 1, 2**64 - 1, 1], "Sparse[object, 1]"),
+        (pd.SparseDtype("int64", np.nan), [2**53 + 1, 1, 2**53 + 3, 0, 1], "Sparse[object, nan]"),
+        (pd.SparseDtype("int64", 0), [0, 2**54, 0, 2**54 + 4, 0], "Sparse[float64, 0]"),
+        (pd.SparseDtype("int64", 2**53 + 1), [2**53 + 1] * 5, f"Sparse[object, {2**53 + 1}]"),
     ],
 )
 def test_additional_data_auxiliary_bootstrap_dtypes(as_series, dtype, values, expected_dtype):
@@ -1461,9 +1466,45 @@ def test_additional_data_auxiliary_bootstrap_dtypes(as_series, dtype, values, ex
     # Compare Python integers: pandas float/int equality can round the oracle too.
     if pd.api.types.is_integer_dtype(dtype):
         assert [None if pd.isna(v) else int(v) for v in column.iloc[1:]] == [None if pd.isna(v) else int(v) for v in values]
+    if isinstance(dtype, pd.SparseDtype):
+        original_column = auxiliary if as_series else auxiliary["value"]
+        # The missing row adds one stored point only when missingness is not the fill.
+        assert column.sparse.npoints == original_column.sparse.npoints + (0 if pd.isna(dtype.fill_value) else 1)
     assert_equal = pd.testing.assert_series_equal if as_series else pd.testing.assert_frame_equal
     assert_equal(processed.iloc[1:], auxiliary, check_dtype=False, check_freq=False)
     assert_equal(auxiliary, original)
+
+
+@pytest.mark.filterwarnings("error")
+@pytest.mark.parametrize("duplicate_columns", [False, True])
+def test_additional_data_sparse_integer_mixed_columns(duplicate_columns):
+    """Preserve mixed sparse and Boolean signals without dtype-inference warnings."""
+    dates = pd.date_range("2026-01-01", periods=3, tz="UTC")
+    auxiliary = pd.DataFrame(
+        {
+            "large": pd.Series([2**53 + 1] * 3, dtype=pd.SparseDtype("int64", 2**53 + 1)),
+            "small": pd.Series([0] * 3, dtype=pd.SparseDtype("int64", 0)),
+            "flag": [True, False, True],
+        },
+    )
+    auxiliary.index = dates
+    if duplicate_columns:
+        auxiliary.columns = pd.Index(["same"] * 3, name="caller")
+    original = auxiliary.copy(deep=True)
+    backtest = bt.Backtest(bt.Strategy("test"), pd.DataFrame(100.0, index=dates, columns=["a"]), additional_data={"signals": auxiliary}, progress_bar=False)
+    processed = backtest.additional_data["signals"]
+
+    assert [int(v) for v in processed.iloc[1:, 0]] == [2**53 + 1] * 3
+    assert [int(v) for v in processed.iloc[1:, 1]] == [0, 0, 0]
+    assert processed.iloc[1:, 2].tolist() == [True, False, True]
+    assert all(isinstance(v, (bool, np.bool_)) for v in processed.iloc[1:, 2])
+    # Read cells separately so the check does not coerce mixed sparse columns.
+    assert all(pd.isna(processed.iloc[0, i]) for i in range(3))
+    assert processed.iloc[:, 0].sparse.npoints == processed.iloc[:, 1].sparse.npoints == 1
+    assert processed.dtypes.iloc[1] == pd.SparseDtype("float64", 0)
+    pd.testing.assert_index_equal(processed.index[1:], dates)
+    pd.testing.assert_index_equal(processed.columns, auxiliary.columns)
+    pd.testing.assert_frame_equal(auxiliary, original)
 
 
 def test_additional_data_integer_precision_with_duplicate_columns():
@@ -1506,6 +1547,30 @@ def test_additional_data_integer_ids_preserve_allocations(as_series):
     assert backtest.strategy.positions["a"].iloc[1:].tolist() == [0.0, 1000.0, 0.0, 1000.0, 0.0]
     np.testing.assert_allclose(backtest.strategy.values, 100_000.0)
     pd.testing.assert_series_equal(ids, pd.Series([base, base + 1, base, base + 1, base], index=dates, dtype="int64", name="id"))
+
+
+@pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
+@pytest.mark.parametrize("dtype", ["int64", "uint64"])
+def test_additional_data_sparse_integer_ids_preserve_allocations(as_series, dtype):
+    dates = pd.date_range("2026-10-07", periods=5)
+    base = int(pd.Timestamp("2026-10-07").value)
+    ids = pd.Series([0, base + 1, 0, base + 3, 0], index=dates, dtype=pd.SparseDtype(dtype, 0), name="id")
+    weights = {0: 0.0, base + 1: 1.0, base + 3: 0.5}
+
+    def lookup_weight(target):
+        observations = target.get_data("ids")
+        event_id = observations.at[target.now] if as_series else observations.at[target.now, "id"]
+        target.temp["weights"] = {"a": weights.get(int(event_id), 0.0)}
+        return True
+
+    strategy = bt.Strategy("test", [lookup_weight, bt.algos.Rebalance()])
+    prices = pd.DataFrame({"a": [100.0, 100.0, 110.0, 110.0, 120.0]}, index=dates)
+    backtest = bt.Backtest(strategy, prices, initial_capital=1000.0, additional_data={"ids": ids if as_series else ids.to_frame()}, progress_bar=False)
+    backtest.run()
+
+    # Ten shares earn 100, then five earn 50; zero IDs close the intervening holdings.
+    assert backtest.strategy.value == 1150.0
+    assert backtest.strategy.positions["a"].iloc[1:].tolist() == [0.0, 10.0, 0.0, 5.0, 0.0]
 
 
 def _impact_universe(n_periods=60, n_securities=3, seed=0):
