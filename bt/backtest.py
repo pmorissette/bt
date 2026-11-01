@@ -322,10 +322,22 @@ class Backtest:
         positional = data.set_axis(pd.RangeIndex(len(data)))
         dtypes = [positional.dtype] if isinstance(data, pd.Series) else positional.dtypes
         nullable = {}
+        fill_only_sparse = False
         for i, dtype in enumerate(dtypes):
-            if not isinstance(dtype, np.dtype) or dtype.kind not in "iu":
+            sparse_integer = isinstance(dtype, pd.SparseDtype) and dtype.subtype.kind in "iu"
+            if not sparse_integer and (not isinstance(dtype, np.dtype) or dtype.kind not in "iu"):
                 continue
             column = positional if isinstance(data, pd.Series) else positional.iloc[:, i]
+            if sparse_integer:
+                # Check stored integers and occupied fill without expanding sparse data.
+                fill = dtype.fill_value
+                lossy = any(int(v) != int(float(v)) for v in column.array.sp_values)
+                if column.sparse.npoints < len(column) and isinstance(fill, (int, np.integer)):
+                    lossy = lossy or int(fill) != int(float(fill))
+                if lossy:
+                    nullable[i] = pd.SparseDtype(object, fill)
+                    fill_only_sparse = fill_only_sparse or column.sparse.npoints == 0
+                continue
             # Float promotion is unchanged when every integer is exactly representable.
             # Python int comparisons avoid overflow or rounding the reference itself.
             if (int(column.min()) < -(2**53) or int(column.max()) > 2**53) and any(int(v) != int(float(v)) for v in column):
@@ -336,7 +348,16 @@ class Backtest:
             else:
                 # Address columns by position: auxiliary data may have duplicate labels.
                 positional = positional.set_axis(pd.RangeIndex(len(data.columns)), axis=1).astype(nullable).set_axis(data.columns, axis=1)
-        positional = positional.reindex(pd.RangeIndex(-1, len(data)))
+        if fill_only_sparse:
+            # pandas 1.x reindex loses implicit values when no sparse points are stored.
+            missing = positional.iloc[:0].reindex(pd.RangeIndex(-1, 0))
+            if isinstance(data, pd.DataFrame):
+                # Avoid pandas 1.x sparse inference warnings without changing other dtypes.
+                sparse = positional.dtypes.map(lambda dtype: isinstance(dtype, pd.SparseDtype))
+                positional = positional.astype(missing.dtypes.where(sparse))
+            positional = pd.concat([missing, positional])
+        else:
+            positional = positional.reindex(pd.RangeIndex(-1, len(data)))
         index = data.index.insert(0, data.index[0] - pd.DateOffset(days=1))
         return positional.set_axis(index)
 
