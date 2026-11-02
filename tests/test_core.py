@@ -3237,6 +3237,67 @@ def test_fixed_commissions():
     assert s.capital == 198 + 199 - 101 + 499 + 199
 
 
+@pytest.mark.parametrize("integer_positions", [True, False])
+@pytest.mark.parametrize("position", [0, 3, -3])
+def test_positive_allocation_does_not_sell_to_pay_commission(integer_positions, position):
+    strategy = StrategyBase("s", [SecurityBase("asset")])
+    strategy.use_integer_positions(integer_positions)
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame({"asset": [1.0, 1.0]}, index=dates)
+    strategy.setup(prices)
+    strategy.update(dates[0])
+    strategy.adjust(1000)
+    security = strategy["asset"]
+    security.transact(position)
+    strategy.update(dates[0])
+    strategy.set_commissions(lambda q, p: 2.0)
+    before = (security.position, strategy.capital, strategy.value, strategy.fees.sum(), security.outlays.sum())
+
+    security.allocate(1)
+    strategy.update(dates[0])
+
+    assert (security.position, strategy.capital, strategy.value, strategy.fees.sum(), security.outlays.sum()) == before
+
+
+@pytest.mark.parametrize("integer_positions, amount, affordable_quantity", [(True, 5.0, 1.0), (False, 1.0, 1.0 / 3.0)])
+def test_positive_allocation_can_remain_unfilled_after_cost_search(integer_positions, amount, affordable_quantity):
+    strategy = StrategyBase("s", [SecurityBase("asset")])
+    strategy.use_integer_positions(integer_positions)
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame({"asset": [1.0, 1.0]}, index=dates)
+    strategy.setup(prices)
+    strategy.update(dates[0])
+    strategy.adjust(1000)
+    strategy.set_commissions(lambda q, p: 2.0 * abs(q))
+
+    # A failed search is not proof of unaffordability: principal plus fees is 3q.
+    # The conservative fallback leaves cash untouched instead of retrying the search.
+    assert 3.0 * affordable_quantity <= amount
+    security = strategy["asset"]
+    security.allocate(amount)
+    strategy.update(dates[0])
+
+    assert security.position == 0
+    assert strategy.capital == strategy.value == 1000
+    assert strategy.fees.sum() == security.outlays.sum() == 0
+
+
+@pytest.mark.parametrize("integer_positions, expected_a, expected_cash", [(True, 9.0, 98.0), (False, 9.97, 1.0)])
+def test_long_only_backtest_does_not_short_to_pay_commission(integer_positions, expected_a, expected_cash):
+    dates = pd.date_range("2020-01-01", periods=3)
+    prices = pd.DataFrame({"A": [100.0] * 3, "B": [1.0] * 3}, index=dates)
+    strategy = Strategy("long-only", [bt.algos.RunOnce(), bt.algos.WeighSpecified(A=0.999, B=0.001), bt.algos.Rebalance()])
+    backtest = bt.Backtest(strategy, prices, initial_capital=1000, integer_positions=integer_positions, commissions=lambda q, p: 2.0, progress_bar=False)
+    backtest.run()
+
+    # Only A trades: its two-unit fee leaves 998 in cash plus holdings.
+    np.testing.assert_allclose(backtest.strategy.positions["A"].iloc[1:], expected_a, rtol=0, atol=1e-12)
+    assert backtest.strategy.positions["B"].eq(0).all()
+    assert backtest.strategy.capital == pytest.approx(expected_cash, rel=0, abs=1e-10)
+    assert backtest.strategy.value == 998
+    assert backtest.strategy.fees.sum() == 2
+
+
 def test_integer_positions_with_nonlinear_commissions():
     c = SecurityBase("c")
     s = StrategyBase("s", [c])

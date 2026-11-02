@@ -1648,6 +1648,11 @@ class SecurityBase(Node):
             * amount (float): Amount of adjustment.
             * update (bool): Force update?
 
+        Note:
+            When price times multiplier is positive, a positive allocation is
+            left unfilled if cost adjustment would produce a sale. An affordable
+            purchase may still exist. The quantity search is not retried.
+
         """
 
         # will need to update if this has been idle for a while...
@@ -1777,6 +1782,11 @@ class SecurityBase(Node):
                         " not smooth"
                     )
                 last_amount_short = full_outlay - amount
+
+        # Reject an opposite-direction result instead of selling to fund costs.
+        # Retrying would require assumptions about arbitrary commission functions.
+        if amount > 0 and q < 0 and self._price * self.multiplier > 0:
+            return
 
         self.transact(q, update, False)
 
