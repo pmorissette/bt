@@ -2152,6 +2152,9 @@ class RebalanceOverTime(Algo):
         * weights
         * cash (optional): fraction to reserve for the current period, as in
           Rebalance. Fixed-income strategies ignore this value.
+        * notional_value (optional): fixed-income base for interpreting weights,
+          as in Rebalance. Supply a positive base on each phase when phasing
+          towards an explicit notional amount.
 
     """
 
@@ -2177,17 +2180,24 @@ class RebalanceOverTime(Algo):
                 # Full cash delegates to Rebalance's immediate close without division.
                 if scale == 0.0:
                     scale = 1.0
+            # FI current weights use today's total, not the requested notional base.
+            # A NumPy float64 numerator prevents low-precision bases from downcasting it.
+            notional_base = target.temp.get("notional_value", 0.0) if target.fixed_income else 0.0
             tgt = {}
             # Read mapping entries by key and preserve their supplied order.
             for cname, target_weight in self._weights.items():
-                curr = target.children[cname].weight / scale if cname in target.children else 0.0
+                curr = 0.0
+                if cname in target.children:
+                    child = target.children[cname]
+                    curr = np.float64(child.weight * target.notional_value) / notional_base if notional_base > 0 else child.weight / scale
                 dlt = (target_weight - curr) / self._days_left
                 tgt[cname] = curr + dlt
 
             # Rebalance would otherwise close omitted holdings immediately.
             for cname in target.children:
                 if cname not in tgt:
-                    curr = target.children[cname].weight / scale
+                    child = target.children[cname]
+                    curr = np.float64(child.weight * target.notional_value) / notional_base if notional_base > 0 else child.weight / scale
                     if curr == 0.0:
                         continue
                     dlt = -curr / self._days_left
