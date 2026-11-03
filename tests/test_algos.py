@@ -3383,7 +3383,8 @@ def test_rebalance_over_time_phases_out_omitted_target():
 
 @pytest.mark.parametrize("hedge_type", [bt.HedgeSecurity, bt.CouponPayingHedgeSecurity])
 @pytest.mark.parametrize("close_hedge", [False, True])
-def test_rebalance_over_time_preserves_omitted_hedges(hedge_type, close_hedge):
+@pytest.mark.parametrize("notional_base", [None, 20.0])
+def test_rebalance_over_time_preserves_omitted_hedges(hedge_type, close_hedge, notional_base):
     dates = pd.date_range("2020-01-01", periods=2)
     prices = pd.DataFrame(100.0, index=dates, columns=["a", "b", "hedge"])
     strategy = bt.FixedIncomeStrategy(
@@ -3401,19 +3402,119 @@ def test_rebalance_over_time_preserves_omitted_hedges(hedge_type, close_hedge):
 
     algo = algos.RebalanceOverTime(n=2)
     strategy.temp["weights"] = {"a": 1.0}
+    if notional_base is not None:
+        strategy.temp["notional_value"] = notional_base
     if close_hedge:
         strategy.temp["weights"]["hedge"] = 0.0
     assert algo(strategy)
-    assert strategy["a"].position == pytest.approx(7.5)
+    base = 10.0 if notional_base is None else notional_base
+    assert strategy["a"].position == pytest.approx((5.0 + base) / 2)
     assert strategy["b"].position == pytest.approx(2.5)
     assert strategy["hedge"].position == (0 if close_hedge else -2)
 
     strategy.temp = {}
+    if notional_base is not None:
+        strategy.temp["notional_value"] = notional_base
     strategy.update(dates[1])
     assert algo(strategy)
-    assert strategy["a"].position == pytest.approx(10.0)
+    assert strategy["a"].position == pytest.approx(base)
     assert strategy["b"].position == 0.0
     assert strategy["hedge"].position == (0 if close_hedge else -2)
+
+
+@pytest.mark.parametrize("security_type", [bt.FixedIncomeSecurity, bt.Security])
+@pytest.mark.parametrize(("initial_notional", "lazy"), [(0.0, False), (0.0, True), (50.0, False), (150.0, False), (-50.0, False)])
+def test_rebalance_over_time_explicit_notional_coordinates(security_type, initial_notional, lazy):
+    dates = pd.date_range("2020-01-01", periods=5)
+    strategy = bt.FixedIncomeStrategy("s", children=[security_type("a", multiplier=5, lazy_add=lazy)])
+    strategy.use_integer_positions(False)
+    strategy.setup(pd.DataFrame(2.0, index=dates, columns=["a"]))
+    strategy.adjust(20000.0)
+    strategy.update(dates[0])
+    # FI notionals count units; ordinary security notionals include price and multiplier.
+    notional_per_unit = 1.0 if security_type is bt.FixedIncomeSecurity else 10.0
+    if initial_notional:
+        strategy["a"].transact(initial_notional / notional_per_unit)
+        strategy.update(dates[0])
+    target_weight = -1.0 if initial_notional < 0 else 1.0
+    weights = {"a": target_weight}
+    algo = algos.RebalanceOverTime(n=3)
+
+    for phase in range(1, 4):
+        strategy.temp = {"notional_value": 100.0}
+        strategy.update(dates[phase])
+        if phase == 1:
+            strategy.temp["weights"] = weights
+        assert algo(strategy)
+        expected_notional = initial_notional + (100.0 * target_weight - initial_notional) * phase / 3
+        expected_position = expected_notional / notional_per_unit
+        assert strategy["a"].position == pytest.approx(expected_position, rel=0, abs=1e-10)
+        assert strategy.capital == pytest.approx(20000.0 - expected_position * 10.0, rel=0, abs=1e-8)
+        assert strategy.value == pytest.approx(20000.0, rel=0, abs=1e-8)
+        assert strategy.fees.sum() == 0.0
+        assert weights == {"a": target_weight}
+
+
+@pytest.mark.parametrize("initial_position", [0.0, 50.0])
+def test_rebalance_over_time_explicit_notional_backtest(initial_position):
+    dates = pd.date_range("2020-01-01", periods=3)
+
+    class Seed(bt.Algo):
+        def __call__(self, target):
+            if target.now == dates[0] and initial_position:
+                target.transact(initial_position, "a")
+            return True
+
+    strategy = bt.FixedIncomeStrategy(
+        "s",
+        [Seed(), algos.SetNotional("notionals"), algos.RunOnce(), algos.WeighSpecified(a=1.0), algos.run_always(algos.RebalanceOverTime(n=3))],
+        children=[bt.FixedIncomeSecurity("a")],
+    )
+    prices = pd.DataFrame({"a": [100.0, 100.03, 99.99]}, index=dates)
+    backtest = bt.Backtest(strategy, prices, initial_capital=20000.0, additional_data={"notionals": pd.Series(100.0, index=dates)}, integer_positions=False, progress_bar=False)
+    backtest.run()
+
+    # Price changes accrue on the previous phase's quantity, before the next trade.
+    cash = 20000.0 - initial_position * 100.0
+    previous = initial_position
+    for phase, date in enumerate(dates, 1):
+        quantity = initial_position + (100.0 - initial_position) * phase / 3
+        cash -= (quantity - previous) * prices.at[date, "a"]
+        assert backtest.strategy.positions.at[date, "a"] == pytest.approx(quantity, rel=0, abs=1e-10)
+        assert backtest.strategy.cash.at[date] == pytest.approx(cash, rel=0, abs=1e-8)
+        assert backtest.strategy.values.at[date] == pytest.approx(cash + quantity * prices.at[date, "a"], rel=0, abs=1e-8)
+        previous = quantity
+    assert backtest.strategy.fees.sum() == 0.0
+
+
+@pytest.mark.parametrize("notional_dtype", [np.float16, np.float32])
+def test_rebalance_over_time_low_precision_notional(notional_dtype):
+    dates = pd.date_range("2020-01-01", periods=2)
+
+    class Seed(bt.Algo):
+        def __call__(self, target):
+            if target.now == dates[0]:
+                target.transact(1000000.0, "a")
+                target.transact(-20000.0, "b")
+            return True
+
+    strategy = bt.FixedIncomeStrategy(
+        "s",
+        [Seed(), algos.SetNotional("notionals"), algos.RunOnce(), algos.WeighSpecified(a=1.0), algos.run_always(algos.RebalanceOverTime(n=2))],
+        children=[bt.FixedIncomeSecurity("a"), bt.FixedIncomeSecurity("b")],
+    )
+    notionals = pd.Series(10000.0, index=dates, dtype=notional_dtype)
+    backtest = bt.Backtest(strategy, pd.DataFrame(1.0, index=dates, columns=["a", "b"]), initial_capital=2000000.0, additional_data={"notionals": notionals}, integer_positions=False, progress_bar=False)
+    # A finite small base must not downcast the much larger current exposure.
+    with np.errstate(all="raise"):
+        backtest.run()
+
+    # Halfway to the requested holding, while the omitted short phases to zero.
+    np.testing.assert_allclose(backtest.strategy.positions.loc[dates, ["a", "b"]], [[505000.0, -10000.0], [10000.0, 0.0]], rtol=1e-12, atol=1e-8)
+    np.testing.assert_allclose(backtest.strategy.cash.loc[dates], [1505000.0, 1990000.0], rtol=1e-12, atol=1e-8)
+    np.testing.assert_allclose(backtest.strategy.values.loc[dates], 2000000.0, rtol=1e-12, atol=1e-8)
+    assert backtest.strategy.fees.sum() == 0.0
+    pd.testing.assert_series_equal(notionals, pd.Series(10000.0, index=dates, dtype=notional_dtype))
 
 
 def test_rebalance_over_time_supports_sparse_weigh_target():
