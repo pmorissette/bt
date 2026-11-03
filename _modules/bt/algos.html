@@ -2754,6 +2754,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        * weights</span>
 <span class="sd">        * cash (optional): fraction to reserve for the current period, as in</span>
 <span class="sd">          Rebalance. Fixed-income strategies ignore this value.</span>
+<span class="sd">        * notional_value (optional): fixed-income base for interpreting weights,</span>
+<span class="sd">          as in Rebalance. Supply a positive base on each phase when phasing</span>
+<span class="sd">          towards an explicit notional amount.</span>
 
 <span class="sd">    """</span>
 
@@ -2779,17 +2782,24 @@ window.runMermaid = runMermaid;</script>
                 <span class="c1"># Full cash delegates to Rebalance's immediate close without division.</span>
                 <span class="k">if</span> <span class="n">scale</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
                     <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="c1"># FI current weights use today's total, not the requested notional base.</span>
+            <span class="c1"># A NumPy float64 numerator prevents low-precision bases from downcasting it.</span>
+            <span class="n">notional_base</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"notional_value"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">fixed_income</span> <span class="k">else</span> <span class="mf">0.0</span>
             <span class="n">tgt</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c1"># Read mapping entries by key and preserve their supplied order.</span>
             <span class="k">for</span> <span class="n">cname</span><span class="p">,</span> <span class="n">target_weight</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="n">scale</span> <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span> <span class="k">else</span> <span class="mf">0.0</span>
+                <span class="n">curr</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">if</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                    <span class="n">child</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span>
+                    <span class="n">curr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">weight</span> <span class="o">*</span> <span class="n">target</span><span class="o">.</span><span class="n">notional_value</span><span class="p">)</span> <span class="o">/</span> <span class="n">notional_base</span> <span class="k">if</span> <span class="n">notional_base</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">child</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="n">scale</span>
                 <span class="n">dlt</span> <span class="o">=</span> <span class="p">(</span><span class="n">target_weight</span> <span class="o">-</span> <span class="n">curr</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>
                 <span class="n">tgt</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr</span> <span class="o">+</span> <span class="n">dlt</span>
 
             <span class="c1"># Rebalance would otherwise close omitted holdings immediately.</span>
             <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">cname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tgt</span><span class="p">:</span>
-                    <span class="n">curr</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="n">scale</span>
+                    <span class="n">child</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span>
+                    <span class="n">curr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">weight</span> <span class="o">*</span> <span class="n">target</span><span class="o">.</span><span class="n">notional_value</span><span class="p">)</span> <span class="o">/</span> <span class="n">notional_base</span> <span class="k">if</span> <span class="n">notional_base</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">child</span><span class="o">.</span><span class="n">weight</span> <span class="o">/</span> <span class="n">scale</span>
                     <span class="k">if</span> <span class="n">curr</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
                         <span class="k">continue</span>
                     <span class="n">dlt</span> <span class="o">=</span> <span class="o">-</span><span class="n">curr</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_left</span>
