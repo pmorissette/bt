@@ -402,14 +402,22 @@ def test_can_disable_progress_bar_from_run():
     assert  len(result.get_transactions()) > 0
 
 
-def test_progress_bar_finishes():
-    data = pd.DataFrame(index=pd.date_range("2010-01-01", periods=5), columns=["a"], data=100)
-    b = bt.Backtest(bt.Strategy("test"), data, progress_bar=True)
+@pytest.mark.parametrize("periods", [1, 5])
+def test_progress_bar_finishes_after_trading(periods):
+    completed_before_run = []
+
+    def record_progress(target):
+        completed_before_run.append(bar.return_value.update.call_count)
+        return True
+
+    data = pd.DataFrame(index=pd.date_range("2010-01-01", periods=periods), columns=["a"], data=100)
+    b = bt.Backtest(bt.Strategy("test", [record_progress]), data, progress_bar=True)
 
     with mock.patch("pyprind.ProgBar") as bar:
         b.run()
 
     assert bar.call_args.args[0] == bar.return_value.update.call_count
+    assert completed_before_run == list(range(periods))
 
 
 @pytest.mark.parametrize("missing_position", [0, 2, 3])

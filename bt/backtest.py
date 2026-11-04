@@ -523,10 +523,6 @@ class Backtest:
 
         # and for the backtest loop, start at date 1
         for dt in self.dates[1:]:
-            # update progress bar
-            if self.progress_bar:
-                bar.update()
-
             # update strategy
             self.strategy.update(dt)
 
@@ -534,6 +530,8 @@ class Backtest:
                 self.strategy.run()
                 # need update after to save weights, values and such
                 self.strategy.update(dt)
+                if self.progress_bar:
+                    bar.update()
             else:
                 if self.progress_bar:
                     bar.stop()
