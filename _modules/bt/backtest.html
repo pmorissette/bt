@@ -965,7 +965,7 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># loop through dates</span>
         <span class="c1"># init progress bar</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress_bar</span><span class="p">:</span>
-            <span class="n">bar</span> <span class="o">=</span> <span class="n">pyprind</span><span class="o">.</span><span class="n">ProgBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dates</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">bar</span> <span class="o">=</span> <span class="n">pyprind</span><span class="o">.</span><span class="n">ProgBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dates</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># Initialize the synthetic reference row without consuming a nested</span>
         <span class="c1"># paper strategy's first trading call before market prices exist.</span>
@@ -977,10 +977,6 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># and for the backtest loop, start at date 1</span>
         <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dates</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-            <span class="c1"># update progress bar</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress_bar</span><span class="p">:</span>
-                <span class="n">bar</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
-
             <span class="c1"># update strategy</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
@@ -988,6 +984,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
                 <span class="c1"># need update after to save weights, values and such</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress_bar</span><span class="p">:</span>
+                    <span class="n">bar</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress_bar</span><span class="p">:</span>
                     <span class="n">bar</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
