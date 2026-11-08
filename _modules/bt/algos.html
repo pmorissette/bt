@@ -3625,7 +3625,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">port_val</span> <span class="o">+=</span> <span class="n">child</span><span class="o">.</span><span class="n">value</span>
 
             <span class="c1"># calculate the interest on the margin</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_daily_rate</span><span class="p">(),</span> <span class="n">diff</span><span class="o">.</span><span class="n">days</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_daily_rate</span><span class="p">(),</span> <span class="n">diff</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">/</span> <span class="mi">86400</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="n">fee</span> <span class="o">=</span> <span class="n">margin</span> <span class="o">*</span> <span class="n">f</span>
 
             <span class="c1"># charge it</span>
