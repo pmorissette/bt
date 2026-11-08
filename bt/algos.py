@@ -2984,7 +2984,7 @@ class Margin(Algo):
                 port_val += child.value
 
             # calculate the interest on the margin
-            f = math.pow(1 + self._daily_rate(), diff.days) - 1
+            f = math.pow(1 + self._daily_rate(), diff.total_seconds() / 86400) - 1
             fee = margin * f
 
             # charge it

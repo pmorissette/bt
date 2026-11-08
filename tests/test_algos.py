@@ -6747,3 +6747,25 @@ def test_tax_liabilities_keeps_lot_identity_after_pickle():
 
     assert restored.perm["tax_liabilities"]["tax"].sum() == pytest.approx(40.0)
     assert strategy.perm["tax_liabilities"]["tax"].sum() == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("hours", [1, 6, 12, 24])
+def test_margin_interest_accrues_across_intraday_updates(hours):
+    dates = pd.date_range("2024-01-01", periods=24 // hours + 1, freq=f"{hours}h")
+    strategy = bt.Strategy("strategy", children=["asset"])
+    strategy.use_integer_positions(False)
+    strategy.setup(pd.DataFrame({"asset": 100.0}, index=dates))
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    strategy.allocate(2000.0, "asset")
+    strategy.update(dates[0])
+    margin = algos.Margin(0.1, 0.1)
+    for date in dates:
+        strategy.update(date)
+        assert margin(strategy)
+        strategy.update(date)
+
+    expected_fee = 1000.0 * (1.1 ** (1.0 / 365.25) - 1.0)
+    assert strategy.fees.sum() == pytest.approx(expected_fee)
+    assert strategy.capital == pytest.approx(-1000.0 - expected_fee)
+    assert strategy.value == pytest.approx(1000.0 - expected_fee)
