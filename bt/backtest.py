@@ -976,6 +976,10 @@ class RenormalizedFixedIncomeResult(Result):
         if not np.isfinite(applicable_values).all() or (applicable_values == 0).any():
             raise ValueError(f"normalizing_value for strategy {s.name!r} must contain finite, non-zero values for every date after the initial price")
 
-        prices = bt.core.PAR * (1.0 + (returns / v).cumsum())
+        increments = returns / v
+        if isinstance(increments.dtype, pd.api.extensions.ExtensionDtype):
+            # Dense floats avoid pandas 1 nullable cumsum propagating the initial NaN and unsupported sparse cumsum.
+            increments = pd.Series(increments.to_numpy(dtype=float, na_value=np.nan), index=returns.index)
+        prices = bt.core.PAR * (1.0 + increments.cumsum())
         prices.iloc[0] = bt.core.PAR
         return prices
