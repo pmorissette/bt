@@ -15,7 +15,7 @@ np.random.seed(0)
 returns =  np.random.normal(0.08/12,0.2/np.sqrt(12),12*10)
 pdf = pd.DataFrame(
     np.cumprod(1+returns),
-    index = pd.date_range(start="2008-01-01",periods=12*10,freq="m"),
+    index = pd.date_range(start="2008-01-01",periods=12*10,freq=pd.offsets.MonthEnd()),
     columns=['foo']
 )
 
@@ -309,7 +309,7 @@ res.stats
   <tbody>
     <tr>
       <th>start</th>
-      <td>2008-01-30 00:00:00</td>
+      <td>2009-02-28 00:00:00</td>
     </tr>
     <tr>
       <th>end</th>
@@ -325,7 +325,7 @@ res.stats
     </tr>
     <tr>
       <th>cagr</th>
-      <td>0.109805</td>
+      <td>0.124045</td>
     </tr>
     <tr>
       <th>max_drawdown</th>
@@ -333,7 +333,7 @@ res.stats
     </tr>
     <tr>
       <th>calmar</th>
-      <td>0.411186</td>
+      <td>0.464507</td>
     </tr>
     <tr>
       <th>mtd</th>
@@ -365,67 +365,67 @@ res.stats
     </tr>
     <tr>
       <th>ten_year</th>
-      <td>0.109805</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>incep</th>
-      <td>0.109805</td>
+      <td>0.124045</td>
     </tr>
     <tr>
       <th>daily_sharpe</th>
-      <td>3.299555</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>daily_sortino</th>
-      <td>6.352869</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>daily_mean</th>
-      <td>2.448589</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>daily_vol</th>
-      <td>0.742097</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>daily_skew</th>
-      <td>0.307861</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>daily_kurt</th>
-      <td>1.414455</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>best_day</th>
-      <td>0.137711</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>worst_day</th>
-      <td>-0.14073</td>
+      <td>NaN</td>
     </tr>
     <tr>
       <th>monthly_sharpe</th>
-      <td>0.723148</td>
+      <td>0.767883</td>
     </tr>
     <tr>
       <th>monthly_sortino</th>
-      <td>1.392893</td>
+      <td>1.387225</td>
     </tr>
     <tr>
       <th>monthly_mean</th>
-      <td>0.117579</td>
+      <td>0.131999</td>
     </tr>
     <tr>
       <th>monthly_vol</th>
-      <td>0.162594</td>
+      <td>0.1719</td>
     </tr>
     <tr>
       <th>monthly_skew</th>
-      <td>0.301545</td>
+      <td>0.21428</td>
     </tr>
     <tr>
       <th>monthly_kurt</th>
-      <td>1.379006</td>
+      <td>0.921084</td>
     </tr>
     <tr>
       <th>best_month</th>
@@ -437,27 +437,27 @@ res.stats
     </tr>
     <tr>
       <th>yearly_sharpe</th>
-      <td>0.503939</td>
+      <td>0.540003</td>
     </tr>
     <tr>
       <th>yearly_sortino</th>
-      <td>5.019272</td>
+      <td>5.323415</td>
     </tr>
     <tr>
       <th>yearly_mean</th>
-      <td>0.14814</td>
+      <td>0.166647</td>
     </tr>
     <tr>
       <th>yearly_vol</th>
-      <td>0.293964</td>
+      <td>0.308605</td>
     </tr>
     <tr>
       <th>yearly_skew</th>
-      <td>2.317496</td>
+      <td>2.154823</td>
     </tr>
     <tr>
       <th>yearly_kurt</th>
-      <td>5.894955</td>
+      <td>5.129542</td>
     </tr>
     <tr>
       <th>best_year</th>
@@ -481,15 +481,15 @@ res.stats
     </tr>
     <tr>
       <th>avg_down_month</th>
-      <td>-0.012928</td>
+      <td>-0.015295</td>
     </tr>
     <tr>
       <th>win_year_perc</th>
-      <td>0.555556</td>
+      <td>0.5</td>
     </tr>
     <tr>
       <th>twelve_month_win_perc</th>
-      <td>0.46789</td>
+      <td>0.458333</td>
     </tr>
   </tbody>
 </table>
