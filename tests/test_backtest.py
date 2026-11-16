@@ -1401,6 +1401,55 @@ def test_renormalized_fixed_income_result_validates_each_mapped_backtest():
         bt.backtest.RenormalizedFixedIncomeResult(normalizers, first, second)
 
 
+@pytest.mark.parametrize("kind", ["scalar", "float64", "Float64", "sparse"])
+@pytest.mark.parametrize("mapped", [False, True])
+def test_renormalized_fixed_income_result_preserves_numeric_history(kind, mapped):
+    dates = pd.date_range("2024-01-02", periods=4)
+    prices = pd.DataFrame({"A": [100.0, 110.0, 115.0, 120.0]}, index=dates)
+    backtests = []
+    for name in (["first", "second"] if mapped else ["first"]):
+        strategy = bt.FixedIncomeStrategy(
+            name,
+            [
+                bt.algos.RunOnce(),
+                bt.algos.SetNotional("notional"),
+                bt.algos.WeighSpecified(A=1.0),
+                bt.algos.Rebalance(),
+            ],
+            children=[bt.FixedIncomeSecurity("A")],
+        )
+        backtest = bt.Backtest(
+            strategy,
+            prices,
+            initial_capital=0,
+            additional_data={"notional": pd.Series(2.0, index=dates)},
+            progress_bar=False,
+        )
+        backtest.run()
+        backtests.append(backtest)
+
+    normalizers = {}
+    for backtest, value in zip(backtests, [100.0, 200.0]):
+        normalizer = value
+        if kind != "scalar":
+            dtype = pd.SparseDtype("float64", np.nan) if kind == "sparse" else kind
+            normalizer = pd.Series(value, index=backtests[0].dates[::-1], dtype=dtype)
+        normalizers[backtest.name] = normalizer
+
+    supplied = normalizers if mapped else normalizers["first"]
+    result = bt.backtest.RenormalizedFixedIncomeResult(supplied, *backtests)
+
+    # Two units earn cash P&L 0, 20, 10, 10, independently of normalization.
+    expected = {"first": [100.0, 100.0, 120.0, 130.0, 140.0]}
+    if mapped:
+        expected["second"] = [100.0, 100.0, 110.0, 115.0, 120.0]
+    pd.testing.assert_frame_equal(
+        result.prices,
+        pd.DataFrame(expected, index=backtests[0].dates),
+        check_dtype=False,
+    )
+
+
 @pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
 def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series):
     """Test that the bootstrap row stays missing without a bool concat warning."""
