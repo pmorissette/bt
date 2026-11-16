@@ -1486,6 +1486,7 @@ def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series)
         assert len(future_warnings) == 0
 
 
+@pytest.mark.filterwarnings("error::FutureWarning")
 @pytest.mark.parametrize("as_series", [False, True], ids=["dataframe", "series"])
 @pytest.mark.parametrize(
     ("dtype", "values", "expected_dtype"),
@@ -1499,6 +1500,10 @@ def test_additional_data_auxiliary_bootstrap_boolean_dtype_no_warning(as_series)
         ("Int64", [2**53, pd.NA, 2**53 + 1, 0, 1], "Int64"),
         ("UInt64", [2**64 - 1, pd.NA, 2**64 - 2, 0, 1], "UInt64"),
         ("boolean", [True, False, True, False, True], "boolean"),
+        (pd.SparseDtype(bool, False), [False] * 5, "Sparse[object, False]"),
+        (pd.SparseDtype(bool, True), [True] * 5, "Sparse[object, True]"),
+        (pd.SparseDtype(bool, False), [True, False, True, False, True], "Sparse[object, False]"),
+        (pd.SparseDtype(bool, True), [True, False, True, False, True], "Sparse[object, True]"),
         ("float64", [1, 0, 1, 0, 1], "float64"),
         (pd.SparseDtype("int64", 0), [0, 2**53 + 1, 0, -2**63 + 1, 0], "Sparse[object, 0]"),
         (pd.SparseDtype("uint64", 1), [1, 2**53 + 1, 1, 2**64 - 1, 1], "Sparse[object, 1]"),
@@ -1537,9 +1542,41 @@ def test_additional_data_auxiliary_bootstrap_dtypes(as_series, dtype, values, ex
         original_column = auxiliary if as_series else auxiliary["value"]
         # The missing row adds one stored point only when missingness is not the fill.
         assert column.sparse.npoints == original_column.sparse.npoints + (0 if pd.isna(dtype.fill_value) else 1)
+        if dtype.subtype.kind == "b":
+            assert all(isinstance(v, (bool, np.bool_)) for v in column.iloc[1:])
     assert_equal = pd.testing.assert_series_equal if as_series else pd.testing.assert_frame_equal
     assert_equal(processed.iloc[1:], auxiliary, check_dtype=False, check_freq=False)
     assert_equal(auxiliary, original)
+
+
+@pytest.mark.filterwarnings("error::FutureWarning")
+@pytest.mark.parametrize("named", [False, True], ids=["direct", "named"])
+@pytest.mark.parametrize(
+    ("fill", "signals", "positions", "values"),
+    [
+        (True, [True] * 5, [10.0] * 5, [1000.0, 1000.0, 1100.0, 1100.0, 1200.0]),
+        (False, [False] * 5, [0.0] * 5, [1000.0] * 5),
+        (False, [False, True, False, True, False], [0.0, 10.0, 0.0, 10.0, 0.0], [1000.0, 1000.0, 1100.0, 1100.0, 1200.0]),
+        (True, [False, True, False, True, False], [0.0, 10.0, 0.0, 10.0, 0.0], [1000.0, 1000.0, 1100.0, 1100.0, 1200.0]),
+    ],
+)
+def test_sparse_boolean_signals_preserve_allocations(named, fill, signals, positions, values):
+    dates = pd.date_range("2024-01-01", periods=5)
+    prices = pd.DataFrame({"a": [100.0, 100.0, 110.0, 110.0, 120.0]}, index=dates)
+    signal = pd.DataFrame({"a": signals}, index=dates).astype(pd.SparseDtype(bool, fill))
+    strategy = bt.Strategy(
+        "test",
+        [bt.algos.SelectWhere("signal" if named else signal), bt.algos.WeighEqually(), bt.algos.Rebalance()],
+        children=[bt.Security("a")],
+    )
+    backtest = bt.Backtest(strategy, prices, initial_capital=1000.0, additional_data={"signal": signal} if named else None, progress_bar=False)
+    backtest.run()
+
+    # Zero fees and price 100 buy ten shares; each subsequent ten-point rise earns 100.
+    assert backtest.strategy.positions["a"].iloc[1:].tolist() == positions
+    np.testing.assert_allclose(backtest.strategy.values, [1000.0, *values], rtol=0, atol=1e-10)
+    pd.testing.assert_index_equal(signal.index, dates)
+    assert signal["a"].tolist() == signals
 
 
 @pytest.mark.filterwarnings("error")

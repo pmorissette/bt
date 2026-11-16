@@ -324,17 +324,18 @@ class Backtest:
         nullable = {}
         fill_only_sparse = False
         for i, dtype in enumerate(dtypes):
-            sparse_integer = isinstance(dtype, pd.SparseDtype) and dtype.subtype.kind in "iu"
-            if not sparse_integer and (not isinstance(dtype, np.dtype) or dtype.kind not in "iu"):
+            sparse = isinstance(dtype, pd.SparseDtype) and dtype.subtype.kind in "biu"
+            if not sparse and (not isinstance(dtype, np.dtype) or dtype.kind not in "iu"):
                 continue
             column = positional if isinstance(data, pd.Series) else positional.iloc[:, i]
-            if sparse_integer:
-                # Check stored integers and occupied fill without expanding sparse data.
+            if sparse:
+                # Object storage admits a missing Boolean row without coercing bool fills to floats.
+                # Check integer precision without expanding sparse data.
                 fill = dtype.fill_value
-                lossy = any(int(v) != int(float(v)) for v in column.array.sp_values)
+                needs_object = dtype.subtype.kind == "b" or any(int(v) != int(float(v)) for v in column.array.sp_values)
                 if column.sparse.npoints < len(column) and isinstance(fill, (int, np.integer)):
-                    lossy = lossy or int(fill) != int(float(fill))
-                if lossy:
+                    needs_object = needs_object or int(fill) != int(float(fill))
+                if needs_object:
                     nullable[i] = pd.SparseDtype(object, fill)
                     fill_only_sparse = fill_only_sparse or column.sparse.npoints == 0
                 continue
