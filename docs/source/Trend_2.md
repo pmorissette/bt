@@ -489,7 +489,7 @@ res.stats
     </tr>
     <tr>
       <th>twelve_month_win_perc</th>
-      <td>0.458333</td>
+      <td>0.484211</td>
     </tr>
   </tbody>
 </table>
