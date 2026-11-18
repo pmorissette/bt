@@ -1938,7 +1938,8 @@ class CloseDead(Algo):
     Closes all positions for which prices are equal to zero (we assume
     that these stocks are dead) and removes them from temp['weights'] if
     they enter it by any chance.
-    To be called before Rebalance().
+    To be called before Rebalance(). Negative prices remain tradable (for
+    example, futures) and are not treated as a dead security.
 
     In a normal workflow it is not needed, as those securities will not
     be selected by SelectAll(include_no_data=False) or similar method, and
@@ -1961,7 +1962,7 @@ class CloseDead(Algo):
 
         targets = target.temp["weights"]
         for c in target.children:
-            if target.universe.at[target.now, c] <= 0:
+            if target.universe.at[target.now, c] == 0:
                 target.close(c)
                 if c in targets:
                     del targets[c]

@@ -6769,3 +6769,25 @@ def test_margin_interest_accrues_across_intraday_updates(hours):
     assert strategy.fees.sum() == pytest.approx(expected_fee)
     assert strategy.capital == pytest.approx(-1000.0 - expected_fee)
     assert strategy.value == pytest.approx(1000.0 - expected_fee)
+
+
+@pytest.mark.parametrize("fixed_income", [False, True])
+@pytest.mark.parametrize("price", [-37.63, 0.0, 1.0])
+def test_close_dead_preserves_tradable_negative_prices(fixed_income, price):
+    dates = pd.date_range("2020-04-17", periods=2)
+    data = pd.DataFrame({"oil": [30.0, price]}, index=dates)
+    strategy_type = bt.FixedIncomeStrategy if fixed_income else bt.Strategy
+    security_type = bt.FixedIncomeSecurity if fixed_income else bt.Security
+    strategy = strategy_type("strategy", children=[security_type("oil", multiplier=2)])
+    strategy.setup(data)
+    strategy.update(dates[0])
+    strategy.adjust(1000.0)
+    strategy.transact(2.0, "oil")
+    strategy.update(dates[0])
+    strategy.update(dates[1])
+    strategy.temp["weights"] = {"oil": 0.2}
+
+    assert algos.CloseDead()(strategy)
+
+    assert strategy["oil"].position == (0.0 if price == 0 else 2.0)
+    assert strategy.temp["weights"] == ({} if price == 0 else {"oil": 0.2})
