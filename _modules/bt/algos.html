@@ -2531,7 +2531,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Closes all positions for which prices are equal to zero (we assume</span>
 <span class="sd">    that these stocks are dead) and removes them from temp['weights'] if</span>
 <span class="sd">    they enter it by any chance.</span>
-<span class="sd">    To be called before Rebalance().</span>
+<span class="sd">    To be called before Rebalance(). Negative prices remain tradable (for</span>
+<span class="sd">    example, futures) and are not treated as a dead security.</span>
 
 <span class="sd">    In a normal workflow it is not needed, as those securities will not</span>
 <span class="sd">    be selected by SelectAll(include_no_data=False) or similar method, and</span>
@@ -2554,7 +2555,7 @@ window.runMermaid = runMermaid;</script>
 
         <span class="n">targets</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">temp</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">universe</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
                     <span class="k">del</span> <span class="n">targets</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>

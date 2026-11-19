@@ -88,7 +88,8 @@ not correct price-based performance statistics.</p>
 <p>Closes all positions for which prices are equal to zero (we assume
 that these stocks are dead) and removes them from temp[‘weights’] if
 they enter it by any chance.
-To be called before Rebalance().</p>
+To be called before Rebalance(). Negative prices remain tradable (for
+example, futures) and are not treated as a dead security.</p>
 <p>In a normal workflow it is not needed, as those securities will not
 be selected by SelectAll(include_no_data=False) or similar method, and
 Rebalance() closes positions that are not in temp[‘weights’] anyway.
