@@ -3387,6 +3387,52 @@ def test_securitybase_allocate():
     assert np.isclose(full_outlay, original_capital - s._capital, rtol=0.0)
 
 
+@pytest.mark.parametrize("amount", [1e9, -1e9], ids=["buy", "sell"])
+def test_securitybase_allocate_large_fractional_amount(amount):
+    # No float64 quantity puts the outlay of 1e9 at 90 within 1e-8 + 1e-16 * 1e9:
+    # the closest ones are an ulp of 1e9 (1.19e-7) away on either side.
+    c1 = SecurityBase("c1")
+    s = StrategyBase("p", [c1])
+
+    c1 = s["c1"]
+
+    dts = pd.date_range("2010-01-01", periods=3)
+    data = pd.DataFrame(index=dts, columns=["c1"], data=90.0)
+    s.setup(data)
+    s.update(dts[0])
+
+    original_capital = 1e10
+    s.adjust(original_capital)
+    c1.integer_positions = False
+    # start long so that the sale reduces a position instead of opening a short
+    c1.transact(2e7)
+    capital = s._capital
+
+    c1.allocate(amount)
+
+    assert c1.position == pytest.approx(2e7 + amount / 90.0, rel=1e-15)
+    assert capital - s._capital == pytest.approx(amount, rel=1e-15)
+
+
+def test_securitybase_allocate_large_integer_amount_does_not_overspend():
+    # 7e8 / 71.68 is exactly 9765625 shares, but that outlay rounds to an ulp above 7e8
+    c1 = SecurityBase("c1")
+    s = StrategyBase("p", [c1])
+
+    c1 = s["c1"]
+
+    dts = pd.date_range("2010-01-01", periods=3)
+    data = pd.DataFrame(index=dts, columns=["c1"], data=71.68)
+    s.setup(data)
+    s.update(dts[0])
+
+    s.adjust(7e8)
+    c1.allocate(7e8)
+
+    assert c1.position == 9765624
+    assert s._capital >= 0
+
+
 def test_securitybase_allocate_commisions():
 
     date_span = pd.date_range(start="10/1/2017", end="10/11/2017", freq="B")

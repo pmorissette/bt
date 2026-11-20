@@ -11,6 +11,10 @@ import pandas as pd
 
 PAR = 100.0
 TOL = 1e-16
+# Relative tolerance for the fractional quantity search in SecurityBase.allocate.
+# It has to exceed float64 resolution: outlay() rounds several times and q moves in
+# ulp steps, so the closest outlays can be a couple of ulps away from the amount.
+ALLOCATE_RTOL = 4 * np.finfo(float).eps
 
 
 @cy.locals(x=cy.double)
@@ -1723,7 +1727,12 @@ class SecurityBase(Node):
             i = 0
             last_q = q
             last_amount_short = full_outlay - amount
-            while not np.isclose(full_outlay, amount, rtol=TOL) and q != 0:
+            # Fractional quantities need a tolerance above an ulp of amount (see
+            # ALLOCATE_RTOL). Integer positions keep TOL: their search ends through the
+            # floor logic below, and a wider tolerance could accept an outlay an ulp
+            # above amount there.
+            rtol = TOL if self.integer_positions else ALLOCATE_RTOL
+            while not np.isclose(full_outlay, amount, rtol=rtol) and q != 0:
                 dq_wout_considering_tx_costs = (full_outlay - amount) / (self._price * self.multiplier)
                 q = q - dq_wout_considering_tx_costs
 
