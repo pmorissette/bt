@@ -3918,6 +3918,68 @@ def test_TargetVol_zero_volatility(
     assert s.temp["weights"] == initial_weights
 
 
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+@pytest.mark.parametrize("target_volatility", [{}, {"absent": np.inf}])
+@pytest.mark.parametrize("use_series", [False, True])
+def test_TargetVol_unused_targets_without_history(covar_method, target_volatility, use_series):
+    dates = pd.date_range("2024-01-01", periods=1)
+    data = pd.DataFrame({"a": [100.0]}, index=dates)
+    strategy = bt.Strategy("s")
+    strategy.setup(data)
+    strategy.update(dates[0])
+    weights = pd.Series({"a": 1.0}) if use_series else {"a": 1.0}
+    strategy.temp["weights"] = weights
+    algo = algos.TargetVol(target_volatility, covar_method=covar_method)
+
+    # An omitted target needs no estimate, even when its unused value is invalid.
+    assert algo(strategy)
+    assert strategy.temp["weights"] is weights
+    assert dict(weights) == {"a": 1.0}
+    assert algo.target_volatility is target_volatility
+    pd.testing.assert_frame_equal(data, pd.DataFrame({"a": [100.0]}, index=dates))
+
+
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+@pytest.mark.parametrize("target_volatility", [{}, {"absent": 0.1}])
+def test_TargetVol_unused_targets_reach_rebalance(covar_method, target_volatility):
+    dates = pd.date_range("2024-01-01", periods=3)
+    data = pd.DataFrame({"a": 100.0}, index=dates)
+    strategy = bt.Strategy(
+        "s",
+        [
+            algos.RunOnce(),
+            algos.WeighSpecified(a=1.0),
+            algos.TargetVol(target_volatility, covar_method=covar_method),
+            algos.Rebalance(),
+        ],
+    )
+    backtest = bt.Backtest(strategy, data, initial_capital=1000.0, progress_bar=False)
+    backtest.run()
+
+    # The untouched unit weight invests the full 1,000 at 100 on the first bar.
+    np.testing.assert_array_equal(backtest.positions.loc[dates, "a"], [10.0, 10.0, 10.0])
+    np.testing.assert_array_equal(backtest.strategy.values.loc[dates], [1000.0, 1000.0, 1000.0])
+    assert backtest.strategy.capital == 0.0
+
+
+@pytest.mark.parametrize("covar_method", ["standard", "ledoit-wolf"])
+@pytest.mark.parametrize("target_volatility", [0.0, {"a": 0.0}])
+def test_TargetVol_zero_target_still_requires_history(covar_method, target_volatility):
+    dates = pd.date_range("2024-01-01", periods=1)
+    strategy = bt.Strategy("s")
+    strategy.setup(pd.DataFrame({"a": [100.0]}, index=dates))
+    strategy.update(dates[0])
+    weights = {"a": 1.0}
+    strategy.temp["weights"] = weights
+    algo = algos.TargetVol(target_volatility, covar_method=covar_method)
+
+    # Zero is an applicable target, not an omitted target.
+    with pytest.raises(ValueError):
+        algo(strategy)
+    assert strategy.temp["weights"] is weights
+    assert weights == {"a": 1.0}
+
+
 def test_TargetVol_rejects_non_finite_volatility():
     s = bt.Strategy("s")
     dts = pd.date_range("2010-01-01", periods=1)

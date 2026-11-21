@@ -1673,16 +1673,6 @@ class TargetVol(Algo):
         if len(selected) == 0:
             return True
 
-        t0 = target.now - self.lag
-        prc = target.universe.loc[t0 - self.lookback : t0, selected]
-        returns = bt.ffn.to_returns(prc)
-
-        covar = _estimate_covariance(self, returns)
-
-        weights = pd.Series([current_weights[x] for x in covar.columns], index=covar.columns)
-
-        vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
-
         # Series iteration yields values; target lookup and scaling require labels.
         if isinstance(self.target_volatility, (float, int)):
             target_volatility = {k: self.target_volatility for k in selected}
@@ -1693,6 +1683,16 @@ class TargetVol(Algo):
         applicable_target_volatilities: list[float] = [target_volatility[k] for k in selected if k in target_volatility]
         if not applicable_target_volatilities:
             return True
+
+        t0 = target.now - self.lag
+        prc = target.universe.loc[t0 - self.lookback : t0, selected]
+        returns = bt.ffn.to_returns(prc)
+
+        covar = _estimate_covariance(self, returns)
+
+        weights = pd.Series([current_weights[x] for x in covar.columns], index=covar.columns)
+
+        vol = np.sqrt(np.matmul(weights.values.T, np.matmul(covar.values, weights.values)) * self.annualization_factor)
 
         if not np.isfinite(applicable_target_volatilities).all():
             raise ValueError("Cannot target a non-finite target volatility")
