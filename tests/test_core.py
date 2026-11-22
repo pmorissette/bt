@@ -515,6 +515,29 @@ def test_numpy_weighted_transfers_preserve_precision(dtype, amount, sign, method
     assert root.flows.iloc[-1] == 0.0
 
 
+@pytest.mark.parametrize("price_type", [np.float16, np.float32])
+@pytest.mark.parametrize("amount_type, amount", [(np.float16, 2048.0), (np.float32, 100000000.0), (np.float64, 100000000.0), (float, 100000000.0)])
+def test_numpy_cash_allocations_preserve_derived_quantities(amount_type, amount, price_type):
+    dates = pd.date_range("2020-01-01", periods=2)
+    price, multiplier = price_type(100.01), price_type(2.0)
+    root = StrategyBase("root", [SecurityBase("asset", multiplier=multiplier)])
+    root.use_integer_positions(False)
+    root.setup(pd.DataFrame({"asset": np.array([price, price], dtype=price_type)}, index=dates))
+    capital = 1000000000.0
+    root.adjust(capital)
+    root.update(dates[0])
+
+    security = root["asset"]
+    security.allocate(amount_type(amount))
+    root.update(dates[0])
+
+    expected_quantity = amount / (float(price) * float(multiplier))
+    assert float(security.position) == pytest.approx(expected_quantity, rel=1e-15)
+    assert float(security.outlay(security.position)[0]) == pytest.approx(amount, rel=1e-15)
+    assert float(root.capital) == pytest.approx(capital - amount, rel=0, abs=1e-7)
+    assert float(root.value) == capital
+
+
 @pytest.mark.parametrize("sign", [1, -1])
 @pytest.mark.parametrize("dtype, shares", [(np.float16, 2048.0), (np.float32, 16777216.0), (np.float64, 16777216.0), (float, 16777216.0)])
 def test_numpy_orders_preserve_position_precision(dtype, shares, sign):

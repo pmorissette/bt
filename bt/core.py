@@ -1675,6 +1675,8 @@ class SecurityBase(Node):
         if self._needupdate or self.now != self.parent.now:
             self.update(self.parent.now)
 
+        amount = _promote_narrow_float(amount)
+
         # Ignore zero adjustments. StrategyBase.close handles a live position
         # whose price and value are zero by transacting its exact quantity.
         if is_zero(amount):
@@ -1686,13 +1688,15 @@ class SecurityBase(Node):
         if is_zero(self._price) or np.isnan(self._price):
             raise ValueError(f"Cannot allocate capital to {self.name} because price is {self._price} as of {self.parent.now}")
 
+        unit_price = _promote_narrow_float(self._price) * _promote_narrow_float(self.multiplier)
+
         # buy/sell
         # determine quantity - must also factor in commission
         # closing out?
         if is_zero(amount + self._value):
             q = -self._position
         else:
-            q = amount / (self._price * self.multiplier)
+            q = amount / unit_price
             if self.integer_positions:
                 if (self._position > 0) or (is_zero(self._position) and (amount > 0)):
                     # if we're going long or changing long position
@@ -1743,7 +1747,7 @@ class SecurityBase(Node):
             # above amount there.
             rtol = TOL if self.integer_positions else ALLOCATE_RTOL
             while not np.isclose(full_outlay, amount, rtol=rtol) and q != 0:
-                dq_wout_considering_tx_costs = (full_outlay - amount) / (self._price * self.multiplier)
+                dq_wout_considering_tx_costs = (full_outlay - amount) / unit_price
                 q = q - dq_wout_considering_tx_costs
 
                 if self.integer_positions:
@@ -1804,7 +1808,7 @@ class SecurityBase(Node):
 
         # Reject an opposite-direction result instead of selling to fund costs.
         # Retrying would require assumptions about arbitrary commission functions.
-        if amount > 0 and q < 0 and self._price * self.multiplier > 0:
+        if amount > 0 and q < 0 and unit_price > 0:
             return
 
         self.transact(q, update, False)
