@@ -1053,7 +1053,7 @@ class StrategyBase(Node):
             # push allocation down to children if any
             # use _weight to avoid triggering an update
             if self.children is not None:
-                [c.allocate(amount * c._weight, update=False) for c in self._childrenv]
+                [c.allocate(_promote_narrow_float(amount) * c._weight, update=False) for c in self._childrenv]
 
             # mark as stale if update requested
             if update:
@@ -1086,7 +1086,7 @@ class StrategyBase(Node):
             # push allocation down to children if any
             # use _weight to avoid triggering an update
             if self.children is not None:
-                [c.transact(q * c._weight, update=False) for c in self._childrenv]
+                [c.transact(_promote_narrow_float(q) * c._weight, update=False) for c in self._childrenv]
 
             # mark as stale if update requested
             if update:

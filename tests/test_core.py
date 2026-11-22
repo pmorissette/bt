@@ -482,6 +482,39 @@ def test_numpy_internal_allocations_preserve_flows(dtype, capital, delta, via_pa
     assert leaf.price == 100.0
 
 
+@pytest.mark.parametrize("method", ["allocate", "transact"])
+@pytest.mark.parametrize("sign", [-1, 1])
+@pytest.mark.parametrize("dtype, amount", [(np.float16, 2048.0), (np.float32, 100000000.0), (np.float64, 100000000.0), (float, 100000000.0)])
+def test_numpy_weighted_transfers_preserve_precision(dtype, amount, sign, method):
+    dates = pd.date_range("2020-01-01", periods=2)
+    leaf = bt.FixedIncomeStrategy("leaf", children=[bt.FixedIncomeSecurity("a"), bt.FixedIncomeSecurity("b")])
+    root = bt.FixedIncomeStrategy("root", children=[leaf])
+    root.use_integer_positions(False)
+    root.setup(pd.DataFrame(1.0, index=dates, columns=["a", "b"]))
+    capital = 4 * amount + 1000.0
+    root.adjust(capital)
+    root.update(dates[0])
+    root.allocate(3.0, "leaf")
+    leaf = root["leaf"]
+    leaf.transact(1.0, "a")
+    leaf.transact(2.0, "b")
+    root.update(dates[0])
+    root.update(dates[1])
+
+    transferred = sign * amount
+    getattr(leaf, method)(dtype(transferred))
+    root.update(dates[1])
+
+    # The one-third/two-thirds split must retain double-precision quantities.
+    np.testing.assert_allclose([leaf["a"].position, leaf["b"].position], [1.0 + transferred / 3.0, 2.0 + transferred * 2.0 / 3.0], rtol=1e-15, atol=1e-10)
+    flow = transferred if method == "allocate" else 0.0
+    assert leaf.capital == pytest.approx(flow - transferred, rel=0, abs=1e-7)
+    assert root.capital == capital - 3.0 - flow
+    assert root.value == pytest.approx(capital, rel=0, abs=1e-7)
+    assert leaf.flows.iloc[-1] == flow
+    assert root.flows.iloc[-1] == 0.0
+
+
 @pytest.mark.parametrize("sign", [1, -1])
 @pytest.mark.parametrize("dtype, shares", [(np.float16, 2048.0), (np.float32, 16777216.0), (np.float64, 16777216.0), (float, 16777216.0)])
 def test_numpy_orders_preserve_position_precision(dtype, shares, sign):
