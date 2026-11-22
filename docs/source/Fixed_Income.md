@@ -80,7 +80,7 @@ timeline = pd.date_range( start_date, end_date, freq='B')
 # Government Bonds: Create synthetic data for a single series of rolling government bonds
 
 # Reference Data
-roll_freq = 'Q'   
+roll_freq = pd.offsets.QuarterEnd(startingMonth=12)
 maturity = 10 
 coupon = 2.0
 roll_dates = pd.date_range( start_date, end_date+to_offset(roll_freq), freq=roll_freq) # Go one period beyond the end date to be safe
@@ -110,12 +110,14 @@ govt_yield = pd.DataFrame( columns = govt_data.index, index=timeline )
 govt_yield_ts = (govt_yield_initial + np.cumsum( np.random.normal( 0., govt_yield_vol/np.sqrt(252), len(timeline)))).reshape(-1,1)
 govt_yield.loc[:,:] = govt_yield_ts
 
-govt_mat = pd.DataFrame( columns = govt_data.index, index=timeline, data=pd.NA ).astype('datetime64')
+govt_mat = pd.DataFrame( columns = govt_data.index, index=timeline, data=pd.NA ).astype('datetime64[ns]')
 govt_mat.loc[:,:] = govt_data['mat_date'].values.T
-govt_ttm = (govt_mat - timeline.values.reshape(-1,1))/pd.Timedelta('1Y')
+# Preserve the mean Gregorian year used by the former '1Y' duration.
+year = pd.Timedelta(seconds=31556952)
+govt_ttm = (govt_mat - timeline.values.reshape(-1,1))/year
 govt_coupon = pd.DataFrame( columns = govt_data.index, index=timeline )
 govt_coupon.loc[:,:] = govt_data['coupon'].values.T
-govt_accrued = govt_coupon.multiply( timeline.to_series().diff()/pd.Timedelta('1Y'), axis=0 )
+govt_accrued = govt_coupon.multiply( timeline.to_series().diff()/year, axis=0 )
 govt_accrued.iloc[0] = 0
 
 govt_price = yield_to_price( govt_yield, govt_ttm, govt_coupon )
@@ -164,10 +166,10 @@ corp_yield = pd.DataFrame(  columns = corp_data.index, index=timeline, data = co
 
 corp_mat = pd.DataFrame( columns = corp_data.index, index=timeline, data=start_date )
 corp_mat.loc[:,:] = corp_data['mat_date'].values.T
-corp_ttm = (corp_mat - timeline.values.reshape(-1,1))/pd.Timedelta('1Y')
+corp_ttm = (corp_mat - timeline.values.reshape(-1,1))/year
 corp_coupon = pd.DataFrame( columns = corp_data.index, index=timeline )
 corp_coupon.loc[:,:] = corp_data['coupon'].values.T
-corp_accrued = corp_coupon.multiply( timeline.to_series().diff()/pd.Timedelta('1Y'), axis=0 )
+corp_accrued = corp_coupon.multiply( timeline.to_series().diff()/year, axis=0 )
 corp_accrued.iloc[0] = 0
 
 corp_price = yield_to_price( corp_yield, corp_ttm, corp_coupon )
