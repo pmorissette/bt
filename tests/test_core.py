@@ -432,6 +432,217 @@ def test_strategybase_tree_setup():
     assert len(c2._values) == 3
 
 
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("dtype, capital", [(np.float16, 2048.0), (np.float32, 100000000.0), (np.float64, 100000000.0), (float, 100000000.0)])
+def test_numpy_capital_flows_preserve_precision(dtype, capital, nested):
+    dates = pd.date_range("2020-01-01", periods=2)
+    root = StrategyBase("root", [StrategyBase("leaf")] if nested else [])
+    root.setup(pd.DataFrame({"asset": [100.0, 100.0]}, index=dates))
+    target = root["leaf"] if nested else root
+    target.adjust(dtype(capital))
+    root.update(dates[0])
+    root.update(dates[1])
+    target.adjust(dtype(1))
+    target.adjust(dtype(1))
+    root.update(dates[1])
+
+    # Each input is exact in its own dtype; adding it must not narrow the ledger.
+    assert float(target.capital) == capital + 2.0
+    assert float(root.value) == capital + 2.0
+    assert target.flows.sum() == capital + 2.0
+    assert root.flows.sum() == capital + 2.0
+
+
+@pytest.mark.parametrize("via_parent", [False, True])
+@pytest.mark.parametrize("delta", [-1, 1])
+@pytest.mark.parametrize("dtype, capital", [(np.float16, 2048.0), (np.float32, 100000000.0), (np.float64, 100000000.0), (float, 100000000.0)])
+def test_numpy_internal_allocations_preserve_flows(dtype, capital, delta, via_parent):
+    dates = pd.date_range("2020-01-01", periods=2)
+    root = StrategyBase("root", [StrategyBase("leaf")])
+    root.setup(pd.DataFrame({"asset": [100.0, 100.0]}, index=dates))
+    root.adjust(2 * capital)
+    root.update(dates[0])
+    root.update(dates[1])
+    leaf = root["leaf"]
+    if via_parent:
+        root.allocate(dtype(capital), child="leaf", update=False)
+        root.allocate(dtype(delta), child="leaf", update=False)
+    else:
+        leaf.allocate(dtype(capital), update=False)
+        leaf.allocate(dtype(delta), update=False)
+    root.update(dates[1])
+
+    # An internal transfer is a flow for the sleeve, but changes no root wealth.
+    transferred = capital + delta
+    assert float(leaf.capital) == transferred
+    assert leaf.flows.iloc[-1] == transferred
+    assert root.capital == 2 * capital - transferred
+    assert root.value == 2 * capital
+    assert root.flows.iloc[-1] == 0.0
+    assert leaf.price == 100.0
+
+
+@pytest.mark.parametrize("method", ["allocate", "transact"])
+@pytest.mark.parametrize("sign", [-1, 1])
+@pytest.mark.parametrize("dtype, amount", [(np.float16, 2048.0), (np.float32, 100000000.0), (np.float64, 100000000.0), (float, 100000000.0)])
+def test_numpy_weighted_transfers_preserve_precision(dtype, amount, sign, method):
+    dates = pd.date_range("2020-01-01", periods=2)
+    leaf = bt.FixedIncomeStrategy("leaf", children=[bt.FixedIncomeSecurity("a"), bt.FixedIncomeSecurity("b")])
+    root = bt.FixedIncomeStrategy("root", children=[leaf])
+    root.use_integer_positions(False)
+    root.setup(pd.DataFrame(1.0, index=dates, columns=["a", "b"]))
+    capital = 4 * amount + 1000.0
+    root.adjust(capital)
+    root.update(dates[0])
+    root.allocate(3.0, "leaf")
+    leaf = root["leaf"]
+    leaf.transact(1.0, "a")
+    leaf.transact(2.0, "b")
+    root.update(dates[0])
+    root.update(dates[1])
+
+    transferred = sign * amount
+    getattr(leaf, method)(dtype(transferred))
+    root.update(dates[1])
+
+    # The one-third/two-thirds split must retain double-precision quantities.
+    np.testing.assert_allclose([leaf["a"].position, leaf["b"].position], [1.0 + transferred / 3.0, 2.0 + transferred * 2.0 / 3.0], rtol=1e-15, atol=1e-10)
+    flow = transferred if method == "allocate" else 0.0
+    assert leaf.capital == pytest.approx(flow - transferred, rel=0, abs=1e-7)
+    assert root.capital == capital - 3.0 - flow
+    assert root.value == pytest.approx(capital, rel=0, abs=1e-7)
+    assert leaf.flows.iloc[-1] == flow
+    assert root.flows.iloc[-1] == 0.0
+
+
+@pytest.mark.parametrize("price_type", [np.float16, np.float32])
+@pytest.mark.parametrize("amount_type, amount", [(np.float16, 2048.0), (np.float32, 100000000.0), (np.float64, 100000000.0), (float, 100000000.0)])
+def test_numpy_cash_allocations_preserve_derived_quantities(amount_type, amount, price_type):
+    dates = pd.date_range("2020-01-01", periods=2)
+    price, multiplier = price_type(100.01), price_type(2.0)
+    root = StrategyBase("root", [SecurityBase("asset", multiplier=multiplier)])
+    root.use_integer_positions(False)
+    root.setup(pd.DataFrame({"asset": np.array([price, price], dtype=price_type)}, index=dates))
+    capital = 1000000000.0
+    root.adjust(capital)
+    root.update(dates[0])
+
+    security = root["asset"]
+    security.allocate(amount_type(amount))
+    root.update(dates[0])
+
+    expected_quantity = amount / (float(price) * float(multiplier))
+    assert float(security.position) == pytest.approx(expected_quantity, rel=1e-15)
+    assert float(security.outlay(security.position)[0]) == pytest.approx(amount, rel=1e-15)
+    assert float(root.capital) == pytest.approx(capital - amount, rel=0, abs=1e-7)
+    assert float(root.value) == capital
+
+
+@pytest.mark.parametrize("sign", [1, -1])
+@pytest.mark.parametrize("dtype, shares", [(np.float16, 2048.0), (np.float32, 16777216.0), (np.float64, 16777216.0), (float, 16777216.0)])
+def test_numpy_orders_preserve_position_precision(dtype, shares, sign):
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
+    root = StrategyBase("root", [SecurityBase("asset")])
+    root.setup(prices)
+    capital = shares * 100.0 + 10000.0
+    root.adjust(capital)
+    root.update(dates[0])
+    security = root["asset"]
+    security.transact(dtype(sign * shares))
+    security.transact(dtype(sign))
+    root.update(dates[1])
+
+    expected_position = sign * (shares + 1.0)
+    assert float(security.position) == expected_position
+    assert root.capital == capital - expected_position * 100.0
+    assert root.value == capital
+
+
+@pytest.mark.parametrize("delta", [-1, 1])
+@pytest.mark.parametrize("quantity_type", [np.float32, float])
+@pytest.mark.parametrize("split_dtype", ["float32", "Float32"])
+def test_numpy_split_positions_preserve_subsequent_trades(split_dtype, quantity_type, delta):
+    dates = pd.date_range("2020-01-01", periods=2)
+    shares, capital = 2**24, 2**31
+    root = bt.Strategy("root", children=[bt.Security("asset")])
+    root.setup(pd.DataFrame({"asset": [100.0, 50.0]}, index=dates))
+    root.adjust(float(capital))
+    root.update(dates[0])
+    security = root["asset"]
+    security.transact(float(shares))
+    root.update(dates[0])
+    root.update(dates[1])
+    splits = pd.DataFrame({"asset": pd.Series([2.0], index=dates[1:], dtype=split_dtype)})
+    assert bt.algos.CorporateActions(pd.DataFrame(), splits)(root)
+    root.update(dates[1])
+
+    security.transact(quantity_type(delta))
+    root.update(dates[1])
+
+    # The exact split preserves wealth; paying for a share must change the holding.
+    assert float(security.position) == 2 * shares + delta
+    assert float(root.capital) == capital - shares * 100 - delta * 50
+    assert float(root.value) == capital
+
+
+@pytest.mark.parametrize("capital, quantity, fee", [(1000.0, 1.0, np.float16(0.01)), (100000010.0, 1000000.0, np.float32(1.0))])
+def test_numpy_commission_is_charged_in_full(capital, quantity, fee):
+    dates = pd.date_range("2020-01-01", periods=2)
+    prices = pd.DataFrame({"asset": [100.0, 100.0]}, index=dates)
+    observations = []
+
+    class Trade(bt.Algo):
+        def __call__(self, target):
+            target.transact(quantity, "asset")
+            return True
+
+    def commission(q, price):
+        observations.append((q, price))
+        return fee
+
+    strategy = bt.Strategy("strategy", [bt.algos.RunOnce(), Trade()])
+    backtest = bt.Backtest(strategy, prices, initial_capital=capital, commissions=commission)
+    backtest.run()
+    expected_cash = capital - quantity * 100.0 - float(fee)
+
+    assert observations == [(quantity, 100.0)]
+    assert backtest.strategy["asset"].position == quantity
+    assert backtest.strategy.fees.sum() == float(fee)
+    assert backtest.strategy.capital == expected_cash
+    assert backtest.strategy.value == capital - float(fee)
+
+
+@pytest.mark.parametrize("custom_price", [False, True])
+@pytest.mark.parametrize("sign", [1, -1])
+def test_numpy_outlay_preserves_price_and_spread_precision(custom_price, sign):
+    dates = pd.date_range("2020-01-01", periods=2)
+    price, spread, execution_price = np.float32(100.01), np.float32(0.1), np.float32(100.02)
+    multiplier, quantity, fee = np.float32(10.0), np.float32(sign * 1000000.0), np.float16(0.01)
+    root = StrategyBase("root", [SecurityBase("asset", multiplier=multiplier)])
+    root.setup(pd.DataFrame({"asset": [price, price]}, index=dates), bidoffer=pd.DataFrame({"asset": [spread, spread]}, index=dates))
+    root.set_commissions(lambda q, p: fee)
+    root.adjust(2000000000.0)
+    root.update(dates[0])
+    security = root["asset"]
+    full_outlay, outlay, returned_fee, bidoffer = security.outlay(quantity, p=execution_price if custom_price else None)
+
+    # Reconstruct money from the supplied quote units, without NumPy promotion.
+    q, mark, mult = float(quantity), float(price), float(multiplier)
+    if custom_price:
+        expected_outlay = q * float(execution_price) * mult
+        expected_spread = q * (float(execution_price) - mark) * mult
+    else:
+        expected_spread = abs(q) * 0.5 * float(spread) * mult
+        expected_outlay = q * mark * mult + expected_spread
+    # Separate equivalent floating-point expressions may differ by one ulp.
+    tolerance = 2 * np.finfo(float).eps
+    assert float(bidoffer) == pytest.approx(expected_spread, rel=tolerance)
+    assert float(outlay) == pytest.approx(expected_outlay, rel=tolerance)
+    assert float(returned_fee) == float(fee)
+    assert float(full_outlay) == pytest.approx(expected_outlay + float(fee), rel=tolerance)
+
+
 def test_strategybase_tree_adjust():
     c1 = SecurityBase("c1")
     c2 = SecurityBase("c2")

@@ -25,6 +25,16 @@ def is_zero(x):
     return abs(x) < TOL
 
 
+@cy.ccall
+def _promote_narrow_float(value):
+    """Prevent NumPy float16/32 from narrowing double-precision accounting."""
+    if type(value) is float:
+        return value
+    if type(value) in (np.float16, np.float32):
+        return float(value)
+    return value
+
+
 def _carry_observation(series, inow):
     """Use faster scalar indexing while retaining custom iloc and invalid-index behavior."""
     # Keep integer subclasses' comparison hooks on the native iloc path.
@@ -979,6 +989,9 @@ class StrategyBase(Node):
         if flow and not math.isfinite(amount):
             raise ValueError("Capital flow amount must be finite")
 
+        amount = _promote_narrow_float(amount)
+        fee = _promote_narrow_float(fee)
+
         # adjust capital
         self._capital += amount
         self._last_fee += fee
@@ -989,7 +1002,7 @@ class StrategyBase(Node):
         if flow:
             node = self
             while True:
-                node._net_flows += amount
+                node._net_flows = _promote_narrow_float(node._net_flows) + amount
                 if node.parent is node:
                     break
                 node = node.parent
@@ -1038,12 +1051,12 @@ class StrategyBase(Node):
             # Internal allocation is a flow only for the receiving sleeve;
             # the ancestors' total values do not change.
             self.adjust(amount, update=False, flow=False)
-            self._net_flows += amount
+            self._net_flows = _promote_narrow_float(self._net_flows) + _promote_narrow_float(amount)
 
             # push allocation down to children if any
             # use _weight to avoid triggering an update
             if self.children is not None:
-                [c.allocate(amount * c._weight, update=False) for c in self._childrenv]
+                [c.allocate(_promote_narrow_float(amount) * c._weight, update=False) for c in self._childrenv]
 
             # mark as stale if update requested
             if update:
@@ -1076,7 +1089,7 @@ class StrategyBase(Node):
             # push allocation down to children if any
             # use _weight to avoid triggering an update
             if self.children is not None:
-                [c.transact(q * c._weight, update=False) for c in self._childrenv]
+                [c.transact(_promote_narrow_float(q) * c._weight, update=False) for c in self._childrenv]
 
             # mark as stale if update requested
             if update:
@@ -1665,6 +1678,8 @@ class SecurityBase(Node):
         if self._needupdate or self.now != self.parent.now:
             self.update(self.parent.now)
 
+        amount = _promote_narrow_float(amount)
+
         # Ignore zero adjustments. StrategyBase.close handles a live position
         # whose price and value are zero by transacting its exact quantity.
         if is_zero(amount):
@@ -1676,13 +1691,15 @@ class SecurityBase(Node):
         if is_zero(self._price) or np.isnan(self._price):
             raise ValueError(f"Cannot allocate capital to {self.name} because price is {self._price} as of {self.parent.now}")
 
+        unit_price = _promote_narrow_float(self._price) * _promote_narrow_float(self.multiplier)
+
         # buy/sell
         # determine quantity - must also factor in commission
         # closing out?
         if is_zero(amount + self._value):
             q = -self._position
         else:
-            q = amount / (self._price * self.multiplier)
+            q = amount / unit_price
             if self.integer_positions:
                 if (self._position > 0) or (is_zero(self._position) and (amount > 0)):
                     # if we're going long or changing long position
@@ -1733,7 +1750,7 @@ class SecurityBase(Node):
             # above amount there.
             rtol = TOL if self.integer_positions else ALLOCATE_RTOL
             while not np.isclose(full_outlay, amount, rtol=rtol) and q != 0:
-                dq_wout_considering_tx_costs = (full_outlay - amount) / (self._price * self.multiplier)
+                dq_wout_considering_tx_costs = (full_outlay - amount) / unit_price
                 q = q - dq_wout_considering_tx_costs
 
                 if self.integer_positions:
@@ -1794,7 +1811,7 @@ class SecurityBase(Node):
 
         # Reject an opposite-direction result instead of selling to fund costs.
         # Retrying would require assumptions about arbitrary commission functions.
-        if amount > 0 and q < 0 and self._price * self.multiplier > 0:
+        if amount > 0 and q < 0 and unit_price > 0:
             return
 
         self.transact(q, update, False)
@@ -1848,8 +1865,12 @@ class SecurityBase(Node):
         # last update)
         self._needupdate = True
 
+        # Splits can leave narrow positions; widen the cache too so updates see small trades.
+        self._last_pos = _promote_narrow_float(self._last_pos)
+        self._position = _promote_narrow_float(self._position)
+
         # adjust position & value
-        self._position += q
+        self._position += _promote_narrow_float(q)
 
         # store outlay for future reference
         self._outlay += outlay
@@ -1888,15 +1909,18 @@ class SecurityBase(Node):
         """
         if p is None:
             fee = self.commission(q, self._price * self.multiplier)
-            bidoffer = abs(q) * 0.5 * self._bidoffer * self.multiplier
+            q = _promote_narrow_float(q)
+            bidoffer = abs(q) * 0.5 * _promote_narrow_float(self._bidoffer) * _promote_narrow_float(self.multiplier)
         else:
             # price override provided: custom transaction
             fee = self.commission(q, p * self.multiplier)
-            bidoffer = q * (p - self._price) * self.multiplier
+            q = _promote_narrow_float(q)
+            bidoffer = q * (_promote_narrow_float(p) - _promote_narrow_float(self._price)) * _promote_narrow_float(self.multiplier)
 
-        outlay = q * self._price * self.multiplier + bidoffer
+        outlay = q * _promote_narrow_float(self._price) * _promote_narrow_float(self.multiplier) + bidoffer
 
-        return outlay + fee, outlay, fee, bidoffer
+        # Keep the callback result intact, but charge it without rounding the sum.
+        return outlay + _promote_narrow_float(fee), outlay, fee, bidoffer
 
     def run(self):
         """
