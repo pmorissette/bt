@@ -25,8 +25,11 @@ def is_zero(x):
     return abs(x) < TOL
 
 
+@cy.ccall
 def _promote_narrow_float(value):
     """Prevent NumPy float16/32 from narrowing double-precision accounting."""
+    if type(value) is float:
+        return value
     if type(value) in (np.float16, np.float32):
         return float(value)
     return value
