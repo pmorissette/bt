@@ -1702,7 +1702,9 @@ class SecurityBase(Node):
         else:
             q = amount / unit_price
             if self.integer_positions:
-                round_down = (self._position > 0) or (is_zero(self._position) and (amount > 0))
+                # Use the holding's value sign to mirror positive-price rounding.
+                round_down = (self._position > 0) if unit_price > 0 else (self._position < 0)
+                round_down = round_down or (is_zero(self._position) and (amount > 0))
                 if unit_price < 0:
                     round_down = not round_down
                 if round_down:

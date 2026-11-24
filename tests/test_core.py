@@ -6073,6 +6073,33 @@ def test_almgren_chriss_cost_model_quadratic_in_participation():
     assert c2 == pytest.approx(4.0 * c1)
 
 
+@pytest.mark.parametrize("price, multiplier", [(-37.0, 1.0), (37.0, -1.0)])
+@pytest.mark.parametrize("fee", [0.0, 1.0, 2.0])
+@pytest.mark.parametrize("position, amount", [(-3.0, -1.0), (27.0, 1000.0)])
+def test_negative_unit_price_rounding_uses_position_value(price, multiplier, fee, position, amount):
+    dates = pd.date_range("2020-01-01", periods=2)
+    strategy = StrategyBase("strategy", children=[SecurityBase("asset", multiplier=multiplier)])
+    strategy.setup(pd.DataFrame({"asset": [price, price]}, index=dates))
+    strategy.adjust(1000.0)
+    strategy.update(dates[0])
+    security = strategy["asset"]
+    security.transact(position)
+    strategy.update(dates[0])
+    strategy.set_commissions(lambda q, p: fee)
+    before_cash = strategy.capital
+
+    security.allocate(amount)
+    strategy.update(dates[0])
+
+    # Small withdrawals must raise cash; a near-close must still respect its budget.
+    expected_trade = 1.0 if amount < 0 else (-26.0 if fee == 2.0 else -27.0)
+    expected_outlay = expected_trade * price * multiplier + fee
+    assert security.position == position + expected_trade
+    assert before_cash - strategy.capital == expected_outlay
+    assert expected_outlay <= amount
+    assert strategy.value == 1000.0 - fee
+
+
 def test_security_allocate_negative_price_integer_positions():
     dts = pd.date_range("2020-01-01", periods=3)
     data = pd.DataFrame({"neg": [-37.0, -35.0, -35.0]}, index=dts)
@@ -6118,6 +6145,7 @@ def test_security_allocate_negative_price_integer_positions():
     s4.allocate(100.0, "neg")
     s4.update(dts[0])
     assert s4["neg"].position == 0
+    assert s4.capital == pytest.approx(1000.0)
 
     # End-to-end backtest allocating and closing a negative-price security with integer positions
     bt_data = pd.DataFrame(
@@ -6150,4 +6178,4 @@ def test_security_allocate_negative_price_integer_positions():
     s5.close("neg")
     s5.update(dts[1])
     assert s5["neg"].position == 0
-    assert s4.capital == pytest.approx(1000.0)
+    assert s5.capital == pytest.approx(946.0)
