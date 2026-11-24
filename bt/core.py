@@ -1666,9 +1666,10 @@ class SecurityBase(Node):
             * update (bool): Force update?
 
         Note:
-            When price times multiplier is positive, a positive allocation is
-            left unfilled if cost adjustment would produce a sale. An affordable
-            purchase may still exist. The quantity search is not retried.
+            When price times multiplier is nonzero, a positive allocation is
+            left unfilled if cost adjustment would produce a trade in the
+            opposite direction. An affordable trade may still exist. The
+            quantity search is not retried.
 
         """
 
@@ -1701,11 +1702,14 @@ class SecurityBase(Node):
         else:
             q = amount / unit_price
             if self.integer_positions:
-                if (self._position > 0) or (is_zero(self._position) and (amount > 0)):
-                    # if we're going long or changing long position
+                round_down = (self._position > 0) or (is_zero(self._position) and (amount > 0))
+                if unit_price < 0:
+                    round_down = not round_down
+                if round_down:
+                    # reduce magnitude when increasing outlay or reducing long exposure
                     q = math.floor(q)
                 else:
-                    # if we're going short or changing short position
+                    # mirror rounding for short exposure or negative unit_price
                     q = math.ceil(q)
 
         # if q is 0 nothing to do
@@ -1727,6 +1731,8 @@ class SecurityBase(Node):
         #
         if q != -self._position:
             full_outlay, _, _, _ = self.outlay(q)
+            # Step in the direction that increases full_outlay (sign of unit_price).
+            step = 1 if unit_price > 0 else -1
 
             # if full outlay > amount, we must decrease the magnitude of `q`
             # this can potentially lead to an infinite loop if the commission
@@ -1740,13 +1746,14 @@ class SecurityBase(Node):
 
             # if integer positions is false then we want full_outlay == amount
             # if integer positions is true then we want to be at the q where
-            #   if we bought 1 more then we wouldn't have enough cash
+            #   if we changed q by one more step in the outlay-increasing direction
+            #   then we wouldn't have enough cash
             i = 0
             last_q = q
             last_amount_short = full_outlay - amount
             # Fractional quantities need a tolerance above an ulp of amount (see
             # ALLOCATE_RTOL). Integer positions keep TOL: their search ends through the
-            # floor logic below, and a wider tolerance could accept an outlay an ulp
+            # rounding logic below, and a wider tolerance could accept an outlay an ulp
             # above amount there.
             rtol = TOL if self.integer_positions else ALLOCATE_RTOL
             while not np.isclose(full_outlay, amount, rtol=rtol) and q != 0:
@@ -1754,16 +1761,16 @@ class SecurityBase(Node):
                 q = q - dq_wout_considering_tx_costs
 
                 if self.integer_positions:
-                    q = math.floor(q)
+                    q = math.floor(q) if unit_price > 0 else math.ceil(q)
 
                 full_outlay, _, _, _ = self.outlay(q)
 
-                # if our q is too low and we have integer positions
-                # then we know that the correct quantity is the one  where
-                # the outlay of q + 1 < amount. i.e. if we bought one more
-                # position then we wouldn't have enough cash
+                # if our outlay is below amount and we have integer positions
+                # then we know that the correct quantity is the one where
+                # the outlay of q + step > amount. i.e. if we moved one more
+                # unit in the spending direction then we wouldn't have enough cash
                 if self.integer_positions:
-                    full_outlay_of_1_more, _, _, _ = self.outlay(q + 1)
+                    full_outlay_of_1_more, _, _, _ = self.outlay(q + step)
 
                     if full_outlay < amount:
                         if full_outlay_of_1_more > amount:
@@ -1773,7 +1780,7 @@ class SecurityBase(Node):
                         # quantity when commissions are non-linear. Move back
                         # one share so the search keeps the closest affordable
                         # outlay instead of treating the larger gap as an error.
-                        q += 1
+                        q += step
                         full_outlay = full_outlay_of_1_more
 
                 # if not integer positions then we should keep going until
@@ -1809,9 +1816,9 @@ class SecurityBase(Node):
                     )
                 last_amount_short = full_outlay - amount
 
-        # Reject an opposite-direction result instead of selling to fund costs.
+        # Reject an opposite-direction result instead of trading the wrong way to fund costs.
         # Retrying would require assumptions about arbitrary commission functions.
-        if amount > 0 and q < 0 and unit_price > 0:
+        if amount > 0 and q * unit_price < 0:
             return
 
         self.transact(q, update, False)

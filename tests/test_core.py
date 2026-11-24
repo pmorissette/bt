@@ -6071,3 +6071,83 @@ def test_almgren_chriss_cost_model_quadratic_in_participation():
     c1 = cm.cost(1000.0, p, V, sigma)
     c2 = cm.cost(2000.0, p, V, sigma)
     assert c2 == pytest.approx(4.0 * c1)
+
+
+def test_security_allocate_negative_price_integer_positions():
+    dts = pd.date_range("2020-01-01", periods=3)
+    data = pd.DataFrame({"neg": [-37.0, -35.0, -35.0]}, index=dts)
+
+    s = StrategyBase("p", children=[SecurityBase("neg")])
+    s.setup(data)
+    s.adjust(1000.0)
+    s.update(dts[0])
+
+    # Open position with positive capital on negative-price security: -27 * -37 = 999 <= 1000
+    s.allocate(1000.0, "neg")
+    s.update(dts[0])
+    assert s["neg"].position == -27
+    assert s.capital == pytest.approx(1.0)
+
+    # Raise cash (negative amount) from zero position on negative-price security
+    s2 = StrategyBase("p2", children=[SecurityBase("neg")])
+    s2.setup(data)
+    s2.adjust(1000.0)
+    s2.update(dts[0])
+    s2.allocate(-500.0, "neg")
+    s2.update(dts[0])
+    assert s2["neg"].position == 14
+    assert s2.capital == pytest.approx(1518.0)
+
+    # With per-share commission, outlay still respects budget: -26 * -37 + 26 * 1 = 988 <= 1000
+    s3 = StrategyBase("p3", children=[SecurityBase("neg")])
+    s3.set_commissions(lambda q, p: abs(q) * 1.0)
+    s3.setup(data)
+    s3.adjust(1000.0)
+    s3.update(dts[0])
+    s3.allocate(1000.0, "neg")
+    s3.update(dts[0])
+    assert s3["neg"].position == -26
+    assert s3.capital == pytest.approx(12.0)
+
+    # Opposite-direction push from excessive commissions returns without trading
+    s4 = StrategyBase("p4", children=[SecurityBase("neg")])
+    s4.set_commissions(lambda q, p: 500.0 if q != 0 else 0.0)
+    s4.setup(data)
+    s4.adjust(1000.0)
+    s4.update(dts[0])
+    s4.allocate(100.0, "neg")
+    s4.update(dts[0])
+    assert s4["neg"].position == 0
+
+    # End-to-end backtest allocating and closing a negative-price security with integer positions
+    bt_data = pd.DataFrame(
+        {"pos": [50.0, 50.0, 50.0], "neg": [-37.0, -35.0, -40.0]},
+        index=dts,
+    )
+    strat = Strategy(
+        "s",
+        [
+            bt.algos.SelectAll(include_negative=True),
+            bt.algos.WeighEqually(),
+            bt.algos.Rebalance(),
+        ],
+    )
+    res = bt.Backtest(strat, bt_data, initial_capital=1000.0, integer_positions=True, progress_bar=False)
+    out = bt.run(res)
+    assert np.isfinite(out.stats.loc["total_return", "s"])
+    assert res.strategy["neg"].position < 0
+
+    # Rebalancing an existing negative-price position across price changes (buyback + add)
+    s5 = StrategyBase("p5", children=[SecurityBase("neg")])
+    s5.setup(data)
+    s5.adjust(1000.0)
+    s5.update(dts[0])
+    s5.allocate(1000.0, "neg")
+    s5.update(dts[1])
+    s5.allocate(-400.0, "neg")
+    s5.update(dts[1])
+    assert s5["neg"].position > -27
+    s5.close("neg")
+    s5.update(dts[1])
+    assert s5["neg"].position == 0
+    assert s4.capital == pytest.approx(1000.0)
