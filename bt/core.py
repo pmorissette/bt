@@ -826,7 +826,7 @@ class StrategyBase(Node):
         self._capital += coupons
         val += coupons
 
-        if self.root == self and (val < 0) and not self.bankrupt and not self.fixed_income and not is_zero(val):
+        if self.root == self and (val < 0) and not self.bankrupt and not self.fixed_income and not is_zero(val) and not getattr(self, "_defer_bankruptcy", False):
             # Declare a bankruptcy
             self.bankrupt = True
             self.flatten()
@@ -952,12 +952,17 @@ class StrategyBase(Node):
                 bootstrap = getattr(self.root, "_in_bootstrap", False)
                 self._paper._in_bootstrap = bootstrap
                 try:
+                    # As in Backtest.run, check solvency once the paper's Algos
+                    # have had the chance to apply this date's splits.
+                    self._paper._defer_bankruptcy = True
                     self._paper.update(date)
+                    self._paper._defer_bankruptcy = False
                     if not bootstrap:
                         self._paper.run()
                     self._paper.update(date)
                 finally:
                     self._paper._in_bootstrap = False
+                    self._paper._defer_bankruptcy = False
             # update price
             self._price = self._paper.price
             self._prices_arr[inow] = self._price

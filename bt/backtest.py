@@ -524,13 +524,25 @@ class Backtest:
 
         # and for the backtest loop, start at date 1
         for dt in self.dates[1:]:
-            # update strategy
-            self.strategy.update(dt)
+            # Mark the book at this date's prices. The Algos can still apply a
+            # split for this date (CorporateActions), so the bankruptcy check
+            # waits for the updates during and after run().
+            self.strategy._defer_bankruptcy = True
+            try:
+                self.strategy.update(dt)
+            finally:
+                self.strategy._defer_bankruptcy = False
 
             if not self.strategy.bankrupt:
                 self.strategy.run()
                 # need update after to save weights, values and such
                 self.strategy.update(dt)
+                # A bankruptcy declared during run() does not stop the Algos,
+                # e.g. Rebalance can reopen positions with the negative value
+                # it read. A bankrupt strategy ends the date flat.
+                if self.strategy.bankrupt:
+                    self.strategy.flatten()
+                    self.strategy.update(dt)
                 if self.progress_bar:
                     bar.update()
             else:

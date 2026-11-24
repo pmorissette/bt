@@ -186,6 +186,133 @@ def test_bootstrap_marker_clears_after_update_failure():
     assert backtest.strategy._in_bootstrap is False
 
 
+def _corporate_actions_backtest(prices, weights, splits=None, run_algo=bt.algos.RunOnce, integer_positions=False):
+    stack = []
+    if splits is not None:
+        dividends = pd.DataFrame(0.0, index=prices.index, columns=prices.columns)
+        stack.append(bt.algos.CorporateActions(dividends, splits.reindex(columns=prices.columns).fillna(1.0)))
+    stack += [run_algo(), bt.algos.SelectAll(), bt.algos.WeighSpecified(**weights), bt.algos.Rebalance()]
+    backtest = bt.Backtest(bt.Strategy("s", stack), prices, initial_capital=1_000_000, integer_positions=integer_positions, progress_bar=False)
+    backtest.run()
+    return backtest.strategy
+
+
+# Unadjusted prices with a split on the third date, and the same prices back-adjusted.
+SPLIT_CASES = {
+    # 15% short through a 1-for-10 reverse split
+    "short_reverse_split": ({"a": [2.0, 2.0, 20.0, 20.0, 19.8, 20.2]}, {"a": [20.0, 20.0, 20.0, 20.0, 19.8, 20.2]}, {"a": 0.1}, {"a": -0.15}),
+    # 1.25x long through a 10-for-1 split
+    "levered_long_split": ({"a": [100.0, 102.0, 10.3, 10.4, 10.5, 10.6]}, {"a": [10.0, 10.2, 10.3, 10.4, 10.5, 10.6]}, {"a": 10.0}, {"a": 1.25}),
+    # 100% long b with a 3% short in a, which does a 1-for-50 reverse split
+    "long_short_reverse_split": (
+        {"a": [1.0, 1.0, 50.0, 50.5, 49.0, 50.0], "b": [100.0, 101.0, 102.0, 101.0, 103.0, 104.0]},
+        {"a": [50.0, 50.0, 50.0, 50.5, 49.0, 50.0], "b": [100.0, 101.0, 102.0, 101.0, 103.0, 104.0]},
+        {"a": 0.02},
+        {"a": -0.03, "b": 1.0},
+    ),
+}
+
+
+def _split_frames(case):
+    raw, adjusted, ratios, weights = SPLIT_CASES[case]
+    dates = pd.date_range("2024-06-03", periods=6)
+    splits = pd.DataFrame(1.0, index=dates, columns=list(ratios))
+    for name, ratio in ratios.items():
+        splits.loc[dates[2], name] = ratio
+    return pd.DataFrame(raw, index=dates), pd.DataFrame(adjusted, index=dates), splits, weights
+
+
+@pytest.mark.parametrize("run_algo", [bt.algos.RunOnce, bt.algos.RunDaily])
+@pytest.mark.parametrize("case", list(SPLIT_CASES))
+def test_split_does_not_trigger_false_bankruptcy(case, run_algo):
+    raw, adjusted, splits, weights = _split_frames(case)
+
+    unadjusted = _corporate_actions_backtest(raw, weights, splits, run_algo)
+    expected = _corporate_actions_backtest(adjusted, weights, run_algo=run_algo)
+
+    # The book was marked at the post-split price before the split was applied.
+    assert not expected.bankrupt
+    assert not unadjusted.bankrupt
+    pd.testing.assert_series_equal(unadjusted.values, expected.values)
+    for name in weights:
+        assert unadjusted[name].position == pytest.approx(expected[name].position)
+
+
+def test_split_does_not_bankrupt_child_strategy_paper():
+    raw, adjusted, splits, weights = _split_frames("short_reverse_split")
+
+    def run(prices, corporate_actions):
+        stack = [bt.algos.CorporateActions(pd.DataFrame(0.0, index=prices.index, columns=prices.columns), splits)] if corporate_actions else []
+        stack += [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighSpecified(**weights), bt.algos.Rebalance()]
+        child = bt.Strategy("child", stack)
+        parent = bt.Strategy("parent", [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighSpecified(child=1.0), bt.algos.Rebalance()], [child])
+        backtest = bt.Backtest(parent, prices, initial_capital=1_000_000, integer_positions=False, progress_bar=False)
+        backtest.run()
+        return backtest.strategy
+
+    unadjusted = run(raw, corporate_actions=True)
+    expected = run(adjusted, corporate_actions=False)
+
+    # The child's price comes from its paper portfolio, which marks the book in the same order.
+    assert not unadjusted["child"]._paper.bankrupt
+    assert not unadjusted.bankrupt
+    pd.testing.assert_series_equal(unadjusted["child"].prices, expected["child"].prices)
+    pd.testing.assert_series_equal(unadjusted.values, expected.values)
+
+
+@pytest.mark.parametrize("run_algo", [bt.algos.RunOnce, bt.algos.RunDaily])
+@pytest.mark.parametrize("ratio", [0.1, 2.0])
+def test_bankruptcy_on_split_date_leaves_strategy_flat(ratio, run_algo):
+    # 3x long; the adjusted price falls 60% on the split date, so the book really is insolvent.
+    dates = pd.date_range("2024-06-03", periods=6)
+    adjusted = pd.DataFrame({"a": [100.0, 100.0, 40.0, 42.0, 44.0, 46.0]}, index=dates)
+    raw = adjusted.copy()
+    raw.iloc[2:] /= ratio
+    splits = pd.DataFrame(1.0, index=dates, columns=["a"])
+    splits.loc[dates[2], "a"] = ratio
+
+    unadjusted = _corporate_actions_backtest(raw, {"a": 3.0}, splits, run_algo)
+    expected = _corporate_actions_backtest(adjusted, {"a": 3.0}, run_algo=run_algo)
+
+    # A bankruptcy found while the Algos run must not leave positions they opened afterwards.
+    assert expected.bankrupt
+    assert unadjusted.bankrupt
+    assert unadjusted["a"].position == 0
+    assert unadjusted.values.iloc[-1] == pytest.approx(-800_000.0)
+    pd.testing.assert_series_equal(unadjusted.values, expected.values)
+
+
+@pytest.mark.parametrize("integer_positions", [False, True])
+@pytest.mark.parametrize("run_algo", [bt.algos.RunOnce, bt.algos.RunDaily])
+def test_insolvent_strategy_still_goes_bankrupt(run_algo, integer_positions):
+    dates = pd.date_range("2024-06-03", periods=6)
+    prices = pd.DataFrame({"a": [100.0, 100.0, 50.0, 55.0, 60.0, 65.0]}, index=dates)
+
+    s = _corporate_actions_backtest(prices, {"a": 3.0}, run_algo=run_algo, integer_positions=integer_positions)
+
+    assert s.bankrupt
+    assert s["a"].position == 0
+    assert (s.values.iloc[3:] == -500_000.0).all()
+
+
+def test_bankruptcy_deferral_marker_clears_after_update_failure():
+    dates = pd.date_range("2024-01-01", periods=2)
+    backtest = bt.Backtest(bt.Strategy("parent"), pd.DataFrame({"x": 100.0}, index=dates), progress_bar=False)
+    original_update = backtest.strategy.update
+
+    def update(date, *args, **kwargs):
+        if getattr(backtest.strategy, "_defer_bankruptcy", False):
+            raise ValueError("update failed")
+        return original_update(date, *args, **kwargs)
+
+    with (
+        mock.patch.object(backtest.strategy, "update", side_effect=update),
+        pytest.raises(ValueError, match="update failed"),
+    ):
+        backtest.run()
+    assert backtest.strategy._defer_bankruptcy is False
+
+
 def test_turnover():
     dts = pd.date_range("2010-01-01", periods=5)
     data = pd.DataFrame(index=dts, columns=["a", "b"], data=100)
