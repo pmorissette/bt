@@ -798,6 +798,11 @@ class StrategyBase(Node):
             else:
                 inow = self._index.get_loc(date)
 
+        # Let Algos change positions for the new date, e.g. apply a split,
+        # before the children are valued at its prices.
+        if newpt:
+            self._on_new_date()
+
         # update children if any and calculate value
         val = self._capital  # default if no children
         notl_val = 0.0  # Capital doesn't count towards notional value
@@ -1211,6 +1216,11 @@ class StrategyBase(Node):
         This is the main logic method. Override this method to provide some
         algorithm to execute on each date change. This method is called by
         backtester.
+        """
+
+    def _on_new_date(self):
+        """
+        Called by update on each new date, before the children are valued.
         """
 
     def set_commissions(self, fn):
@@ -2298,6 +2308,14 @@ class AlgoStack(Algo):
         super().__init__()
         self.algos = algos
         self.check_run_always = any(hasattr(x, "run_always") for x in self.algos)
+        self._new_date_algos = tuple(x for x in self.algos if hasattr(x, "_on_new_date"))
+
+    def _on_new_date(self, target):
+        # The target has moved to a new date and not yet valued its children.
+        # Every Algo that acts on this is called, whether or not the stack
+        # would reach it when it runs. A subclass may skip AlgoStack.__init__.
+        for algo in getattr(self, "_new_date_algos", ()):
+            algo._on_new_date(target)
 
     def __call__(self, target):
         # normal running mode
@@ -2356,6 +2374,12 @@ class Strategy(StrategyBase):
         self.stack = AlgoStack(*algos)
         self.temp = {}
         self.perm = {}
+
+    def _on_new_date(self):
+        # A subclass can replace the stack, e.g. with a plain callable.
+        stack = getattr(self, "stack", None)
+        if isinstance(stack, AlgoStack):
+            stack._on_new_date(self)
 
     def run(self):
         # clear out temp data
