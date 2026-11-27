@@ -249,7 +249,7 @@ res2 = bt.run(sma10, sma20, sma40, benchmark)
 ```
 
 ```python
-res2.plot(freq='m');
+res2.plot(freq=pd.offsets.MonthEnd(), title="monthly Equity Progression");
 ```
 
 ```{image} _static/examples-nb_18_0.png
