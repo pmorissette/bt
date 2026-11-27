@@ -21,6 +21,29 @@ def test_backtest_copies_strategy():
     assert id(s) != id(actual.strategy)
 
 
+@pytest.mark.parametrize("dtype", ["float64", "Float32", "Float64", "Int64", "UInt64"])
+@pytest.mark.parametrize("explicit", [False, True], ids=["lazy", "explicit"])
+def test_backtest_nullable_numeric_prices(dtype, explicit):
+    dates = pd.date_range("2024-01-02", periods=4)
+    data = pd.DataFrame({"A": [100, 110, 115, 120], "B": [None, 100, 100, 100]}, index=dates, dtype=dtype)
+    original = data.copy(deep=True)
+    strategy = bt.Strategy(
+        "buy_and_hold",
+        [bt.algos.RunOnce(), bt.algos.SelectThese(["A"]), bt.algos.WeighEqually(), bt.algos.Rebalance()],
+        children=[bt.Security("A"), bt.Security("B")] if explicit else [],
+    )
+    backtest = bt.Backtest(strategy, data, initial_capital=1000, progress_bar=False)
+    backtest.run()
+
+    # Ten shares bought at 100 account for every subsequent portfolio value.
+    np.testing.assert_allclose(backtest.strategy.values, [1000, 1000, 1100, 1150, 1200])
+    assert backtest.strategy["A"].position == 10
+    assert backtest.strategy.capital == 0
+    if explicit:
+        assert backtest.strategy["B"].position == 0
+    pd.testing.assert_frame_equal(data, original)
+
+
 def test_backtest_dates_set():
     s = mock.MagicMock()
     data = pd.DataFrame(
