@@ -1859,8 +1859,11 @@ class CorporateActions(Algo):
 
     Security positions are adjusted on dates where a split value other than
     1.0 is given. A value above 1.0 causes the position size to increase
-    (compared to the previous date) and vice versa. Split-adjusted values and
-    weights are available to subsequent Algos in the same iteration.
+    (compared to the previous date) and vice versa. In a Strategy's stack, the
+    split is applied when the strategy moves to the date, before it values its
+    positions at that date's prices, so the date's values, weights and
+    bankruptcy check all use the split-adjusted positions. Calling the Algo
+    applies a split that has not been applied yet for that date.
 
     On a given date, a position on a security causes a cash inflow (when
     long) or outflow (when short) given by the size of the position times
@@ -1890,34 +1893,30 @@ class CorporateActions(Algo):
         super().__init__()
         self.dividends = dividends.fillna(0.0)
         self.splits = splits.fillna(1.0)
+        # The last date each strategy had its splits applied, so that a date's
+        # splits are applied once.
+        self._split_dates = {}
+
+    def _on_new_date(self, target):
+        # The target has moved to a new date and is about to value its
+        # positions at that date's prices, which is the value the bankruptcy
+        # check uses. Split the positions first.
+        if self._split_dates.get(target) != target.now:
+            ratios = self._split_ratios(target)
+            if ratios:
+                # As in __call__, check the dividends before a split changes portfolio state.
+                self._dividend_row(target)
+            self._split(target, ratios)
 
     def __call__(self, target):
-        split_row = dividend_row = None
-        if target.now in self.splits.index:
-            split_row = self.splits.loc[target.now]
-            # Mixed-dtype rows can promote scalars and change position arithmetic.
-            if not self.splits.dtypes.eq(split_row.dtype).all():
-                split_row = {c: self.splits.loc[target.now, c] for c in target.children if c in self.splits.columns}
-        if target.now in self.dividends.index:
-            dividend_row = self.dividends.loc[target.now]
-            if not self.dividends.dtypes.eq(dividend_row.dtype).all():
-                dividend_row = {c: self.dividends.loc[target.now, c] for c in target.children if c in self.dividends.columns}
-
+        # In a Strategy's stack, the splits were applied when the target moved to this date.
+        ratios = self._split_ratios(target) if self._split_dates.get(target) != target.now else {}
         # Check both action sets before the first split can change portfolio state.
-        for c in target.children:
-            if split_row is not None and c in self.splits.columns and not math.isfinite(split_row[c]):
-                raise ValueError("Corporate action split ratio must be finite")
-            if dividend_row is not None and c in self.dividends.columns and not math.isfinite(dividend_row[c]):
-                raise ValueError("Corporate action dividend must be finite")
+        dividend_row = self._dividend_row(target)
 
         # A split changes positions without a transaction, so invalidate cached tree values.
-        if split_row is not None:
-            for c in target.children:
-                if c in self.splits.columns:
-                    spl = split_row[c]
-                    if spl != 1.0:
-                        target.children[c]._position *= spl
-                        target.root.stale = True
+        if self._split(target, ratios):
+            target.root.stale = True
 
         # adjust capital due to dividends
         if dividend_row is not None:
@@ -1931,6 +1930,43 @@ class CorporateActions(Algo):
             target.adjust(div_inflow, flow=False)
 
         return True
+
+    def _row(self, actions, target):
+        row = actions.loc[target.now]
+        # Mixed-dtype rows can promote scalars and change position arithmetic.
+        if not actions.dtypes.eq(row.dtype).all():
+            row = {c: actions.loc[target.now, c] for c in target.children if c in actions.columns}
+        return row
+
+    def _split_ratios(self, target):
+        # The target's split ratios other than 1.0 on its current date.
+        ratios = {}
+        if target.now in self.splits.index:
+            split_row = self._row(self.splits, target)
+            for c in target.children:
+                if c in self.splits.columns:
+                    spl = split_row[c]
+                    if not math.isfinite(spl):
+                        raise ValueError("Corporate action split ratio must be finite")
+                    if spl != 1.0:
+                        ratios[c] = spl
+        return ratios
+
+    def _dividend_row(self, target):
+        if target.now not in self.dividends.index:
+            return None
+        dividend_row = self._row(self.dividends, target)
+        for c in target.children:
+            if c in self.dividends.columns and not math.isfinite(dividend_row[c]):
+                raise ValueError("Corporate action dividend must be finite")
+        return dividend_row
+
+    def _split(self, target, ratios):
+        # Record the date so that its splits are not applied again.
+        self._split_dates[target] = target.now
+        for c, spl in ratios.items():
+            target.children[c]._position *= spl
+        return bool(ratios)
 
 
 class CloseDead(Algo):

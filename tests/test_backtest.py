@@ -230,7 +230,7 @@ def test_split_does_not_trigger_false_bankruptcy(case, run_algo):
     unadjusted = _corporate_actions_backtest(raw, weights, splits, run_algo)
     expected = _corporate_actions_backtest(adjusted, weights, run_algo=run_algo)
 
-    # The book was marked at the post-split price before the split was applied.
+    # Valuing the pre-split position at the post-split price would make each book look insolvent.
     assert not expected.bankrupt
     assert not unadjusted.bankrupt
     pd.testing.assert_series_equal(unadjusted.values, expected.values)
@@ -238,14 +238,16 @@ def test_split_does_not_trigger_false_bankruptcy(case, run_algo):
         assert unadjusted[name].position == pytest.approx(expected[name].position)
 
 
-def test_split_does_not_bankrupt_child_strategy_paper():
-    raw, adjusted, splits, weights = _split_frames("short_reverse_split")
+@pytest.mark.parametrize("parent_run_algo", [bt.algos.RunOnce, bt.algos.RunDaily])
+@pytest.mark.parametrize("case", list(SPLIT_CASES))
+def test_split_does_not_bankrupt_child_strategy_paper(case, parent_run_algo):
+    raw, adjusted, splits, weights = _split_frames(case)
 
     def run(prices, corporate_actions):
         stack = [bt.algos.CorporateActions(pd.DataFrame(0.0, index=prices.index, columns=prices.columns), splits)] if corporate_actions else []
         stack += [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighSpecified(**weights), bt.algos.Rebalance()]
         child = bt.Strategy("child", stack)
-        parent = bt.Strategy("parent", [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighSpecified(child=1.0), bt.algos.Rebalance()], [child])
+        parent = bt.Strategy("parent", [parent_run_algo(), bt.algos.SelectAll(), bt.algos.WeighSpecified(child=1.0), bt.algos.Rebalance()], [child])
         backtest = bt.Backtest(parent, prices, initial_capital=1_000_000, integer_positions=False, progress_bar=False)
         backtest.run()
         return backtest.strategy
@@ -253,11 +255,14 @@ def test_split_does_not_bankrupt_child_strategy_paper():
     unadjusted = run(raw, corporate_actions=True)
     expected = run(adjusted, corporate_actions=False)
 
-    # The child's price comes from its paper portfolio, which marks the book in the same order.
+    # The child's price comes from its paper portfolio, and a parent that rebalances daily
+    # values the child before the child's Algos run.
     assert not unadjusted["child"]._paper.bankrupt
     assert not unadjusted.bankrupt
     pd.testing.assert_series_equal(unadjusted["child"].prices, expected["child"].prices)
     pd.testing.assert_series_equal(unadjusted.values, expected.values)
+    for name in weights:
+        assert unadjusted["child"][name].position == pytest.approx(expected["child"][name].position)
 
 
 @pytest.mark.parametrize("run_algo", [bt.algos.RunOnce, bt.algos.RunDaily])
@@ -274,7 +279,7 @@ def test_bankruptcy_on_split_date_leaves_strategy_flat(ratio, run_algo):
     unadjusted = _corporate_actions_backtest(raw, {"a": 3.0}, splits, run_algo)
     expected = _corporate_actions_backtest(adjusted, {"a": 3.0}, run_algo=run_algo)
 
-    # A bankruptcy found while the Algos run must not leave positions they opened afterwards.
+    # The bankruptcy is declared when the date is marked, before Rebalance can trade.
     assert expected.bankrupt
     assert unadjusted.bankrupt
     assert unadjusted["a"].position == 0
@@ -295,22 +300,59 @@ def test_insolvent_strategy_still_goes_bankrupt(run_algo, integer_positions):
     assert (s.values.iloc[3:] == -500_000.0).all()
 
 
-def test_bankruptcy_deferral_marker_clears_after_update_failure():
-    dates = pd.date_range("2024-01-01", periods=2)
-    backtest = bt.Backtest(bt.Strategy("parent"), pd.DataFrame({"x": 100.0}, index=dates), progress_bar=False)
-    original_update = backtest.strategy.update
+@pytest.mark.parametrize("integer_positions", [False, True])
+def test_bankruptcy_at_zero_price_flattens_before_the_algos_run(integer_positions):
+    # Rebalance cannot allocate at a price of 0, so the bankruptcy must stop the Algos.
+    dates = pd.date_range("2024-06-03", periods=6)
+    prices = pd.DataFrame({"a": [100.0, 100.0, 0.0, 0.0, 0.0, 0.0]}, index=dates)
 
-    def update(date, *args, **kwargs):
-        if getattr(backtest.strategy, "_defer_bankruptcy", False):
-            raise ValueError("update failed")
-        return original_update(date, *args, **kwargs)
+    s = _corporate_actions_backtest(prices, {"a": 3.0}, run_algo=bt.algos.RunDaily, integer_positions=integer_positions)
 
-    with (
-        mock.patch.object(backtest.strategy, "update", side_effect=update),
-        pytest.raises(ValueError, match="update failed"),
-    ):
-        backtest.run()
-    assert backtest.strategy._defer_bankruptcy is False
+    assert s.bankrupt
+    assert s["a"].position == 0
+    assert (s.values.iloc[3:] == -2_000_000.0).all()
+
+
+def test_corporate_actions_applies_each_split_once():
+    dates = pd.date_range("2024-06-03", periods=4)
+    prices = pd.DataFrame({"a": [10.0, 10.0, 5.0, 5.0]}, index=dates)
+    splits = pd.DataFrame({"a": [1.0, 1.0, 2.0, 1.0]}, index=dates)
+    dividends = pd.DataFrame({"a": [0.0, 0.0, 0.1, 0.0]}, index=dates)
+    # A child built with parent= shares the parent's instance; the child's paper portfolio has a copy.
+    corporate_actions = bt.algos.CorporateActions(dividends, splits)
+    parent = bt.Strategy("parent", [corporate_actions, bt.algos.RunOnce(), bt.algos.WeighSpecified(a=0.5, child=0.5), bt.algos.Rebalance()], ["a"])
+    bt.Strategy("child", [corporate_actions, bt.algos.RunOnce(), bt.algos.WeighSpecified(a=1.0), bt.algos.Rebalance()], parent=parent)
+    backtest = bt.Backtest(parent, prices, initial_capital=1_000_000, integer_positions=False, progress_bar=False)
+    backtest.run()
+    s = backtest.strategy
+
+    # Each split is applied when the strategy moves to the date and not again when the Algos run.
+    assert s["a"].position == 100_000
+    assert s["child"]["a"].position == 100_000
+    assert s["child"]._paper["a"].position == 200_000
+    # The dividend is paid once, on the post-split positions.
+    assert s.values.iloc[-1] == pytest.approx(1_020_000.0)
+    assert s["child"].prices.iloc[-1] == pytest.approx(102.0)
+
+
+class _StackWithoutInit(bt.AlgoStack):
+    def __init__(self, *algos):
+        self.algos = algos
+
+    def __call__(self, target):
+        return all(algo(target) for algo in self.algos)
+
+
+@pytest.mark.parametrize("stack", ["callable", "no_init"])
+def test_new_date_hook_tolerates_a_replaced_stack(stack):
+    dates = pd.date_range("2024-06-03", periods=3)
+    algos = [bt.algos.RunOnce(), bt.algos.SelectAll(), bt.algos.WeighEqually(), bt.algos.Rebalance()]
+    s = bt.Strategy("s")
+    s.stack = (lambda target: all(algo(target) for algo in algos)) if stack == "callable" else _StackWithoutInit(*algos)
+    backtest = bt.Backtest(s, pd.DataFrame({"a": [10.0, 11.0, 12.0]}, index=dates), integer_positions=False, progress_bar=False)
+    backtest.run()
+
+    assert backtest.strategy.values.iloc[-1] == pytest.approx(1_200_000.0)
 
 
 def test_turnover():
