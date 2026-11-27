@@ -1518,6 +1518,10 @@ class SecurityBase(Node):
         columns = ["value", "position", "notional_value", "outlay"]
         if prices is not None:
             self._prices_arr = np.array(prices, copy=True)
+            if self._prices_arr.dtype.kind == "O" and prices.dtype.kind in "iuf":
+                # Older pandas leaves nullable numbers as objects. Normalize missing
+                # entries for scalar validation without coercing the finite prices.
+                self._prices_arr[pd.isna(self._prices_arr)] = np.nan
             self._prices_set = True
         else:
             self._prices_set = False

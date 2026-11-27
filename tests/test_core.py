@@ -916,6 +916,32 @@ def test_update_accepts_nan_price_for_zero_position(price_source):
     assert np.isnan(security._prices.loc[dates[1]])
 
 
+@pytest.mark.parametrize("dtype", ["Float32", "Float64", "Int64", "UInt64"])
+def test_security_nullable_prices_preserve_missing_price_validation(dtype):
+    dates = pd.date_range("2024-01-01", periods=3)
+    prices = pd.DataFrame({"asset": [None, 100, None]}, index=dates, dtype=dtype)
+    original = prices.copy(deep=True)
+    security = SecurityBase("asset")
+    security.setup(prices)
+    security.update(dates[0])
+
+    assert np.isnan(security.price)
+    assert security.value == 0.0
+    security.update(dates[1])
+    assert security.price == 100.0
+
+    # The same missing observation must still reject an open position before mutation.
+    security._position = 10.0
+    history = security.data.copy(deep=True)
+    with pytest.raises(ValueError, match="Position is open"):
+        security.update(dates[2])
+    assert security.now == dates[1]
+    assert security.price == 100.0
+    assert security.position == 10.0
+    pd.testing.assert_frame_equal(security.data, history)
+    pd.testing.assert_frame_equal(prices, original)
+
+
 def test_strategybase_tree_allocate():
     c1 = SecurityBase("c1")
     c2 = SecurityBase("c2")
