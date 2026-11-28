@@ -171,7 +171,7 @@ transactions = (transactions['quantity'] * transactions['price']).reset_index()
 bar_mask = transactions.loc[:,'Security'] == 'bar'
 foo_mask = transactions.loc[:,'Security'] == 'foo'
 
-trans_df.loc[trans_df.index[4:],'Target'] = np.abs(transactions[bar_mask].iloc[:,2].values) + np.abs(transactions[foo_mask].iloc[:,2].values)
+trans_df.loc[transactions[bar_mask].iloc[:,0],'Target'] = np.abs(transactions[bar_mask].iloc[:,2].values) + np.abs(transactions[foo_mask].iloc[:,2].values)
 
 ```
 
